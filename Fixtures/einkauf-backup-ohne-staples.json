@@ -1,0 +1,20 @@
+{
+  "kind": "einkauf-backup",
+  "v": 1,
+  "currentStoreId": "aldi",
+  "stores": [
+    {
+      "id": "aldi",
+      "name": "Aldi",
+      "layout": ["vor", "obst", "brot", "kuehlung", "tiefkuehl", "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach"],
+      "builtin": true
+    }
+  ],
+  "items": [
+    {"id": "x1", "name": "Bananen", "dept": "obst", "done": false, "added": 1710000000100, "ord": 1},
+    {"id": "x2", "name": "Kassenbon prüfen", "dept": "nach", "done": false, "added": 1710000000101, "ord": 2},
+    {"id": "x3", "name": "Tasche einpacken", "dept": "vor", "done": false, "added": 1710000000102, "ord": 3}
+  ],
+  "walkMode": false,
+  "layoutTrip": 1
+}

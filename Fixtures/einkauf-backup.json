@@ -1,0 +1,71 @@
+{
+  "kind": "einkauf-backup",
+  "v": 1,
+  "currentStoreId": "edeka",
+  "extraIgnoredField": "unbekannte Felder werden ignoriert",
+  "stores": [
+    {
+      "id": "edeka",
+      "name": "Edeka",
+      "layout": ["vor", "obst", "bedienung", "brot", "kuehlung", "tiefkuehl", "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach"],
+      "builtin": true
+    },
+    {
+      "id": "aldi",
+      "name": "Aldi",
+      "layout": ["vor", "obst", "brot", "kuehlung", "tiefkuehl", "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach"],
+      "builtin": true
+    },
+    {
+      "id": "rewe",
+      "name": "Rewe",
+      "layout": ["vor", "obst", "brot", "bedienung", "trocken", "suess", "kuehlung", "tiefkuehl", "getraenke", "drogerie", "sonstiges", "nach"],
+      "builtin": true
+    },
+    {
+      "id": "lidl",
+      "name": "Lidl",
+      "layout": ["vor", "obst", "brot", "kuehlung", "tiefkuehl", "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach"],
+      "builtin": true
+    },
+    {
+      "id": "dm",
+      "name": "dm",
+      "layout": ["vor", "drogerie", "trocken", "getraenke", "sonstiges", "nach"],
+      "builtin": true
+    },
+    {
+      "id": "eigenes",
+      "name": "Eigenes Layout",
+      "layout": ["vor", "sonstiges", "nach"],
+      "builtin": true
+    }
+  ],
+  "mappings": {
+    "milch": "kuehlung",
+    "klopapier": "drogerie"
+  },
+  "items": [
+    {"id": "i001vor", "name": "Pfandflaschen zurück", "dept": "vor", "done": false, "added": 1710000000001, "ord": 1},
+    {"id": "i002obst", "name": "Äpfel", "dept": "obst", "done": false, "added": 1710000000002, "ord": 2, "color": "ignored"},
+    {"id": "i003obst", "name": "Tomaten", "dept": "obst", "done": true, "added": 1710000000003, "ord": 3},
+    {"id": "i004bed", "name": "Gouda", "dept": "bedienung", "done": false, "added": 1710000000004, "ord": 4},
+    {"id": "i005brot", "name": "Brötchen", "dept": "brot", "done": false, "added": 1710000000005, "ord": 5},
+    {"id": "i006kuehl", "name": "Milch", "dept": "kuehlung", "done": false, "added": 1710000000006, "ord": 6},
+    {"id": "i007tk", "name": "TK-Pizza", "dept": "tiefkuehl", "done": false, "added": 1710000000007, "ord": 7},
+    {"id": "i008trock", "name": "Spaghetti", "dept": "trocken", "done": false, "added": 1710000000008, "ord": 8},
+    {"id": "i009suess", "name": "Chips", "dept": "suess", "done": false, "added": 1710000000009, "ord": 9},
+    {"id": "i010getr", "name": "Mineralwasser", "dept": "getraenke", "done": false, "added": 1710000000010, "ord": 10},
+    {"id": "i011drog", "name": "Klopapier", "dept": "drogerie", "done": false, "added": 1710000000011, "ord": 11},
+    {"id": "i012sonst", "name": "Batterien", "dept": "sonstiges", "done": false, "added": 1710000000012, "ord": 12},
+    {"id": "i013nach", "name": "Pfandbon einlösen", "dept": "nach", "done": false, "added": 1710000000013, "ord": 13},
+    {"id": "i014unk", "name": "Unbekannte Abteilung", "dept": "nicht-da", "done": false, "added": 1710000000014, "ord": 14}
+  ],
+  "walkMode": true,
+  "layoutTrip": 1,
+  "staples": [
+    {"name": "Milch", "dept": "kuehlung"},
+    {"name": "Butter", "dept": "kuehlung"},
+    {"name": "Klopapier", "dept": "drogerie"}
+  ]
+}
