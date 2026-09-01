@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var showExporter = false
     @State private var exportDocument = BackupFileDocument(data: Data())
     @State private var alertMessage: String?
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -44,6 +45,10 @@ struct ContentView: View {
                 } catch {
                     alertMessage = error.localizedDescription
                 }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsSheet()
+                    .environmentObject(store)
             }
         }
         .tint(Color(red: 0.61, green: 0.20, blue: 0.14))
@@ -106,18 +111,23 @@ struct ContentView: View {
                         alertMessage = error.localizedDescription
                     }
                 }
-                Button("Beispiel-Liste laden", systemImage: "tray.and.arrow.down") {
-                    store.loadSampleFromBundle()
-                }
-                if !store.staples.isEmpty {
-                    Menu("Stamm") {
+                Menu("Stamm") {
+                    Button("Gesamtliste") {
+                        store.applyAllStaples()
+                    }
+                    if !store.staples.isEmpty {
+                        Divider()
                         ForEach(Array(store.staples.enumerated()), id: \.offset) { _, staple in
-                            Button(staple.name) { store.addStaple(staple) }
+                            Button(staple.name) { store.applyStaple(staple) }
                         }
                     }
                 }
                 Button("Erledigte löschen", systemImage: "trash") {
                     store.clearDone()
+                }
+                Divider()
+                Button("Einstellungen", systemImage: "gearshape") {
+                    showSettings = true
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")

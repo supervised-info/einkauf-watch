@@ -109,7 +109,10 @@ def test_sources() -> None:
         fail("WatchConnectivity not linked")
     needed = [
         "Sources/Shared/BackupCodec.swift",
+        "Sources/Shared/StoreLayout.swift",
+        "Sources/Shared/StapleApply.swift",
         "Sources/iOS/ContentView.swift",
+        "Sources/iOS/SettingsSheet.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
         "Sources/Watch/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
@@ -117,6 +120,13 @@ def test_sources() -> None:
     for rel in needed:
         if not (ROOT / rel).exists():
             fail(f"missing {rel}")
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    if "Beispiel-Liste" in content or "loadSampleFromBundle" in content:
+        fail("sample list still offered in UI")
+    if "Gesamtliste" not in content:
+        fail("Stamm menu missing Gesamtliste")
+    if "Einstellungen" not in content:
+        fail("Einstellungen menu missing")
     print("sources: ok")
 
 
