@@ -266,4 +266,154 @@ final class ItemEditingTests: XCTestCase {
         XCTAssertEqual(moved.filter { $0.dept == "obst" }.sorted(by: ListGrouping.sortItems).map(\.id), ["b", "a"])
         XCTAssertEqual(moved.first { $0.id == "c" }?.ord, 1)
     }
+
+    func testFlattenedRowsHeadersThenItems() {
+        let store = edeka
+        let items = sampleItems
+        let rows = ItemEditing.rows(items: items, store: store)
+        XCTAssertEqual(rows.map(\.id), ["h:vor", "v", "h:obst", "a", "b", "h:brot", "br", "h:nach", "n"])
+    }
+
+    func testDropSlotBeforeItemIsThatDept() {
+        let remaining: [ItemEditing.Row] = [
+            .header("obst"),
+            .item(Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1)),
+            .header("brot"),
+            .item(Item(id: "br", name: "Brot", dept: "brot", done: false, added: 2, ord: 1))
+        ]
+        let slot = ItemEditing.dropSlot(remaining: remaining, destination: 3)
+        XCTAssertEqual(slot?.dept, "brot")
+        XCTAssertEqual(slot?.beforeId, "br")
+    }
+
+    func testDropSlotBeforeHeaderAppendsToPrevious() {
+        let remaining: [ItemEditing.Row] = [
+            .header("obst"),
+            .item(Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1)),
+            .header("brot"),
+            .item(Item(id: "br", name: "Brot", dept: "brot", done: false, added: 2, ord: 1))
+        ]
+        let slot = ItemEditing.dropSlot(remaining: remaining, destination: 2)
+        XCTAssertEqual(slot?.dept, "obst")
+        XCTAssertNil(slot?.beforeId)
+    }
+
+    func testDropSlotAtEndIsLastDept() {
+        let remaining: [ItemEditing.Row] = [
+            .header("vor"),
+            .item(Item(id: "v", name: "Tasche", dept: "vor", done: false, added: 1, ord: 1)),
+            .header("nach"),
+            .item(Item(id: "n", name: "Pfand", dept: "nach", done: false, added: 2, ord: 1))
+        ]
+        let slot = ItemEditing.dropSlot(remaining: remaining, destination: 4)
+        XCTAssertEqual(slot?.dept, "nach")
+        XCTAssertNil(slot?.beforeId)
+    }
+
+    func testMoveRowsAcrossDeptUpdatesDeptMappingAndOrder() {
+        let items = sampleItems
+        let rows = ItemEditing.rows(items: items, store: edeka)
+        // Birne (idx 4) vor Brot (idx 6) → nach Entfernen destination 5
+        XCTAssertEqual(rows[4].id, "b")
+        XCTAssertEqual(rows[6].id, "br")
+        let result = ItemEditing.moveRows(
+            allItems: items,
+            store: edeka,
+            from: IndexSet(integer: 4),
+            to: 5,
+            mappings: [:]
+        )
+        XCTAssertEqual(result?.items.first { $0.id == "b" }?.dept, "brot")
+        XCTAssertEqual(result?.mappings[DepartmentGuesser.mappingKey("Birne")], "brot")
+        let brot = result!.items.filter { $0.dept == "brot" }.sorted(by: ListGrouping.sortItems).map(\.id)
+        XCTAssertEqual(brot, ["b", "br"])
+        XCTAssertEqual(result?.items.first { $0.id == "a" }?.dept, "obst")
+    }
+
+    func testMoveRowsIntoVorAndNach() {
+        let items = sampleItems
+        // Äpfel (idx 3) ans Ende von vor: vor obst-Header (idx 2) nach Entfernen von 3 → dest 2
+        let toVor = ItemEditing.moveRows(
+            allItems: items,
+            store: edeka,
+            from: IndexSet(integer: 3),
+            to: 2,
+            mappings: [:]
+        )
+        XCTAssertEqual(toVor?.items.first { $0.id == "a" }?.dept, "vor")
+        let vor = toVor!.items.filter { $0.dept == "vor" }.sorted(by: ListGrouping.sortItems).map(\.id)
+        XCTAssertEqual(vor, ["v", "a"])
+
+        // Tasche (idx 1) ans Ende von nach
+        let rows = ItemEditing.rows(items: items, store: edeka)
+        XCTAssertEqual(rows[1].id, "v")
+        let afterRemoveCount = rows.count - 1
+        let toNach = ItemEditing.moveRows(
+            allItems: items,
+            store: edeka,
+            from: IndexSet(integer: 1),
+            to: afterRemoveCount,
+            mappings: [:]
+        )
+        XCTAssertEqual(toNach?.items.first { $0.id == "v" }?.dept, "nach")
+        let nach = toNach!.items.filter { $0.dept == "nach" }.sorted(by: ListGrouping.sortItems).map(\.id)
+        XCTAssertEqual(nach, ["n", "v"])
+    }
+
+    func testMoveRowsSamePositionIsNoOp() {
+        let items = sampleItems
+        // Äpfel (idx 3) bleibt vor Birne: nach Entfernen dest zeigt auf Birne (idx 3)
+        let result = ItemEditing.moveRows(
+            allItems: items,
+            store: edeka,
+            from: IndexSet(integer: 3),
+            to: 3,
+            mappings: ["äpfel": "obst"]
+        )
+        XCTAssertNil(result)
+    }
+
+    func testMoveRowsHeaderSourceIsNoOp() {
+        let result = ItemEditing.moveRows(
+            allItems: sampleItems,
+            store: edeka,
+            from: IndexSet(integer: 0),
+            to: 4,
+            mappings: [:]
+        )
+        XCTAssertNil(result)
+    }
+
+    func testMoveRowsWithinDeptViaFlattenedList() {
+        let items = sampleItems
+        // Birne (4) vor Äpfel: nach Entfernen dest = 3 (Äpfel)
+        let result = ItemEditing.moveRows(
+            allItems: items,
+            store: edeka,
+            from: IndexSet(integer: 4),
+            to: 3,
+            mappings: [:]
+        )
+        let obst = result!.items.filter { $0.dept == "obst" }.sorted(by: ListGrouping.sortItems).map(\.id)
+        XCTAssertEqual(obst, ["b", "a"])
+        XCTAssertEqual(result?.items.first { $0.id == "b" }?.dept, "obst")
+    }
+
+    func testItemIDsSkipsHeaders() {
+        let rows = ItemEditing.rows(items: sampleItems, store: edeka)
+        let ids = ItemEditing.itemIDs(in: rows, at: IndexSet([0, 1, 3]))
+        XCTAssertEqual(ids, ["v", "a"])
+    }
+
+    private var edeka: Store { Store.seeds.first { $0.id == "edeka" }! }
+
+    private var sampleItems: [Item] {
+        [
+            Item(id: "v", name: "Tasche", dept: "vor", done: false, added: 1, ord: 1),
+            Item(id: "a", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 1),
+            Item(id: "b", name: "Birne", dept: "obst", done: false, added: 3, ord: 2),
+            Item(id: "br", name: "Brot", dept: "brot", done: false, added: 4, ord: 1),
+            Item(id: "n", name: "Pfand", dept: "nach", done: false, added: 5, ord: 1)
+        ]
+    }
 }

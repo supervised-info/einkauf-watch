@@ -58,25 +58,57 @@ struct ContentView: View {
     }
 
     private var list: some View {
+        Group {
+            if store.walkMode {
+                walkList
+            } else {
+                editList
+            }
+        }
+    }
+
+    private var walkList: some View {
         List {
             ForEach(store.groups) { group in
                 Section(group.title) {
-                    if store.walkMode {
-                        ForEach(group.items) { item in
-                            walkRow(item)
-                        }
-                    } else {
-                        ForEach(group.items) { item in
-                            editRow(item)
-                        }
-                        .onMove { store.moveItems(in: group.id, from: $0, to: $1) }
-                        .onDelete { store.deleteItems(in: group.id, at: $0) }
+                    ForEach(group.items) { item in
+                        walkRow(item)
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
-        .environment(\.editMode, .constant(store.walkMode ? .inactive : .active))
+        .environment(\.editMode, .constant(.inactive))
+    }
+
+    /// Flache Liste: Überschriften sind nicht verschiebbar, Artikel können in jede sichtbare
+    /// Abteilung (inkl. vor/nach). Per-Section-`onMove` kann das in SwiftUI nicht.
+    private var editList: some View {
+        List {
+            ForEach(store.editRows) { row in
+                switch row {
+                case .header(let dept):
+                    Text(Department.title(for: dept))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .listRowInsets(EdgeInsets(top: 18, leading: 16, bottom: 6, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .moveDisabled(true)
+                        .deleteDisabled(true)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityLabel(Department.title(for: dept))
+                case .item(let item):
+                    editRow(item)
+                }
+            }
+            .onMove { store.moveEditRows(from: $0, to: $1) }
+            .onDelete { store.deleteEditRows(at: $0) }
+        }
+        .listStyle(.insetGrouped)
+        .environment(\.editMode, .constant(.active))
     }
 
     private func walkRow(_ item: Item) -> some View {

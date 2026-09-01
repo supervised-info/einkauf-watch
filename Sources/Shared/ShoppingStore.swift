@@ -24,6 +24,7 @@ final class ShoppingStore: ObservableObject {
     }
 
     var groups: [DeptGroup] { state.grouped() }
+    var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
     var walkMode: Bool { state.walkMode }
@@ -104,10 +105,33 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
+    func deleteEditRows(at offsets: IndexSet) {
+        let ids = Set(ItemEditing.itemIDs(in: editRows, at: offsets))
+        guard !ids.isEmpty else { return }
+        state.items.removeAll { ids.contains($0.id) }
+        state.listRevision += 1
+        persistAndSync()
+    }
+
     func moveItems(in dept: String, from source: IndexSet, to destination: Int) {
         let next = ItemEditing.move(allItems: state.items, dept: dept, from: source, to: destination)
         guard next != state.items else { return }
         state.items = next
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func moveEditRows(from source: IndexSet, to destination: Int) {
+        guard let result = ItemEditing.moveRows(
+            allItems: state.items,
+            store: state.currentStore,
+            from: source,
+            to: destination,
+            mappings: state.mappings
+        ) else { return }
+        guard result.items != state.items || result.mappings != state.mappings else { return }
+        state.items = result.items
+        state.mappings = result.mappings
         state.listRevision += 1
         persistAndSync()
     }
