@@ -1,13 +1,34 @@
 import SwiftUI
 import UIKit
 
-/// System-Teilen-Blatt (`UIActivityViewController`) für eine Backup-Datei.
+/// Temp-Datei, die erst nach dem Schreiben das Share-Sheet öffnet (`.sheet(item:)`).
+struct BackupShareItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+/// System-Teilen-Blatt. Bekommt immer eine existierende Datei, kein optionales `if let`.
 struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
+    let url: URL
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        Self.configurePopover(controller)
+        return controller
     }
 
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {
+        Self.configurePopover(controller)
+    }
+
+    /// iPad: `UIActivityViewController` braucht eine Popover-Quelle, sonst bleibt das Blatt leer.
+    private static func configurePopover(_ controller: UIActivityViewController) {
+        guard UIDevice.current.userInterfaceIdiom == .pad,
+              let popover = controller.popoverPresentationController else { return }
+        let source = controller.view
+        popover.sourceView = source
+        let bounds = source.bounds
+        popover.sourceRect = CGRect(x: bounds.midX, y: bounds.midY, width: 1, height: 1)
+        popover.permittedArrowDirections = []
+    }
 }

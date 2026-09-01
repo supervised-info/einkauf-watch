@@ -145,6 +145,10 @@ def test_sources() -> None:
         fail("ItemEditing missing cross-dept moveRows")
     if "Backup teilen" not in content:
         fail("overflow menu missing Backup teilen")
+    if "sheet(item:" not in content:
+        fail("Backup teilen must use sheet(item:) with a file URL")
+    if "showShare" in content or "if let shareURL" in content:
+        fail("Backup teilen still uses isPresented + optional URL")
     if "Text(\"Hell\")" in content or "Text(\"Creme\")" in content:
         fail("theme/palette controls must not be in the list toolbar (ContentView)")
     settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
