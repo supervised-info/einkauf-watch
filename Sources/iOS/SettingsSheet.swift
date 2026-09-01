@@ -2,6 +2,9 @@ import SwiftUI
 
 struct SettingsSheet: View {
     @EnvironmentObject private var store: ShoppingStore
+    @EnvironmentObject private var appearance: AppearanceSettings
+    @Environment(\.einkaufTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @State private var newStapleName = ""
 
@@ -13,9 +16,37 @@ struct SettingsSheet: View {
         NavigationStack {
             List {
                 Section {
+                    Picker("Hell oder Dunkel", selection: Binding(
+                        get: { appearance.resolvedMode(system: colorScheme) },
+                        set: { appearance.themeOverride = $0 }
+                    )) {
+                        Text("Hell").tag(AppColorMode.light)
+                        Text("Dunkel").tag(AppColorMode.dark)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityLabel("Hell oder Dunkel")
+                    .einkaufRowChrome()
+
+                    Picker("Creme oder Blau", selection: $appearance.palette) {
+                        Text("Creme").tag(AppPalette.vintage)
+                        Text("Blau").tag(AppPalette.navy)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityLabel("Creme oder Blau")
+                    .einkaufRowChrome()
+                } header: {
+                    Text("Darstellung")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Creme ist das Vintage-Papier, Blau die Navy-Palette. Ungewählt folgt Hell/Dunkel dem System.")
+                }
+
+                Section {
                     Text(store.state.currentStore.name)
+                        .einkaufRowChrome()
                 } header: {
                     Text("Laden")
+                        .foregroundStyle(theme.muted)
                 }
 
                 Section {
@@ -24,6 +55,7 @@ struct SettingsSheet: View {
                     }
                 } header: {
                     Text("Ladenweg")
+                        .foregroundStyle(theme.muted)
                 } footer: {
                     Text("Vor dem Einkauf immer vorn, Nach dem Einkauf immer hinten, Sonstiges direkt davor.")
                 }
@@ -32,16 +64,20 @@ struct SettingsSheet: View {
                     let unused = StoreLayout.unused(in: layout)
                     if unused.isEmpty {
                         Text("Alle Abteilungen sind im Layout.")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(theme.muted)
+                            .einkaufRowChrome()
                     } else {
                         ForEach(unused, id: \.self) { id in
                             Button(Department.title(for: id)) {
                                 store.addLayoutDept(id)
                             }
+                            .foregroundStyle(theme.oxide)
+                            .einkaufRowChrome()
                         }
                     }
                 } header: {
                     Text("Abteilungen hinzufügen")
+                        .foregroundStyle(theme.muted)
                 }
 
                 if store.state.currentStore.builtin {
@@ -49,6 +85,8 @@ struct SettingsSheet: View {
                         Button("Layout zurücksetzen") {
                             store.resetLayout()
                         }
+                        .foregroundStyle(theme.oxide)
+                        .einkaufRowChrome()
                     }
                 }
 
@@ -64,12 +102,15 @@ struct SettingsSheet: View {
                         Button("Anlegen", action: submitStaple)
                             .disabled(newStapleName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
+                    .einkaufRowChrome()
                 } header: {
                     Text("Stamm-Artikel")
+                        .foregroundStyle(theme.muted)
                 } footer: {
                     Text("Stamm-Artikel erscheinen im Menü Stamm und können mit Gesamtliste auf einmal auf die Liste.")
                 }
             }
+            .einkaufListChrome()
             .navigationTitle("Einstellungen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -114,7 +155,8 @@ struct SettingsSheet: View {
                 .accessibilityLabel("Entfernen")
             }
         }
-        .foregroundStyle(locked ? Color.secondary : Color.primary)
+        .foregroundStyle(locked ? theme.muted : theme.ink)
+        .einkaufRowChrome()
     }
 
     private func stapleRow(idx: Int, staple: Staple) -> some View {
@@ -142,6 +184,7 @@ struct SettingsSheet: View {
             .accessibilityLabel("Abteilung für \(staple.name)")
         }
         .padding(.vertical, 2)
+        .einkaufRowChrome()
     }
 
     private func canMove(_ id: String, by: Int) -> Bool {
@@ -161,4 +204,6 @@ struct SettingsSheet: View {
 #Preview {
     SettingsSheet()
         .environmentObject(ShoppingStore(state: .seed, enableSync: false))
+        .environmentObject(AppearanceSettings())
+        .environment(\.einkaufTheme, ThemeTokens.make(palette: .vintage, scheme: .light))
 }

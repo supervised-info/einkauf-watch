@@ -112,8 +112,12 @@ def test_sources() -> None:
         "Sources/Shared/StoreLayout.swift",
         "Sources/Shared/StapleApply.swift",
         "Sources/Shared/ItemEditing.swift",
+        "Sources/Shared/Theme.swift",
+        "Sources/Shared/BackupShare.swift",
         "Sources/iOS/ContentView.swift",
         "Sources/iOS/SettingsSheet.swift",
+        "Sources/iOS/ShareSheet.swift",
+        "Sources/iOS/AppearanceSettings.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
         "Sources/Watch/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
@@ -139,9 +143,30 @@ def test_sources() -> None:
     editing = (ROOT / "Sources/Shared/ItemEditing.swift").read_text()
     if "func moveRows" not in editing:
         fail("ItemEditing missing cross-dept moveRows")
+    if "Backup teilen" not in content:
+        fail("overflow menu missing Backup teilen")
+    if "Text(\"Hell\")" in content or "Text(\"Creme\")" in content:
+        fail("theme/palette controls must not be in the list toolbar (ContentView)")
+    settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
+    for needle in ("Hell", "Dunkel", "Creme", "Blau", "Darstellung"):
+        if needle not in settings:
+            fail(f"Einstellungen missing {needle}")
+    if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
+        fail("preferredColorScheme not applied from setting")
+    theme = (ROOT / "Sources/Shared/Theme.swift").read_text()
+    for token in ("0xF3EEE4", "0x1C1814", "0x9C3424", "0xD2C8B8", "0x14110E", "0xE07060", "0xF0F4FF", "0x2060DF"):
+        if token not in theme:
+            fail(f"theme missing {token}")
+    share = (ROOT / "Sources/Shared/BackupShare.swift").read_text()
+    if "yyyyMMdd_HHmm" not in share:
+        fail("BackupShare missing stamped filename")
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch or "onMove" in watch:
         fail("Watch UI should stay Geh-Modus only")
+    for wfile in (ROOT / "Sources/Watch").glob("*.swift"):
+        wtxt = wfile.read_text()
+        if "Backup teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt:
+            fail("Watch should not have backup share UI")
     print("sources: ok")
 
 

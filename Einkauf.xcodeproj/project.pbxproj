@@ -40,6 +40,12 @@
 		E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */; };
 		F77609148593B38AF721ACEB /* ShoppingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */; };
+		0F37D65CA49E42F77966B30C /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BEC967DFB7A0070174933F /* AppearanceSettings.swift */; };
+		380ED6ADDB8D55A2097AFAD4 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */; };
+		F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
+		AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
+		619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
+		E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,6 +99,10 @@
 		ECC3FAE11911BD587AF7020C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEC8D9AE5EAF557803AC2453 /* EinkaufCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufCoreTests.swift; sourceTree = "<group>"; };
 		FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionary.swift; sourceTree = "<group>"; };
+		80BEC967DFB7A0070174933F /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
+		81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupShare.swift; sourceTree = "<group>"; };
+		A32268097AE4939ECE075B98 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,6 +162,8 @@
 				7B54211927DDC48EEBB30B70 /* ContentView.swift */,
 				2804963C38E068C930E5F599 /* EinkaufApp.swift */,
 				50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */,
+				80BEC967DFB7A0070174933F /* AppearanceSettings.swift */,
+				81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */,
 				03AF5479195A1C1DAE505808 /* Assets.xcassets */,
 				1FEA59AE375BB26F5821D80A /* Info.plist */,
 			);
@@ -167,6 +179,8 @@
 				E0C1C34BBFDDF520649DD2D1 /* Department.swift */,
 				12DB007C89450C8042516356 /* DepartmentGuesser.swift */,
 				60D4629D736BF231C646237E /* ItemEditing.swift */,
+				E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */,
+				A32268097AE4939ECE075B98 /* Theme.swift */,
 				FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */,
 				1576966105F98F0A51DBA185 /* Models.swift */,
 				2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */,
@@ -314,6 +328,10 @@
 				D2E5181B0EE3B2B6DF332844 /* ContentView.swift in Sources */,
 				41907324178F605BC264F97B /* EinkaufApp.swift in Sources */,
 				0DC30FB358098A2BE19E4CC6 /* SettingsSheet.swift in Sources */,
+				0F37D65CA49E42F77966B30C /* AppearanceSettings.swift in Sources */,
+				380ED6ADDB8D55A2097AFAD4 /* ShareSheet.swift in Sources */,
+				F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */,
+				AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */,
 				E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */,
 				6BAFDC654535F8AC7412AE73 /* ConnectivitySync.swift in Sources */,
 				E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */,
@@ -339,6 +357,8 @@
 				E410C3E9DA23BDDB00054634 /* Department.swift in Sources */,
 				55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */,
 				A67DE1B4CDD2B7D8E9747F37 /* ItemEditing.swift in Sources */,
+				619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */,
+				E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */,
 				676BB7C0E6CFB910DC8147A8 /* KeywordDictionary.swift in Sources */,
 				8015BEAA3E4A968A615E3843 /* Models.swift in Sources */,
 				26246BA3D4001BC572F04EB2 /* Persistence.swift in Sources */,
