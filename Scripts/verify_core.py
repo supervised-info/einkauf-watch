@@ -111,6 +111,7 @@ def test_sources() -> None:
         "Sources/Shared/BackupCodec.swift",
         "Sources/Shared/StoreLayout.swift",
         "Sources/Shared/StapleApply.swift",
+        "Sources/Shared/ItemEditing.swift",
         "Sources/iOS/ContentView.swift",
         "Sources/iOS/SettingsSheet.swift",
         "Sources/Watch/WatchListView.swift",
@@ -127,6 +128,13 @@ def test_sources() -> None:
         fail("Stamm menu missing Gesamtliste")
     if "Einstellungen" not in content:
         fail("Einstellungen menu missing")
+    if "Geh-Modus" not in content or "Bearbeiten" not in content:
+        fail("walk/edit toggle labels missing")
+    if "func setWalkMode" not in store:
+        fail("walkMode not persisted via setWalkMode")
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    if "Picker" in watch or "onMove" in watch:
+        fail("Watch UI should stay Geh-Modus only")
     print("sources: ok")
 
 

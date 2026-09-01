@@ -18,6 +18,7 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertTrue(state.staples.isEmpty)
         XCTAssertEqual(state.currentStoreId, "aldi")
         XCTAssertEqual(state.items.count, 3)
+        XCTAssertEqual(state.walkMode, false)
     }
 
     func testUnknownFieldsIgnored() throws {
@@ -36,8 +37,10 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(again.currentStoreId, original.currentStoreId)
         XCTAssertEqual(again.items.map(\.id), original.items.map(\.id))
         XCTAssertEqual(again.items.map(\.done), original.items.map(\.done))
+        XCTAssertEqual(again.walkMode, true)
         let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
         XCTAssertEqual(obj["kind"] as? String, "einkauf-backup")
+        XCTAssertEqual(obj["walkMode"] as? Bool, true)
         XCTAssertNil(obj["listRevision"])
     }
 
@@ -222,5 +225,45 @@ final class GuesserTests: XCTestCase {
         XCTAssertEqual(DepartmentGuesser.guess("Chips"), "suess")
         XCTAssertEqual(DepartmentGuesser.guess("Klopapier"), "drogerie")
         XCTAssertEqual(DepartmentGuesser.guess("xyzzy-unbekannt"), "sonstiges")
+    }
+}
+
+final class ItemEditingTests: XCTestCase {
+    func testEmptyRenameIsNoOp() {
+        let item = Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)
+        XCTAssertNil(ItemEditing.rename(item, to: "  ", mappings: [:]))
+    }
+
+    func testRenameKeepsDeptWhenSameKey() {
+        let item = Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)
+        let result = ItemEditing.rename(item, to: "Milch", mappings: [:])
+        XCTAssertEqual(result?.0.dept, "kuehlung")
+        XCTAssertEqual(result?.0.name, "Milch")
+    }
+
+    func testRenameGuessesDeptWhenKeyChanges() {
+        let item = Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)
+        let result = ItemEditing.rename(item, to: "Äpfel", mappings: [:])
+        XCTAssertEqual(result?.0.name, "Äpfel")
+        XCTAssertEqual(result?.0.dept, "obst")
+        XCTAssertEqual(result?.1[DepartmentGuesser.mappingKey("Äpfel")], "obst")
+    }
+
+    func testSetDeptWritesMapping() {
+        let item = Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)
+        let result = ItemEditing.setDept(item, dept: "trocken", mappings: [:])
+        XCTAssertEqual(result?.0.dept, "trocken")
+        XCTAssertEqual(result?.1["milch"], "trocken")
+    }
+
+    func testMoveReordersWithinDeptOnly() {
+        let items = [
+            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1),
+            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 2),
+            Item(id: "c", name: "C", dept: "brot", done: false, added: 3, ord: 1)
+        ]
+        let moved = ItemEditing.move(allItems: items, dept: "obst", from: IndexSet(integer: 1), to: 0)
+        XCTAssertEqual(moved.filter { $0.dept == "obst" }.sorted(by: ListGrouping.sortItems).map(\.id), ["b", "a"])
+        XCTAssertEqual(moved.first { $0.id == "c" }?.ord, 1)
     }
 }
