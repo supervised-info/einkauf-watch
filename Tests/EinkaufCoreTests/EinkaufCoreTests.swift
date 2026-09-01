@@ -126,6 +126,93 @@ final class MergeTests: XCTestCase {
     }
 }
 
+final class StapleApplyTests: XCTestCase {
+    func testAddsMissingStapleWithDepartment() {
+        let staple = Staple(name: "Milch", dept: "kuehlung")
+        let result = StapleApply.apply(staple, items: [], mappings: [:], nextOrd: 1, now: 10)
+        XCTAssertEqual(result.added, 1)
+        XCTAssertEqual(result.items[0].name, "Milch")
+        XCTAssertEqual(result.items[0].dept, "kuehlung")
+        XCTAssertEqual(result.mappings["milch"], "kuehlung")
+    }
+
+    func testReopensDoneStaple() {
+        let items = [Item(id: "i1", name: "Milch", dept: "kuehlung", done: true, added: 1, ord: 1, doneChangedAt: 1)]
+        let staple = Staple(name: "Milch", dept: "kuehlung")
+        let result = StapleApply.apply(staple, items: items, mappings: [:], nextOrd: 2, now: 50)
+        XCTAssertEqual(result.reopened, 1)
+        XCTAssertEqual(result.added, 0)
+        XCTAssertFalse(result.items[0].done)
+        XCTAssertEqual(result.items[0].doneChangedAt, 50)
+    }
+
+    func testSkipsOpenDuplicate() {
+        let items = [Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)]
+        let result = StapleApply.apply(Staple(name: "Milch", dept: "kuehlung"), items: items, mappings: [:], nextOrd: 2)
+        XCTAssertEqual(result.already, 1)
+        XCTAssertEqual(result.items.count, 1)
+    }
+
+    func testApplyAllAddsAndReopens() {
+        let items = [Item(id: "i1", name: "Butter", dept: "kuehlung", done: true, added: 1, ord: 1)]
+        let staples = [
+            Staple(name: "Butter", dept: "kuehlung"),
+            Staple(name: "Klopapier", dept: "drogerie")
+        ]
+        let result = StapleApply.applyAll(staples, items: items, mappings: [:], nextOrd: 2, now: 9)
+        XCTAssertEqual(result.reopened, 1)
+        XCTAssertEqual(result.added, 1)
+        XCTAssertEqual(result.items.count, 2)
+        XCTAssertFalse(result.items[0].done)
+        XCTAssertEqual(result.items[1].name, "Klopapier")
+        XCTAssertEqual(result.items[1].dept, "drogerie")
+    }
+}
+
+final class StoreLayoutTests: XCTestCase {
+    func testVorFirstNachLastAfterSanitize() {
+        let layout = StoreLayout.sanitized(["nach", "obst", "vor", "brot"])
+        XCTAssertEqual(layout.first, "vor")
+        XCTAssertEqual(layout.last, "nach")
+        XCTAssertEqual(layout, ["vor", "obst", "brot", "nach"])
+    }
+
+    func testCannotMoveVorOrNach() {
+        let start = ["vor", "obst", "brot", "nach"]
+        XCTAssertEqual(StoreLayout.move(start, id: "vor", by: 1), start)
+        XCTAssertEqual(StoreLayout.move(start, id: "nach", by: -1), start)
+    }
+
+    func testMoveMiddleDept() {
+        let next = StoreLayout.move(["vor", "obst", "brot", "nach"], id: "brot", by: -1)
+        XCTAssertEqual(next, ["vor", "brot", "obst", "nach"])
+    }
+
+    func testAddInsertsBeforeNach() {
+        let next = StoreLayout.adding("drogerie", to: ["vor", "obst", "nach"])
+        XCTAssertEqual(next.last, "nach")
+        XCTAssertEqual(next, ["vor", "obst", "drogerie", "nach"])
+    }
+
+    func testCannotRemoveVor() {
+        let start = ["vor", "obst", "nach"]
+        XCTAssertEqual(StoreLayout.removing("vor", from: start), StoreLayout.sanitized(start))
+    }
+
+    func testResetBuiltin() {
+        XCTAssertEqual(
+            StoreLayout.reset(storeId: "dm", current: ["vor", "obst", "nach"]),
+            Store.seeds.first { $0.id == "dm" }!.layout
+        )
+    }
+
+    func testUnused() {
+        let unused = StoreLayout.unused(in: ["vor", "sonstiges", "nach"])
+        XCTAssertTrue(unused.contains("obst"))
+        XCTAssertFalse(unused.contains("vor"))
+    }
+}
+
 final class GuesserTests: XCTestCase {
     func testCommonItems() {
         XCTAssertEqual(DepartmentGuesser.guess("Milch"), "kuehlung")

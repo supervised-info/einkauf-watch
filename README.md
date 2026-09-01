@@ -31,7 +31,6 @@ Die App versteht PWA-Backups mit `"kind": "einkauf-backup"`. Unbekannte Felder w
 
 1. Rechts oben **…** → **Backup importieren…**
 2. Datei in Dateien / iCloud wählen (z. B. `einkauf-backup.json`).
-3. Optional **Beispiel-Liste laden** (Fixture aus dem App-Bundle).
 
 **Über die Share Sheet / Dateien**
 
@@ -50,7 +49,7 @@ PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hie
 
 ## Bedienung
 
-**iPhone:** Liste nach Abteilung, Checkboxen, Artikel hinzufügen (Abteilung wird geraten), Ladenwahl, Import/Export, Stamm aus dem Backup, Erledigte löschen.
+**iPhone:** Liste nach Abteilung, Checkboxen, Artikel hinzufügen (Abteilung wird geraten), Ladenwahl, Import/Export, Stamm (Gesamtliste + einzelne Artikel), Einstellungen (Ladenweg und Stamm-Artikel), Erledigte löschen.
 
 **Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch.
 
@@ -79,4 +78,4 @@ python3 Scripts/verify_core.py
 | Persistenz | JSON in Application Support |
 | Abteilungen / Läden | wie die PWA (`edeka`, `aldi`, `rewe`, `lidl`, `dm`, `eigenes`) |
 
-Stamm-Verwaltung (anlegen/sortieren) bleibt v2; importierte Stamm-Artikel können auf dem iPhone auf die Liste gelegt werden.
+Stamm-Artikel lassen sich unter **Einstellungen** anlegen, entfernen und einer Abteilung zuordnen. **Stamm → Gesamtliste** setzt alle auf die Einkaufsliste (fehlende ergänzen, erledigte wieder öffnen).

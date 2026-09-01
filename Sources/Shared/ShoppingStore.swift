@@ -65,20 +65,93 @@ final class ShoppingStore: ObservableObject {
     }
 
     func addStaple(_ staple: Staple) {
-        let key = DepartmentGuesser.mappingKey(staple.name)
-        if state.items.contains(where: { DepartmentGuesser.mappingKey($0.name) == key && !$0.done }) {
+        applyStaple(staple)
+    }
+
+    /// Wie HTML `applyStaple`: fehlend anlegen, erledigt wieder öffnen, sonst überspringen.
+    @discardableResult
+    func applyStaple(_ staple: Staple) -> StapleApply.Outcome {
+        let result = StapleApply.apply(
+            staple,
+            items: state.items,
+            mappings: state.mappings,
+            nextOrd: nextOrd()
+        )
+        guard result.didChange else { return result }
+        state.items = result.items
+        state.mappings = result.mappings
+        state.listRevision += 1
+        persistAndSync()
+        return result
+    }
+
+    /// Wie HTML `applyAllStaples`: jeden Stamm-Artikel anlegen oder wieder öffnen.
+    @discardableResult
+    func applyAllStaples() -> StapleApply.Outcome {
+        let result = StapleApply.applyAll(
+            state.staples,
+            items: state.items,
+            mappings: state.mappings,
+            nextOrd: nextOrd()
+        )
+        guard result.didChange else { return result }
+        state.items = result.items
+        state.mappings = result.mappings
+        state.listRevision += 1
+        persistAndSync()
+        return result
+    }
+
+    func createStaple(_ rawName: String) {
+        let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        let key = DepartmentGuesser.mappingKey(name)
+        if state.staples.contains(where: { DepartmentGuesser.mappingKey($0.name) == key }) {
             return
         }
-        let item = Item(
-            id: Item.makeID(),
-            name: staple.name,
-            dept: Department.isKnown(staple.dept) ? staple.dept : DepartmentGuesser.guess(staple.name, mappings: state.mappings),
-            done: false,
-            added: Date.nowEpochMillis,
-            ord: nextOrd(),
-            doneChangedAt: Date.nowEpochMillis
-        )
-        state.items.append(item)
+        let dept = DepartmentGuesser.guess(name, mappings: state.mappings)
+        state.staples.append(Staple(name: name, dept: dept))
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func removeStaple(at index: Int) {
+        guard state.staples.indices.contains(index) else { return }
+        state.staples.remove(at: index)
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func setStapleDept(at index: Int, dept: String) {
+        guard state.staples.indices.contains(index), Department.isKnown(dept) else { return }
+        state.staples[index].dept = dept
+        state.mappings[DepartmentGuesser.mappingKey(state.staples[index].name)] = dept
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func moveLayoutDept(_ id: String, by: Int) {
+        mutateCurrentStoreLayout { StoreLayout.move($0, id: id, by: by) }
+    }
+
+    func addLayoutDept(_ id: String) {
+        mutateCurrentStoreLayout { StoreLayout.adding(id, to: $0) }
+    }
+
+    func removeLayoutDept(_ id: String) {
+        mutateCurrentStoreLayout { StoreLayout.removing(id, from: $0) }
+    }
+
+    func resetLayout() {
+        mutateCurrentStoreLayout { StoreLayout.reset(storeId: state.currentStoreId, current: $0) }
+    }
+
+    private func mutateCurrentStoreLayout(_ transform: ([String]) -> [String]) {
+        guard let idx = state.stores.firstIndex(where: { $0.id == state.currentStoreId }) else { return }
+        let next = transform(state.stores[idx].layout)
+        guard next != state.stores[idx].layout else { return }
+        state.stores[idx].layout = next
         state.listRevision += 1
         persistAndSync()
     }
@@ -115,21 +188,6 @@ final class ShoppingStore: ObservableObject {
 
     func exportBackup() throws -> Data {
         try BackupCodec.encodeExport(state)
-    }
-
-    func loadSampleFromBundle() {
-        let bundle = Bundle.main
-        let url = bundle.url(forResource: "einkauf-backup", withExtension: "json")
-            ?? bundle.url(forResource: "einkauf-backup", withExtension: "json", subdirectory: "Fixtures")
-        guard let url, let data = try? Data(contentsOf: url) else {
-            lastError = "Beispiel-Liste nicht im App-Bundle gefunden."
-            return
-        }
-        do {
-            try importBackup(data)
-        } catch {
-            lastError = error.localizedDescription
-        }
     }
 
     func applyRemoteSnapshot(_ incoming: AppState) {
