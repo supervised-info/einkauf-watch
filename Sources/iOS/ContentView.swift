@@ -9,8 +9,7 @@ struct ContentView: View {
     @State private var showImporter = false
     @State private var showExporter = false
     @State private var exportDocument = BackupFileDocument(data: Data())
-    @State private var shareURL: URL?
-    @State private var showShare = false
+    @State private var shareItem: BackupShareItem?
     @State private var alertMessage: String?
     @State private var showSettings = false
     @State private var renamingID: String?
@@ -63,11 +62,9 @@ struct ContentView: View {
                     .preferredColorScheme(appearance.preferredColorScheme)
                     .einkaufScreen(theme)
             }
-            .sheet(isPresented: $showShare) {
-                if let shareURL {
-                    ShareSheet(items: [shareURL])
-                        .ignoresSafeArea()
-                }
+            .sheet(item: $shareItem) { item in
+                ShareSheet(url: item.url)
+                    .ignoresSafeArea()
             }
         }
     }
@@ -314,8 +311,12 @@ struct ContentView: View {
     private func shareBackup() {
         do {
             let data = try store.exportBackup()
-            shareURL = try BackupShare.writeTempFile(data: data)
-            showShare = true
+            let url = try BackupShare.writeTempFile(data: data)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                alertMessage = "Backup-Datei konnte nicht erzeugt werden."
+                return
+            }
+            shareItem = BackupShareItem(url: url)
         } catch {
             alertMessage = error.localizedDescription
         }
