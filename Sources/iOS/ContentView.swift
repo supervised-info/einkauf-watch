@@ -9,6 +9,9 @@ struct ContentView: View {
     @State private var exportDocument = BackupFileDocument(data: Data())
     @State private var alertMessage: String?
     @State private var showSettings = false
+    @State private var renamingID: String?
+    @State private var renameDraft = ""
+    @FocusState private var renameFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -58,30 +61,109 @@ struct ContentView: View {
         List {
             ForEach(store.groups) { group in
                 Section(group.title) {
-                    ForEach(group.items) { item in
-                        Button {
-                            store.toggle(item.id)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                                    .font(.title2)
-                                    .foregroundStyle(item.done ? Color(red: 0.17, green: 0.42, blue: 0.29) : Color.secondary)
-                                Text(item.name)
-                                    .foregroundStyle(.primary)
-                                    .strikethrough(item.done, color: .secondary)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .padding(.vertical, 4)
-                            .contentShape(Rectangle())
+                    if store.walkMode {
+                        ForEach(group.items) { item in
+                            walkRow(item)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(item.name)
-                        .accessibilityValue(item.done ? "erledigt" : "offen")
+                    } else {
+                        ForEach(group.items) { item in
+                            editRow(item)
+                        }
+                        .onMove { store.moveItems(in: group.id, from: $0, to: $1) }
+                        .onDelete { store.deleteItems(in: group.id, at: $0) }
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .environment(\.editMode, .constant(store.walkMode ? .inactive : .active))
+    }
+
+    private func walkRow(_ item: Item) -> some View {
+        Button {
+            store.toggle(item.id)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(item.done ? Color(red: 0.17, green: 0.42, blue: 0.29) : Color.secondary)
+                Text(item.name)
+                    .foregroundStyle(.primary)
+                    .strikethrough(item.done, color: .secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(item.name)
+        .accessibilityValue(item.done ? "erledigt" : "offen")
+    }
+
+    private func editRow(_ item: Item) -> some View {
+        HStack(spacing: 10) {
+            Button {
+                store.toggle(item.id)
+            } label: {
+                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(item.done ? Color(red: 0.17, green: 0.42, blue: 0.29) : Color.secondary)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(item.done ? "Erledigt: \(item.name)" : "Offen: \(item.name)")
+
+            if renamingID == item.id {
+                TextField("Name", text: $renameDraft)
+                    .textFieldStyle(.plain)
+                    .focused($renameFocused)
+                    .submitLabel(.done)
+                    .onSubmit(commitRename)
+                    .onChange(of: renameFocused) { _, focused in
+                        if !focused { commitRename() }
+                    }
+                    .strikethrough(item.done, color: .secondary)
+            } else {
+                Button {
+                    beginRename(item)
+                } label: {
+                    Text(item.name)
+                        .foregroundStyle(.primary)
+                        .strikethrough(item.done, color: .secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Umbenennen: \(item.name)")
+            }
+
+            Picker("Abteilung", selection: Binding(
+                get: { Department.resolved(item.dept) },
+                set: { store.setItemDept(item.id, dept: $0) }
+            )) {
+                ForEach(Department.allCases) { dept in
+                    Text(dept.title).tag(dept.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .fixedSize()
+            .accessibilityLabel("Abteilung für \(item.name)")
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func beginRename(_ item: Item) {
+        renamingID = item.id
+        renameDraft = item.name
+        renameFocused = true
+    }
+
+    private func commitRename() {
+        guard let id = renamingID else { return }
+        store.renameItem(id, to: renameDraft)
+        renamingID = nil
+        renameFocused = false
+        renameDraft = ""
     }
 
     @ToolbarContentBuilder
@@ -97,6 +179,16 @@ struct ContentView: View {
             }
             .pickerStyle(.menu)
             .accessibilityLabel("Laden")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button(store.walkMode ? "Bearbeiten" : "Geh-Modus") {
+                if store.walkMode == false {
+                    commitRename()
+                }
+                store.toggleWalkMode()
+            }
+            .accessibilityLabel(store.walkMode ? "Bearbeiten" : "Geh-Modus")
+            .accessibilityAddTraits(store.walkMode ? .isSelected : [])
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {

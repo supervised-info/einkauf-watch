@@ -49,7 +49,7 @@ PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hie
 
 ## Bedienung
 
-**iPhone:** Liste nach Abteilung, Checkboxen, Artikel hinzufügen (Abteilung wird geraten), Ladenwahl, Import/Export, Stamm (Gesamtliste + einzelne Artikel), Einstellungen (Ladenweg und Stamm-Artikel), Erledigte löschen.
+**iPhone:** **Geh-Modus** (große Checkbox + Name) und **Bearbeiten** (Ziehen in der Abteilung, Umbenennen, Abteilungs-Picker, Löschen). Der Knopf zeigt den jeweils anderen Modus, wie in der PWA; `walkMode` bleibt im Backup. Plus Artikel hinzufügen, Ladenwahl, Stamm, Einstellungen, Import/Export.
 
 **Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch.
 

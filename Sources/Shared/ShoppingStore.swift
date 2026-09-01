@@ -26,6 +26,17 @@ final class ShoppingStore: ObservableObject {
     var groups: [DeptGroup] { state.grouped() }
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
+    var walkMode: Bool { state.walkMode }
+
+    func setWalkMode(_ on: Bool) {
+        guard state.walkMode != on else { return }
+        state.walkMode = on
+        persistAndSync()
+    }
+
+    func toggleWalkMode() {
+        setWalkMode(!state.walkMode)
+    }
 
     func toggle(_ id: String) {
         guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
@@ -60,6 +71,43 @@ final class ShoppingStore: ObservableObject {
             doneChangedAt: Date.nowEpochMillis
         )
         state.items.append(item)
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func renameItem(_ id: String, to rawName: String) {
+        guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
+        guard let result = ItemEditing.rename(state.items[idx], to: rawName, mappings: state.mappings) else { return }
+        guard result.0 != state.items[idx] || result.1 != state.mappings else { return }
+        state.items[idx] = result.0
+        state.mappings = result.1
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func setItemDept(_ id: String, dept: String) {
+        guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
+        guard let result = ItemEditing.setDept(state.items[idx], dept: dept, mappings: state.mappings) else { return }
+        guard result.0 != state.items[idx] || result.1 != state.mappings else { return }
+        state.items[idx] = result.0
+        state.mappings = result.1
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func deleteItems(in dept: String, at offsets: IndexSet) {
+        let group = groups.first(where: { $0.id == dept })?.items ?? []
+        let ids = Set(offsets.compactMap { group.indices.contains($0) ? group[$0].id : nil })
+        guard !ids.isEmpty else { return }
+        state.items.removeAll { ids.contains($0.id) }
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func moveItems(in dept: String, from source: IndexSet, to destination: Int) {
+        let next = ItemEditing.move(allItems: state.items, dept: dept, from: source, to: destination)
+        guard next != state.items else { return }
+        state.items = next
         state.listRevision += 1
         persistAndSync()
     }

@@ -14,6 +14,7 @@
 		6BAFDC654535F8AC7412AE73 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
 		E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
+		3D291F41DFB800EAE9D7064C /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
 		69B46A2068B1D9DDC1A8BAB3 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
 		1E2E30863C1CC0EF68250ACE /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
 		3DD640118A2CA67D5ABC6DFA /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
@@ -26,6 +27,7 @@
 		CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
 		E410C3E9DA23BDDB00054634 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
+		A67DE1B4CDD2B7D8E9747F37 /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
 		676BB7C0E6CFB910DC8147A8 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
 		8015BEAA3E4A968A615E3843 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
 		26246BA3D4001BC572F04EB2 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
@@ -77,6 +79,7 @@
 		D84943AB38524794E90ACDCD /* ConnectivitySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivitySync.swift; sourceTree = "<group>"; };
 		E0C1C34BBFDDF520649DD2D1 /* Department.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Department.swift; sourceTree = "<group>"; };
 		12DB007C89450C8042516356 /* DepartmentGuesser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartmentGuesser.swift; sourceTree = "<group>"; };
+		60D4629D736BF231C646237E /* ItemEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditing.swift; sourceTree = "<group>"; };
 		FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionary.swift; sourceTree = "<group>"; };
 		1576966105F98F0A51DBA185 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -174,6 +177,7 @@
 				D84943AB38524794E90ACDCD /* ConnectivitySync.swift */,
 				E0C1C34BBFDDF520649DD2D1 /* Department.swift */,
 				12DB007C89450C8042516356 /* DepartmentGuesser.swift */,
+				60D4629D736BF231C646237E /* ItemEditing.swift */,
 				FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */,
 				1576966105F98F0A51DBA185 /* Models.swift */,
 				2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */,
@@ -315,6 +319,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				6BAFDC654535F8AC7412AE73 /* ConnectivitySync.swift in Sources */,
 				E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */,
 				12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */,
+				3D291F41DFB800EAE9D7064C /* ItemEditing.swift in Sources */,
 				69B46A2068B1D9DDC1A8BAB3 /* KeywordDictionary.swift in Sources */,
 				1E2E30863C1CC0EF68250ACE /* Models.swift in Sources */,
 				3DD640118A2CA67D5ABC6DFA /* Persistence.swift in Sources */,
@@ -334,6 +339,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */,
 				E410C3E9DA23BDDB00054634 /* Department.swift in Sources */,
 				55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */,
+				A67DE1B4CDD2B7D8E9747F37 /* ItemEditing.swift in Sources */,
 				676BB7C0E6CFB910DC8147A8 /* KeywordDictionary.swift in Sources */,
 				8015BEAA3E4A968A615E3843 /* Models.swift in Sources */,
 				26246BA3D4001BC572F04EB2 /* Persistence.swift in Sources */,
