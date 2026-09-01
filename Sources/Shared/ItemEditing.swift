@@ -148,15 +148,9 @@ enum ItemEditing {
         }
 
         func firstItemID(afterHeaderAt headerIndex: Int) -> String? {
-            var i = headerIndex + 1
-            while i < remaining.count {
-                switch remaining[i] {
-                case .header: return nil
-                case .item(let item): return item.id
-                }
-                i += 1
-            }
-            return nil
+            let next = headerIndex + 1
+            guard next < remaining.count, case .item(let item) = remaining[next] else { return nil }
+            return item.id
         }
 
         if dest == remaining.count {
