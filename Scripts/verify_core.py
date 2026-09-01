@@ -130,8 +130,15 @@ def test_sources() -> None:
         fail("Einstellungen menu missing")
     if "Geh-Modus" not in content or "Bearbeiten" not in content:
         fail("walk/edit toggle labels missing")
+    if "moveItems(in:" in content:
+        fail("Bearbeiten still uses per-section onMove")
+    if "moveEditRows" not in content or "moveDisabled(true)" not in content:
+        fail("Bearbeiten needs flattened list with immovable headers")
     if "func setWalkMode" not in store:
         fail("walkMode not persisted via setWalkMode")
+    editing = (ROOT / "Sources/Shared/ItemEditing.swift").read_text()
+    if "func moveRows" not in editing:
+        fail("ItemEditing missing cross-dept moveRows")
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch or "onMove" in watch:
         fail("Watch UI should stay Geh-Modus only")
