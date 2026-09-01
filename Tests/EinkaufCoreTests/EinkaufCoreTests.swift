@@ -417,3 +417,44 @@ final class ItemEditingTests: XCTestCase {
         ]
     }
 }
+
+final class BackupShareTests: XCTestCase {
+    func testStampedFilenameMatchesHTML() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = calendar.date(from: DateComponents(year: 2026, month: 9, day: 1, hour: 19, minute: 7))!
+        XCTAssertEqual(
+            BackupShare.stampedFilename(date: date, timeZone: TimeZone(secondsFromGMT: 0)!),
+            "20260901_1907-einkauf-backup.json"
+        )
+    }
+}
+
+final class ThemeTokenTests: XCTestCase {
+    func testVintageLight() {
+        let t = ThemeRGB.tokens(palette: .vintage, dark: false)
+        XCTAssertEqual(t.paper, 0xF3EEE4)
+        XCTAssertEqual(t.ink, 0x1C1814)
+        XCTAssertEqual(t.oxide, 0x9C3424)
+        XCTAssertEqual(t.rule, 0xD2C8B8)
+    }
+
+    func testVintageDark() {
+        let t = ThemeRGB.tokens(palette: .vintage, dark: true)
+        XCTAssertEqual(t.paper, 0x14110E)
+        XCTAssertEqual(t.ink, 0xF3EEE4)
+        XCTAssertEqual(t.oxide, 0xE07060)
+        XCTAssertEqual(t.rule, 0x3D362C)
+    }
+
+    func testNavyLightAndDark() {
+        let light = ThemeRGB.tokens(palette: .navy, dark: false)
+        XCTAssertEqual(light.paper, 0xF0F4FF)
+        XCTAssertEqual(light.ink, 0x08102A)
+        XCTAssertEqual(light.oxide, 0x2060DF)
+        let dark = ThemeRGB.tokens(palette: .navy, dark: true)
+        XCTAssertEqual(dark.paper, 0x060C1A)
+        XCTAssertEqual(dark.oxide, 0x4A94FF)
+        XCTAssertEqual(dark.ink, 0xEDF2FF)
+    }
+}

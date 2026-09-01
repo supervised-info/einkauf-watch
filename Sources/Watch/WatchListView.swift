@@ -4,6 +4,7 @@ import SwiftUI
 /// Digital Crown scrollt die `List`. Kein Edit-Chrome in v1.
 struct WatchListView: View {
     @EnvironmentObject private var store: ShoppingStore
+    @Environment(\.einkaufTheme) private var theme
 
     var body: some View {
         NavigationStack {
@@ -11,12 +12,13 @@ struct WatchListView: View {
                 if store.groups.isEmpty {
                     Text("Noch nichts auf der Liste.")
                         .font(.headline)
+                        .foregroundStyle(theme.ink)
                         .multilineTextAlignment(.center)
                         .padding()
                 } else {
                     List {
                         ForEach(store.groups) { group in
-                            Section(group.title) {
+                            Section {
                                 ForEach(group.items) { item in
                                     Button {
                                         store.toggle(item.id)
@@ -24,12 +26,12 @@ struct WatchListView: View {
                                         HStack(alignment: .center, spacing: 10) {
                                             Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                                                 .font(.title)
-                                                .foregroundStyle(item.done ? Color.green : Color.secondary)
+                                                .foregroundStyle(item.done ? theme.good : theme.muted)
                                                 .frame(width: 36, height: 36)
                                             Text(item.name)
                                                 .font(.headline)
-                                                .foregroundStyle(.primary)
-                                                .strikethrough(item.done)
+                                                .foregroundStyle(theme.ink)
+                                                .strikethrough(item.done, color: theme.muted)
                                                 .lineLimit(3)
                                                 .multilineTextAlignment(.leading)
                                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -39,16 +41,22 @@ struct WatchListView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+                                    .listRowBackground(theme.paper2)
                                     .accessibilityLabel(item.name)
                                     .accessibilityValue(item.done ? "erledigt" : "offen")
                                 }
+                            } header: {
+                                Text(group.title)
+                                    .foregroundStyle(theme.muted)
                             }
                         }
                     }
+                    .einkaufListChrome()
                 }
             }
             .navigationTitle("Einkauf")
             .navigationBarTitleDisplayMode(.inline)
+            .containerBackground(theme.paper, for: .navigation)
         }
     }
 }
@@ -56,4 +64,5 @@ struct WatchListView: View {
 #Preview {
     WatchListView()
         .environmentObject(ShoppingStore(state: .seed, enableSync: false))
+        .environment(\.einkaufTheme, ThemeTokens.make(palette: .vintage, scheme: .light))
 }

@@ -3,10 +3,14 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @EnvironmentObject private var store: ShoppingStore
+    @EnvironmentObject private var appearance: AppearanceSettings
+    @Environment(\.einkaufTheme) private var theme
     @State private var draft = ""
     @State private var showImporter = false
     @State private var showExporter = false
     @State private var exportDocument = BackupFileDocument(data: Data())
+    @State private var shareURL: URL?
+    @State private var showShare = false
     @State private var alertMessage: String?
     @State private var showSettings = false
     @State private var renamingID: String?
@@ -18,10 +22,12 @@ struct ContentView: View {
             Group {
                 if store.groups.isEmpty {
                     ContentUnavailableView("Noch nichts auf der Liste.", systemImage: "basket", description: Text("Artikel hinzufügen oder ein Backup importieren."))
+                        .foregroundStyle(theme.ink)
                 } else {
                     list
                 }
             }
+            .background(theme.paper)
             .navigationTitle("Einkaufsliste")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
@@ -52,9 +58,18 @@ struct ContentView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsSheet()
                     .environmentObject(store)
+                    .environmentObject(appearance)
+                    .environment(\.einkaufTheme, theme)
+                    .preferredColorScheme(appearance.preferredColorScheme)
+                    .einkaufScreen(theme)
+            }
+            .sheet(isPresented: $showShare) {
+                if let shareURL {
+                    ShareSheet(items: [shareURL])
+                        .ignoresSafeArea()
+                }
             }
         }
-        .tint(Color(red: 0.61, green: 0.20, blue: 0.14))
     }
 
     private var list: some View {
@@ -70,14 +85,19 @@ struct ContentView: View {
     private var walkList: some View {
         List {
             ForEach(store.groups) { group in
-                Section(group.title) {
+                Section {
                     ForEach(group.items) { item in
                         walkRow(item)
                     }
+                } header: {
+                    Text(group.title)
+                        .foregroundStyle(theme.muted)
+                        .textCase(.uppercase)
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .einkaufListChrome()
         .environment(\.editMode, .constant(.inactive))
     }
 
@@ -90,7 +110,7 @@ struct ContentView: View {
                 case .header(let dept):
                     Text(Department.title(for: dept))
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.muted)
                         .textCase(.uppercase)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .listRowInsets(EdgeInsets(top: 18, leading: 16, bottom: 6, trailing: 16))
@@ -108,6 +128,7 @@ struct ContentView: View {
             .onDelete { store.deleteEditRows(at: $0) }
         }
         .listStyle(.insetGrouped)
+        .einkaufListChrome()
         .environment(\.editMode, .constant(.active))
     }
 
@@ -118,16 +139,17 @@ struct ContentView: View {
             HStack(spacing: 12) {
                 Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(item.done ? Color(red: 0.17, green: 0.42, blue: 0.29) : Color.secondary)
+                    .foregroundStyle(item.done ? theme.good : theme.muted)
                 Text(item.name)
-                    .foregroundStyle(.primary)
-                    .strikethrough(item.done, color: .secondary)
+                    .foregroundStyle(theme.ink)
+                    .strikethrough(item.done, color: theme.muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.vertical, 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .einkaufRowChrome()
         .accessibilityLabel(item.name)
         .accessibilityValue(item.done ? "erledigt" : "offen")
     }
@@ -139,7 +161,7 @@ struct ContentView: View {
             } label: {
                 Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(item.done ? Color(red: 0.17, green: 0.42, blue: 0.29) : Color.secondary)
+                    .foregroundStyle(item.done ? theme.good : theme.muted)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(item.done ? "Erledigt: \(item.name)" : "Offen: \(item.name)")
@@ -153,14 +175,14 @@ struct ContentView: View {
                     .onChange(of: renameFocused) { _, focused in
                         if !focused { commitRename() }
                     }
-                    .strikethrough(item.done, color: .secondary)
+                    .strikethrough(item.done, color: theme.muted)
             } else {
                 Button {
                     beginRename(item)
                 } label: {
                     Text(item.name)
-                        .foregroundStyle(.primary)
-                        .strikethrough(item.done, color: .secondary)
+                        .foregroundStyle(theme.ink)
+                        .strikethrough(item.done, color: theme.muted)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .multilineTextAlignment(.leading)
                 }
@@ -182,6 +204,7 @@ struct ContentView: View {
             .accessibilityLabel("Abteilung für \(item.name)")
         }
         .padding(.vertical, 2)
+        .einkaufRowChrome()
     }
 
     private func beginRename(_ item: Item) {
@@ -235,6 +258,9 @@ struct ContentView: View {
                         alertMessage = error.localizedDescription
                     }
                 }
+                Button("Backup teilen", systemImage: "square.and.arrow.up.on.square") {
+                    shareBackup()
+                }
                 Menu("Stamm") {
                     Button("Gesamtliste") {
                         store.applyAllStaples()
@@ -272,12 +298,27 @@ struct ContentView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.bar)
+        .background(theme.paper2)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(theme.rule)
+                .frame(height: 1)
+        }
     }
 
     private func submit() {
         store.addItem(draft)
         draft = ""
+    }
+
+    private func shareBackup() {
+        do {
+            let data = try store.exportBackup()
+            shareURL = try BackupShare.writeTempFile(data: data)
+            showShare = true
+        } catch {
+            alertMessage = error.localizedDescription
+        }
     }
 
     private func handleImport(_ result: Result<[URL], Error>) {
@@ -317,4 +358,6 @@ struct BackupFileDocument: FileDocument {
 #Preview {
     ContentView()
         .environmentObject(ShoppingStore(state: .seed, enableSync: false))
+        .environmentObject(AppearanceSettings())
+        .environment(\.einkaufTheme, ThemeTokens.make(palette: .vintage, scheme: .light))
 }

@@ -39,6 +39,7 @@ Die App versteht PWA-Backups mit `"kind": "einkauf-backup"`. Unbekannte Felder w
 **Export**
 
 - **…** → **Backup exportieren…** schreibt dieselbe Form (`kind`, `v`, `currentStoreId`, `stores`, `items`, `mappings`, `walkMode`, `layoutTrip`, `staples`).
+- **…** → **Backup teilen** schickt dieselbe JSON-Datei über das System-Teilen-Menü (`yyyyMMdd_HHmm-einkauf-backup.json`).
 
 Beispiel-Dateien im Repo:
 
@@ -49,7 +50,7 @@ PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hie
 
 ## Bedienung
 
-**iPhone:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen) und **Bearbeiten** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Löschen). Der Knopf zeigt den jeweils anderen Modus, wie in der PWA; `walkMode` bleibt im Backup. Plus Artikel hinzufügen, Ladenwahl, Stamm, Einstellungen, Import/Export.
+**iPhone:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen) und **Bearbeiten** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Löschen). Der Knopf zeigt den jeweils anderen Modus, wie in der PWA; `walkMode` bleibt im Backup. Plus Artikel hinzufügen, Ladenwahl, Stamm, Einstellungen (Hell/Dunkel, Creme/Blau), Import/Export/Teilen.
 
 **Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch.
 
