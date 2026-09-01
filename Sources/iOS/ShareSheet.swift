@@ -22,10 +22,11 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     /// iPad: `UIActivityViewController` braucht eine Popover-Quelle, sonst bleibt das Blatt leer.
+    /// iPhone nutzt diesen Pfad nicht. `view` ist auf neueren SDKs `UIView?` (Swift 6).
     private static func configurePopover(_ controller: UIActivityViewController) {
         guard UIDevice.current.userInterfaceIdiom == .pad,
-              let popover = controller.popoverPresentationController else { return }
-        let source = controller.view
+              let popover = controller.popoverPresentationController,
+              let source = controller.view else { return }
         popover.sourceView = source
         let bounds = source.bounds
         popover.sourceRect = CGRect(x: bounds.midX, y: bounds.midY, width: 1, height: 1)
