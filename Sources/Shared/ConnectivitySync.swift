@@ -57,13 +57,15 @@ final class ConnectivitySync: NSObject {
         }
     }
 
-    static func extractBlob(_ payload: [String: Any]) -> Data? {
+    /// Nur Encode/Decode, kein Store-Zugriff — muss von WCSessionDelegate
+    /// (nicht MainActor) synchron aufrufbar sein (Swift 6).
+    nonisolated static func extractBlob(_ payload: [String: Any]) -> Data? {
         if let data = payload["blob"] as? Data { return data }
         if let s = payload["json"] as? String { return Data(s.utf8) }
         return nil
     }
 
-    static func makePayload(_ state: AppState) -> [String: Any] {
+    nonisolated static func makePayload(_ state: AppState) -> [String: Any] {
         let blob = (try? BackupCodec.encodeLocal(state)) ?? Data()
         return [
             "kind": "einkauf-sync",
