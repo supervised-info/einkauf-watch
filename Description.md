@@ -79,15 +79,15 @@ Liste speichern: Alert „Liste speichern“, Feld „Name, z. B. Grillen“, ma
 
 ## Einstellungen (nur iPhone, Sheet)
 
-Titel **Einstellungen**, Fertig schließt. Sektionsreihenfolge **genau so**:
+Titel **Einstellungen**, Fertig schließt. Native-Sektionen **genau so** (Darstellung ist native-only). Gemeinsames Gerüst mit HTML: Aktueller Laden → Neuer Laden → Ladenweg → Stamm → Gespeicherte Listen → Wörterbuch. HTML schiebt **Alle Läden** JSON zwischen Neuer Laden und Ladenweg; Native hat dort nichts.
 
 1. **Darstellung** — segmented Hell / Dunkel / System; segmented Creme / Blau. Footer: „Creme ist das Vintage-Papier, Blau die Navy-Palette. System folgt der iPhone-Einstellung für Hell und Dunkel.“ UserDefaults `einkauf.theme` / `einkauf.palette` (nicht im Backup).
 2. **Aktueller Laden** — `ForEach(store.stores)`, Tippen wählt (`setStore`), Checkmark am aktuellen. **Swipe-Delete nur für `builtin == false`**. Builtin: `deleteDisabled`. Bestätigung: „Laden „{Name}“ wirklich löschen?“ Builtin-Seeds werden nie gelöscht (`StoreCatalog.delete` gibt `nil`). Löschen des aktuellen eigenen Ladens fällt auf `edeka` zurück; Seeds mergen.
 3. **Neuer Laden** — Feld „Name des Ladens“ max 60, Anlegen. Footer: „Übernimmt das Layout des ausgewählten Ladens.“ (`StoreCatalog.create` kopiert `currentStore.layout`, `builtin: false`, id `s`+time36+random). Kein separater Knopf „Laden löschen“ zwischen Neuer Laden und Ladenweg.
-4. **Ladenweg · {Name}** — `StoreLayout.sanitized`; `vor`/`nach` locked (`moveDisabled`, keine Pfeile/Entfernen). `sonstiges` ist **verschiebbar** (nicht locked). `onMove` plus Nach oben / Nach unten / Entfernen für nicht-locked. Footer-Text aktuell: „Vor dem Einkauf immer vorn, Nach dem Einkauf immer hinten, Sonstiges direkt davor.“ — das lockt `sonstiges` **nicht**; Regeneratoren dürfen `sonstiges` nicht an `nach` festkleben.
+4. **Ladenweg · {Name}** — `StoreLayout.sanitized`; `vor`/`nach` locked (`moveDisabled`, keine Pfeile/Entfernen). `sonstiges` ist **verschiebbar** (nicht locked) und folgt dem Layout-Slot — **geteilt mit HTML** (`groupItems` / `walkLayout`). `onMove` plus Nach oben / Nach unten / Entfernen für nicht-locked. Footer-Text aktuell: „Vor dem Einkauf immer vorn, Nach dem Einkauf immer hinten, Sonstiges direkt davor.“ — das lockt `sonstiges` **nicht**. HTML-Hinweis: „Sonstiges folgt der Position im Ladenweg.“ Regeneratoren dürfen `sonstiges` nicht an `nach` festkleben.
 5. **Abteilungen hinzufügen** — unused laut `StoreLayout.unused`; leer: „Alle Abteilungen sind im Layout.“ Sonst Button je Titel, Insert vor `nach`.
 6. **Layout zurücksetzen** — builtin: Seed-Layout; eigener Laden: `["vor", "sonstiges", "nach"]`. Auch für Custom, nicht nur builtin.
-7. **Stamm-Artikel** — Name, Dept-Picker, Löschen; Anlegen „Milch, Butter…“. Footer zu Gesamtliste. Kein Hoch/Runter der Stamm-Zeilen (anders als HTML).
+7. **Stamm-Artikel** — Name, Dept-Picker, Löschen; Anlegen „Milch, Butter…“. Footer zu Gesamtliste. Kein Hoch/Runter der Stamm-Zeilen.
 8. **Gespeicherte Listen** — leer: „Noch keine gespeicherten Listen.“ Sonst Tippen = `applySavedList` (auffüllen). Swipe-Delete mit Confirm „Gespeicherte Liste „{Name}“ wirklich löschen?“ Footer: Anlass-Listen, Tippen füllt auf ohne zu ersetzen, Wischen löscht.
 9. **Wörterbuch** — NavigationLink, nur lesen, lokal `KeywordDictionary.source`, Suche „Wort suchen“. Footer: Zuordnung nur lokal; Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste. Kein Netz, keine Bearbeitung.
 
@@ -114,7 +114,7 @@ Unbekannte Dept-ID → `Department.resolved` = `sonstiges` (Decode/Lookup). **`i
 5. `nach` zuletzt.
 6. Innerhalb: `ord`, dann `added`, dann `localeCompare` de.
 
-HTML klebt `sonstiges` immer direkt vor `nach` und zieht es aus dem mittleren Layout. Native folgt der Position im Ladenweg. Regeneratoren dürfen das nicht an HTML angleichen.
+**Geteilt mit HTML** (`groupItems` / `walkLayout`, Spec 2026-09-02/03, Cache `einkauf-offline-v17`): Sonstiges bleibt, wo der Laden es platziert hat. Nicht aus dem Layout ziehen und vor `nach` kleben. Extra-Gänge bleiben Extra-Gänge; `item.dept` nicht nach `sonstiges` umschreiben.
 
 Ladenwechsel: `setStore` erhöht `listRevision`, published `groups` neu, List-`.id` wechselt mit. SwiftUI darf Abschnitte nicht an der nackten Dept-ID wiederverwenden (`DeptGroup.id` = `storeId|dept`).
 
@@ -160,7 +160,7 @@ Wörterbuch-UI: Gruppen nach `Department.title`, Wörter je Abteilung alphabetis
 
 ## Gespeicherte Listen
 
-`SavedList`: `{ id, name, items: [{ name, dept }] }`. id `l`+time36+random. Name max 60, Duplikat-Namen erlaubt (verschiedene ids). Snapshot der **aktuellen** Artikel inkl. erledigter — nur Name+Abteilung, ohne `done`/`id`. Leere Liste nicht speichern.
+Geteilt mit HTML. `SavedList`: `{ id, name, items: [{ name, dept }] }`. id `l`+time36+random. Name max 60, Duplikat-Namen erlaubt (verschiedene ids). Snapshot der **aktuellen** Artikel inkl. erledigter — nur Name+Abteilung, ohne `done`/`id`. Leere Liste nicht speichern.
 
 Apply = `StapleApply.applyAll` auf die Snapshot-Items: **füllen, nicht ersetzen**. Offene bleiben, Matching per `mappingKey` öffnet erledigte wieder, fehlende kommen dazu.
 
@@ -170,7 +170,7 @@ Watch hat keine UI dafür; der Stand liegt in `AppState` und synct mit.
 
 ## Backup JSON `kind: "einkauf-backup"`
 
-Gleiche Datei wie die PWA, plus natives `savedLists`. Export (`BackupCodec.encodeExport`):
+Gleiche Datei wie die PWA, inkl. geteiltem `savedLists`. Export (`BackupCodec.encodeExport`):
 
 ```
 {
@@ -205,25 +205,35 @@ Creme = vintage, Blau = navy. RGB wie HTML `:root` / `data-theme` / `data-palett
 
 ## Delta vs HTML (bewusst, nicht schließen)
 
-HTML-Spec: Pages `einkauf/Description_index.md`. Regeneratoren der nativen App dürfen HTML-only nicht nachbauen; Regeneratoren der PWA dürfen Native-only nicht ins HTML ziehen.
+HTML-Spec: Pages `einkauf/Description_index.md` (Stand 2026-09-02/03, SW `einkauf-offline-v17`). Regeneratoren der nativen App dürfen HTML-only nicht nachbauen; Regeneratoren der PWA dürfen Native-only nicht ins HTML ziehen.
 
-**Nur HTML / in der PWA behalten:** Markdown kopieren / Datei / teilen; Import `.md`/`.txt`; nach Bring; nach Erinnerungen; extra Läden-JSON `kind: "einkauf-laeden"`; Site-Mast Theme + Palette (`theme-btn`, `#paletteBtn`) und Shared Keys `supervised-info.theme` / `supervised-info.palette`; PWA Service Worker (`sw.js`, Cache-Bump). HTML-Gruppierung: Layout ohne `sonstiges`, Rest-Depts, dann `sonstiges`, dann `nach`. HTML-Settings: Layout-Reset nur builtin; Stamm-Reorder; Hinweis „Sonstiges direkt davor“ meint dort die feste Position.
+**Gemeinsame Slice** (HTML und Native, Stand 2026-09-02/03):
 
-**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy); Liste teilen als PDF mit leeren quadratischen Kästchen; Erscheinungsbild **System** plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**; Gespeicherte Listen (`savedLists`, auffüllen); Swipe-Delete eigener Läden in der Liste Aktueller Laden; `sonstiges` im Ladenweg verschiebbar; Wörterbuch-Screen aus `KeywordDictionary.source`; Cross-Dept-Drag über flache SwiftUI-Liste. TestFlight nicht erforderlich.
+- `savedLists` — Name+Dept-Snapshot, Apply **füllt** statt zu ersetzen; Backup-Feld; alte Backups `[]`
+- Sonstiges-Slot im Ladenweg — `sonstiges` bleibt an der Layout-Position; Extra-Depts mit Items nach dem letzten Nicht-`nach`-Gang; `item.dept` nicht nach `sonstiges` umschreiben
+- Wörterbuch — nur lesen, lokal aus `KeywordDictionary.source` / `DICT_SRC`, kein Netz
+- Settings-Reihenfolge (gemeinsames Gerüst): **Aktueller Laden → Neuer Laden → Ladenweg → Stamm → Gespeicherte Listen → Wörterbuch**
 
-**Brücke:** nur Backup-JSON-Datei. Kein Live-localStorage-Sync. Unbekannte Felder jeweils ignorieren (`savedLists` in älteren HTML-Importen harmlos). App scrapt die Website nicht.
+Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat **kein** Darstellung-Block im Sheet; Theme/Palette bleiben am Site-Mast. HTML schiebt **Alle Läden** JSON (`kind: "einkauf-laeden"`) zwischen Neuer Laden und Ladenweg — nur HTML.
+
+**Nur HTML / in der PWA behalten:** Markdown kopieren / Datei / teilen; Import `.md`/`.txt`; nach Bring; nach Erinnerungen; extra Läden-JSON `kind: "einkauf-laeden"` (zwischen Neuer Laden und Ladenweg); Site-Mast Theme + Palette (`theme-btn`, `#paletteBtn`) und Shared Keys `supervised-info.theme` / `supervised-info.palette`; PWA Service Worker (`sw.js`, Cache-Bump, aktuell v17).
+
+**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy, kein Picker/Edit/Share); **PDF Liste teilen** mit leeren quadratischen Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar. TestFlight nicht erforderlich.
+
+**Brücke:** nur Backup-JSON-Datei (inkl. `savedLists`). Kein Live-localStorage-Sync. Unbekannte Felder jeweils ignorieren. App scrapt die Website nicht.
 
 ## Nicht ändern
 
 - Bundle-IDs `net.tschelle.einkauf` / `.watchkitapp`
 - Builtin-Laden-IDs und DEPT-IDs
-- Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys)
-- `ListGrouping`: `sonstiges` folgt dem Layout; Extra-Depts behalten `item.dept`
+- Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys, inkl. `savedLists`)
+- `ListGrouping`: `sonstiges` folgt dem Layout; Extra-Depts behalten `item.dept` (geteilt mit HTML, nicht vor `nach` kleben)
 - Guesser: Keywords vor Mappings; lokal
 - Watch bleibt Geh-Modus ohne Picker/Edit/Share
 - Theme nur in Einstellungen
 - PDF-Kästchen leer (kein Fill, kein Häkchen)
-- Bewusstes Delta zur HTML-PWA nicht angleichen
+- Bewusstes Rest-Delta zur HTML-PWA (Watch, PDF Liste teilen, System-Appearance in Einstellungen vs. Markdown/Bring/Erinnerungen/`einkauf-laeden`/Mast/SW) nicht angleichen
+- Gemeinsame Slice (savedLists, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only oder HTML-only führen
 
 ## Akzeptanzkriterien
 
@@ -235,4 +245,4 @@ HTML-Spec: Pages `einkauf/Description_index.md`. Regeneratoren der nativen App d
 - [ ] Gespeicherte Listen: Name+Dept-Snapshot, füllen nicht ersetzen, Backup-Feld `savedLists`.
 - [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen.
 - [ ] Watch-Titel: gekürzter Ladenname + Einkauf xx/yy; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
-- [ ] Theme nur in Einstellungen; HTML-Delta bleibt (kein Markdown/Bring/Erinnerungen/einkauf-laeden/PWA-SW/Mast-Theme in der nativen App).
+- [ ] Theme nur in Einstellungen; HTML-Delta bleibt: kein Markdown/Bring/Erinnerungen/`einkauf-laeden`/PWA-SW/Mast-Theme in der nativen App; kein Watch/PDF/System-Appearance im HTML. Gemeinsame Slice (Listen, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only führen.
