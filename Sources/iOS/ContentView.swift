@@ -276,6 +276,9 @@ struct ContentView: View {
                 Button("Backup teilen", systemImage: "square.and.arrow.up.on.square") {
                     shareBackup()
                 }
+                Button("Liste teilen", systemImage: "list.bullet.rectangle") {
+                    shareList()
+                }
                 Menu("Stamm") {
                     Button("Gesamtliste") {
                         store.applyAllStaples()
@@ -332,6 +335,25 @@ struct ContentView: View {
             let url = try BackupShare.writeTempFile(data: data)
             guard FileManager.default.fileExists(atPath: url.path) else {
                 alertMessage = "Backup-Datei konnte nicht erzeugt werden."
+                return
+            }
+            shareItem = BackupShareItem(url: url)
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func shareList() {
+        do {
+            let data = try ListPDF.render(
+                groups: store.groups,
+                storeName: store.state.currentStore.name,
+                progressLabel: store.state.progressLabel,
+                colors: ThemeRGB.tokens(palette: appearance.palette, dark: false)
+            )
+            let url = try ListShare.writeTempFile(data: data, storeName: store.state.currentStore.name)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                alertMessage = "PDF-Datei konnte nicht erzeugt werden."
                 return
             }
             shareItem = BackupShareItem(url: url)

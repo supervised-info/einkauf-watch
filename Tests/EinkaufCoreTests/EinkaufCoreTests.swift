@@ -749,6 +749,49 @@ final class BackupShareTests: XCTestCase {
     }
 }
 
+final class ListShareTests: XCTestCase {
+    private var utc: TimeZone { TimeZone(secondsFromGMT: 0)! }
+
+    private func date(_ y: Int, _ m: Int, _ d: Int, _ h: Int, _ min: Int) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = utc
+        return calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h, minute: min))!
+    }
+
+    func testStampedFilenameUsesStoreSlug() {
+        XCTAssertEqual(
+            ListShare.stampedFilename(storeName: "Edeka", date: date(2026, 9, 2, 16, 39), timeZone: utc),
+            "20260902_1639-einkauf-edeka.pdf"
+        )
+        XCTAssertEqual(
+            ListShare.stampedFilename(storeName: "Eigenes Layout", date: date(2026, 9, 2, 16, 39), timeZone: utc),
+            "20260902_1639-einkauf-eigenes-layout.pdf"
+        )
+    }
+
+    func testGermanStoreSlug() {
+        XCTAssertEqual(ListShare.storeSlug("Edeka"), "edeka")
+        XCTAssertEqual(ListShare.storeSlug("dm"), "dm")
+        XCTAssertEqual(ListShare.storeSlug("Eigenes Layout"), "eigenes-layout")
+        XCTAssertEqual(ListShare.storeSlug("Müller Süd"), "mueller-sued")
+        XCTAssertEqual(ListShare.storeSlug("  "), "laden")
+        XCTAssertEqual(ListShare.storeSlug("Aldi!!!"), "aldi")
+    }
+
+    func testWriteTempFileUsesSlug() throws {
+        let data = Data("%PDF-1.4\n".utf8)
+        let url = try ListShare.writeTempFile(
+            data: data,
+            storeName: "Edeka",
+            date: date(2026, 9, 2, 16, 41),
+            timeZone: utc
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+        XCTAssertEqual(url.lastPathComponent, "20260902_1641-einkauf-edeka.pdf")
+        XCTAssertEqual(try Data(contentsOf: url), data)
+    }
+}
+
 final class ThemeTokenTests: XCTestCase {
     func testVintageLight() {
         let t = ThemeRGB.tokens(palette: .vintage, dark: false)

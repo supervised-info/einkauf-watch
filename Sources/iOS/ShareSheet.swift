@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 /// Temp-Datei, die erst nach dem Schreiben das Share-Sheet öffnet (`.sheet(item:)`).
+/// URL ist Backup-JSON oder Listen-PDF — gleiches Blatt, anderer Dateiname.
 struct BackupShareItem: Identifiable {
     let id = UUID()
     let url: URL
