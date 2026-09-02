@@ -8,6 +8,7 @@ struct SettingsSheet: View {
     @State private var newStapleName = ""
     @State private var newStoreName = ""
     @State private var confirmDeleteStore = false
+    @State private var pendingDeleteStoreId: String?
 
     private var layout: [String] {
         StoreLayout.sanitized(store.state.currentStore.layout)
@@ -59,7 +60,9 @@ struct SettingsSheet: View {
                         .accessibilityLabel(s.name)
                         .accessibilityAddTraits(s.id == store.state.currentStoreId ? .isSelected : [])
                         .einkaufRowChrome()
+                        .deleteDisabled(s.builtin)
                     }
+                    .onDelete(perform: requestDeleteStores)
                 } header: {
                     Text("Aktueller Laden")
                         .foregroundStyle(theme.muted)
@@ -85,15 +88,6 @@ struct SettingsSheet: View {
                         .foregroundStyle(theme.muted)
                 } footer: {
                     Text("Übernimmt das Layout des ausgewählten Ladens.")
-                }
-
-                if !store.state.currentStore.builtin {
-                    Section {
-                        Button("Laden löschen", role: .destructive) {
-                            confirmDeleteStore = true
-                        }
-                        .einkaufRowChrome()
-                    }
                 }
 
                 Section {
@@ -177,14 +171,19 @@ struct SettingsSheet: View {
                 }
             }
             .confirmationDialog(
-                "Laden „\(store.state.currentStore.name)“ wirklich löschen?",
+                "Laden „\(pendingDeleteStoreName)“ wirklich löschen?",
                 isPresented: $confirmDeleteStore,
                 titleVisibility: .visible
             ) {
                 Button("Laden löschen", role: .destructive) {
-                    store.deleteStore(id: store.state.currentStoreId)
+                    if let id = pendingDeleteStoreId {
+                        store.deleteStore(id: id)
+                    }
+                    pendingDeleteStoreId = nil
                 }
-                Button("Abbrechen", role: .cancel) {}
+                Button("Abbrechen", role: .cancel) {
+                    pendingDeleteStoreId = nil
+                }
             }
         }
     }
@@ -271,6 +270,22 @@ struct SettingsSheet: View {
     private func submitStore() {
         store.createStore(newStoreName)
         newStoreName = ""
+    }
+
+    private var pendingDeleteStoreName: String {
+        guard let id = pendingDeleteStoreId else { return "" }
+        return store.stores.first(where: { $0.id == id })?.name ?? ""
+    }
+
+    private func requestDeleteStores(at offsets: IndexSet) {
+        let custom = offsets.compactMap { index -> Store? in
+            guard store.stores.indices.contains(index) else { return nil }
+            let s = store.stores[index]
+            return s.builtin ? nil : s
+        }
+        guard let victim = custom.first else { return }
+        pendingDeleteStoreId = victim.id
+        confirmDeleteStore = true
     }
 }
 
