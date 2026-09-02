@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var shareItem: BackupShareItem?
     @State private var alertMessage: String?
     @State private var showSettings = false
+    @State private var showSaveListPrompt = false
+    @State private var saveListName = ""
     @State private var renamingID: String?
     @State private var renameDraft = ""
     @FocusState private var renameFocused: Bool
@@ -44,8 +46,20 @@ struct ContentView: View {
             } message: {
                 Text(alertMessage ?? "")
             }
+            .alert("Liste speichern", isPresented: $showSaveListPrompt) {
+                TextField("Name, z. B. Grillen", text: $saveListName)
+                Button("Speichern") { commitSaveList() }
+                Button("Abbrechen", role: .cancel) { saveListName = "" }
+            } message: {
+                Text("Die aktuellen Artikel werden unter diesem Namen gespeichert.")
+            }
             .onChange(of: store.lastError) { _, new in
                 if let new { alertMessage = new }
+            }
+            .onChange(of: saveListName) { _, value in
+                if value.count > SavedList.nameMax {
+                    saveListName = String(value.prefix(SavedList.nameMax))
+                }
             }
             .onOpenURL { url in
                 do {
@@ -279,6 +293,19 @@ struct ContentView: View {
                 Button("Liste teilen", systemImage: "list.bullet.rectangle") {
                     shareList()
                 }
+                Button("Liste speichern", systemImage: "bookmark") {
+                    beginSaveList()
+                }
+                Menu("Gespeicherte Listen") {
+                    if store.savedLists.isEmpty {
+                        Button("Keine gespeicherten Listen") {}
+                            .disabled(true)
+                    } else {
+                        ForEach(store.savedLists) { list in
+                            Button(list.name) { store.applySavedList(list) }
+                        }
+                    }
+                }
                 Menu("Stamm") {
                     Button("Gesamtliste") {
                         store.applyAllStaples()
@@ -327,6 +354,27 @@ struct ContentView: View {
     private func submit() {
         store.addItem(draft)
         draft = ""
+    }
+
+    private func beginSaveList() {
+        if store.state.items.isEmpty {
+            alertMessage = "Die Liste ist leer."
+            return
+        }
+        saveListName = ""
+        showSaveListPrompt = true
+    }
+
+    private func commitSaveList() {
+        switch store.saveCurrentList(name: saveListName) {
+        case .saved:
+            break
+        case .emptyList:
+            alertMessage = "Die Liste ist leer."
+        case .invalidName:
+            alertMessage = "Bitte einen Namen eingeben."
+        }
+        saveListName = ""
     }
 
     private func shareBackup() {

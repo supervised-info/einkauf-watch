@@ -37,6 +37,12 @@ enum BackupCodec {
             staples = sanitizeStaples(dict["staples"], mappings: mappings)
         }
         let listRevision = uint64(dict["listRevision"]) ?? 0
+        let savedLists: [SavedList]
+        if dict["savedLists"] == nil {
+            savedLists = []
+        } else {
+            savedLists = sanitizeSavedLists(dict["savedLists"], mappings: mappings)
+        }
 
         var current = currentStoreId
         if !stores.contains(where: { $0.id == current }) {
@@ -50,7 +56,8 @@ enum BackupCodec {
             mappings: mappings,
             walkMode: walkMode,
             staples: staples,
-            listRevision: listRevision
+            listRevision: listRevision,
+            savedLists: savedLists
         )
     }
 
@@ -80,7 +87,14 @@ enum BackupCodec {
             },
             "walkMode": state.walkMode,
             "layoutTrip": 1,
-            "staples": state.staples.map { ["name": $0.name, "dept": $0.dept] }
+            "staples": state.staples.map { ["name": $0.name, "dept": $0.dept] },
+            "savedLists": state.savedLists.map { list in
+                [
+                    "id": list.id,
+                    "name": list.name,
+                    "items": list.items.map { ["name": $0.name, "dept": $0.dept] }
+                ] as [String: Any]
+            }
         ]
         return try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
     }
@@ -122,6 +136,7 @@ enum BackupCodec {
             maps[k] = v
         }
         next.mappings = maps
+        next.savedLists = sanitizeSavedListModels(state.savedLists, mappings: maps)
         return next
     }
 
@@ -234,6 +249,76 @@ enum BackupCodec {
             out.append(Staple(name: n, dept: dept))
         }
         return out
+    }
+
+    static func sanitizeSavedLists(_ raw: Any?, mappings: [String: String]) -> [SavedList] {
+        guard let arr = raw as? [Any] else { return [] }
+        return sanitizeSavedListModels(
+            arr.compactMap { entry in
+                guard let obj = entry as? [String: Any] else { return nil }
+                let name = string(obj["name"]) ?? ""
+                let id = string(obj["id"]) ?? ""
+                let items = sanitizeSavedListItems(obj["items"], mappings: mappings)
+                return SavedList(id: id, name: name, items: items)
+            },
+            mappings: mappings
+        )
+    }
+
+    static func sanitizeSavedListModels(_ lists: [SavedList], mappings: [String: String]) -> [SavedList] {
+        var seenIds = Set<String>()
+        var out: [SavedList] = []
+        for list in lists {
+            guard let name = SavedList.sanitizedName(list.name) else { continue }
+            let items = sanitizeSavedListItems(list.items, mappings: mappings)
+            guard !items.isEmpty else { continue }
+            var id = list.id.trimmingCharacters(in: .whitespacesAndNewlines)
+            if id.isEmpty || seenIds.contains(id) {
+                id = SavedList.makeID()
+            }
+            seenIds.insert(id)
+            out.append(SavedList(id: id, name: name, items: items))
+        }
+        return out
+    }
+
+    static func sanitizeSavedListItems(_ raw: Any?, mappings: [String: String]) -> [Staple] {
+        guard let arr = raw as? [Any] else { return [] }
+        var out: [Staple] = []
+        for entry in arr {
+            let name: String?
+            var dept = ""
+            if let s = entry as? String {
+                name = s
+            } else if let obj = entry as? [String: Any] {
+                name = string(obj["name"])
+                dept = string(obj["dept"]) ?? ""
+            } else {
+                name = nil
+            }
+            guard var n = name else { continue }
+            n = n.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !n.isEmpty else { continue }
+            if !Department.isKnown(dept) {
+                dept = DepartmentGuesser.guess(n, mappings: mappings)
+            }
+            out.append(Staple(name: n, dept: dept))
+        }
+        return out
+    }
+
+    static func sanitizeSavedListItems(_ items: [Staple], mappings: [String: String]) -> [Staple] {
+        items.compactMap { staple in
+            let n = staple.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !n.isEmpty else { return nil }
+            var dept = staple.dept
+            if !Department.isKnown(dept) {
+                dept = DepartmentGuesser.guess(n, mappings: mappings)
+            }
+            return Staple(name: n, dept: dept)
+        }
     }
 
     static func mergeBuiltinSeeds(_ stores: [Store]) -> [Store] {

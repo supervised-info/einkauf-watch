@@ -8,6 +8,7 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(state.currentStoreId, "edeka")
         XCTAssertEqual(state.items.count, 14)
         XCTAssertEqual(state.staples.count, 3)
+        XCTAssertTrue(state.savedLists.isEmpty)
         XCTAssertTrue(state.stores.contains(where: { $0.id == "rewe" }))
         XCTAssertEqual(state.items.first(where: { $0.id == "i014unk" })?.dept, "sonstiges")
     }
@@ -16,6 +17,7 @@ final class BackupCodecTests: XCTestCase {
         let data = try loadFixture("einkauf-backup-ohne-staples.json")
         let state = try BackupCodec.decode(data)
         XCTAssertTrue(state.staples.isEmpty)
+        XCTAssertTrue(state.savedLists.isEmpty)
         XCTAssertEqual(state.currentStoreId, "aldi")
         XCTAssertEqual(state.items.count, 3)
         XCTAssertEqual(state.walkMode, false)
@@ -38,10 +40,12 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(again.items.map(\.id), original.items.map(\.id))
         XCTAssertEqual(again.items.map(\.done), original.items.map(\.done))
         XCTAssertEqual(again.walkMode, true)
+        XCTAssertEqual(again.savedLists, original.savedLists)
         let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
         XCTAssertEqual(obj["kind"] as? String, "einkauf-backup")
         XCTAssertEqual(obj["walkMode"] as? Bool, true)
         XCTAssertNil(obj["listRevision"])
+        XCTAssertNotNil(obj["savedLists"])
     }
 
     func testNotABackupRejected() {
@@ -341,6 +345,212 @@ final class StapleApplyTests: XCTestCase {
         XCTAssertFalse(result.items[0].done)
         XCTAssertEqual(result.items[1].name, "Klopapier")
         XCTAssertEqual(result.items[1].dept, "drogerie")
+    }
+}
+
+@MainActor
+final class SavedListTests: XCTestCase {
+    private func threeItemsOneDone() -> [Item] {
+        [
+            Item(id: "a", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1),
+            Item(id: "b", name: "Butter", dept: "kuehlung", done: true, added: 2, ord: 2, doneChangedAt: 2),
+            Item(id: "c", name: "Grillkohle", dept: "sonstiges", done: false, added: 3, ord: 3)
+        ]
+    }
+
+    func testSaveSnapshotOmitsDone() throws {
+        var seed = AppState.seed
+        seed.items = threeItemsOneDone()
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .saved)
+        XCTAssertEqual(store.savedLists.count, 1)
+        let list = store.savedLists[0]
+        XCTAssertEqual(list.name, "Grillen")
+        XCTAssertEqual(list.items.map(\.name), ["Milch", "Butter", "Grillkohle"])
+        XCTAssertEqual(list.items.map(\.dept), ["kuehlung", "kuehlung", "sonstiges"])
+        XCTAssertEqual(list.items.count, 3)
+
+        let exported = try BackupCodec.encodeExport(store.state)
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        let saved = obj["savedLists"] as! [[String: Any]]
+        XCTAssertEqual(saved.count, 1)
+        let items = saved[0]["items"] as! [[String: Any]]
+        XCTAssertEqual(items.count, 3)
+        XCTAssertTrue(items.allSatisfy { $0["done"] == nil })
+        XCTAssertTrue(items.allSatisfy { $0["id"] == nil })
+        XCTAssertEqual(items.map { $0["name"] as? String }, ["Milch", "Butter", "Grillkohle"])
+    }
+
+    func testApplyOnEmptyAddsAllOpen() {
+        let list = SavedList(
+            id: "l-grillen",
+            name: "Grillen",
+            items: SavedList.snapshot(from: threeItemsOneDone())
+        )
+        XCTAssertEqual(list.items.count, 3)
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertTrue(store.state.items.isEmpty)
+        let result = store.applySavedList(list)
+        XCTAssertEqual(result.added, 3)
+        XCTAssertEqual(result.reopened, 0)
+        XCTAssertEqual(store.state.items.count, 3)
+        XCTAssertTrue(store.state.items.allSatisfy { !$0.done })
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "Grillkohle"])
+    }
+
+    func testApplyReopensDoneMatchingItem() {
+        var seed = AppState.seed
+        seed.items = [
+            Item(id: "keep", name: "Äpfel", dept: "obst", done: false, added: 1, ord: 1),
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: true, added: 2, ord: 2, doneChangedAt: 2)
+        ]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        let list = SavedList(
+            id: "l-grillen",
+            name: "Grillen",
+            items: [
+                Staple(name: "Milch", dept: "kuehlung"),
+                Staple(name: "Grillkohle", dept: "sonstiges")
+            ]
+        )
+        let result = store.applySavedList(list)
+        XCTAssertEqual(result.reopened, 1)
+        XCTAssertEqual(result.added, 1)
+        XCTAssertEqual(store.state.items.count, 3)
+        XCTAssertEqual(store.state.items.first { $0.id == "keep" }?.name, "Äpfel")
+        XCTAssertFalse(store.state.items.first { $0.id == "keep" }?.done ?? true)
+        XCTAssertFalse(store.state.items.first { $0.id == "m" }?.done ?? true)
+        XCTAssertEqual(store.state.items.first { $0.name == "Grillkohle" }?.dept, "sonstiges")
+        XCTAssertFalse(store.state.items.first { $0.name == "Grillkohle" }?.done ?? true)
+    }
+
+    func testSaveThenApplyReopensDoneWithoutReplacing() {
+        var seed = AppState.seed
+        seed.items = threeItemsOneDone()
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .saved)
+        let result = store.applySavedList(store.savedLists[0])
+        XCTAssertEqual(result.reopened, 1)
+        XCTAssertEqual(result.added, 0)
+        XCTAssertEqual(result.already, 2)
+        XCTAssertEqual(store.state.items.count, 3)
+        XCTAssertFalse(store.state.items.first { $0.name == "Butter" }?.done ?? true)
+        XCTAssertEqual(store.state.items.map(\.id), ["a", "b", "c"])
+    }
+
+    func testEmptyListDoesNotSave() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .emptyList)
+        XCTAssertTrue(store.savedLists.isEmpty)
+        XCTAssertEqual(store.state.listRevision, 0)
+        XCTAssertEqual(store.saveCurrentList(name: "   "), .invalidName)
+    }
+
+    func testDuplicateNamesAllowed() {
+        var seed = AppState.seed
+        seed.items = [Item(id: "a", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .saved)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .saved)
+        XCTAssertEqual(store.savedLists.map(\.name), ["Grillen", "Grillen"])
+        XCTAssertNotEqual(store.savedLists[0].id, store.savedLists[1].id)
+    }
+
+    func testBackupRoundTripSavedLists() throws {
+        var state = AppState.seed
+        state.items = threeItemsOneDone()
+        state.savedLists = [
+            SavedList(
+                id: "l1",
+                name: "Grillen",
+                items: SavedList.snapshot(from: state.items)
+            )
+        ]
+        state.staples = [Staple(name: "Milch", dept: "kuehlung")]
+        let exported = try BackupCodec.encodeExport(state)
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.savedLists.count, 1)
+        XCTAssertEqual(again.savedLists[0].id, "l1")
+        XCTAssertEqual(again.savedLists[0].name, "Grillen")
+        XCTAssertEqual(again.savedLists[0].items.map(\.name), ["Milch", "Butter", "Grillkohle"])
+        XCTAssertEqual(again.savedLists[0].items.map(\.dept), ["kuehlung", "kuehlung", "sonstiges"])
+        XCTAssertEqual(again.staples.map(\.name), ["Milch"])
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        XCTAssertNotNil(obj["savedLists"])
+        XCTAssertEqual(obj["kind"] as? String, "einkauf-backup")
+    }
+
+    func testLocalEncodeRoundTripSavedLists() throws {
+        var state = AppState.seed
+        state.savedLists = [
+            SavedList(id: "l1", name: "Grillen", items: [Staple(name: "Milch", dept: "kuehlung")])
+        ]
+        state.listRevision = 4
+        let data = try BackupCodec.encodeLocal(state)
+        let again = try BackupCodec.decodeLocal(data)
+        XCTAssertEqual(again.savedLists, state.savedLists)
+        XCTAssertEqual(again.listRevision, 4)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        XCTAssertEqual(json["kind"] as? String, "einkauf-local")
+        let encodedState = json["state"] as! [String: Any]
+        XCTAssertNotNil(encodedState["savedLists"])
+    }
+
+    func testOldBackupHasEmptySavedLists() throws {
+        let data = try loadFixture("einkauf-backup-ohne-staples.json")
+        let state = try BackupCodec.decode(data)
+        XCTAssertTrue(state.savedLists.isEmpty)
+        XCTAssertTrue(state.staples.isEmpty)
+        XCTAssertEqual(state.items.count, 3)
+    }
+
+    func testBuiltinStoresUntouchedAfterSavedListsRoundTrip() throws {
+        var state = AppState.seed
+        state.savedLists = [
+            SavedList(id: "l1", name: "Drogerie", items: [Staple(name: "Klopapier", dept: "drogerie")])
+        ]
+        let exported = try BackupCodec.encodeExport(state)
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(Set(again.stores.map(\.id)), Set(Store.seeds.map(\.id)))
+        XCTAssertTrue(again.stores.allSatisfy(\.builtin))
+        XCTAssertEqual(again.stores.map(\.id), Store.seeds.map(\.id))
+        XCTAssertEqual(again.savedLists.first?.name, "Drogerie")
+        XCTAssertEqual(again.staples, [])
+        XCTAssertEqual(again.currentStoreId, "edeka")
+    }
+
+    func testBackupIgnoresDoneOnSavedListItemsAndKeepsSeeds() throws {
+        let json = """
+        {"kind":"einkauf-backup","v":1,"currentStoreId":"edeka","stores":[],"items":[],"savedLists":[{"id":"l1","name":"Grillen","items":[{"name":"Milch","dept":"kuehlung","done":true}]}]}
+        """
+        let state = try BackupCodec.decode(Data(json.utf8))
+        XCTAssertEqual(state.savedLists.count, 1)
+        XCTAssertEqual(state.savedLists[0].name, "Grillen")
+        XCTAssertEqual(state.savedLists[0].items.map(\.name), ["Milch"])
+        XCTAssertEqual(state.savedLists[0].items.map(\.dept), ["kuehlung"])
+        XCTAssertEqual(Set(state.stores.map(\.id)), Set(Store.seeds.map(\.id)))
+        XCTAssertTrue(state.stores.allSatisfy(\.builtin))
+        XCTAssertTrue(state.staples.isEmpty)
+    }
+
+    func testRemoveSavedList() {
+        var seed = AppState.seed
+        seed.items = [Item(id: "a", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        store.saveCurrentList(name: "Grillen")
+        let id = store.savedLists[0].id
+        store.removeSavedList(id: id)
+        XCTAssertTrue(store.savedLists.isEmpty)
+    }
+
+    private func loadFixture(_ name: String) throws -> Data {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures")
+            .appendingPathComponent(name)
+        return try Data(contentsOf: url)
     }
 }
 

@@ -38,6 +38,7 @@ final class ShoppingStore: ObservableObject {
     var walkListRows: [WalkListRow] { ListGrouping.walkListRows(groups: groups, storeId: state.currentStoreId) }
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
+    var savedLists: [SavedList] { state.savedLists }
     var walkMode: Bool { state.walkMode }
 
     func setWalkMode(_ on: Bool) {
@@ -185,6 +186,49 @@ final class ShoppingStore: ObservableObject {
         state.listRevision += 1
         persistAndSync()
         return result
+    }
+
+    enum SaveListOutcome: Equatable {
+        case saved
+        case emptyList
+        case invalidName
+    }
+
+    /// Snapshot der aktuellen Artikel (Name + Abteilung, ohne Häkchen). Leere Liste wird nicht gespeichert.
+    @discardableResult
+    func saveCurrentList(name: String) -> SaveListOutcome {
+        guard let trimmed = SavedList.sanitizedName(name) else { return .invalidName }
+        let snapshot = SavedList.snapshot(from: state.items)
+        guard !snapshot.isEmpty else { return .emptyList }
+        state.savedLists.append(SavedList(id: SavedList.makeID(), name: trimmed, items: snapshot))
+        state.listRevision += 1
+        persistAndSync()
+        return .saved
+    }
+
+    /// Wie Gesamtliste / `StapleApply`: fehlend anlegen, erledigt wieder öffnen, offen überspringen. Ersetzt die Liste nicht.
+    @discardableResult
+    func applySavedList(_ list: SavedList) -> StapleApply.Outcome {
+        let result = StapleApply.applyAll(
+            list.items,
+            items: state.items,
+            mappings: state.mappings,
+            nextOrd: nextOrd()
+        )
+        guard result.didChange else { return result }
+        state.items = result.items
+        state.mappings = result.mappings
+        state.listRevision += 1
+        persistAndSync()
+        return result
+    }
+
+    func removeSavedList(id: String) {
+        let before = state.savedLists.count
+        state.savedLists.removeAll { $0.id == id }
+        guard state.savedLists.count != before else { return }
+        state.listRevision += 1
+        persistAndSync()
     }
 
     func createStaple(_ rawName: String) {
