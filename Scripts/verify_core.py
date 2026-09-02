@@ -196,9 +196,12 @@ def test_sources() -> None:
         "Sources/Shared/ListShare.swift",
         "Sources/iOS/ContentView.swift",
         "Sources/iOS/SettingsSheet.swift",
+        "Sources/iOS/KeywordDictionaryView.swift",
         "Sources/iOS/ShareSheet.swift",
         "Sources/iOS/ListPDF.swift",
         "Sources/iOS/AppearanceSettings.swift",
+        "Sources/Shared/KeywordDictionary.swift",
+        "Sources/Shared/KeywordDictionaryBrowse.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
         "Sources/Watch/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
@@ -295,6 +298,29 @@ def test_sources() -> None:
         fail("Einstellungen missing Laden löschen")
     if "!store.state.currentStore.builtin" not in settings:
         fail("Laden löschen must be limited to custom stores")
+    if "Wörterbuch" not in settings:
+        fail("Einstellungen missing Wörterbuch")
+    if "KeywordDictionaryView" not in settings:
+        fail("Einstellungen Wörterbuch row must open KeywordDictionaryView")
+    if "NavigationLink" not in settings:
+        fail("Wörterbuch must be a NavigationLink in Einstellungen, not the overflow menu")
+    if "Wörterbuch" in content:
+        fail("Wörterbuch must not be in the overflow menu")
+    dict_view = (ROOT / "Sources/iOS/KeywordDictionaryView.swift").read_text()
+    if "KeywordDictionary.source" not in dict_view:
+        fail("Wörterbuch view must read KeywordDictionary.source")
+    if re.search(r"URLSession|https?://|github\.io", dict_view):
+        fail("Wörterbuch must not fetch the web")
+    browse = (ROOT / "Sources/Shared/KeywordDictionaryBrowse.swift").read_text()
+    if "Department.title" not in browse:
+        fail("Wörterbuch groups must use Department.title")
+    if "Locale(identifier: \"de\")" not in browse:
+        fail("Wörterbuch words must sort with de locale")
+    kd = (ROOT / "Sources/Shared/KeywordDictionary.swift").read_text()
+    if "static let source" not in kd:
+        fail("KeywordDictionary.source missing")
+    if "Do not scrape" not in kd:
+        fail("KeywordDictionary must stay local (no website scrape)")
     store_src = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
     if "func createStore" not in store_src or "func deleteStore" not in store_src:
         fail("ShoppingStore missing createStore/deleteStore")
@@ -441,6 +467,8 @@ def test_sources() -> None:
         wtxt = wfile.read_text()
         if "Backup teilen" in wtxt or "Liste teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt or "ListPDF" in wtxt:
             fail("Watch should not have share UI")
+        if "Wörterbuch" in wtxt or "KeywordDictionaryView" in wtxt:
+            fail("Watch should not have Wörterbuch UI")
     print("sources: ok")
 
 
