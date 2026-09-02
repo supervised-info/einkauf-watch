@@ -252,8 +252,11 @@ final class ShoppingStore: ObservableObject {
 
     func setStore(_ id: String) {
         guard state.stores.contains(where: { $0.id == id }) else { return }
-        state.currentStoreId = id
-        state.listRevision += 1
+        var next = state
+        next.currentStoreId = id
+        next.listRevision += 1
+        state = next
+        objectWillChange.send()
         persistAndSync()
     }
 

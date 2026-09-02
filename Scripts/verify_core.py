@@ -47,6 +47,28 @@ def groups(items: list[dict], layout: list[str]) -> list[str]:
     return out
 
 
+def test_store_switch_changes_group_order() -> None:
+    items = [
+        {"name": "Äpfel", "dept": "obst", "ord": 1, "added": 1},
+        {"name": "Milch", "dept": "kuehlung", "ord": 1, "added": 1},
+        {"name": "Seife", "dept": "drogerie", "ord": 1, "added": 1},
+    ]
+    edeka = [
+        "vor", "obst", "bedienung", "brot", "kuehlung", "tiefkuehl",
+        "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach",
+    ]
+    dm = ["vor", "drogerie", "trocken", "getraenke", "sonstiges", "nach"]
+    edeka_ids = groups(items, edeka)
+    dm_ids = groups(items, dm)
+    if edeka_ids == dm_ids:
+        fail(f"store switch should change group order, both {edeka_ids}")
+    if edeka_ids != ["obst", "kuehlung", "drogerie"]:
+        fail(f"edeka groups {edeka_ids}")
+    if dm_ids != ["drogerie", "obst", "kuehlung"]:
+        fail(f"dm groups {dm_ids}")
+    print("store switch groups: ok")
+
+
 def test_fixtures() -> None:
     full = json.loads((ROOT / "Fixtures/einkauf-backup.json").read_text())
     if full.get("kind") != "einkauf-backup":
@@ -138,6 +160,8 @@ def test_sources() -> None:
         fail("Bearbeiten still uses per-section onMove")
     if "moveEditRows" not in content or "moveDisabled(true)" not in content:
         fail("Bearbeiten needs flattened list with immovable headers")
+    if content.count(".id(store.state.currentStoreId)") < 2:
+        fail("ContentView walkList and editList must .id(currentStoreId) so store switch rebuilds")
     if "func setWalkMode" not in store:
         fail("walkMode not persisted via setWalkMode")
     editing = (ROOT / "Sources/Shared/ItemEditing.swift").read_text()
@@ -180,9 +204,23 @@ def test_sources() -> None:
     store_src = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
     if "func createStore" not in store_src or "func deleteStore" not in store_src:
         fail("ShoppingStore missing createStore/deleteStore")
+    setstore = re.search(r"func setStore\(_ id: String\) \{.*?\n    \}", store_src, re.S)
+    if not setstore:
+        fail("ShoppingStore missing setStore")
+    body = setstore.group(0)
+    if "var next = state" not in body or "next.currentStoreId" not in body or "state = next" not in body:
+        fail("setStore must copy AppState, set currentStoreId, assign state = next")
+    if "listRevision += 1" not in body:
+        fail("setStore must bump listRevision before persistAndSync")
+    if body.find("state = next") > body.find("persistAndSync"):
+        fail("setStore must assign state (and bump revision) before persistAndSync")
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch:
         fail("Watch should not have a store picker")
+    if ".id(store.state.currentStoreId)" not in watch:
+        fail("Watch list must .id(currentStoreId) so store switch rebuilds")
+    if "navigationTitle(store.state.watchTitle)" not in watch:
+        fail("Watch navigationTitle must bind to watchTitle")
     models = (ROOT / "Sources/Shared/Models.swift").read_text()
     if not re.search(r'\.navigationTitle\(', watch):
         fail("Watch must use navigationTitle")
@@ -242,6 +280,7 @@ def test_backup_codec_python() -> None:
 
 def main() -> None:
     test_fixtures()
+    test_store_switch_changes_group_order()
     test_backup_codec_python()
     test_sources()
     print("ALL OK")
