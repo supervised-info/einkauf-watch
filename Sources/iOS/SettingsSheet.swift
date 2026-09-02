@@ -4,7 +4,6 @@ struct SettingsSheet: View {
     @EnvironmentObject private var store: ShoppingStore
     @EnvironmentObject private var appearance: AppearanceSettings
     @Environment(\.einkaufTheme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @State private var newStapleName = ""
 
@@ -16,15 +15,13 @@ struct SettingsSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Picker("Hell oder Dunkel", selection: Binding(
-                        get: { appearance.resolvedMode(system: colorScheme) },
-                        set: { appearance.themeOverride = $0 }
-                    )) {
-                        Text("Hell").tag(AppColorMode.light)
-                        Text("Dunkel").tag(AppColorMode.dark)
+                    Picker("Hell, Dunkel oder System", selection: $appearance.theme) {
+                        Text("Hell").tag(AppThemePreference.light)
+                        Text("Dunkel").tag(AppThemePreference.dark)
+                        Text("System").tag(AppThemePreference.system)
                     }
                     .pickerStyle(.segmented)
-                    .accessibilityLabel("Hell oder Dunkel")
+                    .accessibilityLabel("Hell, Dunkel oder System")
                     .einkaufRowChrome()
 
                     Picker("Creme oder Blau", selection: $appearance.palette) {
@@ -38,7 +35,7 @@ struct SettingsSheet: View {
                     Text("Darstellung")
                         .foregroundStyle(theme.muted)
                 } footer: {
-                    Text("Creme ist das Vintage-Papier, Blau die Navy-Palette. Ungewählt folgt Hell/Dunkel dem System.")
+                    Text("Creme ist das Vintage-Papier, Blau die Navy-Palette. System folgt der iPhone-Einstellung für Hell und Dunkel.")
                 }
 
                 Section {

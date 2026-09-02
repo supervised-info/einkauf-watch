@@ -457,4 +457,14 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(dark.oxide, 0x4A94FF)
         XCTAssertEqual(dark.ink, 0xEDF2FF)
     }
+
+    func testThemePreferenceMapsColorScheme() {
+        XCTAssertEqual(AppThemePreference.parse(nil), .system)
+        XCTAssertEqual(AppThemePreference.parse("system"), .system)
+        XCTAssertEqual(AppThemePreference.parse("light"), .light)
+        XCTAssertEqual(AppThemePreference.parse("dark"), .dark)
+        XCTAssertNil(AppThemePreference.system.preferredColorScheme)
+        XCTAssertEqual(AppThemePreference.light.preferredColorScheme, .light)
+        XCTAssertEqual(AppThemePreference.dark.preferredColorScheme, .dark)
+    }
 }
