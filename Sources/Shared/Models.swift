@@ -148,8 +148,9 @@ struct AppState: Equatable, Codable, Sendable {
         "\(Self.clippedWatchStoreName(currentStore.name))  Einkauf \(progressLabel)"
     }
 
-    /// Zeichenbudget vor „Einkauf xx/yy“, passend für die 41mm-Leiste.
-    static let watchStoreNameLimit = 8
+    /// Zeichenbudget vor „Einkauf xx/yy“, passend für die 41mm-Leiste
+    /// (Edeka/Aldi/Rewe/Lidl/dm ungekürzt, längere Namen mit Auslassung).
+    static let watchStoreNameLimit = 6
 
     static func clippedWatchStoreName(_ name: String) -> String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)

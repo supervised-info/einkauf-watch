@@ -167,7 +167,7 @@ final class WatchTitleTests: XCTestCase {
             Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1),
             Item(id: "c", name: "C", dept: "obst", done: false, added: 3, ord: 1)
         ]
-        XCTAssertEqual(state.watchTitle, "Wochenm…  Einkauf 0/3")
+        XCTAssertEqual(state.watchTitle, "Woche…  Einkauf 0/3")
         XCTAssertTrue(state.watchTitle.hasSuffix("Einkauf \(state.progressLabel)"))
         XCTAssertLessThanOrEqual(AppState.clippedWatchStoreName(state.currentStore.name).count, AppState.watchStoreNameLimit)
     }
@@ -176,7 +176,7 @@ final class WatchTitleTests: XCTestCase {
         var state = AppState.seed
         state.currentStoreId = "eigenes"
         XCTAssertEqual(state.currentStore.name, "Eigenes Layout")
-        XCTAssertEqual(state.watchTitle, "Eigenes…  Einkauf 0/0")
+        XCTAssertEqual(state.watchTitle, "Eigen…  Einkauf 0/0")
     }
 
     func testRemoteSetStoreUpdatesTitleViaMerge() {
