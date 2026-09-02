@@ -96,6 +96,7 @@ struct ContentView: View {
         .listStyle(.insetGrouped)
         .einkaufListChrome()
         .environment(\.editMode, .constant(.inactive))
+        .id(store.state.currentStoreId)
     }
 
     /// Flache Liste: Überschriften sind nicht verschiebbar, Artikel können in jede sichtbare
@@ -127,6 +128,7 @@ struct ContentView: View {
         .listStyle(.insetGrouped)
         .einkaufListChrome()
         .environment(\.editMode, .constant(.active))
+        .id(store.state.currentStoreId)
     }
 
     private func walkRow(_ item: Item) -> some View {

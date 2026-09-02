@@ -52,9 +52,11 @@ struct WatchListView: View {
                         }
                     }
                     .einkaufListChrome()
+                    .id(store.state.currentStoreId)
                 }
             }
             .navigationTitle(store.state.watchTitle)
+            .id(store.state.currentStoreId)
             .navigationBarTitleDisplayMode(.inline)
             .containerBackground(theme.paper, for: .navigation)
         }

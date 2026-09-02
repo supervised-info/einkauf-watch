@@ -209,12 +209,16 @@ final class MergeTests: XCTestCase {
     func testHigherListRevisionKeepsNewItems() {
         var local = AppState.seed
         local.listRevision = 1
+        local.currentStoreId = "edeka"
         local.items = [Item(id: "old", name: "Alt", dept: "obst", done: false, added: 1, ord: 1)]
         var remote = AppState.seed
         remote.listRevision = 5
+        remote.currentStoreId = "dm"
         remote.items = [Item(id: "new", name: "Neu", dept: "obst", done: false, added: 2, ord: 1)]
         let merged = StateMerge.merge(local: local, remote: remote)
         XCTAssertEqual(merged.items.map(\.id), ["new"])
+        XCTAssertEqual(merged.currentStoreId, "dm")
+        XCTAssertEqual(merged.listRevision, 5)
     }
 }
 
@@ -437,6 +441,32 @@ final class StoreCatalogTests: XCTestCase {
         XCTAssertEqual(state.grouped().map(\.id), ["obst", "drogerie"])
         state.currentStoreId = dmKopie.id
         XCTAssertEqual(state.grouped().map(\.id), ["drogerie", "obst"])
+    }
+}
+
+final class ShoppingStoreSetStoreTests: XCTestCase {
+    /// Vertrag von `ShoppingStore.setStore`: eine Liste für alle Läden, Gangfolge folgt dem Layout.
+    func testSetStoreToStoreWithDifferentLayoutChangesGroupOrder() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 1, ord: 1),
+            Item(id: "k", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 1),
+            Item(id: "d", name: "Seife", dept: "drogerie", done: false, added: 3, ord: 1)
+        ]
+        XCTAssertEqual(state.currentStoreId, "edeka")
+        let before = state.grouped().map(\.id)
+        XCTAssertEqual(before, ["obst", "kuehlung", "drogerie"])
+
+        var next = state
+        next.currentStoreId = "dm"
+        next.listRevision += 1
+        state = next
+
+        XCTAssertEqual(state.currentStoreId, "dm")
+        XCTAssertEqual(state.listRevision, 1)
+        XCTAssertEqual(state.grouped().map(\.id), ["drogerie", "obst", "kuehlung"])
+        XCTAssertNotEqual(state.grouped().map(\.id), before)
+        XCTAssertEqual(state.watchTitle, "dm  Einkauf 0/3")
     }
 }
 
