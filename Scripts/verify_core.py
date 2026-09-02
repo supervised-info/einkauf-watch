@@ -167,6 +167,13 @@ def test_sources() -> None:
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch:
         fail("Watch should not have a store picker")
+    if 'navigationTitle("Einkauf")' not in watch:
+        fail("Watch title must remain Einkauf")
+    if "progressLabel" not in watch or "topBarTrailing" not in watch:
+        fail("Watch missing live xx/yy counter next to title")
+    models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    if "var doneCount" not in models or "var progressLabel" not in models:
+        fail("AppState missing doneCount/progressLabel")
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
         fail("preferredColorScheme not applied from setting")
     theme = (ROOT / "Sources/Shared/Theme.swift").read_text()
