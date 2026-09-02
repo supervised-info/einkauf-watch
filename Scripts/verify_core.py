@@ -295,9 +295,13 @@ def test_sources() -> None:
     if ".onMove" not in settings:
         fail("Ladenweg should support onMove drag")
     if "Laden löschen" not in settings:
-        fail("Einstellungen missing Laden löschen")
-    if "!store.state.currentStore.builtin" not in settings:
-        fail("Laden löschen must be limited to custom stores")
+        fail("Einstellungen missing Laden löschen confirmation")
+    if "pendingDeleteStoreId" not in settings:
+        fail("Aktueller Laden swipe delete must track pendingDeleteStoreId")
+    if "wirklich löschen?" not in settings:
+        fail("store delete must use the confirmationDialog")
+    if 'if !store.state.currentStore.builtin' in settings:
+        fail("standalone Laden löschen section must be removed; swipe on the list instead")
     section_order = [
         "Darstellung",
         "Aktueller Laden",
@@ -312,10 +316,18 @@ def test_sources() -> None:
     if any(p < 0 for p in section_pos) or section_pos != sorted(section_pos):
         fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Wörterbuch")
     neuer_idx = settings.find("Neuer Laden")
-    delete_idx = settings.find('Button("Laden löschen"')
     ladenweg_idx = settings.find("Ladenweg ·")
-    if delete_idx < 0 or not (neuer_idx < delete_idx < ladenweg_idx):
-        fail("Laden löschen must sit with Neuer Laden, before Ladenweg")
+    store_list_start = settings.find("ForEach(store.stores)")
+    if store_list_start < 0 or store_list_start > neuer_idx:
+        fail("Aktueller Laden ForEach must sit before Neuer Laden")
+    store_list = settings[store_list_start:neuer_idx]
+    if ".onDelete" not in store_list:
+        fail("Aktueller Laden must support onDelete swipe for custom stores")
+    if "deleteDisabled" not in store_list or "builtin" not in store_list:
+        fail("builtin stores must not be swipe-deletable (deleteDisabled)")
+    zwischen = settings[neuer_idx:ladenweg_idx]
+    if 'Button("Laden löschen"' in zwischen:
+        fail("no standalone Laden löschen button; swipe on the list instead")
     footer_idx = settings.find("Übernimmt das Layout des ausgewählten Ladens.")
     if footer_idx < 0 or not (neuer_idx < footer_idx < ladenweg_idx):
         fail("Neuer Laden footer must sit with Neuer Laden, before Ladenweg")
@@ -345,6 +357,8 @@ def test_sources() -> None:
     store_src = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
     if "func createStore" not in store_src or "func deleteStore" not in store_src:
         fail("ShoppingStore missing createStore/deleteStore")
+    if "StoreCatalog.delete" not in store_src:
+        fail("ShoppingStore.deleteStore must use StoreCatalog.delete")
     setstore = re.search(r"func setStore\(_ id: String\) \{.*?\n    \}", store_src, re.S)
     if not setstore:
         fail("ShoppingStore missing setStore")
@@ -358,6 +372,8 @@ def test_sources() -> None:
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch:
         fail("Watch should not have a store picker")
+    if "deleteStore" in watch:
+        fail("Watch must not delete stores")
     if list_id not in watch:
         fail("Watch list must .id(currentStoreId|layout) so store switch rebuilds")
     if "Section {" in watch:
@@ -394,6 +410,14 @@ def test_sources() -> None:
     tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
     if "ShoppingStore(state: seed, enableSync: false)" not in tests:
         fail("tests must construct ShoppingStore(enableSync: false)")
+    if "store.deleteStore" not in tests:
+        fail("tests must delete custom stores via ShoppingStore.deleteStore")
+    if "testDeleteBuiltinIsNoOp" not in tests:
+        fail("tests must assert builtin store delete is a no-op")
+    if "testCannotDeleteBuiltin" not in tests:
+        fail("tests must assert StoreCatalog.delete refuses builtins")
+    if "testDeleteCustomFallsBackToEdeka" not in tests:
+        fail("tests must assert StoreCatalog.delete custom falls back to edeka")
     if 'setStore("dm")' not in tests or 'setStore("edeka")' not in tests:
         fail("tests must setStore dm then edeka")
     if r"groups.map(\.dept)" not in tests:

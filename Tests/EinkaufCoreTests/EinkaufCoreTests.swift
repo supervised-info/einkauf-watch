@@ -450,7 +450,9 @@ final class StoreCatalogTests: XCTestCase {
     }
 
     func testCannotDeleteBuiltin() {
-        XCTAssertNil(StoreCatalog.delete(id: "edeka", stores: Store.seeds, currentId: "edeka"))
+        for seed in Store.seeds {
+            XCTAssertNil(StoreCatalog.delete(id: seed.id, stores: Store.seeds, currentId: seed.id), seed.id)
+        }
     }
 
     func testEmptyStoresMergeSeeds() throws {
@@ -605,6 +607,69 @@ final class ShoppingStoreSetStoreTests: XCTestCase {
         store.setStore("markt-a")
         XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["sonstiges", "obst"])
         XCTAssertEqual(store.state.items.first { $0.id == "s" }?.dept, "sonstiges")
+    }
+}
+
+@MainActor
+final class ShoppingStoreDeleteStoreTests: XCTestCase {
+    func testDeleteCustomStoreFallsBackToEdekaAndRebuildsGroups() {
+        var seed = AppState.seed
+        seed.items = [
+            Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 1, ord: 1),
+            Item(id: "d", name: "Seife", dept: "drogerie", done: false, added: 2, ord: 1)
+        ]
+        let custom = Store(
+            id: "s-custom",
+            name: "Mein Markt",
+            layout: ["vor", "drogerie", "obst", "nach"],
+            builtin: false
+        )
+        seed.stores.append(custom)
+        seed.currentStoreId = "s-custom"
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.groups.map(\.dept), ["drogerie", "obst"])
+        XCTAssertEqual(
+            store.state.watchTitle,
+            "\(AppState.clippedWatchStoreName("Mein Markt"))  Einkauf 0/2"
+        )
+
+        store.deleteStore(id: "s-custom")
+        XCTAssertEqual(store.state.currentStoreId, "edeka")
+        XCTAssertFalse(store.stores.contains(where: { $0.id == "s-custom" }))
+        XCTAssertTrue(store.stores.contains(where: { $0.id == "edeka" }))
+        XCTAssertEqual(store.groups.map(\.dept), ["obst", "drogerie"])
+        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 0/2")
+        XCTAssertGreaterThan(store.state.listRevision, seed.listRevision)
+    }
+
+    func testDeleteNonCurrentCustomKeepsCurrentStore() {
+        var seed = AppState.seed
+        seed.stores.append(Store(id: "s-x", name: "X", layout: ["vor", "nach"], builtin: false))
+        seed.currentStoreId = "rewe"
+        let store = ShoppingStore(state: seed, enableSync: false)
+        let revision = store.state.listRevision
+        store.deleteStore(id: "s-x")
+        XCTAssertEqual(store.state.currentStoreId, "rewe")
+        XCTAssertFalse(store.stores.contains(where: { $0.id == "s-x" }))
+        XCTAssertGreaterThan(store.state.listRevision, revision)
+    }
+
+    func testDeleteBuiltinIsNoOp() {
+        var seed = AppState.seed
+        seed.currentStoreId = "edeka"
+        let store = ShoppingStore(state: seed, enableSync: false)
+        let ids = store.stores.map(\.id)
+        let revision = store.state.listRevision
+        store.deleteStore(id: "edeka")
+        store.deleteStore(id: "aldi")
+        store.deleteStore(id: "rewe")
+        store.deleteStore(id: "lidl")
+        store.deleteStore(id: "dm")
+        store.deleteStore(id: "eigenes")
+        XCTAssertEqual(store.state.currentStoreId, "edeka")
+        XCTAssertEqual(store.stores.map(\.id), ids)
+        XCTAssertEqual(store.state.listRevision, revision)
+        XCTAssertTrue(store.stores.contains(where: { $0.id == "edeka" && $0.builtin }))
     }
 }
 
