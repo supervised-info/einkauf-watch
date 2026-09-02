@@ -157,6 +157,16 @@ def test_sources() -> None:
             fail(f"Einstellungen missing {needle}")
     if "iPhone-Einstellung" not in settings:
         fail("Darstellung hint should mention iPhone-Einstellung for System")
+    if "Name des Ladens" not in settings or "Übernimmt das aktuelle Layout." not in settings:
+        fail("Einstellungen missing Neuer Laden")
+    if "Laden löschen" not in settings:
+        fail("Einstellungen missing Laden löschen")
+    store_src = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    if "func createStore" not in store_src or "func deleteStore" not in store_src:
+        fail("ShoppingStore missing createStore/deleteStore")
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    if "Picker" in watch:
+        fail("Watch should not have a store picker")
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
         fail("preferredColorScheme not applied from setting")
     theme = (ROOT / "Sources/Shared/Theme.swift").read_text()

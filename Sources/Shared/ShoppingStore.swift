@@ -219,6 +219,24 @@ final class ShoppingStore: ObservableObject {
         mutateCurrentStoreLayout { StoreLayout.reset(storeId: state.currentStoreId, current: $0) }
     }
 
+    func createStore(_ rawName: String) {
+        guard let created = StoreCatalog.create(name: rawName, copying: state.currentStore) else { return }
+        state.stores.append(created)
+        state.stores = BackupCodec.mergeBuiltinSeeds(state.stores)
+        state.currentStoreId = created.id
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func deleteStore(id: String) {
+        guard let result = StoreCatalog.delete(id: id, stores: state.stores, currentId: state.currentStoreId) else { return }
+        guard result.stores != state.stores || result.currentId != state.currentStoreId else { return }
+        state.stores = result.stores
+        state.currentStoreId = result.currentId
+        state.listRevision += 1
+        persistAndSync()
+    }
+
     private func mutateCurrentStoreLayout(_ transform: ([String]) -> [String]) {
         guard let idx = state.stores.firstIndex(where: { $0.id == state.currentStoreId }) else { return }
         let next = transform(state.stores[idx].layout)

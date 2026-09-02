@@ -6,6 +6,8 @@ struct SettingsSheet: View {
     @Environment(\.einkaufTheme) private var theme
     @Environment(\.dismiss) private var dismiss
     @State private var newStapleName = ""
+    @State private var newStoreName = ""
+    @State private var confirmDeleteStore = false
 
     private var layout: [String] {
         StoreLayout.sanitized(store.state.currentStore.layout)
@@ -41,9 +43,31 @@ struct SettingsSheet: View {
                 Section {
                     Text(store.state.currentStore.name)
                         .einkaufRowChrome()
+                    HStack {
+                        TextField("Name des Ladens", text: $newStoreName)
+                            .textInputAutocapitalization(.words)
+                            .submitLabel(.done)
+                            .onSubmit(submitStore)
+                            .onChange(of: newStoreName) { _, value in
+                                if value.count > StoreCatalog.nameMax {
+                                    newStoreName = String(value.prefix(StoreCatalog.nameMax))
+                                }
+                            }
+                        Button("Anlegen", action: submitStore)
+                            .disabled(newStoreName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .einkaufRowChrome()
+                    if !store.state.currentStore.builtin {
+                        Button("Laden löschen", role: .destructive) {
+                            confirmDeleteStore = true
+                        }
+                        .einkaufRowChrome()
+                    }
                 } header: {
                     Text("Laden")
                         .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Übernimmt das aktuelle Layout.")
                 }
 
                 Section {
@@ -77,14 +101,12 @@ struct SettingsSheet: View {
                         .foregroundStyle(theme.muted)
                 }
 
-                if store.state.currentStore.builtin {
-                    Section {
-                        Button("Layout zurücksetzen") {
-                            store.resetLayout()
-                        }
-                        .foregroundStyle(theme.oxide)
-                        .einkaufRowChrome()
+                Section {
+                    Button("Layout zurücksetzen") {
+                        store.resetLayout()
                     }
+                    .foregroundStyle(theme.oxide)
+                    .einkaufRowChrome()
                 }
 
                 Section {
@@ -114,6 +136,16 @@ struct SettingsSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Fertig") { dismiss() }
                 }
+            }
+            .confirmationDialog(
+                "Laden „\(store.state.currentStore.name)“ wirklich löschen?",
+                isPresented: $confirmDeleteStore,
+                titleVisibility: .visible
+            ) {
+                Button("Laden löschen", role: .destructive) {
+                    store.deleteStore(id: store.state.currentStoreId)
+                }
+                Button("Abbrechen", role: .cancel) {}
             }
         }
     }
@@ -195,6 +227,11 @@ struct SettingsSheet: View {
     private func submitStaple() {
         store.createStaple(newStapleName)
         newStapleName = ""
+    }
+
+    private func submitStore() {
+        store.createStore(newStoreName)
+        newStoreName = ""
     }
 }
 

@@ -209,10 +209,69 @@ final class StoreLayoutTests: XCTestCase {
         )
     }
 
+    func testResetCustomUsesEigenesDefault() {
+        XCTAssertEqual(
+            StoreLayout.reset(storeId: "s-custom", current: ["vor", "obst", "brot", "nach"]),
+            ["vor", "sonstiges", "nach"]
+        )
+    }
+
     func testUnused() {
         let unused = StoreLayout.unused(in: ["vor", "sonstiges", "nach"])
         XCTAssertTrue(unused.contains("obst"))
         XCTAssertFalse(unused.contains("vor"))
+    }
+}
+
+final class StoreCatalogTests: XCTestCase {
+    func testCreateCopiesLayoutAndIsNotBuiltin() {
+        let source = Store.seeds.first { $0.id == "dm" }!
+        let created = StoreCatalog.create(name: "  Mein Markt  ", copying: source, id: "s-test")
+        XCTAssertEqual(created?.id, "s-test")
+        XCTAssertEqual(created?.name, "Mein Markt")
+        XCTAssertEqual(created?.layout, source.layout)
+        XCTAssertEqual(created?.builtin, false)
+    }
+
+    func testCreateRejectsEmptyAndTruncatesName() {
+        let source = Store.seeds[0]
+        XCTAssertNil(StoreCatalog.create(name: "   ", copying: source, id: "s1"))
+        let long = String(repeating: "a", count: 80)
+        XCTAssertEqual(StoreCatalog.create(name: long, copying: source, id: "s2")?.name.count, 60)
+    }
+
+    func testDeleteCustomFallsBackToEdeka() {
+        let custom = Store(id: "s-x", name: "X", layout: ["vor", "nach"], builtin: false)
+        let stores = Store.seeds + [custom]
+        let result = StoreCatalog.delete(id: "s-x", stores: stores, currentId: "s-x")
+        XCTAssertEqual(result?.currentId, "edeka")
+        XCTAssertFalse(result?.stores.contains(where: { $0.id == "s-x" }) ?? true)
+        XCTAssertTrue(Store.seeds.allSatisfy { seed in result?.stores.contains(where: { $0.id == seed.id }) ?? false })
+    }
+
+    func testCannotDeleteBuiltin() {
+        XCTAssertNil(StoreCatalog.delete(id: "edeka", stores: Store.seeds, currentId: "edeka"))
+    }
+
+    func testEmptyStoresMergeSeeds() throws {
+        let json = """
+        {"kind":"einkauf-backup","v":1,"currentStoreId":"edeka","stores":[],"items":[]}
+        """
+        let state = try BackupCodec.decode(Data(json.utf8))
+        XCTAssertEqual(Set(state.stores.map(\.id)), Set(Store.seeds.map(\.id)))
+        XCTAssertTrue(state.stores.allSatisfy(\.builtin))
+    }
+
+    func testBackupRoundTripKeepsCustomStore() throws {
+        var state = AppState.seed
+        let custom = StoreCatalog.create(name: "Testmarkt", copying: state.currentStore, id: "s-round")!
+        state.stores.append(custom)
+        state.currentStoreId = custom.id
+        let exported = try BackupCodec.encodeExport(state)
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.currentStoreId, "s-round")
+        XCTAssertEqual(again.stores.first(where: { $0.id == "s-round" })?.name, "Testmarkt")
+        XCTAssertTrue(Store.seeds.allSatisfy { seed in again.stores.contains(where: { $0.id == seed.id }) })
     }
 }
 

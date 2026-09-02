@@ -52,6 +52,53 @@ enum StoreLayout {
         if let seed = Store.seeds.first(where: { $0.id == storeId }) {
             return sanitized(seed.layout)
         }
-        return sanitized(current)
+        return sanitized(StoreCatalog.customDefaultLayout)
+    }
+}
+
+/// Anlegen/Löschen eigener Läden wie in der PWA (`createStore` / `deleteStore`).
+enum StoreCatalog {
+    static let nameMax = 60
+    static let customDefaultLayout = ["vor", "sonstiges", "nach"]
+
+    static func makeID() -> String {
+        let t = String(Int(Date().timeIntervalSince1970 * 1000), radix: 36)
+        let r = String(UInt64.random(in: 0..<0xFFFFFF), radix: 36)
+        return "s\(t)\(r)"
+    }
+
+    static func sanitizedName(_ raw: String) -> String? {
+        var name = raw.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        if name.count > nameMax {
+            name = String(name.prefix(nameMax))
+        }
+        return name
+    }
+
+    static func create(name raw: String, copying source: Store, id: String? = nil) -> Store? {
+        guard let name = sanitizedName(raw) else { return nil }
+        return Store(
+            id: id ?? makeID(),
+            name: name,
+            layout: StoreLayout.sanitized(source.layout),
+            builtin: false
+        )
+    }
+
+    static func delete(
+        id: String,
+        stores: [Store],
+        currentId: String
+    ) -> (stores: [Store], currentId: String)? {
+        guard let victim = stores.first(where: { $0.id == id }), !victim.builtin else { return nil }
+        let remaining = stores.filter { $0.id != id }
+        let merged = BackupCodec.mergeBuiltinSeeds(remaining)
+        var nextCurrent = currentId
+        if nextCurrent == id {
+            nextCurrent = merged.first(where: { $0.id == "edeka" })?.id ?? merged.first?.id ?? "edeka"
+        }
+        return (merged, nextCurrent)
     }
 }

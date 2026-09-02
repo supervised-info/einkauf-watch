@@ -50,7 +50,7 @@ PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hie
 
 ## Bedienung
 
-**iPhone:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen) und **Bearbeiten** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Löschen). Der Knopf zeigt den jeweils anderen Modus, wie in der PWA; `walkMode` bleibt im Backup. Plus Artikel hinzufügen, Ladenwahl, Stamm, Einstellungen (Hell/Dunkel, Creme/Blau), Import/Export/Teilen.
+**iPhone:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen) und **Bearbeiten** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Löschen). Der Knopf zeigt den jeweils anderen Modus, wie in der PWA; `walkMode` bleibt im Backup. Plus Artikel hinzufügen, **Ladenwahl** (eingebaute Seeds plus eigene Läden unter Einstellungen), Stamm, Einstellungen (Hell/Dunkel/System, Creme/Blau), Import/Export/Teilen.
 
 **Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch.
 
