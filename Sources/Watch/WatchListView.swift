@@ -54,7 +54,7 @@ struct WatchListView: View {
                     .einkaufListChrome()
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .toolbar(.hidden)
             .safeAreaInset(edge: .top) {
                 progressHeader
             }
