@@ -133,6 +133,65 @@ final class ListProgressTests: XCTestCase {
     }
 }
 
+final class WatchTitleTests: XCTestCase {
+    func testSeedShowsStoreAndProgress() {
+        XCTAssertEqual(AppState.seed.watchTitle, "Edeka  Einkauf 0/0")
+    }
+
+    func testUpdatesWhenCurrentStoreChanges() {
+        var state = AppState.seed
+        state.currentStoreId = "rewe"
+        XCTAssertEqual(state.watchTitle, "Rewe  Einkauf 0/0")
+        state.currentStoreId = "aldi"
+        XCTAssertEqual(state.watchTitle, "Aldi  Einkauf 0/0")
+    }
+
+    func testKeepsProgressLabelOnTheSameLine() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1),
+            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1),
+            Item(id: "c", name: "C", dept: "obst", done: false, added: 3, ord: 1)
+        ]
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 0/3")
+        state.items[0].done = true
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 1/3")
+    }
+
+    func testTruncatesLongStoreNameSoProgressFits() {
+        var state = AppState.seed
+        state.stores.append(Store(id: "lang", name: "Wochenmarkt Neustadt", layout: ["vor", "sonstiges", "nach"], builtin: false))
+        state.currentStoreId = "lang"
+        state.items = [
+            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1),
+            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1),
+            Item(id: "c", name: "C", dept: "obst", done: false, added: 3, ord: 1)
+        ]
+        XCTAssertEqual(state.watchTitle, "Woche…  Einkauf 0/3")
+        XCTAssertTrue(state.watchTitle.hasSuffix("Einkauf \(state.progressLabel)"))
+        XCTAssertLessThanOrEqual(AppState.clippedWatchStoreName(state.currentStore.name).count, AppState.watchStoreNameLimit)
+    }
+
+    func testBuiltinEigenesLayoutIsTruncated() {
+        var state = AppState.seed
+        state.currentStoreId = "eigenes"
+        XCTAssertEqual(state.currentStore.name, "Eigenes Layout")
+        XCTAssertEqual(state.watchTitle, "Eigen…  Einkauf 0/0")
+    }
+
+    func testRemoteSetStoreUpdatesTitleViaMerge() {
+        var local = AppState.seed
+        local.listRevision = 1
+        local.currentStoreId = "edeka"
+        var remote = AppState.seed
+        remote.listRevision = 4
+        remote.currentStoreId = "aldi"
+        let merged = StateMerge.merge(local: local, remote: remote)
+        XCTAssertEqual(merged.currentStoreId, "aldi")
+        XCTAssertEqual(merged.watchTitle, "Aldi  Einkauf 0/0")
+    }
+}
+
 final class MergeTests: XCTestCase {
     func testNewerDoneWinsWithoutClobberingList() {
         var local = AppState.seed
