@@ -81,15 +81,12 @@ struct ContentView: View {
 
     private var walkList: some View {
         List {
-            ForEach(store.groups) { group in
-                Section {
-                    ForEach(group.items) { item in
-                        walkRow(item)
-                    }
-                } header: {
-                    Text(group.title)
-                        .foregroundStyle(theme.muted)
-                        .textCase(.uppercase)
+            ForEach(store.walkListRows) { row in
+                switch row.line {
+                case .header(_, let dept):
+                    walkHeader(dept)
+                case .item(_, let item):
+                    walkRow(item)
                 }
             }
         }
@@ -105,7 +102,7 @@ struct ContentView: View {
         List {
             ForEach(store.editRows) { row in
                 switch row {
-                case .header(let dept):
+                case .header(_, let dept):
                     Text(Department.title(for: dept))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.muted)
@@ -118,7 +115,7 @@ struct ContentView: View {
                         .deleteDisabled(true)
                         .accessibilityAddTraits(.isHeader)
                         .accessibilityLabel(Department.title(for: dept))
-                case .item(let item):
+                case .item(_, let item):
                     editRow(item)
                 }
             }
@@ -129,6 +126,19 @@ struct ContentView: View {
         .einkaufListChrome()
         .environment(\.editMode, .constant(.active))
         .id("\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
+    }
+
+    private func walkHeader(_ dept: String) -> some View {
+        Text(Department.title(for: dept))
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(theme.muted)
+            .textCase(.uppercase)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .listRowInsets(EdgeInsets(top: 18, leading: 16, bottom: 6, trailing: 16))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityLabel(Department.title(for: dept))
     }
 
     private func walkRow(_ item: Item) -> some View {

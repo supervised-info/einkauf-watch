@@ -94,6 +94,44 @@ final class GroupingTests: XCTestCase {
         XCTAssertEqual(ids, ["obst", "bedienung", "nach"])
     }
 
+    func testWalkLinesEdekaSuessThenDrogerieDmReversed() {
+        let items = [
+            Item(id: "k", name: "Kinderschokolade", dept: "suess", done: false, added: 1, ord: 1),
+            Item(id: "t", name: "Toilettenpapier", dept: "drogerie", done: false, added: 2, ord: 1),
+            Item(id: "a", name: "AXE", dept: "sonstiges", done: false, added: 3, ord: 1)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let dm = Store.seeds.first { $0.id == "dm" }!
+
+        let edekaLines = ListGrouping.walkLines(
+            groups: ListGrouping.groups(items: items, store: edeka),
+            storeId: "edeka"
+        )
+        XCTAssertEqual(edekaLines.compactMap(\.headerDept), ["suess", "drogerie", "sonstiges"])
+        XCTAssertEqual(edekaLines.map(\.id), [
+            "edeka|h:suess", "edeka|i:k",
+            "edeka|h:drogerie", "edeka|i:t",
+            "edeka|h:sonstiges", "edeka|i:a"
+        ])
+
+        let dmGroups = ListGrouping.groups(items: items, store: dm)
+        let dmLines = ListGrouping.walkLines(groups: dmGroups, storeId: "dm")
+        XCTAssertEqual(dmLines.compactMap(\.headerDept), ["drogerie", "suess", "sonstiges"])
+        XCTAssertEqual(dmLines.map(\.id), [
+            "dm|h:drogerie", "dm|i:t",
+            "dm|h:suess", "dm|i:k",
+            "dm|h:sonstiges", "dm|i:a"
+        ])
+
+        let dmRows = ListGrouping.walkListRows(groups: dmGroups, storeId: "dm")
+        XCTAssertEqual(dmRows.map(\.id), [
+            "dm|0|dm|h:drogerie", "dm|1|dm|i:t",
+            "dm|2|dm|h:suess", "dm|3|dm|i:k",
+            "dm|4|dm|h:sonstiges", "dm|5|dm|i:a"
+        ])
+        XCTAssertNotEqual(edekaLines.compactMap(\.headerDept).prefix(2), dmLines.compactMap(\.headerDept).prefix(2))
+    }
+
     private func loadFixture(_ name: String) throws -> Data {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -468,14 +506,32 @@ final class ShoppingStoreSetStoreTests: XCTestCase {
         XCTAssertEqual(store.groups.map(\.dept), ["drogerie", "obst", "kuehlung"])
         XCTAssertNotEqual(store.groups.map(\.dept), ["obst", "kuehlung", "drogerie"])
         XCTAssertEqual(store.groups.map(\.id), ["dm|drogerie", "dm|obst", "dm|kuehlung"])
-        XCTAssertEqual(store.editRows.filter(\.isHeader).map(\.id), ["h:drogerie", "h:obst", "h:kuehlung"])
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["drogerie", "obst", "kuehlung"])
+        XCTAssertEqual(store.editRows.filter(\.isHeader).map(\.id), ["dm|h:drogerie", "dm|h:obst", "dm|h:kuehlung"])
         XCTAssertGreaterThan(store.state.listRevision, seed.listRevision)
 
         store.setStore("edeka")
         XCTAssertEqual(store.state.currentStoreId, "edeka")
         XCTAssertEqual(store.groups.map(\.dept), ["obst", "kuehlung", "drogerie"])
         XCTAssertEqual(store.groups.map(\.id), ["edeka|obst", "edeka|kuehlung", "edeka|drogerie"])
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["obst", "kuehlung", "drogerie"])
         XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 0/3")
+    }
+
+    func testSetStoreWalkLinesScreenshotItemsReorder() {
+        var seed = AppState.seed
+        seed.items = [
+            Item(id: "k", name: "Kinderschokolade", dept: "suess", done: false, added: 1, ord: 1),
+            Item(id: "t", name: "Toilettenpapier", dept: "drogerie", done: false, added: 2, ord: 1),
+            Item(id: "a", name: "AXE", dept: "sonstiges", done: false, added: 3, ord: 1)
+        ]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["suess", "drogerie", "sonstiges"])
+        store.setStore("dm")
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["drogerie", "suess", "sonstiges"])
+        XCTAssertEqual(Array(store.walkListRows.map(\.id).prefix(2)), ["dm|0|dm|h:drogerie", "dm|1|dm|i:t"])
+        store.setStore("edeka")
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["suess", "drogerie", "sonstiges"])
     }
 }
 
@@ -534,15 +590,15 @@ final class ItemEditingTests: XCTestCase {
         let store = edeka
         let items = sampleItems
         let rows = ItemEditing.rows(items: items, store: store)
-        XCTAssertEqual(rows.map(\.id), ["h:vor", "v", "h:obst", "a", "b", "h:brot", "br", "h:nach", "n"])
+        XCTAssertEqual(rows.map(\.id), ["edeka|h:vor", "edeka|i:v", "edeka|h:obst", "edeka|i:a", "edeka|i:b", "edeka|h:brot", "edeka|i:br", "edeka|h:nach", "edeka|i:n"])
     }
 
     func testDropSlotBeforeItemIsThatDept() {
         let remaining: [ItemEditing.Row] = [
-            .header("obst"),
-            .item(Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1)),
-            .header("brot"),
-            .item(Item(id: "br", name: "Brot", dept: "brot", done: false, added: 2, ord: 1))
+            .header(storeId: "edeka", dept: "obst"),
+            .item(storeId: "edeka", Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1)),
+            .header(storeId: "edeka", dept: "brot"),
+            .item(storeId: "edeka", Item(id: "br", name: "Brot", dept: "brot", done: false, added: 2, ord: 1))
         ]
         let slot = ItemEditing.dropSlot(remaining: remaining, destination: 3)
         XCTAssertEqual(slot?.dept, "brot")
@@ -551,10 +607,10 @@ final class ItemEditingTests: XCTestCase {
 
     func testDropSlotBeforeHeaderAppendsToPrevious() {
         let remaining: [ItemEditing.Row] = [
-            .header("obst"),
-            .item(Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1)),
-            .header("brot"),
-            .item(Item(id: "br", name: "Brot", dept: "brot", done: false, added: 2, ord: 1))
+            .header(storeId: "edeka", dept: "obst"),
+            .item(storeId: "edeka", Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1)),
+            .header(storeId: "edeka", dept: "brot"),
+            .item(storeId: "edeka", Item(id: "br", name: "Brot", dept: "brot", done: false, added: 2, ord: 1))
         ]
         let slot = ItemEditing.dropSlot(remaining: remaining, destination: 2)
         XCTAssertEqual(slot?.dept, "obst")
@@ -563,10 +619,10 @@ final class ItemEditingTests: XCTestCase {
 
     func testDropSlotAtEndIsLastDept() {
         let remaining: [ItemEditing.Row] = [
-            .header("vor"),
-            .item(Item(id: "v", name: "Tasche", dept: "vor", done: false, added: 1, ord: 1)),
-            .header("nach"),
-            .item(Item(id: "n", name: "Pfand", dept: "nach", done: false, added: 2, ord: 1))
+            .header(storeId: "edeka", dept: "vor"),
+            .item(storeId: "edeka", Item(id: "v", name: "Tasche", dept: "vor", done: false, added: 1, ord: 1)),
+            .header(storeId: "edeka", dept: "nach"),
+            .item(storeId: "edeka", Item(id: "n", name: "Pfand", dept: "nach", done: false, added: 2, ord: 1))
         ]
         let slot = ItemEditing.dropSlot(remaining: remaining, destination: 4)
         XCTAssertEqual(slot?.dept, "nach")
@@ -577,8 +633,8 @@ final class ItemEditingTests: XCTestCase {
         let items = sampleItems
         let rows = ItemEditing.rows(items: items, store: edeka)
         // Birne (idx 4) vor Brot (idx 6) → nach Entfernen destination 5
-        XCTAssertEqual(rows[4].id, "b")
-        XCTAssertEqual(rows[6].id, "br")
+        XCTAssertEqual(rows[4].id, "edeka|i:b")
+        XCTAssertEqual(rows[6].id, "edeka|i:br")
         let result = ItemEditing.moveRows(
             allItems: items,
             store: edeka,
@@ -609,7 +665,7 @@ final class ItemEditingTests: XCTestCase {
 
         // Tasche (idx 1) ans Ende von nach
         let rows = ItemEditing.rows(items: items, store: edeka)
-        XCTAssertEqual(rows[1].id, "v")
+        XCTAssertEqual(rows[1].id, "edeka|i:v")
         let afterRemoveCount = rows.count - 1
         let toNach = ItemEditing.moveRows(
             allItems: items,

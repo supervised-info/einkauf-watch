@@ -3,13 +3,13 @@ import Foundation
 enum ItemEditing {
     /// Zeile in der iPhone-Bearbeiten-Liste: Abteilungsüberschrift oder Artikel.
     enum Row: Identifiable, Equatable {
-        case header(String)
-        case item(Item)
+        case header(storeId: String, dept: String)
+        case item(storeId: String, Item)
 
         var id: String {
             switch self {
-            case .header(let dept): return "h:\(dept)"
-            case .item(let item): return item.id
+            case .header(let storeId, let dept): return "\(storeId)|h:\(dept)"
+            case .item(let storeId, let item): return "\(storeId)|i:\(item.id)"
             }
         }
 
@@ -52,9 +52,9 @@ enum ItemEditing {
     static func rows(from groups: [DeptGroup]) -> [Row] {
         var rows: [Row] = []
         for group in groups {
-            rows.append(.header(group.dept))
+            rows.append(.header(storeId: group.storeId, dept: group.dept))
             for item in group.items {
-                rows.append(.item(item))
+                rows.append(.item(storeId: group.storeId, item))
             }
         }
         return rows
@@ -66,7 +66,7 @@ enum ItemEditing {
 
     static func itemIDs(in rows: [Row], at offsets: IndexSet) -> [String] {
         offsets.sorted().compactMap { idx in
-            guard rows.indices.contains(idx), case .item(let item) = rows[idx] else { return nil }
+            guard rows.indices.contains(idx), case .item(_, let item) = rows[idx] else { return nil }
             return item.id
         }
     }
@@ -104,7 +104,7 @@ enum ItemEditing {
     ) -> (items: [Item], mappings: [String: String])? {
         let rows = rows(items: allItems, store: store)
         let moving = source.sorted().compactMap { idx -> Item? in
-            guard rows.indices.contains(idx), case .item(let item) = rows[idx] else { return nil }
+            guard rows.indices.contains(idx), case .item(_, let item) = rows[idx] else { return nil }
             return item
         }
         guard !moving.isEmpty else { return nil }
@@ -141,7 +141,7 @@ enum ItemEditing {
         func header(before index: Int) -> String? {
             var i = index - 1
             while i >= 0 {
-                if case .header(let dept) = remaining[i] { return dept }
+                if case .header(_, let dept) = remaining[i] { return dept }
                 i -= 1
             }
             return nil
@@ -149,7 +149,7 @@ enum ItemEditing {
 
         func firstItemID(afterHeaderAt headerIndex: Int) -> String? {
             let next = headerIndex + 1
-            guard next < remaining.count, case .item(let item) = remaining[next] else { return nil }
+            guard next < remaining.count, case .item(_, let item) = remaining[next] else { return nil }
             return item.id
         }
 
@@ -159,12 +159,12 @@ enum ItemEditing {
         }
 
         switch remaining[dest] {
-        case .header(let dept):
+        case .header(_, let dept):
             if let prev = header(before: dest) {
                 return (prev, nil)
             }
             return (dept, firstItemID(afterHeaderAt: dest))
-        case .item(let item):
+        case .item(_, let item):
             let dept = header(before: dest) ?? Department.resolved(item.dept)
             return (dept, item.id)
         }

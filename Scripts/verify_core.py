@@ -69,6 +69,26 @@ def test_store_switch_changes_group_order() -> None:
     print("store switch groups: ok")
 
 
+def test_walk_lines_screenshot_items() -> None:
+    items = [
+        {"name": "Kinderschokolade", "dept": "suess", "ord": 1, "added": 1},
+        {"name": "Toilettenpapier", "dept": "drogerie", "ord": 1, "added": 1},
+        {"name": "AXE", "dept": "sonstiges", "ord": 1, "added": 1},
+    ]
+    edeka = [
+        "vor", "obst", "bedienung", "brot", "kuehlung", "tiefkuehl",
+        "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach",
+    ]
+    dm = ["vor", "drogerie", "trocken", "getraenke", "sonstiges", "nach"]
+    edeka_ids = groups(items, edeka)
+    dm_ids = groups(items, dm)
+    if edeka_ids != ["suess", "drogerie", "sonstiges"]:
+        fail(f"edeka walk headers {edeka_ids}")
+    if dm_ids != ["drogerie", "suess", "sonstiges"]:
+        fail(f"dm walk headers {dm_ids}")
+    print("walk lines screenshot items: ok")
+
+
 def test_fixtures() -> None:
     full = json.loads((ROOT / "Fixtures/einkauf-backup.json").read_text())
     if full.get("kind") != "einkauf-backup":
@@ -160,6 +180,14 @@ def test_sources() -> None:
         fail("Bearbeiten still uses per-section onMove")
     if "moveEditRows" not in content or "moveDisabled(true)" not in content:
         fail("Bearbeiten needs flattened list with immovable headers")
+    if "Section {" in content:
+        fail("ContentView must not use List+Section (store switch keeps old section order)")
+    if "ForEach(store.groups)" in content:
+        fail("ContentView must not ForEach groups as List sections")
+    if "ForEach(store.walkListRows)" not in content:
+        fail("ContentView walkList must ForEach walkListRows (flat store+position ids)")
+    if "store.walkLines" in content and "ForEach(store.walkLines)" in content:
+        fail("walk ForEach must use walkListRows so ids include position")
     list_id = '.id("\\(store.state.currentStoreId)|\\(store.state.currentStore.layout.joined())")'
     if content.count(list_id) < 2:
         fail("ContentView walkList and editList must .id(currentStoreId|layout) so store switch rebuilds")
@@ -234,6 +262,12 @@ def test_sources() -> None:
         fail("Watch should not have a store picker")
     if list_id not in watch:
         fail("Watch list must .id(currentStoreId|layout) so store switch rebuilds")
+    if "Section {" in watch:
+        fail("Watch list must not use List+Section")
+    if "ForEach(store.groups)" in watch:
+        fail("Watch must not ForEach groups as List sections")
+    if "ForEach(store.walkListRows)" not in watch:
+        fail("Watch list must ForEach walkListRows (flat store+position ids)")
     if "navigationTitle(store.state.watchTitle)" not in watch:
         fail("Watch navigationTitle must bind to watchTitle")
     models = (ROOT / "Sources/Shared/Models.swift").read_text()
@@ -245,8 +279,12 @@ def test_sources() -> None:
         fail("DeptGroup.title must use dept, not id")
     if ".header(group.id)" in editing:
         fail("ItemEditing must not treat group.id as a dept")
-    if ".header(group.dept)" not in editing:
-        fail("ItemEditing headers must use group.dept")
+    if ".header(storeId: group.storeId, dept: group.dept)" not in editing:
+        fail("ItemEditing headers must use group.storeId and group.dept")
+    if r"\(storeId)|h:\(dept)" not in editing:
+        fail("edit row header id must include storeId")
+    if r"\(storeId)|i:\(item.id)" not in editing:
+        fail("edit row item id must include storeId")
     if re.search(r"var groups: \[DeptGroup\] \{", store_src):
         fail("groups must not be a computed property")
     if "@Published private(set) var groups: [DeptGroup]" not in store_src:
@@ -262,6 +300,20 @@ def test_sources() -> None:
         fail("tests must setStore dm then edeka")
     if r"groups.map(\.dept)" not in tests:
         fail(r"tests must assert groups.map(\.dept) after setStore")
+    if "func walkLines" not in models:
+        fail("ListGrouping missing walkLines helper")
+    if "enum WalkLine" not in models:
+        fail("Models missing WalkLine")
+    if "walkListRows" not in models:
+        fail("ListGrouping missing walkListRows (store + position ids)")
+    if "testWalkLinesEdekaSuessThenDrogerieDmReversed" not in tests:
+        fail("tests must cover walkLines header order edeka suess then drogerie vs dm reversed")
+    if 'headerDept), ["suess", "drogerie"' not in tests and '["suess", "drogerie", "sonstiges"]' not in tests:
+        fail("walkLines test must assert edeka header suess then drogerie")
+    if '["drogerie", "suess", "sonstiges"]' not in tests:
+        fail("walkLines test must assert dm header drogerie then suess")
+    if "CURRENT_PROJECT_VERSION = 6" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 6")
     if not re.search(r'\.navigationTitle\(', watch):
         fail("Watch must use navigationTitle")
     title_has_store = "currentStore.name" in watch or (
@@ -321,6 +373,7 @@ def test_backup_codec_python() -> None:
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
+    test_walk_lines_screenshot_items()
     test_backup_codec_python()
     test_sources()
     print("ALL OK")

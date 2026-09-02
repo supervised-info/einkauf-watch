@@ -166,6 +166,7 @@ struct AppState: Equatable, Codable, Sendable {
 struct DeptGroup: Identifiable, Equatable, Sendable {
     /// SwiftUI-Identität inkl. Laden, damit Abschnitte bei Ladenwechsel als neu gelten.
     var id: String
+    var storeId: String
     /// Abteilungs-ID (`obst`, `kuehlung`, …) — nicht `id` verwenden, das enthält den Laden.
     var dept: String
     var items: [Item]
@@ -173,9 +174,36 @@ struct DeptGroup: Identifiable, Equatable, Sendable {
 
     init(storeId: String, dept: String, items: [Item]) {
         self.id = "\(storeId)|\(dept)"
+        self.storeId = storeId
         self.dept = dept
         self.items = items
     }
+}
+
+/// Flache Geh-Modus-Zeile. Keine List-`Section` — SwiftUI behält sonst die Abteilungsreihenfolge.
+enum WalkLine: Identifiable, Equatable, Sendable {
+    case header(storeId: String, dept: String)
+    case item(storeId: String, Item)
+
+    var id: String {
+        switch self {
+        case .header(let storeId, let dept):
+            return "\(storeId)|h:\(dept)"
+        case .item(let storeId, let item):
+            return "\(storeId)|i:\(item.id)"
+        }
+    }
+
+    var headerDept: String? {
+        if case .header(_, let dept) = self { return dept }
+        return nil
+    }
+}
+
+/// ForEach-Zeile inkl. Laden und Position, damit Views beim Ladenwechsel nicht wiederverwendet werden.
+struct WalkListRow: Identifiable, Equatable, Sendable {
+    var id: String
+    var line: WalkLine
 }
 
 enum ListGrouping {
@@ -210,6 +238,24 @@ enum ListGrouping {
         push("sonstiges")
         push("nach")
         return groups
+    }
+
+    static func walkLines(groups: [DeptGroup], storeId: String) -> [WalkLine] {
+        var lines: [WalkLine] = []
+        for group in groups {
+            lines.append(.header(storeId: storeId, dept: group.dept))
+            for item in group.items {
+                lines.append(.item(storeId: storeId, item))
+            }
+        }
+        return lines
+    }
+
+    /// `id` enthält Laden und Listenposition, nicht nur die Abteilungs-ID.
+    static func walkListRows(groups: [DeptGroup], storeId: String) -> [WalkListRow] {
+        walkLines(groups: groups, storeId: storeId).enumerated().map { index, line in
+            WalkListRow(id: "\(storeId)|\(index)|\(line.id)", line: line)
+        }
     }
 
     static func sortItems(_ a: Item, _ b: Item) -> Bool {
