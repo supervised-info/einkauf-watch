@@ -620,6 +620,54 @@ final class GuesserTests: XCTestCase {
     }
 }
 
+final class KeywordDictionaryBrowseTests: XCTestCase {
+    private let german = Locale(identifier: "de")
+
+    func testSpeziIsUnderGetraenkeTitle() {
+        let groups = KeywordDictionary.groups(from: KeywordDictionary.source)
+        let drinks = groups.first { $0.title == "Getränke" }
+        XCTAssertEqual(drinks?.dept, "getraenke")
+        XCTAssertTrue(drinks?.words.contains("spezi") == true)
+    }
+
+    func testGroupsUseDepartmentTitlesNotRawIds() {
+        let titles = KeywordDictionary.groups(from: KeywordDictionary.source).map(\.title)
+        XCTAssertTrue(titles.contains("Obst & Gemüse"))
+        XCTAssertTrue(titles.contains("Getränke"))
+        XCTAssertFalse(titles.contains("obst"))
+        XCTAssertFalse(titles.contains("getraenke"))
+        XCTAssertFalse(titles.contains("Vor dem Einkauf"))
+        XCTAssertFalse(titles.contains("Sonstiges"))
+    }
+
+    func testDedupSkipEmptyAndGermanSort() {
+        let source = [
+            "getraenke": "spezi, wasser, ,spezi,Cola,  ",
+            "obst": ""
+        ]
+        let groups = KeywordDictionary.groups(from: source)
+        XCTAssertEqual(groups.map(\.title), ["Getränke"])
+        XCTAssertEqual(groups[0].words, ["Cola", "spezi", "wasser"])
+    }
+
+    func testWordsSortedAndUniquePerDepartment() {
+        for group in KeywordDictionary.groups(from: KeywordDictionary.source) {
+            XCTAssertFalse(group.words.isEmpty)
+            XCTAssertFalse(group.words.contains { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
+            let folded = group.words.map { $0.lowercased(with: german) }
+            XCTAssertEqual(Set(folded).count, folded.count, group.title)
+            let sorted = group.words.sorted { $0.compare($1, locale: german) == .orderedAscending }
+            XCTAssertEqual(group.words, sorted, group.title)
+        }
+    }
+
+    func testSearchKeepsMatchingWordsOnly() {
+        let groups = KeywordDictionary.groups(from: KeywordDictionary.source, matching: "spezi")
+        XCTAssertEqual(groups.map(\.title), ["Getränke"])
+        XCTAssertEqual(groups[0].words, ["spezi"])
+    }
+}
+
 final class ItemEditingTests: XCTestCase {
     func testEmptyRenameIsNoOp() {
         let item = Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)

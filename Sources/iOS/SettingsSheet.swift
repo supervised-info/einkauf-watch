@@ -158,6 +158,15 @@ struct SettingsSheet: View {
                 } footer: {
                     Text("Stamm-Artikel erscheinen im Menü Stamm und können mit Gesamtliste auf einmal auf die Liste.")
                 }
+
+                Section {
+                    NavigationLink {
+                        KeywordDictionaryView()
+                    } label: {
+                        Text("Wörterbuch")
+                    }
+                    .einkaufRowChrome()
+                }
             }
             .einkaufListChrome()
             .navigationTitle("Einstellungen")
