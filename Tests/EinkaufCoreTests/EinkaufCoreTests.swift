@@ -63,10 +63,11 @@ final class BackupCodecTests: XCTestCase {
 final class GroupingTests: XCTestCase {
     func testVorFirstNachLast() throws {
         let state = try BackupCodec.decode(try loadFixture("einkauf-backup.json"))
-        let ids = state.grouped().map(\.id)
-        XCTAssertEqual(ids.first, "vor")
-        XCTAssertEqual(ids.last, "nach")
-        XCTAssertEqual(ids, ["vor", "obst", "bedienung", "brot", "kuehlung", "tiefkuehl", "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach"])
+        let groups = state.grouped()
+        XCTAssertEqual(groups.map(\.dept).first, "vor")
+        XCTAssertEqual(groups.map(\.dept).last, "nach")
+        XCTAssertEqual(groups.map(\.dept), ["vor", "obst", "bedienung", "brot", "kuehlung", "tiefkuehl", "trocken", "suess", "getraenke", "drogerie", "sonstiges", "nach"])
+        XCTAssertEqual(groups.map(\.id), groups.map { "edeka|\($0.dept)" })
     }
 
     func testSortByOrdInsideDept() {
@@ -76,7 +77,8 @@ final class GroupingTests: XCTestCase {
         ]
         let store = Store.seeds.first { $0.id == "edeka" }!
         let groups = ListGrouping.groups(items: items, store: store)
-        XCTAssertEqual(groups.first { $0.id == "obst" }?.items.map(\.id), ["a", "b"])
+        XCTAssertEqual(groups.first { $0.dept == "obst" }?.items.map(\.id), ["a", "b"])
+        XCTAssertEqual(groups.first { $0.dept == "obst" }?.id, "edeka|obst")
     }
 
     func testAldiPutsBedienungAfterLayout() {
@@ -86,7 +88,7 @@ final class GroupingTests: XCTestCase {
             Item(id: "3", name: "Nachher", dept: "nach", done: false, added: 1, ord: 1)
         ]
         let store = Store.seeds.first { $0.id == "aldi" }!
-        let ids = ListGrouping.groups(items: items, store: store).map(\.id)
+        let ids = ListGrouping.groups(items: items, store: store).map(\.dept)
         XCTAssertEqual(ids.first, "obst")
         XCTAssertEqual(ids.last, "nach")
         XCTAssertEqual(ids, ["obst", "bedienung", "nach"])
@@ -412,10 +414,12 @@ final class StoreCatalogTests: XCTestCase {
 
         state.stores.append(contentsOf: [marktA, marktB])
         state.currentStoreId = marktA.id
-        XCTAssertEqual(state.grouped().map(\.id), ["obst", "brot", "kuehlung"])
+        XCTAssertEqual(state.grouped().map(\.dept), ["obst", "brot", "kuehlung"])
+        XCTAssertEqual(state.grouped().map(\.id), ["s-a|obst", "s-a|brot", "s-a|kuehlung"])
 
         state.currentStoreId = marktB.id
-        XCTAssertEqual(state.grouped().map(\.id), ["kuehlung", "brot", "obst"])
+        XCTAssertEqual(state.grouped().map(\.dept), ["kuehlung", "brot", "obst"])
+        XCTAssertEqual(state.grouped().map(\.id), ["s-b|kuehlung", "s-b|brot", "s-b|obst"])
     }
 
     func testCreateCopiesSelectedStoreThenSwitchingKeepsBothLayouts() {
@@ -438,35 +442,40 @@ final class StoreCatalogTests: XCTestCase {
             Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 1)
         ]
         state.currentStoreId = reweKopie.id
-        XCTAssertEqual(state.grouped().map(\.id), ["obst", "drogerie"])
+        XCTAssertEqual(state.grouped().map(\.dept), ["obst", "drogerie"])
         state.currentStoreId = dmKopie.id
-        XCTAssertEqual(state.grouped().map(\.id), ["drogerie", "obst"])
+        XCTAssertEqual(state.grouped().map(\.dept), ["drogerie", "obst"])
     }
 }
 
+@MainActor
 final class ShoppingStoreSetStoreTests: XCTestCase {
-    /// Vertrag von `ShoppingStore.setStore`: eine Liste für alle Läden, Gangfolge folgt dem Layout.
-    func testSetStoreToStoreWithDifferentLayoutChangesGroupOrder() {
-        var state = AppState.seed
-        state.items = [
+    /// `groups` ist @Published und folgt dem Layout nach `setStore` (enableSync: false).
+    func testSetStoreRebuildsPublishedGroupsInLayoutOrder() {
+        var seed = AppState.seed
+        seed.items = [
             Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 1, ord: 1),
             Item(id: "k", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 1),
             Item(id: "d", name: "Seife", dept: "drogerie", done: false, added: 3, ord: 1)
         ]
-        XCTAssertEqual(state.currentStoreId, "edeka")
-        let before = state.grouped().map(\.id)
-        XCTAssertEqual(before, ["obst", "kuehlung", "drogerie"])
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.state.currentStoreId, "edeka")
+        XCTAssertEqual(store.groups.map(\.dept), ["obst", "kuehlung", "drogerie"])
+        XCTAssertEqual(store.groups.map(\.id), ["edeka|obst", "edeka|kuehlung", "edeka|drogerie"])
 
-        var next = state
-        next.currentStoreId = "dm"
-        next.listRevision += 1
-        state = next
+        store.setStore("dm")
+        XCTAssertEqual(store.state.currentStoreId, "dm")
+        XCTAssertEqual(store.groups.map(\.dept), ["drogerie", "obst", "kuehlung"])
+        XCTAssertNotEqual(store.groups.map(\.dept), ["obst", "kuehlung", "drogerie"])
+        XCTAssertEqual(store.groups.map(\.id), ["dm|drogerie", "dm|obst", "dm|kuehlung"])
+        XCTAssertEqual(store.editRows.filter(\.isHeader).map(\.id), ["h:drogerie", "h:obst", "h:kuehlung"])
+        XCTAssertGreaterThan(store.state.listRevision, seed.listRevision)
 
-        XCTAssertEqual(state.currentStoreId, "dm")
-        XCTAssertEqual(state.listRevision, 1)
-        XCTAssertEqual(state.grouped().map(\.id), ["drogerie", "obst", "kuehlung"])
-        XCTAssertNotEqual(state.grouped().map(\.id), before)
-        XCTAssertEqual(state.watchTitle, "dm  Einkauf 0/3")
+        store.setStore("edeka")
+        XCTAssertEqual(store.state.currentStoreId, "edeka")
+        XCTAssertEqual(store.groups.map(\.dept), ["obst", "kuehlung", "drogerie"])
+        XCTAssertEqual(store.groups.map(\.id), ["edeka|obst", "edeka|kuehlung", "edeka|drogerie"])
+        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 0/3")
     }
 }
 

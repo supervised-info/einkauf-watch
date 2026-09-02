@@ -164,9 +164,18 @@ struct AppState: Equatable, Codable, Sendable {
 }
 
 struct DeptGroup: Identifiable, Equatable, Sendable {
+    /// SwiftUI-Identität inkl. Laden, damit Abschnitte bei Ladenwechsel als neu gelten.
     var id: String
+    /// Abteilungs-ID (`obst`, `kuehlung`, …) — nicht `id` verwenden, das enthält den Laden.
+    var dept: String
     var items: [Item]
-    var title: String { Department.title(for: id) }
+    var title: String { Department.title(for: dept) }
+
+    init(storeId: String, dept: String, items: [Item]) {
+        self.id = "\(storeId)|\(dept)"
+        self.dept = dept
+        self.items = items
+    }
 }
 
 enum ListGrouping {
@@ -189,7 +198,7 @@ enum ListGrouping {
         var used = Set<String>()
         func push(_ dept: String) {
             guard !used.contains(dept), let arr = byDept[dept], !arr.isEmpty else { return }
-            groups.append(DeptGroup(id: dept, items: arr))
+            groups.append(DeptGroup(storeId: store.id, dept: dept, items: arr))
             used.insert(dept)
         }
 

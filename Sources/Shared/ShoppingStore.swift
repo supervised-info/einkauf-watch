@@ -3,10 +3,15 @@ import Combine
 
 @MainActor
 final class ShoppingStore: ObservableObject {
-    @Published private(set) var state: AppState
+    @Published private(set) var state: AppState {
+        didSet { rebuildDerived() }
+    }
+    @Published private(set) var groups: [DeptGroup] = []
     @Published var lastError: String?
 
+#if os(iOS) || os(watchOS)
     private var sync: ConnectivitySync?
+#endif
     private var saveTask: Task<Void, Never>?
 
     init(state: AppState? = nil, enableSync: Bool = true) {
@@ -15,15 +20,19 @@ final class ShoppingStore: ObservableObject {
         } else {
             self.state = Persistence.load() ?? .seed
         }
+        rebuildDerived()
+#if os(iOS) || os(watchOS)
         if enableSync {
             let bridge = ConnectivitySync()
             bridge.store = self
             self.sync = bridge
             bridge.start()
         }
+#else
+        _ = enableSync
+#endif
     }
 
-    var groups: [DeptGroup] { state.grouped() }
     var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
@@ -44,8 +53,10 @@ final class ShoppingStore: ObservableObject {
         state.items[idx].done.toggle()
         state.items[idx].doneChangedAt = Date.nowEpochMillis
         persistQuietly()
+#if os(iOS) || os(watchOS)
         let item = state.items[idx]
         sync?.broadcastToggle(id: item.id, done: item.done, at: item.doneChangedAt ?? Date.nowEpochMillis, state: state)
+#endif
     }
 
     func applyRemoteToggle(id: String, done: Bool, at: Double) {
@@ -97,7 +108,7 @@ final class ShoppingStore: ObservableObject {
     }
 
     func deleteItems(in dept: String, at offsets: IndexSet) {
-        let group = groups.first(where: { $0.id == dept })?.items ?? []
+        let group = groups.first(where: { $0.dept == dept })?.items ?? []
         let ids = Set(offsets.compactMap { group.indices.contains($0) ? group[$0].id : nil })
         guard !ids.isEmpty else { return }
         state.items.removeAll { ids.contains($0.id) }
@@ -256,7 +267,6 @@ final class ShoppingStore: ObservableObject {
         next.currentStoreId = id
         next.listRevision += 1
         state = next
-        objectWillChange.send()
         persistAndSync()
     }
 
@@ -292,13 +302,16 @@ final class ShoppingStore: ObservableObject {
         guard merged != state else { return }
         state = merged
         persistQuietly()
+#if os(iOS) || os(watchOS)
         if merged.listRevision > incoming.listRevision || hasNewerDones(local: merged, remote: incoming) {
             sync?.broadcast(merged)
         }
+#endif
     }
 
     func snapshotForPeer() -> AppState { state }
 
+#if os(iOS) || os(watchOS)
     private func hasNewerDones(local: AppState, remote: AppState) -> Bool {
         let remoteById = Dictionary(uniqueKeysWithValues: remote.items.map { ($0.id, $0) })
         for item in local.items {
@@ -308,6 +321,7 @@ final class ShoppingStore: ObservableObject {
         }
         return false
     }
+#endif
 
     private func nextOrd() -> Double {
         (state.items.map(\.sortOrd).max() ?? 0) + 1
@@ -315,10 +329,17 @@ final class ShoppingStore: ObservableObject {
 
     private func persistAndSync() {
         persistQuietly()
+#if os(iOS) || os(watchOS)
         sync?.broadcast(state)
+#endif
+    }
+
+    private func rebuildDerived() {
+        groups = state.grouped()
     }
 
     private func persistQuietly() {
+        rebuildDerived()
         saveTask?.cancel()
         let snapshot = state
         saveTask = Task {

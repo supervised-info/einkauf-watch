@@ -52,7 +52,7 @@ enum ItemEditing {
     static func rows(from groups: [DeptGroup]) -> [Row] {
         var rows: [Row] = []
         for group in groups {
-            rows.append(.header(group.id))
+            rows.append(.header(group.dept))
             for item in group.items {
                 rows.append(.item(item))
             }
@@ -179,7 +179,7 @@ enum ItemEditing {
     ) -> Bool {
         guard moving.count == 1, let item = moving.first else { return false }
         guard Department.resolved(item.dept) == destDept else { return false }
-        let group = ListGrouping.groups(items: allItems, store: store).first { $0.id == destDept }
+        let group = ListGrouping.groups(items: allItems, store: store).first { $0.dept == destDept }
         guard let ids = group?.items.map(\.id), let idx = ids.firstIndex(of: item.id) else { return false }
         if let beforeId {
             if beforeId == item.id { return true }

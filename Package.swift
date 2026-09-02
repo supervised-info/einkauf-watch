@@ -16,9 +16,7 @@ let package = Package(
             name: "EinkaufCore",
             path: "Sources/Shared",
             exclude: [
-                "ShoppingStore.swift",
-                "ConnectivitySync.swift",
-                "Persistence.swift"
+                "ConnectivitySync.swift"
             ]
         ),
         .testTarget(

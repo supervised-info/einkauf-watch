@@ -52,7 +52,7 @@ struct WatchListView: View {
                         }
                     }
                     .einkaufListChrome()
-                    .id(store.state.currentStoreId)
+                    .id("\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
                 }
             }
             .navigationTitle(store.state.watchTitle)
