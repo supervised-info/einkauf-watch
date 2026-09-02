@@ -54,28 +54,10 @@ struct WatchListView: View {
                     .einkaufListChrome()
                 }
             }
-            .toolbar(.hidden)
-            .safeAreaInset(edge: .top) {
-                progressHeader
-            }
+            .navigationTitle("Einkauf \(store.state.progressLabel)")
+            .navigationBarTitleDisplayMode(.inline)
             .containerBackground(theme.paper, for: .navigation)
         }
-    }
-
-    /// Kopfleiste: „Einkauf“ links, `erledigt/gesamt` rechts — auch bei leerer Liste `0/0`.
-    private var progressHeader: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text("Einkauf").font(.headline)
-            Spacer(minLength: 4)
-            Text(store.state.progressLabel)
-                .font(.caption)
-                .foregroundStyle(theme.muted)
-                .monospacedDigit()
-                .accessibilityLabel("\(store.state.doneCount) von \(store.state.items.count)")
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 2)
-        .background(theme.paper)
     }
 }
 
