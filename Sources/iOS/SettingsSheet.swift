@@ -66,6 +66,37 @@ struct SettingsSheet: View {
                 }
 
                 Section {
+                    HStack {
+                        TextField("Name des Ladens", text: $newStoreName)
+                            .textInputAutocapitalization(.words)
+                            .submitLabel(.done)
+                            .onSubmit(submitStore)
+                            .onChange(of: newStoreName) { _, value in
+                                if value.count > StoreCatalog.nameMax {
+                                    newStoreName = String(value.prefix(StoreCatalog.nameMax))
+                                }
+                            }
+                        Button("Anlegen", action: submitStore)
+                            .disabled(newStoreName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .einkaufRowChrome()
+                } header: {
+                    Text("Neuer Laden")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Übernimmt das Layout des ausgewählten Ladens.")
+                }
+
+                if !store.state.currentStore.builtin {
+                    Section {
+                        Button("Laden löschen", role: .destructive) {
+                            confirmDeleteStore = true
+                        }
+                        .einkaufRowChrome()
+                    }
+                }
+
+                Section {
                     ForEach(layout, id: \.self) { id in
                         layoutRow(id)
                             .moveDisabled(StoreLayout.isLocked(id))
@@ -106,37 +137,6 @@ struct SettingsSheet: View {
                     }
                     .foregroundStyle(theme.oxide)
                     .einkaufRowChrome()
-                }
-
-                Section {
-                    HStack {
-                        TextField("Name des Ladens", text: $newStoreName)
-                            .textInputAutocapitalization(.words)
-                            .submitLabel(.done)
-                            .onSubmit(submitStore)
-                            .onChange(of: newStoreName) { _, value in
-                                if value.count > StoreCatalog.nameMax {
-                                    newStoreName = String(value.prefix(StoreCatalog.nameMax))
-                                }
-                            }
-                        Button("Anlegen", action: submitStore)
-                            .disabled(newStoreName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    .einkaufRowChrome()
-                } header: {
-                    Text("Neuer Laden")
-                        .foregroundStyle(theme.muted)
-                } footer: {
-                    Text("Übernimmt das Layout des ausgewählten Ladens.")
-                }
-
-                if !store.state.currentStore.builtin {
-                    Section {
-                        Button("Laden löschen", role: .destructive) {
-                            confirmDeleteStore = true
-                        }
-                        .einkaufRowChrome()
-                    }
                 }
 
                 Section {
