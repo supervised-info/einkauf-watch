@@ -167,10 +167,16 @@ def test_sources() -> None:
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch:
         fail("Watch should not have a store picker")
-    if 'navigationTitle("Einkauf")' not in watch:
-        fail("Watch title must remain Einkauf")
-    if "progressLabel" not in watch or "topBarTrailing" not in watch:
-        fail("Watch missing live xx/yy counter next to title")
+    if 'Text("Einkauf")' not in watch:
+        fail("Watch header must show Einkauf")
+    if 'navigationTitle("Einkauf")' in watch:
+        fail("Watch must not duplicate Einkauf as navigationTitle plus header")
+    if "topBarTrailing" in watch:
+        fail("Watch counter must not use topBarTrailing (clipped on 41/45mm)")
+    if "progressLabel" not in watch:
+        fail("Watch missing live xx/yy counter")
+    if "safeAreaInset" not in watch and "HStack" not in watch:
+        fail("Watch counter needs safeAreaInset or a header HStack")
     models = (ROOT / "Sources/Shared/Models.swift").read_text()
     if "var doneCount" not in models or "var progressLabel" not in models:
         fail("AppState missing doneCount/progressLabel")
