@@ -136,9 +136,11 @@ def test_sources() -> None:
         "Sources/Shared/ItemEditing.swift",
         "Sources/Shared/Theme.swift",
         "Sources/Shared/BackupShare.swift",
+        "Sources/Shared/ListShare.swift",
         "Sources/iOS/ContentView.swift",
         "Sources/iOS/SettingsSheet.swift",
         "Sources/iOS/ShareSheet.swift",
+        "Sources/iOS/ListPDF.swift",
         "Sources/iOS/AppearanceSettings.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
@@ -180,10 +182,22 @@ def test_sources() -> None:
         fail("ItemEditing missing cross-dept moveRows")
     if "Backup teilen" not in content:
         fail("overflow menu missing Backup teilen")
+    if "Liste teilen" not in content:
+        fail("overflow menu missing Liste teilen")
+    backup_btn = content.find('Button("Backup teilen"')
+    list_btn = content.find('Button("Liste teilen"')
+    if backup_btn < 0 or list_btn < 0 or list_btn < backup_btn:
+        fail("Liste teilen must come after Backup teilen")
+    if content[backup_btn:list_btn].count("Button(") != 1:
+        fail("Liste teilen must come immediately after Backup teilen")
     if "sheet(item:" not in content:
         fail("Backup teilen must use sheet(item:) with a file URL")
     if "showShare" in content or "if let shareURL" in content:
         fail("Backup teilen still uses isPresented + optional URL")
+    if "shareList" not in content or "ListPDF.render" not in content:
+        fail("Liste teilen must render a PDF via ListPDF")
+    if "list.bullet.rectangle" not in content:
+        fail("Liste teilen should use a distinct SF Symbol")
     if "Text(\"Hell\")" in content or "Text(\"Creme\")" in content:
         fail("theme/palette controls must not be in the list toolbar (ContentView)")
     settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
@@ -295,13 +309,21 @@ def test_sources() -> None:
     share = (ROOT / "Sources/Shared/BackupShare.swift").read_text()
     if "yyyyMMdd_HHmm" not in share:
         fail("BackupShare missing stamped filename")
+    list_share = (ROOT / "Sources/Shared/ListShare.swift").read_text()
+    if "yyyyMMdd_HHmm" not in list_share or "-einkauf-" not in list_share or ".pdf" not in list_share:
+        fail("ListShare missing stamped PDF filename")
+    pdf = (ROOT / "Sources/iOS/ListPDF.swift").read_text()
+    if "UIGraphicsPDFRenderer" not in pdf:
+        fail("ListPDF must use UIGraphicsPDFRenderer")
+    if "Noch nichts auf der Liste." not in pdf:
+        fail("ListPDF missing empty-list copy")
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch or "onMove" in watch:
         fail("Watch UI should stay Geh-Modus only")
     for wfile in (ROOT / "Sources/Watch").glob("*.swift"):
         wtxt = wfile.read_text()
-        if "Backup teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt:
-            fail("Watch should not have backup share UI")
+        if "Backup teilen" in wtxt or "Liste teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt or "ListPDF" in wtxt:
+            fail("Watch should not have share UI")
     print("sources: ok")
 
 
