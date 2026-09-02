@@ -103,6 +103,36 @@ final class GroupingTests: XCTestCase {
     }
 }
 
+final class ListProgressTests: XCTestCase {
+    func testEmptyIsZeroOverZero() {
+        XCTAssertEqual(AppState.seed.doneCount, 0)
+        XCTAssertEqual(AppState.seed.items.count, 0)
+        XCTAssertEqual(AppState.seed.progressLabel, "0/0")
+    }
+
+    func testCountsDoneAcrossAllDepartmentsIncludingVorNach() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "v", name: "Tasche", dept: "vor", done: true, added: 1, ord: 1),
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 1),
+            Item(id: "n", name: "Pfand", dept: "nach", done: true, added: 3, ord: 1)
+        ]
+        XCTAssertEqual(state.doneCount, 2)
+        XCTAssertEqual(state.items.count, 3)
+        XCTAssertEqual(state.progressLabel, "2/3")
+        XCTAssertEqual(state.openCount, 1)
+    }
+
+    func testAllDone() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "a", name: "A", dept: "obst", done: true, added: 1, ord: 1),
+            Item(id: "b", name: "B", dept: "brot", done: true, added: 2, ord: 1)
+        ]
+        XCTAssertEqual(state.progressLabel, "2/2")
+    }
+}
+
 final class MergeTests: XCTestCase {
     func testNewerDoneWinsWithoutClobberingList() {
         var local = AppState.seed

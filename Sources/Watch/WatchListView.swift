@@ -56,6 +56,15 @@ struct WatchListView: View {
             }
             .navigationTitle("Einkauf")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Text(store.state.progressLabel)
+                        .font(.headline)
+                        .foregroundStyle(theme.muted)
+                        .monospacedDigit()
+                        .accessibilityLabel("\(store.state.doneCount) von \(store.state.items.count)")
+                }
+            }
             .containerBackground(theme.paper, for: .navigation)
         }
     }

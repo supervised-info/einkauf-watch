@@ -139,6 +139,9 @@ struct AppState: Equatable, Codable, Sendable {
     }
 
     var openCount: Int { items.filter { !$0.done }.count }
+    var doneCount: Int { items.filter(\.done).count }
+    /// Kompakter Fortschritt für die Watch-Leiste: erledigt/gesamt, inkl. vor/nach.
+    var progressLabel: String { "\(doneCount)/\(items.count)" }
 
     func grouped() -> [DeptGroup] {
         ListGrouping.groups(items: items, store: currentStore)
