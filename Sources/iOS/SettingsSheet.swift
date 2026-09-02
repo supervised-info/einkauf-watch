@@ -41,45 +41,36 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    Text(store.state.currentStore.name)
-                        .einkaufRowChrome()
-                    HStack {
-                        TextField("Name des Ladens", text: $newStoreName)
-                            .textInputAutocapitalization(.words)
-                            .submitLabel(.done)
-                            .onSubmit(submitStore)
-                            .onChange(of: newStoreName) { _, value in
-                                if value.count > StoreCatalog.nameMax {
-                                    newStoreName = String(value.prefix(StoreCatalog.nameMax))
-                                }
-                            }
-                        Button("Anlegen", action: submitStore)
-                            .disabled(newStoreName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    .einkaufRowChrome()
-                    if !store.state.currentStore.builtin {
-                        Button("Laden löschen", role: .destructive) {
-                            confirmDeleteStore = true
+                    Picker("Aktueller Laden", selection: Binding(
+                        get: { store.state.currentStoreId },
+                        set: { store.setStore($0) }
+                    )) {
+                        ForEach(store.stores) { s in
+                            Text(s.name).tag(s.id)
                         }
-                        .einkaufRowChrome()
                     }
+                    .pickerStyle(.menu)
+                    .accessibilityLabel("Aktueller Laden")
+                    .einkaufRowChrome()
                 } header: {
-                    Text("Laden")
+                    Text("Aktueller Laden")
                         .foregroundStyle(theme.muted)
-                } footer: {
-                    Text("Übernimmt das aktuelle Layout.")
                 }
 
                 Section {
                     ForEach(layout, id: \.self) { id in
                         layoutRow(id)
+                            .moveDisabled(StoreLayout.isLocked(id))
+                            .deleteDisabled(true)
                     }
+                    .onMove { store.moveLayoutDepts(from: $0, to: $1) }
                 } header: {
-                    Text("Ladenweg")
+                    Text("Ladenweg · \(store.state.currentStore.name)")
                         .foregroundStyle(theme.muted)
                 } footer: {
                     Text("Vor dem Einkauf immer vorn, Nach dem Einkauf immer hinten, Sonstiges direkt davor.")
                 }
+                .environment(\.editMode, .constant(.active))
 
                 Section {
                     let unused = StoreLayout.unused(in: layout)
@@ -107,6 +98,37 @@ struct SettingsSheet: View {
                     }
                     .foregroundStyle(theme.oxide)
                     .einkaufRowChrome()
+                }
+
+                Section {
+                    HStack {
+                        TextField("Name des Ladens", text: $newStoreName)
+                            .textInputAutocapitalization(.words)
+                            .submitLabel(.done)
+                            .onSubmit(submitStore)
+                            .onChange(of: newStoreName) { _, value in
+                                if value.count > StoreCatalog.nameMax {
+                                    newStoreName = String(value.prefix(StoreCatalog.nameMax))
+                                }
+                            }
+                        Button("Anlegen", action: submitStore)
+                            .disabled(newStoreName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .einkaufRowChrome()
+                } header: {
+                    Text("Neuer Laden")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Übernimmt das Layout des ausgewählten Ladens.")
+                }
+
+                if !store.state.currentStore.builtin {
+                    Section {
+                        Button("Laden löschen", role: .destructive) {
+                            confirmDeleteStore = true
+                        }
+                        .einkaufRowChrome()
+                    }
                 }
 
                 Section {

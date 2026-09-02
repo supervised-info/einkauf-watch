@@ -207,6 +207,10 @@ final class ShoppingStore: ObservableObject {
         mutateCurrentStoreLayout { StoreLayout.move($0, id: id, by: by) }
     }
 
+    func moveLayoutDepts(from source: IndexSet, to destination: Int) {
+        mutateCurrentStoreLayout { StoreLayout.moving($0, from: source, to: destination) }
+    }
+
     func addLayoutDept(_ id: String) {
         mutateCurrentStoreLayout { StoreLayout.adding(id, to: $0) }
     }

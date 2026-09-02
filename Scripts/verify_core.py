@@ -157,10 +157,26 @@ def test_sources() -> None:
             fail(f"Einstellungen missing {needle}")
     if "iPhone-Einstellung" not in settings:
         fail("Darstellung hint should mention iPhone-Einstellung for System")
-    if "Name des Ladens" not in settings or "Übernimmt das aktuelle Layout." not in settings:
+    if "Aktueller Laden" not in settings:
+        fail("Einstellungen missing Aktueller Laden picker")
+    if "setStore" not in settings:
+        fail("Einstellungen store picker must call setStore")
+    if "ForEach(store.stores)" not in settings:
+        fail("Einstellungen picker must list all stores")
+    if "Neuer Laden" not in settings or "Name des Ladens" not in settings:
         fail("Einstellungen missing Neuer Laden")
+    if "Übernimmt das Layout des ausgewählten Ladens." not in settings:
+        fail("Neuer Laden footer must mention selected store layout")
+    if "Übernimmt das aktuelle Layout." in settings:
+        fail("old Neuer Laden footer still present")
+    if "Ladenweg ·" not in settings:
+        fail("Ladenweg header should name the store")
+    if ".onMove" not in settings:
+        fail("Ladenweg should support onMove drag")
     if "Laden löschen" not in settings:
         fail("Einstellungen missing Laden löschen")
+    if "!store.state.currentStore.builtin" not in settings:
+        fail("Laden löschen must be limited to custom stores")
     store_src = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
     if "func createStore" not in store_src or "func deleteStore" not in store_src:
         fail("ShoppingStore missing createStore/deleteStore")
