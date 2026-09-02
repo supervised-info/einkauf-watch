@@ -34,6 +34,8 @@ final class ShoppingStore: ObservableObject {
     }
 
     var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
+    var walkLines: [WalkLine] { ListGrouping.walkLines(groups: groups, storeId: state.currentStoreId) }
+    var walkListRows: [WalkListRow] { ListGrouping.walkListRows(groups: groups, storeId: state.currentStoreId) }
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
     var walkMode: Bool { state.walkMode }
