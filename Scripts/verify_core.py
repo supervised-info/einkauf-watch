@@ -298,6 +298,27 @@ def test_sources() -> None:
         fail("Einstellungen missing Laden löschen")
     if "!store.state.currentStore.builtin" not in settings:
         fail("Laden löschen must be limited to custom stores")
+    section_order = [
+        "Darstellung",
+        "Aktueller Laden",
+        "Neuer Laden",
+        "Ladenweg ·",
+        "Abteilungen hinzufügen",
+        "Layout zurücksetzen",
+        "Stamm-Artikel",
+        "Wörterbuch",
+    ]
+    section_pos = [settings.find(label) for label in section_order]
+    if any(p < 0 for p in section_pos) or section_pos != sorted(section_pos):
+        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Wörterbuch")
+    neuer_idx = settings.find("Neuer Laden")
+    delete_idx = settings.find('Button("Laden löschen"')
+    ladenweg_idx = settings.find("Ladenweg ·")
+    if delete_idx < 0 or not (neuer_idx < delete_idx < ladenweg_idx):
+        fail("Laden löschen must sit with Neuer Laden, before Ladenweg")
+    footer_idx = settings.find("Übernimmt das Layout des ausgewählten Ladens.")
+    if footer_idx < 0 or not (neuer_idx < footer_idx < ladenweg_idx):
+        fail("Neuer Laden footer must sit with Neuer Laden, before Ladenweg")
     if "Wörterbuch" not in settings:
         fail("Einstellungen missing Wörterbuch")
     if "KeywordDictionaryView" not in settings:
