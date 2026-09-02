@@ -152,9 +152,11 @@ def test_sources() -> None:
     if "Text(\"Hell\")" in content or "Text(\"Creme\")" in content:
         fail("theme/palette controls must not be in the list toolbar (ContentView)")
     settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
-    for needle in ("Hell", "Dunkel", "Creme", "Blau", "Darstellung"):
+    for needle in ("Hell", "Dunkel", "System", "Creme", "Blau", "Darstellung"):
         if needle not in settings:
             fail(f"Einstellungen missing {needle}")
+    if "iPhone-Einstellung" not in settings:
+        fail("Darstellung hint should mention iPhone-Einstellung for System")
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
         fail("preferredColorScheme not applied from setting")
     theme = (ROOT / "Sources/Shared/Theme.swift").read_text()

@@ -6,10 +6,28 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
 }
 
-enum AppColorMode: String, CaseIterable, Identifiable, Sendable {
+/// Persistierte Hell/Dunkel-Wahl in den Einstellungen (`einkauf.theme`).
+enum AppThemePreference: String, CaseIterable, Identifiable, Sendable {
     case light
     case dark
+    case system
     var id: String { rawValue }
+
+    var preferredColorScheme: ColorScheme? {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        case .system: return nil
+        }
+    }
+
+    static func parse(_ raw: String?) -> AppThemePreference {
+        switch raw {
+        case AppThemePreference.light.rawValue: return .light
+        case AppThemePreference.dark.rawValue: return .dark
+        default: return .system
+        }
+    }
 }
 
 /// supervised-info Vintage- und Navy-Tokens (HTML `:root` / `data-theme` / `data-palette`).

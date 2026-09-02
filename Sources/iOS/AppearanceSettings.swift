@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Hell/Dunkel und Creme/Blau, analog `supervised-info.theme` / `.palette`. Native UserDefaults.
+/// Hell/Dunkel/System und Creme/Blau. Native UserDefaults (`einkauf.theme` / `einkauf.palette`).
 @MainActor
 final class AppearanceSettings: ObservableObject {
     static let themeKey = "einkauf.theme"
@@ -8,8 +8,7 @@ final class AppearanceSettings: ObservableObject {
 
     private let defaults: UserDefaults
 
-    /// `nil` = System folgen (Default).
-    @Published var themeOverride: AppColorMode? {
+    @Published var theme: AppThemePreference {
         didSet { persist() }
     }
 
@@ -19,27 +18,12 @@ final class AppearanceSettings: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        switch defaults.string(forKey: Self.themeKey) {
-        case AppColorMode.light.rawValue:
-            themeOverride = .light
-        case AppColorMode.dark.rawValue:
-            themeOverride = .dark
-        default:
-            themeOverride = nil
-        }
+        theme = AppThemePreference.parse(defaults.string(forKey: Self.themeKey))
         palette = defaults.string(forKey: Self.paletteKey) == AppPalette.navy.rawValue ? .navy : .vintage
     }
 
     var preferredColorScheme: ColorScheme? {
-        switch themeOverride {
-        case .light: return .light
-        case .dark: return .dark
-        case nil: return nil
-        }
-    }
-
-    func resolvedMode(system: ColorScheme) -> AppColorMode {
-        themeOverride ?? (system == .dark ? .dark : .light)
+        theme.preferredColorScheme
     }
 
     func tokens(system: ColorScheme) -> ThemeTokens {
@@ -48,11 +32,7 @@ final class AppearanceSettings: ObservableObject {
     }
 
     private func persist() {
-        if let themeOverride {
-            defaults.set(themeOverride.rawValue, forKey: Self.themeKey)
-        } else {
-            defaults.removeObject(forKey: Self.themeKey)
-        }
+        defaults.set(theme.rawValue, forKey: Self.themeKey)
         defaults.set(palette.rawValue, forKey: Self.paletteKey)
     }
 }
