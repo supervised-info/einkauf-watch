@@ -480,6 +480,22 @@ final class SavedListTests: XCTestCase {
         XCTAssertEqual(obj["kind"] as? String, "einkauf-backup")
     }
 
+    func testLocalEncodeRoundTripSavedLists() throws {
+        var state = AppState.seed
+        state.savedLists = [
+            SavedList(id: "l1", name: "Grillen", items: [Staple(name: "Milch", dept: "kuehlung")])
+        ]
+        state.listRevision = 4
+        let data = try BackupCodec.encodeLocal(state)
+        let again = try BackupCodec.decodeLocal(data)
+        XCTAssertEqual(again.savedLists, state.savedLists)
+        XCTAssertEqual(again.listRevision, 4)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        XCTAssertEqual(json["kind"] as? String, "einkauf-local")
+        let encodedState = json["state"] as! [String: Any]
+        XCTAssertNotNil(encodedState["savedLists"])
+    }
+
     func testOldBackupHasEmptySavedLists() throws {
         let data = try loadFixture("einkauf-backup-ohne-staples.json")
         let state = try BackupCodec.decode(data)
