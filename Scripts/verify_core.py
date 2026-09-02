@@ -160,8 +160,19 @@ def test_sources() -> None:
         fail("Bearbeiten still uses per-section onMove")
     if "moveEditRows" not in content or "moveDisabled(true)" not in content:
         fail("Bearbeiten needs flattened list with immovable headers")
-    if content.count(".id(store.state.currentStoreId)") < 2:
-        fail("ContentView walkList and editList must .id(currentStoreId) so store switch rebuilds")
+    list_id = '.id("\\(store.state.currentStoreId)|\\(store.state.currentStore.layout.joined())")'
+    if content.count(list_id) < 2:
+        fail("ContentView walkList and editList must .id(currentStoreId|layout) so store switch rebuilds")
+    if re.search(r'Picker\(\s*"Laden"', content):
+        fail("toolbar must not use Picker for store selection")
+    if "store.setStore(s.id)" not in content:
+        fail("ContentView store Menu must call store.setStore(s.id)")
+    laden_idx = content.find('accessibilityLabel("Laden")')
+    store_menu = content[max(0, laden_idx - 900):laden_idx] if laden_idx >= 0 else ""
+    if "Menu" not in store_menu or "ForEach(store.stores)" not in store_menu:
+        fail("ContentView store selection must be a Menu of store buttons")
+    if "checkmark" not in store_menu:
+        fail("ContentView store Menu must checkmark the selected store")
     if "func setWalkMode" not in store:
         fail("walkMode not persisted via setWalkMode")
     editing = (ROOT / "Sources/Shared/ItemEditing.swift").read_text()
@@ -182,11 +193,15 @@ def test_sources() -> None:
     if "iPhone-Einstellung" not in settings:
         fail("Darstellung hint should mention iPhone-Einstellung for System")
     if "Aktueller Laden" not in settings:
-        fail("Einstellungen missing Aktueller Laden picker")
-    if "setStore" not in settings:
-        fail("Einstellungen store picker must call setStore")
+        fail("Einstellungen missing Aktueller Laden")
+    if re.search(r'Picker\(\s*"Aktueller Laden"', settings):
+        fail("Aktueller Laden must not be a Picker")
+    if "store.setStore(s.id)" not in settings:
+        fail("Einstellungen store list must call store.setStore(s.id)")
     if "ForEach(store.stores)" not in settings:
-        fail("Einstellungen picker must list all stores")
+        fail("Einstellungen must list all stores")
+    if 'Image(systemName: "checkmark")' not in settings:
+        fail("Einstellungen current store must show a checkmark")
     if "Neuer Laden" not in settings or "Name des Ladens" not in settings:
         fail("Einstellungen missing Neuer Laden")
     if "Übernimmt das Layout des ausgewählten Ladens." not in settings:
@@ -217,11 +232,36 @@ def test_sources() -> None:
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch:
         fail("Watch should not have a store picker")
-    if ".id(store.state.currentStoreId)" not in watch:
-        fail("Watch list must .id(currentStoreId) so store switch rebuilds")
+    if list_id not in watch:
+        fail("Watch list must .id(currentStoreId|layout) so store switch rebuilds")
     if "navigationTitle(store.state.watchTitle)" not in watch:
         fail("Watch navigationTitle must bind to watchTitle")
     models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    if "var dept: String" not in models:
+        fail("DeptGroup must keep a raw dept field")
+    if r"\(storeId)|\(dept)" not in models:
+        fail("DeptGroup.id must include storeId and dept")
+    if re.search(r"var title: String \{ Department\.title\(for: id\) \}", models):
+        fail("DeptGroup.title must use dept, not id")
+    if ".header(group.id)" in editing:
+        fail("ItemEditing must not treat group.id as a dept")
+    if ".header(group.dept)" not in editing:
+        fail("ItemEditing headers must use group.dept")
+    if re.search(r"var groups: \[DeptGroup\] \{", store_src):
+        fail("groups must not be a computed property")
+    if "@Published private(set) var groups: [DeptGroup]" not in store_src:
+        fail("groups must be @Published stored")
+    if "func rebuildDerived" not in store_src:
+        fail("ShoppingStore missing rebuildDerived")
+    if "groups = state.grouped()" not in store_src:
+        fail("rebuildDerived must use state.grouped() (currentStore layout)")
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    if "ShoppingStore(state: seed, enableSync: false)" not in tests:
+        fail("tests must construct ShoppingStore(enableSync: false)")
+    if 'setStore("dm")' not in tests or 'setStore("edeka")' not in tests:
+        fail("tests must setStore dm then edeka")
+    if r"groups.map(\.dept)" not in tests:
+        fail(r"tests must assert groups.map(\.dept) after setStore")
     if not re.search(r'\.navigationTitle\(', watch):
         fail("Watch must use navigationTitle")
     title_has_store = "currentStore.name" in watch or (

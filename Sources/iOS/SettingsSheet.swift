@@ -41,17 +41,25 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    Picker("Aktueller Laden", selection: Binding(
-                        get: { store.state.currentStoreId },
-                        set: { store.setStore($0) }
-                    )) {
-                        ForEach(store.stores) { s in
-                            Text(s.name).tag(s.id)
+                    ForEach(store.stores) { s in
+                        Button {
+                            store.setStore(s.id)
+                        } label: {
+                            HStack {
+                                Text(s.name)
+                                    .foregroundStyle(theme.ink)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                if s.id == store.state.currentStoreId {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(theme.oxide)
+                                        .accessibilityLabel("ausgewählt")
+                                }
+                            }
                         }
+                        .accessibilityLabel(s.name)
+                        .accessibilityAddTraits(s.id == store.state.currentStoreId ? .isSelected : [])
+                        .einkaufRowChrome()
                     }
-                    .pickerStyle(.menu)
-                    .accessibilityLabel("Aktueller Laden")
-                    .einkaufRowChrome()
                 } header: {
                     Text("Aktueller Laden")
                         .foregroundStyle(theme.muted)

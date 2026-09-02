@@ -96,7 +96,7 @@ struct ContentView: View {
         .listStyle(.insetGrouped)
         .einkaufListChrome()
         .environment(\.editMode, .constant(.inactive))
-        .id(store.state.currentStoreId)
+        .id("\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
     }
 
     /// Flache Liste: Überschriften sind nicht verschiebbar, Artikel können in jede sichtbare
@@ -128,7 +128,7 @@ struct ContentView: View {
         .listStyle(.insetGrouped)
         .einkaufListChrome()
         .environment(\.editMode, .constant(.active))
-        .id(store.state.currentStoreId)
+        .id("\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
     }
 
     private func walkRow(_ item: Item) -> some View {
@@ -223,15 +223,21 @@ struct ContentView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Picker("Laden", selection: Binding(
-                get: { store.state.currentStoreId },
-                set: { store.setStore($0) }
-            )) {
+            Menu {
                 ForEach(store.stores) { s in
-                    Text(s.name).tag(s.id)
+                    Button {
+                        store.setStore(s.id)
+                    } label: {
+                        if s.id == store.state.currentStoreId {
+                            Label(s.name, systemImage: "checkmark")
+                        } else {
+                            Text(s.name)
+                        }
+                    }
                 }
+            } label: {
+                Text(store.state.currentStore.name)
             }
-            .pickerStyle(.menu)
             .accessibilityLabel("Laden")
         }
         ToolbarItem(placement: .topBarTrailing) {
