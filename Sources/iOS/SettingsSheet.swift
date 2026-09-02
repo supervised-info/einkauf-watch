@@ -9,6 +9,8 @@ struct SettingsSheet: View {
     @State private var newStoreName = ""
     @State private var confirmDeleteStore = false
     @State private var pendingDeleteStoreId: String?
+    @State private var confirmDeleteSavedList = false
+    @State private var pendingDeleteSavedListId: String?
 
     private var layout: [String] {
         StoreLayout.sanitized(store.state.currentStore.layout)
@@ -154,6 +156,33 @@ struct SettingsSheet: View {
                 }
 
                 Section {
+                    if store.savedLists.isEmpty {
+                        Text("Noch keine gespeicherten Listen.")
+                            .foregroundStyle(theme.muted)
+                            .einkaufRowChrome()
+                            .deleteDisabled(true)
+                    } else {
+                        ForEach(store.savedLists) { list in
+                            Button {
+                                store.applySavedList(list)
+                            } label: {
+                                Text(list.name)
+                                    .foregroundStyle(theme.ink)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .accessibilityLabel(list.name)
+                            .einkaufRowChrome()
+                        }
+                        .onDelete(perform: requestDeleteSavedLists)
+                    }
+                } header: {
+                    Text("Gespeicherte Listen")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Anlass-Listen wie Grillen oder Drogerie. Tippen füllt die aktuelle Liste auf, ohne sie zu ersetzen. Wischen zum Löschen.")
+                }
+
+                Section {
                     NavigationLink {
                         KeywordDictionaryView()
                     } label: {
@@ -183,6 +212,21 @@ struct SettingsSheet: View {
                 }
                 Button("Abbrechen", role: .cancel) {
                     pendingDeleteStoreId = nil
+                }
+            }
+            .confirmationDialog(
+                "Gespeicherte Liste „\(pendingDeleteSavedListName)“ wirklich löschen?",
+                isPresented: $confirmDeleteSavedList,
+                titleVisibility: .visible
+            ) {
+                Button("Liste löschen", role: .destructive) {
+                    if let id = pendingDeleteSavedListId {
+                        store.removeSavedList(id: id)
+                    }
+                    pendingDeleteSavedListId = nil
+                }
+                Button("Abbrechen", role: .cancel) {
+                    pendingDeleteSavedListId = nil
                 }
             }
         }
@@ -286,6 +330,17 @@ struct SettingsSheet: View {
         guard let victim = custom.first else { return }
         pendingDeleteStoreId = victim.id
         confirmDeleteStore = true
+    }
+
+    private var pendingDeleteSavedListName: String {
+        guard let id = pendingDeleteSavedListId else { return "" }
+        return store.savedLists.first(where: { $0.id == id })?.name ?? ""
+    }
+
+    private func requestDeleteSavedLists(at offsets: IndexSet) {
+        guard let idx = offsets.first, store.savedLists.indices.contains(idx) else { return }
+        pendingDeleteSavedListId = store.savedLists[idx].id
+        confirmDeleteSavedList = true
     }
 }
 

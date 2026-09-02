@@ -21,6 +21,41 @@ struct Staple: Equatable, Codable, Sendable {
     var dept: String
 }
 
+/// Benannte Anlass-Liste (Grillen, Drogerie). Snapshot nur `name` + `dept`, ohne Häkchen.
+struct SavedList: Identifiable, Equatable, Codable, Sendable {
+    static let nameMax = 60
+
+    var id: String
+    var name: String
+    var items: [Staple]
+
+    static func makeID() -> String {
+        let t = String(Int(Date().timeIntervalSince1970 * 1000), radix: 36)
+        let r = String(UInt64.random(in: 0..<0xFFFFFF), radix: 36)
+        return "l\(t)\(r)"
+    }
+
+    static func sanitizedName(_ raw: String) -> String? {
+        var name = raw.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        if name.count > nameMax {
+            name = String(name.prefix(nameMax))
+        }
+        return name
+    }
+
+    /// Aktuelle Artikel inkl. erledigter — nur Name und Abteilung, damit Apply wieder öffnet.
+    static func snapshot(from items: [Item]) -> [Staple] {
+        items.compactMap { item in
+            let name = item.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return nil }
+            return Staple(name: name, dept: Department.resolved(item.dept))
+        }
+    }
+}
+
 struct Item: Identifiable, Equatable, Codable, Sendable {
     var id: String
     var name: String
@@ -94,20 +129,22 @@ struct AppState: Equatable, Codable, Sendable {
     var mappings: [String: String]
     var walkMode: Bool
     var staples: [Staple]
+    var savedLists: [SavedList]
     /// Intern: Strukturänderungen (Import, Hinzufügen, Ladenwechsel).
     var listRevision: UInt64
 
     enum CodingKeys: String, CodingKey {
-        case currentStoreId, stores, items, mappings, walkMode, staples, listRevision
+        case currentStoreId, stores, items, mappings, walkMode, staples, savedLists, listRevision
     }
 
-    init(currentStoreId: String, stores: [Store], items: [Item], mappings: [String: String], walkMode: Bool, staples: [Staple], listRevision: UInt64) {
+    init(currentStoreId: String, stores: [Store], items: [Item], mappings: [String: String], walkMode: Bool, staples: [Staple], listRevision: UInt64, savedLists: [SavedList] = []) {
         self.currentStoreId = currentStoreId
         self.stores = stores
         self.items = items
         self.mappings = mappings
         self.walkMode = walkMode
         self.staples = staples
+        self.savedLists = savedLists
         self.listRevision = listRevision
     }
 
@@ -119,6 +156,7 @@ struct AppState: Equatable, Codable, Sendable {
         mappings = try c.decodeIfPresent([String: String].self, forKey: .mappings) ?? [:]
         walkMode = try c.decodeIfPresent(Bool.self, forKey: .walkMode) ?? false
         staples = try c.decodeIfPresent([Staple].self, forKey: .staples) ?? []
+        savedLists = try c.decodeIfPresent([SavedList].self, forKey: .savedLists) ?? []
         listRevision = try c.decodeIfPresent(UInt64.self, forKey: .listRevision) ?? 0
     }
 
@@ -130,7 +168,8 @@ struct AppState: Equatable, Codable, Sendable {
             mappings: [:],
             walkMode: false,
             staples: [],
-            listRevision: 0
+            listRevision: 0,
+            savedLists: []
         )
     }
 

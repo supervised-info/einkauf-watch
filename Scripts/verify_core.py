@@ -177,6 +177,9 @@ def test_sources() -> None:
     store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
     if "func toggle" not in store:
         fail("no toggle")
+    codec = (ROOT / "Sources/Shared/BackupCodec.swift").read_text()
+    if "savedLists" not in codec:
+        fail("backup codec must mention savedLists")
     pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
     if "net.tschelle.einkauf" not in pbx:
         fail("bundle id missing")
@@ -258,6 +261,16 @@ def test_sources() -> None:
         fail("Liste teilen must come after Backup teilen")
     if content[backup_btn:list_btn].count("Button(") != 1:
         fail("Liste teilen must come immediately after Backup teilen")
+    if "Liste speichern" not in content:
+        fail("overflow menu missing Liste speichern")
+    if "Gespeicherte Listen" not in content:
+        fail("overflow menu missing Gespeicherte Listen")
+    save_btn = content.find('Button("Liste speichern"')
+    saved_menu = content.find('Menu("Gespeicherte Listen"')
+    if save_btn < 0 or save_btn < list_btn:
+        fail("Liste speichern must come after Liste teilen")
+    if saved_menu < 0 or saved_menu < save_btn:
+        fail("Gespeicherte Listen must come after Liste speichern")
     if "sheet(item:" not in content:
         fail("Backup teilen must use sheet(item:) with a file URL")
     if "showShare" in content or "if let shareURL" in content:
@@ -310,11 +323,12 @@ def test_sources() -> None:
         "Abteilungen hinzufügen",
         "Layout zurücksetzen",
         "Stamm-Artikel",
+        "Gespeicherte Listen",
         "Wörterbuch",
     ]
     section_pos = [settings.find(label) for label in section_order]
     if any(p < 0 for p in section_pos) or section_pos != sorted(section_pos):
-        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Wörterbuch")
+        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch")
     neuer_idx = settings.find("Neuer Laden")
     ladenweg_idx = settings.find("Ladenweg ·")
     store_list_start = settings.find("ForEach(store.stores)")
@@ -331,6 +345,12 @@ def test_sources() -> None:
     footer_idx = settings.find("Übernimmt das Layout des ausgewählten Ladens.")
     if footer_idx < 0 or not (neuer_idx < footer_idx < ladenweg_idx):
         fail("Neuer Laden footer must sit with Neuer Laden, before Ladenweg")
+    if "pendingDeleteSavedListId" not in settings:
+        fail("Gespeicherte Listen swipe delete must confirm via pendingDeleteSavedListId")
+    if "removeSavedList" not in settings:
+        fail("Einstellungen must delete saved lists via removeSavedList")
+    if "applySavedList" not in settings:
+        fail("Einstellungen saved list rows must applySavedList")
     if "Wörterbuch" not in settings:
         fail("Einstellungen missing Wörterbuch")
     if "KeywordDictionaryView" not in settings:
@@ -444,8 +464,8 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 7" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 7")
+    if "CURRENT_PROJECT_VERSION = 8" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 8")
     if not re.search(r'\.navigationTitle\(', watch):
         fail("Watch must use navigationTitle")
     title_has_store = "currentStore.name" in watch or (
@@ -512,6 +532,8 @@ def test_sources() -> None:
         wtxt = wfile.read_text()
         if "Backup teilen" in wtxt or "Liste teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt or "ListPDF" in wtxt:
             fail("Watch should not have share UI")
+        if "Liste speichern" in wtxt or "Gespeicherte Listen" in wtxt:
+            fail("Watch should not have saved list UI")
         if "Wörterbuch" in wtxt or "KeywordDictionaryView" in wtxt:
             fail("Watch should not have Wörterbuch UI")
         if "deleteStore" in wtxt:
