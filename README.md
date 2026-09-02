@@ -14,6 +14,8 @@ Dieses Repo wurde auf Linux erzeugt. **Simulator und `xcodebuild` wurden hier ni
 4. Destination: iPhone (Gerät oder Simulator). Die Watch-App ist eingebettet und wird mitinstalliert.
 5. Run (⌘R). Watch-Simulator: Scheme **EinkaufWatch** oder in der Destination das paarige Watch-Gerät wählen.
 
+Nach einer Watch-UI-Änderung ist der Bundle-Bump über diese Build-Nummer automatisch; zeigt die Watch weiter die alte UI, Einkauf auf der Watch löschen und in der iPhone-Watch-App unter **Verfügbare Apps** neu installieren.
+
 Projekt neu erzeugen (optional, Python 3, ohne XcodeGen):
 
 ```sh
