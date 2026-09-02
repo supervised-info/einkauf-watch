@@ -514,6 +514,8 @@ def test_sources() -> None:
             fail("Watch should not have share UI")
         if "Wörterbuch" in wtxt or "KeywordDictionaryView" in wtxt:
             fail("Watch should not have Wörterbuch UI")
+        if "deleteStore" in wtxt:
+            fail("Watch must not delete stores")
     print("sources: ok")
 
 
