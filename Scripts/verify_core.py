@@ -369,6 +369,24 @@ def test_sources() -> None:
         fail("ListPDF must use UIGraphicsPDFRenderer")
     if "Noch nichts auf der Liste." not in pdf:
         fail("ListPDF missing empty-list copy")
+    if "checkmark.circle.fill" in pdf:
+        fail("ListPDF checkbox must not use checkmark.circle.fill")
+    box_fn = re.search(r"func drawCheckbox\([^)]*\) \{.*?\n        \}", pdf, re.S)
+    if not box_fn:
+        fail("ListPDF missing drawCheckbox")
+    box = box_fn.group(0)
+    if "setFill" in box or ".fill(" in box or "path.fill" in box:
+        fail("ListPDF checkbox must not fill (empty square for pen ticks)")
+    if "checkmark" in box.lower() or "systemName" in box:
+        fail("ListPDF checkbox must not draw a checkmark or SF Symbol")
+    if "done" in box:
+        fail("ListPDF checkbox must ignore done (same empty box for every item)")
+    if not re.search(r"roundedRect|addRect|\.stroke\(|strokePath", box):
+        fail("ListPDF checkbox must stroke an empty square/rect")
+    if "stroke" not in box:
+        fail("ListPDF checkbox must be stroke-only")
+    if "ovalIn" in box or "circle" in box:
+        fail("ListPDF checkbox must be a square/rect, not a circle")
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch or "onMove" in watch:
         fail("Watch UI should stay Geh-Modus only")

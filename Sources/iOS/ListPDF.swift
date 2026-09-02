@@ -39,7 +39,6 @@ enum ListPDF {
                 paper: uiColor(colors.paper),
                 ink: uiColor(colors.ink),
                 muted: uiColor(colors.muted),
-                good: uiColor(colors.good),
                 rule: uiColor(colors.rule)
             )
             painter.draw(groups: groups, storeName: storeName, progressLabel: progressLabel)
@@ -62,7 +61,6 @@ enum ListPDF {
         let paper: UIColor
         let ink: UIColor
         let muted: UIColor
-        let good: UIColor
         let rule: UIColor
         var y: CGFloat = 0
 
@@ -122,7 +120,7 @@ enum ListPDF {
                 for (idx, item) in group.items.enumerated() {
                     let rowH = rowHeights[idx]
                     ensure(rowH)
-                    drawCheckbox(done: item.done, origin: CGPoint(x: inset, y: y + (rowH - box) / 2))
+                    drawCheckbox(origin: CGPoint(x: inset, y: y + (rowH - box) / 2))
                     let attrs = itemAttributes(name: item.name, done: item.done)
                     attrs.draw(in: CGRect(
                         x: inset + box + gap,
@@ -189,31 +187,14 @@ enum ListPDF {
             return NSAttributedString(string: name, attributes: attrs)
         }
 
-        func drawCheckbox(done: Bool, origin: CGPoint) {
+        func drawCheckbox(origin: CGPoint) {
             let size = ListPDF.checkboxSize
             let box = CGRect(x: origin.x, y: origin.y, width: size, height: size)
-            let config = UIImage.SymbolConfiguration(pointSize: size * 0.92, weight: .regular)
-            let symbol = done ? "checkmark.circle.fill" : "circle"
-            if let image = UIImage(systemName: symbol, withConfiguration: config)?
-                .withTintColor(done ? good : muted, renderingMode: .alwaysOriginal) {
-                let drawn = image.size
-                image.draw(in: CGRect(
-                    x: origin.x + (size - drawn.width) / 2,
-                    y: origin.y + (size - drawn.height) / 2,
-                    width: drawn.width,
-                    height: drawn.height
-                ))
-                return
-            }
-            let path = UIBezierPath(ovalIn: box.insetBy(dx: 1.2, dy: 1.2))
-            if done {
-                good.setFill()
-                path.fill()
-            } else {
-                muted.setStroke()
-                path.lineWidth = 1.5
-                path.stroke()
-            }
+                .insetBy(dx: 1, dy: 1)
+            let path = UIBezierPath(roundedRect: box, cornerRadius: 2.5)
+            muted.setStroke()
+            path.lineWidth = 1.75
+            path.stroke()
         }
     }
 }
