@@ -142,6 +142,20 @@ struct AppState: Equatable, Codable, Sendable {
     var doneCount: Int { items.filter(\.done).count }
     /// Kompakter Fortschritt für die Watch-Leiste: erledigt/gesamt, inkl. vor/nach.
     var progressLabel: String { "\(doneCount)/\(items.count)" }
+    /// Eine Zeile für die Watch-Nav: Laden links, dann Einkauf xx/yy. Lange Namen
+    /// kürzen, damit der Zähler auf 41mm nicht vom Systemtitel abgeschnitten wird.
+    var watchTitle: String {
+        "\(Self.clippedWatchStoreName(currentStore.name))  Einkauf \(progressLabel)"
+    }
+
+    /// Zeichenbudget vor „Einkauf xx/yy“, passend für die 41mm-Leiste.
+    static let watchStoreNameLimit = 8
+
+    static func clippedWatchStoreName(_ name: String) -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > watchStoreNameLimit else { return trimmed }
+        return String(trimmed.prefix(watchStoreNameLimit - 1)) + "…"
+    }
 
     func grouped() -> [DeptGroup] {
         ListGrouping.groups(items: items, store: currentStore)

@@ -54,7 +54,7 @@ struct WatchListView: View {
                     .einkaufListChrome()
                 }
             }
-            .navigationTitle("Einkauf \(store.state.progressLabel)")
+            .navigationTitle(store.state.watchTitle)
             .navigationBarTitleDisplayMode(.inline)
             .containerBackground(theme.paper, for: .navigation)
         }

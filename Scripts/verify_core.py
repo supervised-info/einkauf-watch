@@ -183,8 +183,21 @@ def test_sources() -> None:
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch:
         fail("Watch should not have a store picker")
-    if not re.search(r'navigationTitle\("Einkauf \\\(store\.state\.progressLabel\)"\)', watch):
-        fail("Watch navigationTitle must interpolate progressLabel")
+    models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    if not re.search(r'\.navigationTitle\(', watch):
+        fail("Watch must use navigationTitle")
+    title_has_store = "currentStore.name" in watch or (
+        "watchTitle" in watch and "var watchTitle" in models and "currentStore.name" in models
+    )
+    title_has_progress = "progressLabel" in watch or (
+        "watchTitle" in watch and "var watchTitle" in models and "progressLabel" in models
+    )
+    if not title_has_store:
+        fail("Watch navigationTitle must include currentStore.name")
+    if not title_has_progress:
+        fail("Watch navigationTitle must include progressLabel")
+    if "watchTitle" in watch and not re.search(r'Einkauf \\\(progressLabel\)', models):
+        fail("watchTitle must keep Einkauf plus progressLabel")
     if "topBarTrailing" in watch:
         fail("Watch counter must not use topBarTrailing (clipped under the clock)")
     if "safeAreaInset" in watch:
@@ -193,7 +206,6 @@ def test_sources() -> None:
         fail("Watch must not duplicate Einkauf in a custom header HStack")
     if "toolbar(.hidden)" in watch:
         fail("Watch must not hide the system navigation bar")
-    models = (ROOT / "Sources/Shared/Models.swift").read_text()
     if "var doneCount" not in models or "var progressLabel" not in models:
         fail("AppState missing doneCount/progressLabel")
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
