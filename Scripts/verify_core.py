@@ -261,16 +261,28 @@ def test_sources() -> None:
         fail("Liste teilen must come after Backup teilen")
     if content[backup_btn:list_btn].count("Button(") != 1:
         fail("Liste teilen must come immediately after Backup teilen")
-    if "Liste speichern" not in content:
-        fail("overflow menu missing Liste speichern")
+    if "Einkaufsliste speichern" not in content:
+        fail("overflow menu missing Einkaufsliste speichern")
+    if 'Button("Liste speichern"' in content or '.alert("Liste speichern"' in content:
+        fail("overflow menu still uses Liste speichern")
+    if '.alert("Einkaufsliste speichern"' not in content:
+        fail("save-list alert title must be Einkaufsliste speichern")
+    desc = (ROOT / "Description.md").read_text()
+    if "5. Einkaufsliste speichern" not in desc:
+        fail("Description.md overflow menu must list Einkaufsliste speichern")
+    if "Alert „Einkaufsliste speichern“" not in desc:
+        fail("Description.md must document Einkaufsliste speichern alert title")
     if "Gespeicherte Listen" not in content:
         fail("overflow menu missing Gespeicherte Listen")
-    save_btn = content.find('Button("Liste speichern"')
+    save_btn = content.find('Button("Einkaufsliste speichern"')
     saved_menu = content.find('Menu("Gespeicherte Listen"')
     if save_btn < 0 or save_btn < list_btn:
-        fail("Liste speichern must come after Liste teilen")
+        fail("Einkaufsliste speichern must come after Liste teilen")
     if saved_menu < 0 or saved_menu < save_btn:
-        fail("Gespeicherte Listen must come after Liste speichern")
+        fail("Gespeicherte Listen must come after Einkaufsliste speichern")
+    saved_foreach = content.find("ForEach(store.savedLists)")
+    if saved_foreach < 0 or saved_foreach < saved_menu:
+        fail("saved list names must sit in the Gespeicherte Listen submenu, not as top-level overflow actions")
     if "sheet(item:" not in content:
         fail("Backup teilen must use sheet(item:) with a file URL")
     if "showShare" in content or "if let shareURL" in content:
@@ -532,7 +544,7 @@ def test_sources() -> None:
         wtxt = wfile.read_text()
         if "Backup teilen" in wtxt or "Liste teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt or "ListPDF" in wtxt:
             fail("Watch should not have share UI")
-        if "Liste speichern" in wtxt or "Gespeicherte Listen" in wtxt:
+        if "Liste speichern" in wtxt or "Einkaufsliste speichern" in wtxt or "Gespeicherte Listen" in wtxt:
             fail("Watch should not have saved list UI")
         if "Wörterbuch" in wtxt or "KeywordDictionaryView" in wtxt:
             fail("Watch should not have Wörterbuch UI")

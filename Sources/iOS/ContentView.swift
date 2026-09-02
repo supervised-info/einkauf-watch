@@ -46,7 +46,7 @@ struct ContentView: View {
             } message: {
                 Text(alertMessage ?? "")
             }
-            .alert("Liste speichern", isPresented: $showSaveListPrompt) {
+            .alert("Einkaufsliste speichern", isPresented: $showSaveListPrompt) {
                 TextField("Name, z. B. Grillen", text: $saveListName)
                 Button("Speichern") { commitSaveList() }
                 Button("Abbrechen", role: .cancel) { saveListName = "" }
@@ -293,7 +293,7 @@ struct ContentView: View {
                 Button("Liste teilen", systemImage: "list.bullet.rectangle") {
                     shareList()
                 }
-                Button("Liste speichern", systemImage: "bookmark") {
+                Button("Einkaufsliste speichern", systemImage: "bookmark") {
                     beginSaveList()
                 }
                 Menu("Gespeicherte Listen") {
