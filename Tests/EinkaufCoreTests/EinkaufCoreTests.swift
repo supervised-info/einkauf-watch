@@ -251,6 +251,28 @@ final class StoreLayoutTests: XCTestCase {
         XCTAssertTrue(unused.contains("obst"))
         XCTAssertFalse(unused.contains("vor"))
     }
+
+    func testMovingReordersMiddleAndKeepsVorNach() {
+        let start = ["vor", "obst", "brot", "kuehlung", "nach"]
+        let next = StoreLayout.moving(start, from: IndexSet(integer: 1), to: 3)
+        XCTAssertEqual(next.first, "vor")
+        XCTAssertEqual(next.last, "nach")
+        XCTAssertEqual(next, ["vor", "brot", "obst", "kuehlung", "nach"])
+    }
+
+    func testMovingLockedIsNoOp() {
+        let start = ["vor", "obst", "brot", "nach"]
+        XCTAssertEqual(StoreLayout.moving(start, from: IndexSet(integer: 0), to: 2), StoreLayout.sanitized(start))
+        XCTAssertEqual(StoreLayout.moving(start, from: IndexSet(integer: 3), to: 1), StoreLayout.sanitized(start))
+    }
+
+    func testMovingPastNachStillEndsWithNach() {
+        let start = ["vor", "obst", "brot", "nach"]
+        let next = StoreLayout.moving(start, from: IndexSet(integer: 1), to: 4)
+        XCTAssertEqual(next.first, "vor")
+        XCTAssertEqual(next.last, "nach")
+        XCTAssertEqual(next, ["vor", "brot", "obst", "nach"])
+    }
 }
 
 final class StoreCatalogTests: XCTestCase {
@@ -302,6 +324,60 @@ final class StoreCatalogTests: XCTestCase {
         XCTAssertEqual(again.currentStoreId, "s-round")
         XCTAssertEqual(again.stores.first(where: { $0.id == "s-round" })?.name, "Testmarkt")
         XCTAssertTrue(Store.seeds.allSatisfy { seed in again.stores.contains(where: { $0.id == seed.id }) })
+    }
+
+    func testTwoCustomStoresIndependentLayoutsChangeGroupOrder() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 1, ord: 1),
+            Item(id: "b", name: "Brot", dept: "brot", done: false, added: 2, ord: 1),
+            Item(id: "k", name: "Milch", dept: "kuehlung", done: false, added: 3, ord: 1)
+        ]
+        let marktA = StoreCatalog.create(
+            name: "Markt A",
+            copying: Store(id: "src-a", name: "A", layout: ["vor", "obst", "brot", "kuehlung", "nach"], builtin: false),
+            id: "s-a"
+        )!
+        let marktB = StoreCatalog.create(
+            name: "Markt B",
+            copying: Store(id: "src-b", name: "B", layout: ["vor", "kuehlung", "brot", "obst", "nach"], builtin: false),
+            id: "s-b"
+        )!
+        XCTAssertEqual(marktA.layout, ["vor", "obst", "brot", "kuehlung", "nach"])
+        XCTAssertEqual(marktB.layout, ["vor", "kuehlung", "brot", "obst", "nach"])
+        XCTAssertNotEqual(marktA.layout, marktB.layout)
+
+        state.stores.append(contentsOf: [marktA, marktB])
+        state.currentStoreId = marktA.id
+        XCTAssertEqual(state.grouped().map(\.id), ["obst", "brot", "kuehlung"])
+
+        state.currentStoreId = marktB.id
+        XCTAssertEqual(state.grouped().map(\.id), ["kuehlung", "brot", "obst"])
+    }
+
+    func testCreateCopiesSelectedStoreThenSwitchingKeepsBothLayouts() {
+        var state = AppState.seed
+        let rewe = Store.seeds.first { $0.id == "rewe" }!
+        let dm = Store.seeds.first { $0.id == "dm" }!
+        state.currentStoreId = "rewe"
+        let reweKopie = StoreCatalog.create(name: "Rewe Kopie", copying: state.currentStore, id: "s-rewe-copy")!
+        XCTAssertEqual(reweKopie.layout, rewe.layout)
+        state.stores.append(reweKopie)
+
+        state.currentStoreId = "dm"
+        let dmKopie = StoreCatalog.create(name: "dm Kopie", copying: state.currentStore, id: "s-dm-copy")!
+        XCTAssertEqual(dmKopie.layout, dm.layout)
+        XCTAssertNotEqual(reweKopie.layout, dmKopie.layout)
+        state.stores.append(dmKopie)
+
+        state.items = [
+            Item(id: "d", name: "Shampoo", dept: "drogerie", done: false, added: 1, ord: 1),
+            Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 1)
+        ]
+        state.currentStoreId = reweKopie.id
+        XCTAssertEqual(state.grouped().map(\.id), ["obst", "drogerie"])
+        state.currentStoreId = dmKopie.id
+        XCTAssertEqual(state.grouped().map(\.id), ["drogerie", "obst"])
     }
 }
 

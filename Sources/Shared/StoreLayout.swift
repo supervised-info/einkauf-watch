@@ -31,6 +31,17 @@ enum StoreLayout {
         return sanitized(layout)
     }
 
+    /// SwiftUI-`onMove`: frei sortieren, `vor`/`nach` bleiben durch `sanitized` außen.
+    static func moving(_ layout: [String], from source: IndexSet, to destination: Int) -> [String] {
+        var layout = sanitized(layout)
+        guard !source.isEmpty else { return layout }
+        for idx in source {
+            guard layout.indices.contains(idx), !isLocked(layout[idx]) else { return layout }
+        }
+        layout.move(fromOffsets: source, toOffset: destination)
+        return sanitized(layout)
+    }
+
     static func adding(_ id: String, to layout: [String]) -> [String] {
         guard Department.isKnown(id) else { return sanitized(layout) }
         var layout = sanitized(layout)
