@@ -92,6 +92,41 @@ final class GroupingTests: XCTestCase {
         XCTAssertEqual(ids.first, "obst")
         XCTAssertEqual(ids.last, "nach")
         XCTAssertEqual(ids, ["obst", "bedienung", "nach"])
+        XCTAssertEqual(items.first { $0.id == "1" }?.dept, "bedienung")
+    }
+
+    func testSonstigesFollowsStoreLayoutPosition() {
+        let items = [
+            Item(id: "s", name: "AXE", dept: "sonstiges", done: false, added: 1, ord: 1),
+            Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 1)
+        ]
+        let storeA = Store(id: "markt-a", name: "Markt A", layout: ["vor", "sonstiges", "obst", "nach"], builtin: false)
+        let storeB = Store(id: "markt-b", name: "Markt B", layout: ["vor", "obst", "sonstiges", "nach"], builtin: false)
+
+        let groupsA = ListGrouping.groups(items: items, store: storeA)
+        XCTAssertEqual(groupsA.map(\.dept), ["sonstiges", "obst"])
+        XCTAssertEqual(groupsA.first { $0.dept == "sonstiges" }?.items.map(\.id), ["s"])
+        XCTAssertEqual(groupsA.first { $0.dept == "sonstiges" }?.items.map(\.dept), ["sonstiges"])
+        XCTAssertEqual(groupsA.first { $0.dept == "obst" }?.items.map(\.id), ["o"])
+
+        let groupsB = ListGrouping.groups(items: items, store: storeB)
+        XCTAssertEqual(groupsB.map(\.dept), ["obst", "sonstiges"])
+        XCTAssertEqual(groupsB.first { $0.dept == "sonstiges" }?.items.map(\.id), ["s"])
+        XCTAssertEqual(groupsB.first { $0.dept == "sonstiges" }?.items.map(\.name), ["AXE"])
+        XCTAssertEqual(groupsA.first { $0.dept == "sonstiges" }?.items, groupsB.first { $0.dept == "sonstiges" }?.items)
+        XCTAssertEqual(items.first { $0.id == "s" }?.dept, "sonstiges")
+        XCTAssertEqual(items.first { $0.id == "o" }?.dept, "obst")
+    }
+
+    func testDmSeedKeepsSonstigesBeforeNach() {
+        let dm = Store.seeds.first { $0.id == "dm" }!
+        XCTAssertEqual(dm.layout.dropLast().last, "sonstiges")
+        XCTAssertEqual(StoreLayout.sanitized(dm.layout).dropLast().last, "sonstiges")
+        let items = [
+            Item(id: "t", name: "Toilettenpapier", dept: "drogerie", done: false, added: 1, ord: 1),
+            Item(id: "a", name: "AXE", dept: "sonstiges", done: false, added: 2, ord: 1)
+        ]
+        XCTAssertEqual(ListGrouping.groups(items: items, store: dm).map(\.dept), ["drogerie", "sonstiges"])
     }
 
     func testWalkLinesEdekaSuessThenDrogerieDmReversed() {
@@ -103,10 +138,9 @@ final class GroupingTests: XCTestCase {
         let edeka = Store.seeds.first { $0.id == "edeka" }!
         let dm = Store.seeds.first { $0.id == "dm" }!
 
-        let edekaLines = ListGrouping.walkLines(
-            groups: ListGrouping.groups(items: items, store: edeka),
-            storeId: "edeka"
-        )
+        let edekaGroups = ListGrouping.groups(items: items, store: edeka)
+        XCTAssertEqual(edekaGroups.map(\.dept), ["suess", "drogerie", "sonstiges"])
+        let edekaLines = ListGrouping.walkLines(groups: edekaGroups, storeId: "edeka")
         XCTAssertEqual(edekaLines.compactMap(\.headerDept), ["suess", "drogerie", "sonstiges"])
         XCTAssertEqual(edekaLines.map(\.id), [
             "edeka|h:suess", "edeka|i:k",
@@ -115,21 +149,26 @@ final class GroupingTests: XCTestCase {
         ])
 
         let dmGroups = ListGrouping.groups(items: items, store: dm)
+        XCTAssertEqual(dmGroups.map(\.dept), ["drogerie", "sonstiges", "suess"])
+        XCTAssertEqual(dmGroups.first { $0.dept == "sonstiges" }?.items.map(\.id), ["a"])
+        XCTAssertEqual(dmGroups.first { $0.dept == "suess" }?.items.map(\.id), ["k"])
+        XCTAssertEqual(dmGroups.flatMap(\.items).first { $0.id == "k" }?.dept, "suess")
         let dmLines = ListGrouping.walkLines(groups: dmGroups, storeId: "dm")
-        XCTAssertEqual(dmLines.compactMap(\.headerDept), ["drogerie", "suess", "sonstiges"])
+        XCTAssertEqual(dmLines.compactMap(\.headerDept), ["drogerie", "sonstiges", "suess"])
         XCTAssertEqual(dmLines.map(\.id), [
             "dm|h:drogerie", "dm|i:t",
-            "dm|h:suess", "dm|i:k",
-            "dm|h:sonstiges", "dm|i:a"
+            "dm|h:sonstiges", "dm|i:a",
+            "dm|h:suess", "dm|i:k"
         ])
 
         let dmRows = ListGrouping.walkListRows(groups: dmGroups, storeId: "dm")
         XCTAssertEqual(dmRows.map(\.id), [
             "dm|0|dm|h:drogerie", "dm|1|dm|i:t",
-            "dm|2|dm|h:suess", "dm|3|dm|i:k",
-            "dm|4|dm|h:sonstiges", "dm|5|dm|i:a"
+            "dm|2|dm|h:sonstiges", "dm|3|dm|i:a",
+            "dm|4|dm|h:suess", "dm|5|dm|i:k"
         ])
         XCTAssertNotEqual(edekaLines.compactMap(\.headerDept).prefix(2), dmLines.compactMap(\.headerDept).prefix(2))
+        XCTAssertEqual(items.first { $0.id == "k" }?.dept, "suess")
     }
 
     private func loadFixture(_ name: String) throws -> Data {
@@ -322,6 +361,12 @@ final class StoreLayoutTests: XCTestCase {
     func testMoveMiddleDept() {
         let next = StoreLayout.move(["vor", "obst", "brot", "nach"], id: "brot", by: -1)
         XCTAssertEqual(next, ["vor", "brot", "obst", "nach"])
+    }
+
+    func testSonstigesIsNotLockedAndCanMove() {
+        XCTAssertFalse(StoreLayout.isLocked("sonstiges"))
+        let next = StoreLayout.move(["vor", "obst", "sonstiges", "nach"], id: "sonstiges", by: -1)
+        XCTAssertEqual(next, ["vor", "sonstiges", "obst", "nach"])
     }
 
     func testAddInsertsBeforeNach() {
@@ -528,10 +573,38 @@ final class ShoppingStoreSetStoreTests: XCTestCase {
         let store = ShoppingStore(state: seed, enableSync: false)
         XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["suess", "drogerie", "sonstiges"])
         store.setStore("dm")
-        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["drogerie", "suess", "sonstiges"])
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["drogerie", "sonstiges", "suess"])
         XCTAssertEqual(Array(store.walkListRows.map(\.id).prefix(2)), ["dm|0|dm|h:drogerie", "dm|1|dm|i:t"])
+        XCTAssertEqual(store.groups.first { $0.dept == "sonstiges" }?.items.map(\.id), ["a"])
+        XCTAssertEqual(store.state.items.first { $0.id == "k" }?.dept, "suess")
         store.setStore("edeka")
         XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["suess", "drogerie", "sonstiges"])
+        XCTAssertEqual(store.groups.first { $0.dept == "suess" }?.items.map(\.id), ["k"])
+        XCTAssertEqual(store.state.items.first { $0.id == "k" }?.dept, "suess")
+    }
+
+    func testSetStoreMovesSonstigesSectionWithLayoutPosition() {
+        var seed = AppState.seed
+        seed.stores.append(contentsOf: [
+            Store(id: "markt-a", name: "Markt A", layout: ["vor", "sonstiges", "obst", "nach"], builtin: false),
+            Store(id: "markt-b", name: "Markt B", layout: ["vor", "obst", "sonstiges", "nach"], builtin: false)
+        ])
+        seed.items = [
+            Item(id: "s", name: "AXE", dept: "sonstiges", done: false, added: 1, ord: 1),
+            Item(id: "o", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 1)
+        ]
+        seed.currentStoreId = "markt-a"
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["sonstiges", "obst"])
+        XCTAssertEqual(store.groups.first { $0.dept == "sonstiges" }?.items.map(\.id), ["s"])
+        store.setStore("markt-b")
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["obst", "sonstiges"])
+        XCTAssertEqual(store.groups.first { $0.dept == "sonstiges" }?.items.map(\.id), ["s"])
+        XCTAssertEqual(store.groups.first { $0.dept == "sonstiges" }?.items.map(\.dept), ["sonstiges"])
+        XCTAssertEqual(store.state.items.first { $0.id == "s" }?.dept, "sonstiges")
+        store.setStore("markt-a")
+        XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["sonstiges", "obst"])
+        XCTAssertEqual(store.state.items.first { $0.id == "s" }?.dept, "sonstiges")
     }
 }
 

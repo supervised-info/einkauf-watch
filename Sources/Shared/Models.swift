@@ -207,11 +207,11 @@ struct WalkListRow: Identifiable, Equatable, Sendable {
 }
 
 enum ListGrouping {
-    /// `vor` immer zuerst, `nach` immer zuletzt, `sonstiges` direkt davor.
-    /// Dazwischen: Layout des aktuellen Ladens, dann restliche Abteilungen.
+    /// `vor` zuerst, `nach` zuletzt; `sonstiges` bleibt an der Position im Ladenweg.
+    /// Extra-Abteilungen mit Artikeln, die nicht im Layout stehen, danach (vor `nach`). `item.dept` bleibt unverändert.
     static func groups(items: [Item], store: Store) -> [DeptGroup] {
-        var layout = store.layout.filter { Department.isKnown($0) }
-        layout.removeAll { $0 == "vor" || $0 == "nach" || $0 == "sonstiges" }
+        let layout = StoreLayout.sanitized(store.layout)
+        let inLayout = Set(layout)
 
         var byDept: [String: [Item]] = [:]
         for item in items {
@@ -230,13 +230,13 @@ enum ListGrouping {
             used.insert(dept)
         }
 
-        push("vor")
-        layout.forEach(push)
-        for dept in Department.allCases where dept != .vor && dept != .nach && dept != .sonstiges {
+        for dept in layout where dept != Department.nach.rawValue {
+            push(dept)
+        }
+        for dept in Department.allCases where !inLayout.contains(dept.rawValue) {
             push(dept.rawValue)
         }
-        push("sonstiges")
-        push("nach")
+        push(Department.nach.rawValue)
         return groups
     }
 

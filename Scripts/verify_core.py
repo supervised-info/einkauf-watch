@@ -19,8 +19,22 @@ def fail(msg: str) -> None:
     sys.exit(1)
 
 
+def sanitized_layout(layout: list[str]) -> list[str]:
+    seen: set[str] = set()
+    middle: list[str] = []
+    for d in layout:
+        if d not in DEPTS or d in seen:
+            continue
+        seen.add(d)
+        if d in ("vor", "nach"):
+            continue
+        middle.append(d)
+    return ["vor"] + middle + ["nach"]
+
+
 def groups(items: list[dict], layout: list[str]) -> list[str]:
-    layout = [d for d in layout if d in DEPTS and d not in ("vor", "nach", "sonstiges")]
+    layout = sanitized_layout(layout)
+    in_layout = set(layout)
     by: dict[str, list[dict]] = {}
     for it in items:
         d = it.get("dept") if it.get("dept") in DEPTS else "sonstiges"
@@ -36,13 +50,12 @@ def groups(items: list[dict], layout: list[str]) -> list[str]:
         out.append(d)
         used.add(d)
 
-    push("vor")
     for d in layout:
-        push(d)
-    for d in DEPTS:
-        if d not in ("vor", "nach", "sonstiges"):
+        if d != "nach":
             push(d)
-    push("sonstiges")
+    for d in DEPTS:
+        if d not in in_layout:
+            push(d)
     push("nach")
     return out
 
@@ -84,9 +97,33 @@ def test_walk_lines_screenshot_items() -> None:
     dm_ids = groups(items, dm)
     if edeka_ids != ["suess", "drogerie", "sonstiges"]:
         fail(f"edeka walk headers {edeka_ids}")
-    if dm_ids != ["drogerie", "suess", "sonstiges"]:
+    if dm_ids != ["drogerie", "sonstiges", "suess"]:
         fail(f"dm walk headers {dm_ids}")
     print("walk lines screenshot items: ok")
+
+
+def test_sonstiges_follows_layout_position() -> None:
+    items = [
+        {"name": "AXE", "dept": "sonstiges", "ord": 1, "added": 1},
+        {"name": "Äpfel", "dept": "obst", "ord": 1, "added": 2},
+    ]
+    a = groups(items, ["vor", "sonstiges", "obst", "nach"])
+    b = groups(items, ["vor", "obst", "sonstiges", "nach"])
+    if a != ["sonstiges", "obst"]:
+        fail(f"store A sonstiges first: {a}")
+    if b != ["obst", "sonstiges"]:
+        fail(f"store B obst first: {b}")
+    dm = ["vor", "drogerie", "trocken", "getraenke", "sonstiges", "nach"]
+    dm_ids = groups(
+        [
+            {"name": "Toilettenpapier", "dept": "drogerie", "ord": 1, "added": 1},
+            {"name": "AXE", "dept": "sonstiges", "ord": 1, "added": 2},
+        ],
+        dm,
+    )
+    if dm_ids != ["drogerie", "sonstiges"]:
+        fail(f"dm seed should keep sonstiges before nach: {dm_ids}")
+    print("sonstiges layout position: ok")
 
 
 def test_fixtures() -> None:
@@ -324,10 +361,20 @@ def test_sources() -> None:
         fail("tests must cover walkLines header order edeka suess then drogerie vs dm reversed")
     if 'headerDept), ["suess", "drogerie"' not in tests and '["suess", "drogerie", "sonstiges"]' not in tests:
         fail("walkLines test must assert edeka header suess then drogerie")
-    if '["drogerie", "suess", "sonstiges"]' not in tests:
-        fail("walkLines test must assert dm header drogerie then suess")
-    if "CURRENT_PROJECT_VERSION = 6" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 6")
+    if '["drogerie", "sonstiges", "suess"]' not in tests:
+        fail("walkLines leftover aisles stay extra headers after sonstiges layout slot")
+    if "testSonstigesFollowsStoreLayoutPosition" not in tests:
+        fail("tests must cover sonstiges following store layout position")
+    if '["vor", "sonstiges", "obst", "nach"]' not in tests or '["vor", "obst", "sonstiges", "nach"]' not in tests:
+        fail("tests must use layouts with sonstiges before vs after obst")
+    if 'layout.removeAll { $0 == "vor" || $0 == "nach" || $0 == "sonstiges" }' in models:
+        fail("ListGrouping.groups must not strip sonstiges from the layout")
+    if "StoreLayout.sanitized(store.layout)" not in models:
+        fail("ListGrouping.groups must walk StoreLayout.sanitized")
+    if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
+        fail("groups must not remap leftover depts into sonstiges")
+    if "CURRENT_PROJECT_VERSION = 7" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 7")
     if not re.search(r'\.navigationTitle\(', watch):
         fail("Watch must use navigationTitle")
     title_has_store = "currentStore.name" in watch or (
@@ -396,6 +443,7 @@ def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
     test_walk_lines_screenshot_items()
+    test_sonstiges_follows_layout_position()
     test_backup_codec_python()
     test_sources()
     print("ALL OK")
