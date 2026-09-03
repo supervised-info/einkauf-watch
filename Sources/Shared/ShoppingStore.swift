@@ -263,6 +263,23 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
+    /// Schreibt `mappings[mappingKey(key)]` — dasselbe Backup-Feld wie die PWA, kein zweites Dictionary.
+    func setMapping(_ key: String, dept: String) {
+        let mapped = DepartmentGuesser.mappingKey(key)
+        guard !mapped.isEmpty, Department.isKnown(dept) else { return }
+        guard state.mappings[mapped] != dept else { return }
+        state.mappings[mapped] = dept
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func removeMapping(_ key: String) {
+        guard state.mappings[key] != nil else { return }
+        state.mappings.removeValue(forKey: key)
+        state.listRevision += 1
+        persistAndSync()
+    }
+
     func moveLayoutDept(_ id: String, by: Int) {
         mutateCurrentStoreLayout { StoreLayout.move($0, id: id, by: by) }
     }

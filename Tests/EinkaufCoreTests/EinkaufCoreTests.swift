@@ -46,6 +46,28 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(obj["walkMode"] as? Bool, true)
         XCTAssertNil(obj["listRevision"])
         XCTAssertNotNil(obj["savedLists"])
+        XCTAssertNotNil(obj["mappings"])
+        XCTAssertNil(obj["learnedMappings"])
+        XCTAssertNil(obj["userMappings"])
+        XCTAssertNil(obj["meineZuordnungen"])
+    }
+
+    func testFixtureKeepsMappingsAndExportUsesSameField() throws {
+        let data = try loadFixture("einkauf-backup.json")
+        let state = try BackupCodec.decode(data)
+        XCTAssertEqual(state.mappings["milch"], "kuehlung")
+        XCTAssertEqual(state.mappings["klopapier"], "drogerie")
+        let exported = try BackupCodec.encodeExport(state)
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        let maps = obj["mappings"] as? [String: String]
+        XCTAssertEqual(maps?["milch"], "kuehlung")
+        XCTAssertEqual(maps?["klopapier"], "drogerie")
+        XCTAssertEqual(Set(obj.keys.filter { $0.lowercased().contains("map") }), ["mappings"])
+        XCTAssertNil(obj["learnedMappings"])
+        XCTAssertNil(obj["userMappings"])
+        XCTAssertNil(obj["meineZuordnungen"])
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.mappings, state.mappings)
     }
 
     func testNotABackupRejected() {
@@ -1140,6 +1162,68 @@ final class KeywordDictionaryBrowseTests: XCTestCase {
         let groups = KeywordDictionary.groups(from: KeywordDictionary.source, matching: "spezi")
         XCTAssertEqual(groups.map(\.title), ["Getränke"])
         XCTAssertEqual(groups[0].words, ["spezi"])
+    }
+
+    func testLearnedMappingsSearch() {
+        let maps = ["milch": "kuehlung", "spezi": "getraenke", "apfel": "obst", "nope": "unknown"]
+        let all = KeywordDictionary.learnedMappings(from: maps)
+        XCTAssertEqual(all.map(\.key), ["apfel", "milch", "spezi"])
+        XCTAssertEqual(all.map(\.dept), ["obst", "kuehlung", "getraenke"])
+        let filtered = KeywordDictionary.learnedMappings(from: maps, matching: "SPEZI")
+        XCTAssertEqual(filtered.map(\.key), ["spezi"])
+        XCTAssertEqual(filtered.first?.dept, "getraenke")
+        XCTAssertTrue(KeywordDictionary.learnedMappings(from: maps, matching: "xyz").isEmpty)
+        XCTAssertTrue(KeywordDictionary.learnedMappings(from: [:]).isEmpty)
+    }
+}
+
+@MainActor
+final class ShoppingStoreMappingTests: XCTestCase {
+    func testSetMappingWritesMappingKey() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.setMapping("2x Milch", dept: "trocken")
+        XCTAssertEqual(store.state.mappings["milch"], "trocken")
+        XCTAssertNil(store.state.mappings["2x milch"])
+        XCTAssertEqual(DepartmentGuesser.guess("Milch", mappings: store.state.mappings), "trocken")
+        XCTAssertGreaterThan(store.state.listRevision, 0)
+    }
+
+    func testRemoveMappingDropsKey() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.setMapping("Milch", dept: "trocken")
+        XCTAssertEqual(store.state.mappings["milch"], "trocken")
+        store.removeMapping("milch")
+        XCTAssertNil(store.state.mappings["milch"])
+        XCTAssertEqual(DepartmentGuesser.guess("Milch", mappings: store.state.mappings), "kuehlung")
+    }
+
+    func testSetMappingUnknownDeptAndEmptyAreNoOp() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.setMapping("Milch", dept: "nope")
+        store.setMapping("   ", dept: "kuehlung")
+        XCTAssertTrue(store.state.mappings.isEmpty)
+        XCTAssertEqual(store.state.listRevision, 0)
+        store.setMapping("Milch", dept: "trocken")
+        let rev = store.state.listRevision
+        store.setMapping("Milch", dept: "trocken")
+        XCTAssertEqual(store.state.listRevision, rev)
+        store.removeMapping("missing")
+        XCTAssertEqual(store.state.listRevision, rev)
+        XCTAssertEqual(store.state.mappings["milch"], "trocken")
+    }
+
+    func testExportKeepsMappingsField() throws {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.setMapping("Äpfel", dept: "brot")
+        let exported = try BackupCodec.encodeExport(store.state)
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        let maps = obj["mappings"] as? [String: String]
+        XCTAssertEqual(maps?[DepartmentGuesser.mappingKey("Äpfel")], "brot")
+        XCTAssertNil(obj["learnedMappings"])
+        XCTAssertNil(obj["userMappings"])
+        XCTAssertEqual(obj["kind"] as? String, "einkauf-backup")
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.mappings[DepartmentGuesser.mappingKey("Äpfel")], "brot")
     }
 }
 

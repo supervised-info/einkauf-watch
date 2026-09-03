@@ -240,6 +240,10 @@ def test_sources() -> None:
     codec = (ROOT / "Sources/Shared/BackupCodec.swift").read_text()
     if "savedLists" not in codec:
         fail("backup codec must mention savedLists")
+    if '"mappings": state.mappings' not in codec:
+        fail("backup export must keep the mappings field")
+    if '"learnedMappings"' in codec or '"userMappings"' in codec or '"meineZuordnungen"' in codec:
+        fail("backup codec must not invent a second mappings field")
     pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
     if "net.tschelle.einkauf" not in pbx:
         fail("bundle id missing")
@@ -356,8 +360,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 19" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 19 / CURRENT_PROJECT_VERSION")
+    if "Build 20" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 20 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -411,6 +415,10 @@ def test_sources() -> None:
         fail("Description.md still documents the old guess order (keywords before mappings)")
     if "Artikelnamen (ohne Menge)" not in desc:
         fail("Description.md Wörterbuch footer must mention item-name corrections")
+    if "Meine Zuordnungen" not in desc:
+        fail("Description.md must document Meine Zuordnungen")
+    if "Backup als `mappings`" not in desc and "Backup-Feld `mappings`" not in desc:
+        fail("Description.md must say eigene Zuordnungen use backup field mappings")
     if "5. Einkaufsliste speichern" not in desc:
         fail("Description.md overflow menu must list Einkaufsliste speichern")
     if "Alert „Einkaufsliste speichern“" not in desc:
@@ -521,11 +529,38 @@ def test_sources() -> None:
         fail("Wörterbuch must not fetch the web")
     if "Artikelnamen (ohne Menge)" not in dict_view or "Wörterbuch selbst ändert sich nicht" not in dict_view:
         fail("Wörterbuch footer must say corrections stick to the item name and the dictionary does not change")
+    if "@EnvironmentObject" not in dict_view or "ShoppingStore" not in dict_view:
+        fail("KeywordDictionaryView needs ShoppingStore EnvironmentObject")
+    if "Meine Zuordnungen" not in dict_view:
+        fail("Wörterbuch must show Meine Zuordnungen")
+    empty_copy = "Noch keine eigenen Zuordnungen. Abteilung im Bearbeiten-Modus ändern — dann erscheint der Name hier."
+    if empty_copy not in dict_view:
+        fail("Wörterbuch empty mappings copy missing")
+    if "setMapping" not in dict_view or "removeMapping" not in dict_view:
+        fail("Wörterbuch must edit/delete via setMapping/removeMapping")
+    if ".onDelete" not in dict_view:
+        fail("Meine Zuordnungen must swipe-delete")
+    if "Picker" not in dict_view or "Department.allCases" not in dict_view:
+        fail("Meine Zuordnungen rows need a Department Picker")
+    if "learnedMappings" not in dict_view or "matching: query" not in dict_view:
+        fail("search query must filter Meine Zuordnungen")
+    if "groups(from: KeywordDictionary.source, matching: query)" not in dict_view:
+        fail("search query must still filter canned Wörterbuch groups")
+    meine_idx = dict_view.find("Meine Zuordnungen")
+    canned_idx = dict_view.find("ForEach(groups)")
+    if meine_idx < 0 or canned_idx < 0 or meine_idx > canned_idx:
+        fail("Meine Zuordnungen must sit above canned KeywordDictionary groups")
+    if "Wortliste ist fest" not in dict_view or "Backup als mappings" not in dict_view:
+        fail("Wörterbuch footer must say canned list is fixed and eigene Zuordnungen live in backup mappings")
+    if "learnedMappings" in dict_view and re.search(r'"(learnedMappings|userMappings|meineZuordnungen)"', dict_view):
+        fail("Wörterbuch must not invent a second backup field name")
     browse = (ROOT / "Sources/Shared/KeywordDictionaryBrowse.swift").read_text()
     if "Department.title" not in browse:
         fail("Wörterbuch groups must use Department.title")
     if "Locale(identifier: \"de\")" not in browse:
         fail("Wörterbuch words must sort with de locale")
+    if "func learnedMappings" not in browse:
+        fail("KeywordDictionary.learnedMappings missing")
     kd = (ROOT / "Sources/Shared/KeywordDictionary.swift").read_text()
     if "static let source" not in kd:
         fail("KeywordDictionary.source missing")
@@ -565,6 +600,28 @@ def test_sources() -> None:
         fail("setStore must bump listRevision before persistAndSync")
     if body.find("state = next") > body.find("persistAndSync"):
         fail("setStore must assign state (and bump revision) before persistAndSync")
+    setmap_idx = store_src.find("func setMapping")
+    if setmap_idx < 0:
+        fail("ShoppingStore missing setMapping")
+    setmap = extract_braced(store_src, setmap_idx, "setMapping")
+    if "mappingKey" not in setmap:
+        fail("setMapping must write DepartmentGuesser.mappingKey")
+    if "Department.isKnown" not in setmap:
+        fail("setMapping must reject unknown depts")
+    if "persistAndSync" not in setmap:
+        fail("setMapping must persistAndSync like other state changes")
+    if "listRevision" not in setmap:
+        fail("setMapping must bump listRevision")
+    rmmap_idx = store_src.find("func removeMapping")
+    if rmmap_idx < 0:
+        fail("ShoppingStore missing removeMapping")
+    rmmap = extract_braced(store_src, rmmap_idx, "removeMapping")
+    if "removeValue" not in rmmap:
+        fail("removeMapping must drop the key from mappings")
+    if "persistAndSync" not in rmmap:
+        fail("removeMapping must persistAndSync like other state changes")
+    if "listRevision" not in rmmap:
+        fail("removeMapping must bump listRevision")
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch:
         fail("Watch should not have a store picker")
@@ -716,6 +773,14 @@ def test_sources() -> None:
         fail("iPhone Geh-Modus must persist hideCompleted separately from Watch")
     if "testUserMappingBeatsKeyword" not in tests or "testUserMappingBeatsSpecialRules" not in tests:
         fail("tests must cover user mapping beating keywords and special rules")
+    if "testLearnedMappingsSearch" not in tests:
+        fail("tests must cover Meine Zuordnungen search filter")
+    if "testSetMappingWritesMappingKey" not in tests:
+        fail("tests must cover setMapping writing mappingKey")
+    if "testRemoveMappingDropsKey" not in tests:
+        fail("tests must cover removeMapping")
+    if "testExportKeepsMappingsField" not in tests or "testFixtureKeepsMappingsAndExportUsesSameField" not in tests:
+        fail("tests must cover backup still containing mappings (not a second field)")
     if "testWalkListRowsHidingCompletedDropsDoneItemsAndEmptyHeaders" not in tests:
         fail("tests must cover walkListRows hidingCompleted dropping done items and empty headers")
     if "testWalkListRowsHidingCompletedEmptyWhenAllDone" not in tests:
@@ -736,8 +801,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 19" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 19")
+    if "CURRENT_PROJECT_VERSION = 20" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 20")
+    if "CURRENT_PROJECT_VERSION = 19" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 19 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 18" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 18 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 17" in pbx:
@@ -761,8 +828,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 19" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 19")
+    if "CURRENT_PROJECT_VERSION: 20" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 20")
+    if "CURRENT_PROJECT_VERSION: 19" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 19 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 18" in yml:
         fail("stale CURRENT_PROJECT_VERSION 18 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 17" in yml:
@@ -864,9 +933,13 @@ def test_sources() -> None:
 def test_backup_codec_python() -> None:
     """Sanity: Export-Shape ohne interne Felder."""
     raw = json.loads((ROOT / "Fixtures/einkauf-backup.json").read_text())
-    for key in ("kind", "v", "currentStoreId", "stores", "items"):
+    for key in ("kind", "v", "currentStoreId", "stores", "items", "mappings"):
         if key not in raw:
             fail(f"missing {key}")
+    if "learnedMappings" in raw or "userMappings" in raw or "meineZuordnungen" in raw:
+        fail("backup must not invent a second mappings field")
+    if not isinstance(raw["mappings"], dict):
+        fail("backup mappings must be an object")
     for item in raw["items"]:
         for key in ("id", "name", "dept", "done", "added", "ord"):
             if key not in item:
@@ -961,8 +1034,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 19") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 19")
+    if pbx.count("CURRENT_PROJECT_VERSION = 20") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 20")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
