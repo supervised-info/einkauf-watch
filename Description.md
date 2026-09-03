@@ -38,7 +38,8 @@ Watch-UI-Änderung: Build-Nummer hochzählen, sonst bleibt die alte Companion-Ap
 
 Toolbar:
 
-- Links: **Ladenwahl**-Menü (`accessibilityLabel` „Laden“) — alle `stores`, aktueller mit Checkmark. Nur iPhone.
+- Links: **Ladenwahl**-Menü (`accessibilityLabel` „Laden“) — alle `stores`, aktueller mit Checkmark. Nur iPhone. Das Auge ersetzt dieses Menü **nicht**.
+- Rechts: Auge `eye` / `eye.slash` (Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“) neben dem Umschalter **Geh-Modus** / **Bearbeiten**. Tippen blendet abgehakte Artikel **nur im iPhone-Geh-Modus** aus; Bearbeiten zeigt weiter alle. Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden. Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ Flag nur iPhone (`UserDefaults` / `AppStorage` `einkauf.iphone.hideCompleted`), **nicht** im einkauf-backup, **nicht** zur Watch.
 - Rechts: Umschalter **Geh-Modus** / **Bearbeiten** (zeigt den jeweils anderen Modus, wie die PWA). `walkMode` persistiert und liegt im Backup.
 - Rechts: Overflow **…** (`ellipsis.circle`, Label „Mehr“).
 
@@ -49,6 +50,8 @@ Thema und Palette **nicht** in der Toolbar — nur in Einstellungen.
 ### Geh-Modus (iPhone + Watch)
 
 Große Checkbox + Name, Durchstreichen wenn `done`. Tippen toggelt. Kein Grip, kein Dept-Select, kein Löschen, Name nicht editierbar. Flache `ForEach`-Zeilen (`WalkListRow` / `WalkLine`): Überschrift dann Artikel. **Keine** SwiftUI-`Section` — die verschluckt die Abteilungsreihenfolge beim Ladenwechsel. Zeilen-IDs enthalten Laden und Position (`storeId|index|…`). List-`.id` aus `currentStoreId` + Layout-Join.
+
+iPhone-Geh-Modus kann Erledigte ausblenden (Auge, `einkauf.iphone.hideCompleted`). Watch-Geh-Modus hat denselben Toggle mit **eigenem** Flag (`einkauf.watch.hideCompleted`). Die Flags synct nichts, Backup enthält sie nicht. Bearbeiten auf dem iPhone filtert nicht — erledigte Artikel bleiben editierbar.
 
 ### Bearbeiten (nur iPhone)
 
@@ -103,7 +106,7 @@ Nur Geh-Modus. Navigation-Titel **eine Zeile**: gekürzter Ladenname + zwei Leer
 
 Kein Store-Picker, kein Bearbeiten, kein Share, kein Backup, kein Speichern, kein Wörterbuch, kein Löschen von Läden. Digital Crown scrollt die `List`. Leer: „Noch nichts auf der Liste.“
 
-Toolbar **links** (`.topBarLeading`, dieselbe Zeile wie der Titel — **nicht** `.topBarTrailing`, die Uhr überdeckt das): SF-Symbol `eye` wenn Erledigte sichtbar, `eye.slash` wenn ausgeblendet. Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“. Tippen blendet abgehakte Artikel **nur in der Watch-Gehliste** aus; die Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden. Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ (Toggle bleibt). Flag nur auf der Watch (`UserDefaults` / `AppStorage` `einkauf.watch.hideCompleted`), **nicht** im einkauf-backup, **nicht** zum iPhone. `watchTitle`, Complication und iPhone-Geh-Modus zeigen weiter alle Artikel und `xx/yy` der vollen Liste.
+Toolbar **links** (`.topBarLeading`, dieselbe Zeile wie der Titel — **nicht** `.topBarTrailing`, die Uhr überdeckt das): SF-Symbol `eye` wenn Erledigte sichtbar, `eye.slash` wenn ausgeblendet. Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“. Tippen blendet abgehakte Artikel **nur in der Watch-Gehliste** aus; die Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden. Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ (Toggle bleibt). Flag nur auf der Watch (`UserDefaults` / `AppStorage` `einkauf.watch.hideCompleted`), **nicht** im einkauf-backup, **nicht** zum iPhone (das iPhone hat `einkauf.iphone.hideCompleted`). `watchTitle` und Complication zeigen weiter `xx/yy` der vollen Liste.
 
 ### Watch-Complication (WidgetKit, watchOS 10)
 
@@ -258,7 +261,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 
 **Nur HTML / in der PWA behalten:** Markdown kopieren / Datei / teilen; Import `.md`/`.txt`; nach Bring; nach Erinnerungen; extra Läden-JSON `kind: "einkauf-laeden"` (zwischen Neuer Laden und Ladenweg); Site-Mast Theme + Palette (`theme-btn`, `#paletteBtn`) und Shared Keys `supervised-info.theme` / `supervised-info.palette`; PWA Service Worker (`sw.js`, Cache-Bump, aktuell v17).
 
-**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy, Erledigte ausblendbar nur auf der Watch, WidgetKit-Complication `xx/yy`, kein Picker/Edit/Share); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **PDF Liste teilen** mit leeren quadratischen Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar. TestFlight nicht erforderlich. Native-`guess` wertet Nutzer-Mappings vor Sonderregeln/Keywords aus (HTML-Reihenfolge kann abweichen).
+**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy, Erledigte ausblendbar, WidgetKit-Complication `xx/yy`, kein Picker/Edit/Share); iPhone-Geh-Modus mit eigenem Auge (Bearbeiten ungefiltert); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **PDF Liste teilen** mit leeren quadratischen Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar. TestFlight nicht erforderlich. Native-`guess` wertet Nutzer-Mappings vor Sonderregeln/Keywords aus (HTML-Reihenfolge kann abweichen).
 
 **Brücke:** nur Backup-JSON-Datei (inkl. `savedLists`). Kein Live-localStorage-Sync. Unbekannte Felder jeweils ignorieren. App scrapt die Website nicht.
 
@@ -269,7 +272,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 - Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys, inkl. `savedLists`)
 - `ListGrouping`: `sonstiges` folgt dem Layout; Extra-Depts behalten `item.dept` (geteilt mit HTML, nicht vor `nach` kleben)
 - Guesser: Nutzer-Mapping vor Sonderregeln und Keywords; `KeywordDictionary.source` unverändert; lokal
-- Watch bleibt Geh-Modus ohne Picker/Edit/Share (Auge blendet Erledigte nur an, löscht sie nicht)
+- Watch bleibt Geh-Modus ohne Picker/Edit/Share (Auge blendet Erledigte nur an, löscht sie nicht); iPhone-Auge nur Geh-Modus, Bearbeiten ungefiltert; Flags geräte-lokal, nicht im Backup
 - Complication nur Watch/WidgetKit, nicht iPhone, kein ClockKit, kein iCloud
 - iPhone-Widget nur Homescreen (`systemSmall`/`systemMedium`), nicht Watch, nicht Sperrbildschirm, kein iCloud
 - Theme nur in Einstellungen
@@ -286,7 +289,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 - [ ] `DepartmentGuesser` + `KeywordDictionary.source` lokal, kein Netz; Nutzer-Mapping vor Sonderregeln/Keywords.
 - [ ] Gespeicherte Listen: Name+Dept-Snapshot, füllen nicht ersetzen, Backup-Feld `savedLists`.
 - [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen.
-- [ ] Watch-Titel: gekürzter Ladenname + Einkauf xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`AppStorage`, nicht Backup); kein Picker/Edit/Share auf der Watch; WatchConnectivity.
+- [ ] Watch-Titel: gekürzter Ladenname + Einkauf xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`einkauf.watch.hideCompleted`, nicht Backup); iPhone-Geh-Modus hat dasselbe Auge mit `einkauf.iphone.hideCompleted`; Bearbeiten ungefiltert; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
 - [ ] Watch-Complication (WidgetKit, watchOS 10): `xx/yy` inkl. vor/nach, Ladenname wo Platz, Tap öffnet Geh-Modus; Update aus `einkauf-local.json` / WatchConnectivity; nicht auf dem iPhone.
 - [ ] iPhone-Widget (WidgetKit, iOS 17): `systemSmall` Laden + `xx/yy`, `systemMedium` plus offene Artikel in Geh-Modus-Reihenfolge; Tap öffnet Einkaufsliste; App Group `group.net.tschelle.einkauf`; nicht auf der Watch.
 - [ ] Theme nur in Einstellungen; HTML-Delta bleibt: kein Markdown/Bring/Erinnerungen/`einkauf-laeden`/PWA-SW/Mast-Theme in der nativen App; kein Watch/PDF/System-Appearance im HTML. Gemeinsame Slice (Listen, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only führen.

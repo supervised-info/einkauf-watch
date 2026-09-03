@@ -17,12 +17,21 @@ struct ContentView: View {
     @State private var renamingID: String?
     @State private var renameDraft = ""
     @FocusState private var renameFocused: Bool
+    /// Nur iPhone-UserDefaults — nicht im Backup, nicht zur Watch.
+    @AppStorage("einkauf.iphone.hideCompleted") private var hideCompleted = false
+
+    private var visibleWalkRows: [WalkListRow] {
+        store.walkListRows(hidingCompleted: hideCompleted)
+    }
 
     var body: some View {
         NavigationStack {
             Group {
                 if store.groups.isEmpty {
                     ContentUnavailableView("Noch nichts auf der Liste.", systemImage: "basket", description: Text("Artikel hinzufügen oder ein Backup importieren."))
+                        .foregroundStyle(theme.ink)
+                } else if store.walkMode && visibleWalkRows.isEmpty {
+                    ContentUnavailableView("Erledigte ausgeblendet.", systemImage: "eye.slash")
                         .foregroundStyle(theme.ink)
                 } else {
                     list
@@ -96,7 +105,7 @@ struct ContentView: View {
 
     private var walkList: some View {
         List {
-            ForEach(store.walkListRows) { row in
+            ForEach(visibleWalkRows) { row in
                 switch row.line {
                 case .header(_, let dept):
                     walkHeader(dept)
@@ -264,6 +273,14 @@ struct ContentView: View {
                 Text(store.state.currentStore.name)
             }
             .accessibilityLabel("Laden")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                hideCompleted.toggle()
+            } label: {
+                Image(systemName: hideCompleted ? "eye.slash" : "eye")
+            }
+            .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button(store.walkMode ? "Bearbeiten" : "Geh-Modus") {

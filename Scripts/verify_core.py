@@ -268,8 +268,22 @@ def test_sources() -> None:
         fail("ContentView must not use List+Section (store switch keeps old section order)")
     if "ForEach(store.groups)" in content:
         fail("ContentView must not ForEach groups as List sections")
-    if "ForEach(store.walkListRows)" not in content:
-        fail("ContentView walkList must ForEach walkListRows (flat store+position ids)")
+    if "walkListRows(hidingCompleted" not in content:
+        fail("iPhone Geh-Modus must use walkListRows(hidingCompleted:) so done items can be filtered")
+    if "ForEach(visibleWalkRows)" not in content and "ForEach(store.walkListRows" not in content:
+        fail("ContentView walkList must ForEach walk list rows (flat store+position ids)")
+    if "ForEach(store.editRows)" not in content:
+        fail("Bearbeiten must ForEach the full editRows list")
+    if "AppStorage" not in content or "einkauf.iphone.hideCompleted" not in content:
+        fail("iPhone hide-completed must persist via AppStorage einkauf.iphone.hideCompleted")
+    if "einkauf.watch.hideCompleted" in content:
+        fail("iPhone must not reuse the Watch AppStorage key")
+    if '"eye"' not in content or "eye.slash" not in content:
+        fail("iPhone hide toggle must use eye / eye.slash")
+    if "Erledigte ausblenden" not in content or "Erledigte einblenden" not in content:
+        fail("iPhone hide toggle missing accessibility labels")
+    if "Erledigte ausgeblendet." not in content:
+        fail("iPhone must show Erledigte ausgeblendet. when every walk item is hidden")
     if "store.walkLines" in content and "ForEach(store.walkLines)" in content:
         fail("walk ForEach must use walkListRows so ids include position")
     list_id = '.id("\\(store.state.currentStoreId)|\\(store.state.currentStore.layout.joined())")'
@@ -285,6 +299,13 @@ def test_sources() -> None:
         fail("ContentView store selection must be a Menu of store buttons")
     if "checkmark" not in store_menu:
         fail("ContentView store Menu must checkmark the selected store")
+    leading = content[content.find("placement: .topBarLeading"):content.find("placement: .topBarTrailing")]
+    if 'accessibilityLabel("Laden")' not in leading:
+        fail("store Menu must stay topBarLeading")
+    if "eye.slash" in leading or "hideCompleted.toggle" in leading:
+        fail("eye toggle must not replace the store Menu")
+    if content.find("hideCompleted.toggle") < 0 or content.find("hideCompleted.toggle") > content.find('Button(store.walkMode ? "Bearbeiten"'):
+        fail("iPhone eye toggle must sit near the Geh-Modus / Bearbeiten control")
     if "func setWalkMode" not in store:
         fail("walkMode not persisted via setWalkMode")
     editing = (ROOT / "Sources/Shared/ItemEditing.swift").read_text()
@@ -309,8 +330,10 @@ def test_sources() -> None:
     desc = (ROOT / "Description.md").read_text()
     if "Build 12" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
         fail("Description.md must name Build 12 / CURRENT_PROJECT_VERSION")
-    if "einkauf.watch.hideCompleted" not in desc or "Erledigte ausgeblendet" not in desc:
-        fail("Description.md must document Watch hide-completed (AppStorage, empty line)")
+    if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
+        fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
+    if "Erledigte ausgeblendet" not in desc:
+        fail("Description.md must document Erledigte ausgeblendet empty line")
     if "topBarLeading" not in desc or "eye.slash" not in desc:
         fail("Description.md must place the Watch eye in topBarLeading")
     if "Nutzerkorrektur gewinnt" not in desc:
@@ -492,6 +515,8 @@ def test_sources() -> None:
         fail("Watch navigationTitle must bind to watchTitle")
     if "AppStorage" not in watch or "einkauf.watch.hideCompleted" not in watch:
         fail("Watch hide-completed must persist via AppStorage einkauf.watch.hideCompleted")
+    if "einkauf.iphone.hideCompleted" in watch:
+        fail("Watch must not reuse the iPhone AppStorage key")
     if "topBarLeading" not in watch:
         fail("Watch hide toggle must sit in topBarLeading (same row as the title)")
     if '"eye"' not in watch or "eye.slash" not in watch:
@@ -506,7 +531,7 @@ def test_sources() -> None:
         fail("hideCompleted must not enter BackupCodec / einkauf-backup")
     models = (ROOT / "Sources/Shared/Models.swift").read_text()
     if "hideCompleted" in models:
-        fail("hideCompleted must not live in AppState / Models (Watch-only AppStorage)")
+        fail("hideCompleted must not live in AppState / Models (device-local AppStorage)")
     if "var dept: String" not in models:
         fail("DeptGroup must keep a raw dept field")
     if r"\(storeId)|\(dept)" not in models:
@@ -556,10 +581,10 @@ def test_sources() -> None:
         fail("ListGrouping missing walkListRows (store + position ids)")
     if "hidingCompleted" not in models:
         fail("ListGrouping.walkListRows must accept hidingCompleted")
-    if "ForEach(store.walkListRows)" not in content:
-        fail("iPhone Geh-Modus must still ForEach the full walkListRows")
-    if "hideCompleted" in content or "eye.slash" in content:
-        fail("iPhone Geh-Modus must not hide completed items")
+    if "ForEach(store.editRows)" not in content:
+        fail("iPhone Bearbeiten must still ForEach the full editRows")
+    if "einkauf.iphone.hideCompleted" not in content:
+        fail("iPhone Geh-Modus must persist hideCompleted separately from Watch")
     if "testUserMappingBeatsKeyword" not in tests or "testUserMappingBeatsSpecialRules" not in tests:
         fail("tests must cover user mapping beating keywords and special rules")
     if "testWalkListRowsHidingCompletedDropsDoneItemsAndEmptyHeaders" not in tests:
