@@ -33,9 +33,8 @@
 		AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
 		E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */; };
 		9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499EF012DA49B4720127F282 /* WatchComplicationReload.swift */; };
-		4A32D483E0BD6C110093D553 /* WatchHoldToTalk.swift in Sources */ = {isa = PBXBuildFile; fileRef = E057481E5352117E329A4086 /* WatchHoldToTalk.swift */; };
 		98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5324308E5A34153EAF3F1962 /* WatchListView.swift */; };
-		E9BEE13513ECBB5B155C3592 /* WatchSpeechRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2A9812C2F53BCEF014B818F1 /* WatchSpeechRecognizer.m */; };
+		0B0CC8DFA38C3B262D62D7D9 /* WatchVoiceAdd.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1BAE4433FCEC80ABE7461A /* WatchVoiceAdd.swift */; };
 		0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
 		CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
@@ -77,8 +76,6 @@
 		E4C39E26CF25F6C21D0552E5 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77C32A2ADBD924DE72664400 /* WidgetKit.framework */; };
 		02F44915D5FBC897F9FB4F1C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77C32A2ADBD924DE72664400 /* WidgetKit.framework */; };
 		501068D4B47B08D9E916AE4F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77C32A2ADBD924DE72664400 /* WidgetKit.framework */; };
-		9B7FD5535D927D6E1B6E4888 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD7B42F9C61A7F5D290C6170 /* Speech.framework */; };
-		5A9C1F3969F38772099B407F /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E20042225694E64AAAEDDFD /* AVFoundation.framework */; };
 		4BFF78F8A835ECE8CFB7684C /* EinkaufWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4FA5A48B1D2266068C378675 /* EinkaufWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3F44B27B4CF77F81F801488C /* EinkaufWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BEFC0D5110D2471094B23F1E /* EinkaufWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, CodeSignOnCopy, ); }; };
 		1B1EDFB631B71E5F55AEBB69 /* EinkaufWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 809071407B93695D5B6AD0AC /* EinkaufWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, CodeSignOnCopy, ); }; };
@@ -151,8 +148,6 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		809071407B93695D5B6AD0AC /* EinkaufWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = EinkaufWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
 		77C32A2ADBD924DE72664400 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		BD7B42F9C61A7F5D290C6170 /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; };
-		7E20042225694E64AAAEDDFD /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		80BEC967DFB7A0070174933F /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
 		7B54211927DDC48EEBB30B70 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		2804963C38E068C930E5F599 /* EinkaufApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufApp.swift; sourceTree = "<group>"; };
@@ -163,11 +158,8 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchApp.swift; sourceTree = "<group>"; };
 		499EF012DA49B4720127F282 /* WatchComplicationReload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchComplicationReload.swift; sourceTree = "<group>"; };
-		E057481E5352117E329A4086 /* WatchHoldToTalk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHoldToTalk.swift; sourceTree = "<group>"; };
 		5324308E5A34153EAF3F1962 /* WatchListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListView.swift; sourceTree = "<group>"; };
-		2A9812C2F53BCEF014B818F1 /* WatchSpeechRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WatchSpeechRecognizer.m; sourceTree = "<group>"; };
-		AA715C8EEB428526120821C0 /* EinkaufWatch-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EinkaufWatch-Bridging-Header.h; sourceTree = "<group>"; };
-		C99AC849980732180C808576 /* WatchSpeechRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WatchSpeechRecognizer.h; sourceTree = "<group>"; };
+		AB1BAE4433FCEC80ABE7461A /* WatchVoiceAdd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchVoiceAdd.swift; sourceTree = "<group>"; };
 		63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchWidgets.swift; sourceTree = "<group>"; };
 		3FFA995AB3FFD9B93F5501A0 /* EinkaufWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWidgets.swift; sourceTree = "<group>"; };
 		142154A18A1BACA0878EF95B /* BackupCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCodec.swift; sourceTree = "<group>"; };
@@ -217,8 +209,6 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 	files = (
 		E1975E46420BC7D37D1E9100 /* WatchConnectivity.framework in Frameworks */,
 		E4C39E26CF25F6C21D0552E5 /* WidgetKit.framework in Frameworks */,
-		9B7FD5535D927D6E1B6E4888 /* Speech.framework in Frameworks */,
-		5A9C1F3969F38772099B407F /* AVFoundation.framework in Frameworks */,
 	);
 	runOnlyForDeploymentPostprocessing = 0;
 };
@@ -272,8 +262,6 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
             			children = (
             				B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */,
             				77C32A2ADBD924DE72664400 /* WidgetKit.framework */,
-            				BD7B42F9C61A7F5D290C6170 /* Speech.framework */,
-            				7E20042225694E64AAAEDDFD /* AVFoundation.framework */,
             			);
             			name = Frameworks;
             			sourceTree = "<group>";
@@ -302,11 +290,8 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
             			children = (
             				CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */,
 				499EF012DA49B4720127F282 /* WatchComplicationReload.swift */,
-				E057481E5352117E329A4086 /* WatchHoldToTalk.swift */,
 				5324308E5A34153EAF3F1962 /* WatchListView.swift */,
-				2A9812C2F53BCEF014B818F1 /* WatchSpeechRecognizer.m */,
-				AA715C8EEB428526120821C0 /* EinkaufWatch-Bridging-Header.h */,
-				C99AC849980732180C808576 /* WatchSpeechRecognizer.h */,
+				AB1BAE4433FCEC80ABE7461A /* WatchVoiceAdd.swift */,
 				ECC3FAE11911BD587AF7020C /* Assets.xcassets */,
 				0ABD7868EA98DD31F19ECB30 /* Info.plist */,
 				BA1BE9FFCB8A414E7AFCC4A1 /* EinkaufWatch.entitlements */,
@@ -579,9 +564,8 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 			files = (
 				E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */,
 				9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */,
-				4A32D483E0BD6C110093D553 /* WatchHoldToTalk.swift in Sources */,
 				98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */,
-				E9BEE13513ECBB5B155C3592 /* WatchSpeechRecognizer.m in Sources */,
+				0B0CC8DFA38C3B262D62D7D9 /* WatchVoiceAdd.swift in Sources */,
 				0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */,
 				619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */,
 				CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */,
@@ -772,7 +756,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -807,7 +791,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -842,7 +826,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -856,15 +840,12 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = "$(inherited) -framework Speech -framework AVFoundation";
 				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
@@ -877,7 +858,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -891,15 +872,12 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				OTHER_LDFLAGS = "$(inherited) -framework Speech -framework AVFoundation";
 				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
@@ -913,7 +891,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -943,7 +921,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -974,7 +952,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1005,7 +983,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;

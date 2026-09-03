@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.0"
   CODE_SIGN_STYLE: Automatic
-  CURRENT_PROJECT_VERSION: 23
+  CURRENT_PROJECT_VERSION: 24
   MARKETING_VERSION: "1.0"
   DEVELOPMENT_TEAM: WV26CSTDDR
 targets:
@@ -64,14 +64,9 @@ targets:
       TARGETED_DEVICE_FAMILY: "4"
       SKIP_INSTALL: YES
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      SWIFT_ENABLE_EXPLICIT_MODULES: NO
-      SWIFT_OBJC_BRIDGING_HEADER: Sources/Watch/EinkaufWatch-Bridging-Header.h
-      OTHER_LDFLAGS: "$(inherited) -framework Speech -framework AVFoundation"
     dependencies:
       - sdk: WatchConnectivity.framework
       - sdk: WidgetKit.framework
-      - sdk: Speech.framework
-      - sdk: AVFoundation.framework
       - target: EinkaufWatchWidgets
         embed: true
         codeSign: true

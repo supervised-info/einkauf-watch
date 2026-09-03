@@ -10,9 +10,5 @@
 	<string>net.tschelle.einkauf</string>
 	<key>WKRunsIndependentlyOfCompanionApp</key>
 	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Einkauf nutzt das Mikrofon, um die Einkaufsliste per Sprache zu füllen.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Einkauf erkennt Gesprochenes, um die Einkaufsliste per Sprache zu füllen.</string>
 </dict>
 </plist>
