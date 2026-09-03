@@ -83,11 +83,10 @@ struct WatchListView: View {
         }
     }
 
-    /// Chrome direkt unter dem Titel, rechts: nicht in der Toolbar (Leading kürzt xx/yy, Trailing frisst die Uhr).
-    /// Kompakte Zeile (~24pt) — kein 44pt-minHeight, sonst leere Bänder über und unter dem Glyph.
+    /// Chrome direkt unter dem Titel, links: nicht in der Toolbar (Leading kürzt xx/yy, Trailing frisst die Uhr).
+    /// Kompakte Zeile (~18–20pt) — kein 44pt-minHeight, sonst leere Bänder über und unter dem Glyph.
     private var hideCompletedBar: some View {
         HStack(spacing: 0) {
-            Spacer()
             Button {
                 hideCompleted.toggle()
             } label: {
@@ -100,8 +99,9 @@ struct WatchListView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
+            Spacer()
         }
-        .frame(height: 24)
+        .frame(height: 20)
     }
 }
 
