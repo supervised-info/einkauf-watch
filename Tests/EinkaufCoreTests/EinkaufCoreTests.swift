@@ -318,6 +318,68 @@ final class ComplicationSnapshotTests: XCTestCase {
     }
 }
 
+final class HomeWidgetSnapshotTests: XCTestCase {
+    func testEmptyListIsZeroOverZeroNotHidden() {
+        let snap = HomeWidgetSnapshot.make(from: .seed)
+        XCTAssertEqual(snap.progressLabel, "0/0")
+        XCTAssertEqual(snap.storeName, "Edeka")
+        XCTAssertTrue(snap.isEmpty)
+        XCTAssertTrue(snap.openItemNames.isEmpty)
+        XCTAssertTrue(snap.accessibilityLabel.contains("leer"))
+    }
+
+    func testProgressMatchesWatchTitleAndIncludesVorNach() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "v", name: "Tasche", dept: "vor", done: true, added: 1, ord: 1),
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 1),
+            Item(id: "n", name: "Pfand", dept: "nach", done: true, added: 3, ord: 1)
+        ]
+        let snap = HomeWidgetSnapshot.make(from: state)
+        XCTAssertEqual(snap.progressLabel, state.progressLabel)
+        XCTAssertEqual(snap.progressLabel, "2/3")
+        XCTAssertEqual(snap.storeName, state.currentStore.name)
+        XCTAssertFalse(snap.isEmpty)
+        XCTAssertEqual(snap.openItemNames, ["Milch"])
+        XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
+        XCTAssertEqual(state.complicationSnapshot.progressLabel, snap.progressLabel)
+    }
+
+    func testOpenItemsFollowWalkOrderAndSkipDone() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "d", name: "Seife", dept: "drogerie", done: false, added: 1, ord: 1),
+            Item(id: "k", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 1),
+            Item(id: "o", name: "Äpfel", dept: "obst", done: true, added: 3, ord: 1),
+            Item(id: "v", name: "Tasche", dept: "vor", done: false, added: 4, ord: 1)
+        ]
+        let edeka = HomeWidgetSnapshot.make(from: state)
+        XCTAssertEqual(edeka.openItemNames, ["Tasche", "Milch", "Seife"])
+        state.currentStoreId = "dm"
+        let dm = HomeWidgetSnapshot.make(from: state)
+        XCTAssertEqual(dm.openItemNames, ["Tasche", "Seife", "Milch"])
+    }
+
+    func testOpenItemLimitAndFullStoreName() {
+        var state = AppState.seed
+        state.currentStoreId = "eigenes"
+        state.items = (0..<8).map { i in
+            Item(id: "i\(i)", name: "Artikel \(i)", dept: "sonstiges", done: false, added: Double(i), ord: Double(i))
+        }
+        let snap = HomeWidgetSnapshot.make(from: state)
+        XCTAssertEqual(snap.storeName, "Eigenes Layout")
+        XCTAssertNotEqual(snap.storeName, AppState.clippedWatchStoreName(state.currentStore.name))
+        XCTAssertEqual(snap.openItemNames.count, HomeWidgetSnapshot.openItemLimit)
+        XCTAssertEqual(snap.openItemNames, (0..<5).map { "Artikel \($0)" })
+    }
+
+    func testWidgetKindIsStable() {
+        XCTAssertEqual(HomeWidgetSnapshot.widgetKind, "EinkaufHome")
+        XCTAssertEqual(HomeWidgetSnapshot.openURL.scheme, "einkauf")
+        XCTAssertEqual(HomeWidgetSnapshot.openURL, ComplicationSnapshot.openURL)
+    }
+}
+
 final class MergeTests: XCTestCase {
     func testNewerDoneWinsWithoutClobberingList() {
         var local = AppState.seed

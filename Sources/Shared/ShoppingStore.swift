@@ -395,10 +395,16 @@ final class ShoppingStore: ObservableObject {
 #if os(watchOS)
             WatchComplicationReload.timelines()
 #endif
+#if os(iOS)
+            HomeWidgetReload.timelines()
+#endif
         }
         Persistence.save(state)
 #if os(watchOS)
         WatchComplicationReload.timelines()
+#endif
+#if os(iOS)
+        HomeWidgetReload.timelines()
 #endif
     }
 }

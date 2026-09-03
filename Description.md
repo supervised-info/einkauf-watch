@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-03 (Build 9, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-03 (Build 10, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -14,14 +14,16 @@ TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedac
 
 | | |
 |---|---|
-| iPhone | Target `Einkauf`, Bundle `net.tschelle.einkauf`, Display-Name Einkauf, Portrait, nur iPhone (`TARGETED_DEVICE_FAMILY` 1), kein Mac Catalyst |
+| iPhone | Target `Einkauf`, Bundle `net.tschelle.einkauf`, Display-Name Einkauf, Portrait, nur iPhone (`TARGETED_DEVICE_FAMILY` 1), kein Mac Catalyst, App Group `group.net.tschelle.einkauf` |
 | Watch | Target `EinkaufWatch`, Bundle `net.tschelle.einkauf.watchkitapp`, eingebettet (`embed: true`), Companion `net.tschelle.einkauf`, `WKRunsIndependentlyOfCompanionApp` YES |
 | Watch-Complication | Target `EinkaufWatchWidgets`, Bundle `net.tschelle.einkauf.watchkitapp.widgets`, WidgetKit (watchOS 10, **kein ClockKit**), eingebettet in die Watch-App (`Embed Foundation Extensions`). Nicht auf dem iPhone. |
-| Geteilter Code | `Sources/Shared` in beiden App-Targets (`ConnectivitySync.swift` nur Apple-Targets, nicht im SPM-Paket). Complication lädt `einkauf-local.json` über `Persistence` (ohne `ShoppingStore` / WatchConnectivity im Widget-Prozess). |
-| iOS-UI | `Sources/iOS` — `EinkaufApp`, `ContentView`, `SettingsSheet`, `KeywordDictionaryView`, `ListPDF`, `ShareSheet`, `AppearanceSettings` |
+| iPhone-Widget | Target `EinkaufWidgets`, Bundle `net.tschelle.einkauf.widgets`, WidgetKit (iOS 17), Homescreen `systemSmall`/`systemMedium`, eingebettet in die iPhone-App. Nicht auf der Watch, nicht Sperrbildschirm. |
+| Geteilter Code | `Sources/Shared` in beiden App-Targets (`ConnectivitySync.swift` nur Apple-Targets, nicht im SPM-Paket). Widgets laden `einkauf-local.json` über `Persistence` (ohne `ShoppingStore` / WatchConnectivity im Widget-Prozess). |
+| iOS-UI | `Sources/iOS` — `EinkaufApp`, `ContentView`, `SettingsSheet`, `KeywordDictionaryView`, `ListPDF`, `ShareSheet`, `AppearanceSettings`, `HomeWidgetReload` |
 | Watch-UI | `Sources/Watch` — `EinkaufWatchApp`, `WatchListView`, `WatchComplicationReload` |
 | Watch-Complication | `Sources/WatchWidgets` — `EinkaufWatchWidgets` (WidgetKit `StaticConfiguration`) |
-| Persistenz | Application Support `Einkauf/einkauf-local.json` auf dem iPhone; auf der Watch dieselbe Datei zusätzlich im App Group `group.net.tschelle.einkauf` (Complication), Envelope `kind: "einkauf-local"`. Kein iCloud. |
+| iPhone-Widget | `Sources/iOSWidgets` — `EinkaufWidgets` (WidgetKit `StaticConfiguration`) |
+| Persistenz | `einkauf-local.json` im App Group `group.net.tschelle.einkauf` (iPhone-App + iPhone-Widget bzw. Watch-App + Complication; Geräte-Container getrennt). Fallback Application Support `Einkauf/einkauf-local.json` beim ersten Umzug. Envelope `kind: "einkauf-local"`. Kein iCloud. |
 | Backup-Dokumenttyp | JSON, UTType `net.tschelle.einkauf.backup` |
 | Xcode | 15+, iOS 17, watchOS 10, Sprache de, Marketing 1.0 |
 | Projekt | `Einkauf.xcodeproj` / `project.yml`; optional `Scripts/generate-xcodeproj.sh` |
@@ -119,6 +121,19 @@ Familien, die auf gängigen watchOS-10-Zifferblättern und im Smart Stack vorkom
 Datenquelle: dieselbe lokale Datei `einkauf-local.json` (`Persistence`, Envelope `kind: "einkauf-local"`). Watch-App und Complication teilen sie über App Group `group.net.tschelle.einkauf` (kein iCloud). Die Watch-App schreibt bei jeder `AppState`-Änderung (Artikel, Häkchen, Laden) und ruft `WidgetCenter.reloadTimelines` auf. iPhone-Änderungen kommen wie bisher per WatchConnectivity in die Watch-App und von dort in Datei + Complication. Fallback-Timeline alle 30 Minuten, falls ein Reload ausbleibt.
 
 Kein Store-Picker, kein Bearbeiten, kein Share, kein Wörterbuch in der Complication.
+
+### iPhone-Widget (WidgetKit, iOS 17)
+
+Nur auf dem **iPhone-Homescreen**, nicht auf der Watch und nicht auf dem Sperrbildschirm. Tippen öffnet die iPhone-App auf der Einkaufsliste (`widgetURL` `einkauf://list`). Leere Liste: `0/0`, weiter antippbar.
+
+Anzeige: Fortschritt `doneCount/items.count` als `xx/yy` (wie `AppState.watchTitle` / `ComplicationSnapshot`, inkl. `vor`/`nach`). Ladenname ungekürzt (`currentStore.name`). Medium zusätzlich die nächsten **offenen** Artikelnamen in Geh-Modus-Reihenfolge (`ListGrouping`, erledigte ausgelassen).
+
+| Family | Inhalt |
+|---|---|
+| `systemSmall` | Ladenname + `xx/yy` |
+| `systemMedium` | Ladenname + `xx/yy` + nächste offene Artikel |
+
+Datenquelle: dieselbe lokale Datei `einkauf-local.json` über App Group `group.net.tschelle.einkauf` (kein iCloud, kein Netz). Die iPhone-App tritt der Group bei und schreibt dort; nach Artikel/Häkchen/Laden `WidgetCenter.reloadTimelines`. Fallback-Timeline alle 30 Minuten.
 
 ## Abteilungen `Department` (IDs nicht ändern)
 
@@ -239,19 +254,20 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 
 **Nur HTML / in der PWA behalten:** Markdown kopieren / Datei / teilen; Import `.md`/`.txt`; nach Bring; nach Erinnerungen; extra Läden-JSON `kind: "einkauf-laeden"` (zwischen Neuer Laden und Ladenweg); Site-Mast Theme + Palette (`theme-btn`, `#paletteBtn`) und Shared Keys `supervised-info.theme` / `supervised-info.palette`; PWA Service Worker (`sw.js`, Cache-Bump, aktuell v17).
 
-**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy, WidgetKit-Complication `xx/yy`, kein Picker/Edit/Share); **PDF Liste teilen** mit leeren quadratischen Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar. TestFlight nicht erforderlich.
+**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy, WidgetKit-Complication `xx/yy`, kein Picker/Edit/Share); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **PDF Liste teilen** mit leeren quadratischen Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar. TestFlight nicht erforderlich.
 
 **Brücke:** nur Backup-JSON-Datei (inkl. `savedLists`). Kein Live-localStorage-Sync. Unbekannte Felder jeweils ignorieren. App scrapt die Website nicht.
 
 ## Nicht ändern
 
-- Bundle-IDs `net.tschelle.einkauf` / `.watchkitapp`
+- Bundle-IDs `net.tschelle.einkauf` / `.watchkitapp` / `.watchkitapp.widgets` / `.widgets`
 - Builtin-Laden-IDs und DEPT-IDs
 - Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys, inkl. `savedLists`)
 - `ListGrouping`: `sonstiges` folgt dem Layout; Extra-Depts behalten `item.dept` (geteilt mit HTML, nicht vor `nach` kleben)
 - Guesser: Keywords vor Mappings; lokal
 - Watch bleibt Geh-Modus ohne Picker/Edit/Share
 - Complication nur Watch/WidgetKit, nicht iPhone, kein ClockKit, kein iCloud
+- iPhone-Widget nur Homescreen (`systemSmall`/`systemMedium`), nicht Watch, nicht Sperrbildschirm, kein iCloud
 - Theme nur in Einstellungen
 - PDF-Kästchen leer (kein Fill, kein Häkchen)
 - Bewusstes Rest-Delta zur HTML-PWA (Watch, PDF Liste teilen, System-Appearance in Einstellungen vs. Markdown/Bring/Erinnerungen/`einkauf-laeden`/Mast/SW) nicht angleichen
@@ -268,4 +284,5 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 - [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen.
 - [ ] Watch-Titel: gekürzter Ladenname + Einkauf xx/yy; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
 - [ ] Watch-Complication (WidgetKit, watchOS 10): `xx/yy` inkl. vor/nach, Ladenname wo Platz, Tap öffnet Geh-Modus; Update aus `einkauf-local.json` / WatchConnectivity; nicht auf dem iPhone.
+- [ ] iPhone-Widget (WidgetKit, iOS 17): `systemSmall` Laden + `xx/yy`, `systemMedium` plus offene Artikel in Geh-Modus-Reihenfolge; Tap öffnet Einkaufsliste; App Group `group.net.tschelle.einkauf`; nicht auf der Watch.
 - [ ] Theme nur in Einstellungen; HTML-Delta bleibt: kein Markdown/Bring/Erinnerungen/`einkauf-laeden`/PWA-SW/Mast-Theme in der nativen App; kein Watch/PDF/System-Appearance im HTML. Gemeinsame Slice (Listen, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only führen.
