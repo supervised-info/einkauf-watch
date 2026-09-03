@@ -73,7 +73,7 @@ enum StoreCatalog {
     static let customDefaultLayout = ["vor", "sonstiges", "nach"]
 
     static func makeID() -> String {
-        let t = String(Int(Date().timeIntervalSince1970 * 1000), radix: 36)
+        let t = String(Int64(Date().timeIntervalSince1970 * 1000), radix: 36)
         let r = String(UInt64.random(in: 0..<0xFFFFFF), radix: 36)
         return "s\(t)\(r)"
     }
