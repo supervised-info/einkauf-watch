@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 31" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 31 / CURRENT_PROJECT_VERSION")
+    if "Build 32" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 32 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -803,8 +803,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 31" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 31")
+    if "CURRENT_PROJECT_VERSION = 32" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 32")
+    if "CURRENT_PROJECT_VERSION = 31" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 31 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 30" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 30 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 29" in pbx:
@@ -852,8 +854,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 31" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 31")
+    if "CURRENT_PROJECT_VERSION: 32" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 32")
+    if "CURRENT_PROJECT_VERSION: 31" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 31 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 30" in yml:
         fail("stale CURRENT_PROJECT_VERSION 30 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 29" in yml:
@@ -1080,8 +1084,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 31") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 31")
+    if pbx.count("CURRENT_PROJECT_VERSION = 32") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 32")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1194,6 +1198,7 @@ def test_siri_app_intents() -> None:
     splitter = (ROOT / "Sources/Shared/SpeechItemSplitter.swift").read_text()
     intent = (ROOT / "Sources/Shared/EinkaufAddItemsIntent.swift").read_text()
     store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    persist = (ROOT / "Sources/Shared/Persistence.swift").read_text()
     tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
     desc = (ROOT / "Description.md").read_text()
     pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
@@ -1247,19 +1252,42 @@ def test_siri_app_intents() -> None:
         fail("requestValueDialog should ask Was soll ich besorgen?")
     if "strippingTriggerPrefix" not in intent:
         fail("Intent perform must strip leading Einkauf / Einkauf: / Besorgen:")
+    if "os(watchOS)" not in intent:
+        fail("Intent must branch watchOS vs iOS")
+    if "ShoppingStore(enableSync: false)" not in intent:
+        fail("watchOS Intent must use ShoppingStore(enableSync: false)")
+    if "addItemsFromSiri" not in intent:
+        fail("watchOS Intent must soft-save via addItemsFromSiri")
     if "addItems(fromSpeech:" not in intent:
-        fail("Intent perform must call addItems(fromSpeech:)")
+        fail("iOS Intent perform must call addItems(fromSpeech:)")
     if "ShoppingStore(enableSync: true)" not in intent:
-        fail("Intent must use a short-lived ShoppingStore with enableSync true")
+        fail("iOS Intent must keep ShoppingStore(enableSync: true)")
+    if "Speichern fehlgeschlagen" not in intent:
+        fail("Intent must return Speichern fehlgeschlagen instead of throwing")
     if "openAppWhenRun = false" not in intent:
         fail("Intent should confirm in Siri without opening the UI")
 
     if "func addItems(fromSpeech" not in store:
         fail("ShoppingStore.addItems(fromSpeech:) missing")
+    if "func addItemsFromSiri" not in store:
+        fail("ShoppingStore.addItemsFromSiri missing")
     if "appendNewItems" not in store:
         fail("addItems(fromSpeech:) must batch into a single persist")
     if "SpeechItemSplitter.strippingTriggerPrefix" not in store:
         fail("addItems(fromSpeech:) must strip a leading Einkauf prefix")
+    siri_start = store.find("func addItemsFromSiri")
+    siri_end = store.find("private static func normalizedItemName", siri_start)
+    siri_fn = store[siri_start:siri_end if siri_end > 0 else siri_start + 800]
+    if "persistAndSync" in siri_fn:
+        fail("addItemsFromSiri must not call persistAndSync")
+    if "WatchComplicationReload" in siri_fn:
+        fail("addItemsFromSiri must not reload complications")
+    if "broadcast" in siri_fn:
+        fail("addItemsFromSiri must not sync?.broadcast")
+    if "Persistence.write" not in siri_fn:
+        fail("addItemsFromSiri must persist via Persistence.write")
+    if "static func write" not in persist:
+        fail("Persistence.write must exist for Watch-Siri soft save")
 
     if "testCommaUndUndKeepsQuantity" not in tests:
         fail("tests must cover SpeechItemSplitter comma/und split")
@@ -1271,6 +1299,8 @@ def test_siri_app_intents() -> None:
         fail("tests must cover stripping a leading Besorgen trigger")
     if "testAddItemsFromSpeechStripsBesorgenTrigger" not in tests:
         fail("tests must cover addItems stripping Besorgen:")
+    if "testAddItemsFromSiriSoftSaveSplitsAndGuesses" not in tests:
+        fail("tests must cover addItemsFromSiri soft save")
     if "testConfirmationCopy" not in tests:
         fail("tests must cover Siri confirmation copy")
 
@@ -1291,6 +1321,8 @@ def test_siri_app_intents() -> None:
     if "EinkaufAddItemsIntent.swift" not in pkg:
         fail("Package.swift must exclude EinkaufAddItemsIntent.swift from SPM")
 
+    if "reloadFromPersistenceIfNewer" not in watch_app:
+        fail("Watch app must reload persistence when becoming active after Watch-Siri soft save")
     if "import Speech" in watch or "import Speech" in watch_app:
         fail("Watch UI must not import Speech")
     if "presentTextInputController" in watch or "TextFieldLink" in watch:
@@ -1316,6 +1348,8 @@ def test_siri_app_intents() -> None:
         fail("Description.md must document Apple App Shortcut type restriction")
     if "requestValueDialog" not in desc and "fragt danach" not in desc:
         fail("Description.md must document Siri asking for Artikel after the utterance")
+    if "WCSession" not in desc or "WidgetKit" not in desc:
+        fail("Description.md must note Watch-Siri soft save without WCSession/WidgetKit in the Intent")
     if "Speech.framework" not in desc:
         fail("Description.md must forbid Speech.framework")
     if "kein Watch-Mikro" not in desc and "Kein** In-App-Mikrofon" not in desc and "kein In-App-Mikro" not in desc:

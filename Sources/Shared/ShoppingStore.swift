@@ -50,10 +50,14 @@ final class ShoppingStore: ObservableObject {
     }
 
     /// Siri legt einen kurzlebigen Store an; die laufende App zieht neuere Disk-Stände nach.
+    /// Watch-Siri schreibt nur die Datei — Sync zum iPhone erst hier, wenn die App aktiv wird.
     func reloadFromPersistenceIfNewer() {
         guard let loaded = Persistence.load() else { return }
         guard loaded.listRevision > state.listRevision else { return }
         state = BackupCodec.normalized(loaded)
+#if os(iOS) || os(watchOS)
+        sync?.broadcast(state)
+#endif
     }
 
     var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
@@ -110,15 +114,27 @@ final class ShoppingStore: ObservableObject {
         return names.count
     }
 
+    /// Watch-Siri: Splitter wie `addItems(fromSpeech:)`, aber nur Disk — kein WidgetKit, kein `sync?.broadcast`.
+    @discardableResult
+    func addItemsFromSiri(_ text: String) throws -> Int {
+        let names = SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTriggerPrefix(text))
+        let added = appendNewItems(names, persist: false)
+        guard added > 0 else { return names.count }
+        saveTask?.cancel()
+        try Persistence.write(state)
+        return names.count
+    }
+
     private static func normalizedItemName(_ rawName: String) -> String? {
         let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? nil : name
     }
 
-    private func appendNewItems(_ rawNames: [String]) {
+    @discardableResult
+    private func appendNewItems(_ rawNames: [String], persist: Bool = true) -> Int {
         let names = rawNames.compactMap(Self.normalizedItemName)
-        guard !names.isEmpty else { return }
+        guard !names.isEmpty else { return 0 }
         let now = Date.nowEpochMillis
         var ord = nextOrd()
         for name in names {
@@ -136,7 +152,10 @@ final class ShoppingStore: ObservableObject {
             ord += 1
         }
         state.listRevision += 1
-        persistAndSync()
+        if persist {
+            persistAndSync()
+        }
+        return names.count
     }
 
     func renameItem(_ id: String, to rawName: String) {

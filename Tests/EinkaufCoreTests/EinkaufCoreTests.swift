@@ -1618,4 +1618,21 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter"])
         XCTAssertEqual(store.state.listRevision, 1)
     }
+
+    func testAddItemsFromSiriSoftSaveSplitsAndGuesses() throws {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(try store.addItemsFromSiri("Besorgen: Milch, Butter und zwei Eier"), 3)
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
+        XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
+        XCTAssertEqual(store.state.listRevision, 1)
+    }
+
+    func testAddItemsFromSiriEmptyAddsNothing() throws {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(try store.addItemsFromSiri("  "), 0)
+        XCTAssertTrue(store.state.items.isEmpty)
+        XCTAssertEqual(store.state.listRevision, 0)
+        XCTAssertEqual(try store.addItemsFromSiri("Besorgen"), 0)
+        XCTAssertTrue(store.state.items.isEmpty)
+    }
 }
