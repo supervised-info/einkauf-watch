@@ -356,8 +356,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 18" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 18 / CURRENT_PROJECT_VERSION")
+    if "Build 19" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 19 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -375,6 +375,12 @@ def test_sources() -> None:
         fail("Description.md must place the Watch eye above the title line")
     if "navigationTitle(watchTitle)" not in watch_sec and ".navigationTitle(watchTitle)" not in watch_sec:
         fail("Description.md must forbid navigationTitle(watchTitle)")
+    if "toolbar(.hidden" not in watch_sec:
+        fail("Description.md must hide the Watch navigation bar with toolbar(.hidden)")
+    if "Systemuhr" not in watch_sec:
+        fail("Description.md must keep the system clock visible under a hidden nav bar")
+    if "Navigation-Titel leer" in watch_sec:
+        fail("Description.md still says empty navigation title instead of hiding the bar")
     if "theme.good" not in watch_sec:
         fail("Description.md must document Watch eye as theme.good when completed are visible")
     if "theme.muted" not in watch_sec and "grau" not in watch_sec.lower():
@@ -578,6 +584,8 @@ def test_sources() -> None:
         fail("Watch must not put watchTitle in navigationTitle (that places it above the eye)")
     if "Text(store.state.watchTitle)" not in watch:
         fail("Watch must show watchTitle as Text below the eye bar")
+    if "toolbar(.hidden, for: .navigationBar)" not in watch:
+        fail("Watch must hide the navigation bar (.toolbar(.hidden, for: .navigationBar))")
     if "AppStorage" not in watch or "einkauf.watch.hideCompleted" not in watch:
         fail("Watch hide-completed must persist via AppStorage einkauf.watch.hideCompleted")
     if "einkauf.iphone.hideCompleted" in watch:
@@ -728,8 +736,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 18" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 18")
+    if "CURRENT_PROJECT_VERSION = 19" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 19")
+    if "CURRENT_PROJECT_VERSION = 18" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 18 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 17" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 17 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 16" in pbx:
@@ -751,8 +761,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 18" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 18")
+    if "CURRENT_PROJECT_VERSION: 19" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 19")
+    if "CURRENT_PROJECT_VERSION: 18" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 18 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 17" in yml:
         fail("stale CURRENT_PROJECT_VERSION 17 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 16" in yml:
@@ -773,10 +785,6 @@ def test_sources() -> None:
         fail("stale CURRENT_PROJECT_VERSION 9 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 8" in yml:
         fail("stale CURRENT_PROJECT_VERSION 8 still in project.yml")
-    if not re.search(r'\.navigationTitle\(', watch):
-        fail("Watch must use navigationTitle")
-    if not re.search(r'navigationTitle\(\s*""\s*\)', watch):
-        fail("Watch navigationTitle must be empty/minimal so the clock stays")
     title_has_store = "currentStore.name" in watch or (
         "watchTitle" in watch and "var watchTitle" in models and "currentStore.name" in models
     )
@@ -795,8 +803,8 @@ def test_sources() -> None:
         fail("Watch must not use a duplicate safeAreaInset header for the counter")
     if re.search(r'Text\("Einkauf"\)', watch):
         fail("Watch must not duplicate Einkauf in a custom header HStack")
-    if "toolbar(.hidden)" in watch:
-        fail("Watch must not hide the system navigation bar")
+    if "toolbar(.hidden, for: .navigationBar)" not in watch:
+        fail("Watch must hide the navigation bar so the eye sits under the clock")
     if "var doneCount" not in models or "var progressLabel" not in models:
         fail("AppState missing doneCount/progressLabel")
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
@@ -953,8 +961,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 18") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 18")
+    if pbx.count("CURRENT_PROJECT_VERSION = 19") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 19")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
