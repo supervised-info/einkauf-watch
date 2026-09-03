@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-03 (Build 11, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-03 (Build 12, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -93,7 +93,7 @@ Titel **Einstellungen**, Fertig schließt. Native-Sektionen **genau so** (Darste
 6. **Layout zurücksetzen** — builtin: Seed-Layout; eigener Laden: `["vor", "sonstiges", "nach"]`. Auch für Custom, nicht nur builtin.
 7. **Stamm-Artikel** — Name, Dept-Picker, Löschen; Anlegen „Milch, Butter…“. Footer zu Gesamtliste. Kein Hoch/Runter der Stamm-Zeilen.
 8. **Gespeicherte Listen** — leer: „Noch keine gespeicherten Listen.“ Sonst Tippen = `applySavedList` (auffüllen). Swipe-Delete mit Confirm „Gespeicherte Liste „{Name}“ wirklich löschen?“ Footer: Anlass-Listen, Tippen füllt auf ohne zu ersetzen, Wischen löscht.
-9. **Wörterbuch** — NavigationLink, nur lesen, lokal `KeywordDictionary.source`, Suche „Wort suchen“. Footer: Zuordnung nur lokal; Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste. Kein Netz, keine Bearbeitung.
+9. **Wörterbuch** — NavigationLink, nur lesen, lokal `KeywordDictionary.source`, Suche „Wort suchen“. Footer: Zuordnung nur lokal; Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste. Eigene Korrekturen merkt sich die App unter dem Artikelnamen (ohne Menge) und nutzt sie beim nächsten Eintragen; das Wörterbuch selbst ändert sich nicht. Kein Netz, keine Bearbeitung.
 
 Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` (iPhone-Darstellung synct nicht).
 
@@ -102,6 +102,8 @@ Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` 
 Nur Geh-Modus. Navigation-Titel **eine Zeile**: gekürzter Ladenname + zwei Leerzeichen + `Einkauf xx/yy` (`AppState.watchTitle`). Limit 6 Zeichen vor „Einkauf xx/yy“; länger: 5 Zeichen + `…`. Edeka/Aldi/Rewe/Lidl/dm ungekürzt; „Eigenes Layout“ → `Eigen…`. Zähler inkl. `vor`/`nach` (`doneCount/items.count`).
 
 Kein Store-Picker, kein Bearbeiten, kein Share, kein Backup, kein Speichern, kein Wörterbuch, kein Löschen von Läden. Digital Crown scrollt die `List`. Leer: „Noch nichts auf der Liste.“
+
+Toolbar **links** (`.topBarLeading`, dieselbe Zeile wie der Titel — **nicht** `.topBarTrailing`, die Uhr überdeckt das): SF-Symbol `eye` wenn Erledigte sichtbar, `eye.slash` wenn ausgeblendet. Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“. Tippen blendet abgehakte Artikel **nur in der Watch-Gehliste** aus; die Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden. Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ (Toggle bleibt). Flag nur auf der Watch (`UserDefaults` / `AppStorage` `einkauf.watch.hideCompleted`), **nicht** im einkauf-backup, **nicht** zum iPhone. `watchTitle`, Complication und iPhone-Geh-Modus zeigen weiter alle Artikel und `xx/yy` der vollen Liste.
 
 ### Watch-Complication (WidgetKit, watchOS 10)
 
@@ -183,14 +185,14 @@ Lokal, **kein Netz**. `KeywordDictionary.source` ist die mitgelieferte Kopie von
 
 `guess(name, mappings)` in dieser Reihenfolge:
 
-1. Sonderregeln: TK / `tiefkuhl` → `tiefkuehl`; Eistee / ice tea → `getraenke`; Schorle / Saft-Ende → `getraenke`; chips → `suess`; eis (nicht eisberg) → `tiefkuehl`
-2. Keywords aus `KeywordDictionary.source` (längstes Trefferwort)
-3. **danach** `mappings[mappingKey(name)]`, falls bekannte Dept
+1. **`mappings[mappingKey(name)]`**, falls bekannte Dept — Nutzerkorrektur gewinnt für genau diesen Mapping-Key
+2. Sonderregeln: TK / `tiefkuhl` → `tiefkuehl`; Eistee / ice tea → `getraenke`; Schorle / Saft-Ende → `getraenke`; chips → `suess`; eis (nicht eisberg) → `tiefkuehl`
+3. Keywords aus `KeywordDictionary.source` (längstes Trefferwort)
 4. sonst `sonstiges`
 
-`mappingKey`: canon (ä→a, ö→o, ü→u, ß→ss, ae/oe/ue falten) + Mengen strippen. Select, Cross-Dept-Drop, Stamm-Dept und Rename (wenn der Key wechselt) schreiben denselben Key. Mappings kommen **nach** den Keywords, sie überschreiben einen Wörterbuch-Treffer nicht.
+`mappingKey`: canon (ä→a, ö→o, ü→u, ß→ss, ae/oe/ue falten) + Mengen strippen. Select, Cross-Dept-Drop, Stamm-Dept und Rename (wenn der Key wechselt) schreiben denselben Key. `KeywordDictionary.source` bleibt zur Laufzeit unverändert (Einstellungen-Wörterbuch nur lesen).
 
-Wörterbuch-UI: Gruppen nach `Department.title`, Wörter je Abteilung alphabetisch de, Duplikate/Leer raus. `vor`/`nach`/`sonstiges` haben keine `source`-Keys.
+Wörterbuch-UI: Gruppen nach `Department.title`, Wörter je Abteilung alphabetisch de, Duplikate/Leer raus. `vor`/`nach`/`sonstiges` haben keine `source`-Keys. Footer: eigene Korrekturen merkt sich die App unter dem Artikelnamen (ohne Menge) und nutzt sie beim nächsten Eintragen; das Wörterbuch selbst ändert sich nicht.
 
 ## Stamm
 
@@ -256,7 +258,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 
 **Nur HTML / in der PWA behalten:** Markdown kopieren / Datei / teilen; Import `.md`/`.txt`; nach Bring; nach Erinnerungen; extra Läden-JSON `kind: "einkauf-laeden"` (zwischen Neuer Laden und Ladenweg); Site-Mast Theme + Palette (`theme-btn`, `#paletteBtn`) und Shared Keys `supervised-info.theme` / `supervised-info.palette`; PWA Service Worker (`sw.js`, Cache-Bump, aktuell v17).
 
-**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy, WidgetKit-Complication `xx/yy`, kein Picker/Edit/Share); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **PDF Liste teilen** mit leeren quadratischen Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar. TestFlight nicht erforderlich.
+**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf xx/yy, Erledigte ausblendbar nur auf der Watch, WidgetKit-Complication `xx/yy`, kein Picker/Edit/Share); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **PDF Liste teilen** mit leeren quadratischen Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar. TestFlight nicht erforderlich. Native-`guess` wertet Nutzer-Mappings vor Sonderregeln/Keywords aus (HTML-Reihenfolge kann abweichen).
 
 **Brücke:** nur Backup-JSON-Datei (inkl. `savedLists`). Kein Live-localStorage-Sync. Unbekannte Felder jeweils ignorieren. App scrapt die Website nicht.
 
@@ -266,8 +268,8 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 - Builtin-Laden-IDs und DEPT-IDs
 - Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys, inkl. `savedLists`)
 - `ListGrouping`: `sonstiges` folgt dem Layout; Extra-Depts behalten `item.dept` (geteilt mit HTML, nicht vor `nach` kleben)
-- Guesser: Keywords vor Mappings; lokal
-- Watch bleibt Geh-Modus ohne Picker/Edit/Share
+- Guesser: Nutzer-Mapping vor Sonderregeln und Keywords; `KeywordDictionary.source` unverändert; lokal
+- Watch bleibt Geh-Modus ohne Picker/Edit/Share (Auge blendet Erledigte nur an, löscht sie nicht)
 - Complication nur Watch/WidgetKit, nicht iPhone, kein ClockKit, kein iCloud
 - iPhone-Widget nur Homescreen (`systemSmall`/`systemMedium`), nicht Watch, nicht Sperrbildschirm, kein iCloud
 - Theme nur in Einstellungen
@@ -281,10 +283,10 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 - [ ] Seeds + Custom; Neuer Laden kopiert das Layout des ausgewählten Ladens; Swipe-Delete nur Custom in Einstellungen → Aktueller Laden; Builtins nie weg.
 - [ ] Settings-Reihenfolge: Darstellung (Hell/Dunkel/System, Creme/Blau) → Aktueller Laden → Neuer Laden → Ladenweg (`sonstiges` movable, `vor`/`nach` locked) → Abteilungen hinzufügen → Reset → Stamm → Gespeicherte Listen (Apply + Swipe-Delete) → Wörterbuch.
 - [ ] `ListGrouping` sanitized inkl. `sonstiges`-Position; Rest-Depts mit Items nach dem letzten Nicht-`nach`-Gang; kein Remap von `item.dept` nach `sonstiges`.
-- [ ] `DepartmentGuesser` + `KeywordDictionary.source` lokal, kein Netz; Mappings nach Keywords.
+- [ ] `DepartmentGuesser` + `KeywordDictionary.source` lokal, kein Netz; Nutzer-Mapping vor Sonderregeln/Keywords.
 - [ ] Gespeicherte Listen: Name+Dept-Snapshot, füllen nicht ersetzen, Backup-Feld `savedLists`.
 - [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen.
-- [ ] Watch-Titel: gekürzter Ladenname + Einkauf xx/yy; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
+- [ ] Watch-Titel: gekürzter Ladenname + Einkauf xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`AppStorage`, nicht Backup); kein Picker/Edit/Share auf der Watch; WatchConnectivity.
 - [ ] Watch-Complication (WidgetKit, watchOS 10): `xx/yy` inkl. vor/nach, Ladenname wo Platz, Tap öffnet Geh-Modus; Update aus `einkauf-local.json` / WatchConnectivity; nicht auf dem iPhone.
 - [ ] iPhone-Widget (WidgetKit, iOS 17): `systemSmall` Laden + `xx/yy`, `systemMedium` plus offene Artikel in Geh-Modus-Reihenfolge; Tap öffnet Einkaufsliste; App Group `group.net.tschelle.einkauf`; nicht auf der Watch.
 - [ ] Theme nur in Einstellungen; HTML-Delta bleibt: kein Markdown/Bring/Erinnerungen/`einkauf-laeden`/PWA-SW/Mast-Theme in der nativen App; kein Watch/PDF/System-Appearance im HTML. Gemeinsame Slice (Listen, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only führen.

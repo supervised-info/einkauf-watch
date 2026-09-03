@@ -341,6 +341,16 @@ enum WalkLine: Identifiable, Equatable, Sendable {
         if case .header(_, let dept) = self { return dept }
         return nil
     }
+
+    var itemId: String? {
+        if case .item(_, let item) = self { return item.id }
+        return nil
+    }
+
+    var isItem: Bool {
+        if case .item = self { return true }
+        return false
+    }
 }
 
 /// ForEach-Zeile inkl. Laden und Position, damit Views beim Ladenwechsel nicht wiederverwendet werden.
@@ -408,8 +418,19 @@ enum ListGrouping {
     }
 
     /// `id` enthält Laden und Listenposition, nicht nur die Abteilungs-ID.
-    static func walkListRows(groups: [DeptGroup], storeId: String) -> [WalkListRow] {
-        walkLines(groups: groups, storeId: storeId).enumerated().map { index, line in
+    /// `hidingCompleted` filtert nur die Anzeige (Watch-Gehliste); Artikel bleiben in der Liste.
+    static func walkListRows(groups: [DeptGroup], storeId: String, hidingCompleted: Bool = false) -> [WalkListRow] {
+        let visible: [DeptGroup]
+        if hidingCompleted {
+            visible = groups.compactMap { group in
+                let open = group.items.filter { !$0.done }
+                guard !open.isEmpty else { return nil }
+                return DeptGroup(storeId: group.storeId, dept: group.dept, items: open)
+            }
+        } else {
+            visible = groups
+        }
+        return walkLines(groups: visible, storeId: storeId).enumerated().map { index, line in
             WalkListRow(id: "\(storeId)|\(index)|\(line.id)", line: line)
         }
     }

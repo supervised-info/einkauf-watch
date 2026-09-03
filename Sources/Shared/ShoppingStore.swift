@@ -36,6 +36,9 @@ final class ShoppingStore: ObservableObject {
     var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
     var walkLines: [WalkLine] { ListGrouping.walkLines(groups: groups, storeId: state.currentStoreId) }
     var walkListRows: [WalkListRow] { ListGrouping.walkListRows(groups: groups, storeId: state.currentStoreId) }
+    func walkListRows(hidingCompleted: Bool) -> [WalkListRow] {
+        ListGrouping.walkListRows(groups: groups, storeId: state.currentStoreId, hidingCompleted: hidingCompleted)
+    }
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
     var savedLists: [SavedList] { state.savedLists }
