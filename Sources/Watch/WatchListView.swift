@@ -7,7 +7,7 @@ struct WatchListView: View {
     @Environment(\.einkaufTheme) private var theme
     /// Nur Watch-UserDefaults — nicht im Backup, nicht zum iPhone.
     @AppStorage("einkauf.watch.hideCompleted") private var hideCompleted = false
-    @StateObject private var holdToTalk = WatchHoldToTalkSession()
+    @StateObject private var voiceAdd = WatchVoiceAddSession()
 
     private var visibleWalkRows: [WalkListRow] {
         store.walkListRows(hidingCompleted: hideCompleted)
@@ -24,7 +24,7 @@ struct WatchListView: View {
                     .minimumScaleFactor(0.65)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
-                if let status = holdToTalk.status {
+                if let status = voiceAdd.status {
                     Text(status)
                         .font(.caption2)
                         .foregroundStyle(theme.muted)
@@ -99,7 +99,7 @@ struct WatchListView: View {
     }
 
     /// Chrome direkt unter der Systemuhr, über der Titelzeile: Nav-Bar ausgeblendet.
-    /// Auge leading, Hold-Mikro trailing — nicht in der Toolbar (sonst Kreis-Bug / Uhr).
+    /// Auge leading, Mikro trailing — nicht in der Toolbar (sonst Kreis-Bug / Uhr).
     /// Kompakte Zeile (~18–20pt) — kein 44pt-minHeight, sonst leere Bänder über und unter dem Glyph.
     private var hideCompletedBar: some View {
         HStack(spacing: 0) {
@@ -116,7 +116,7 @@ struct WatchListView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
             Spacer()
-            WatchHoldToTalkButton(session: holdToTalk)
+            WatchVoiceAddButton(session: voiceAdd)
         }
         .frame(height: 20)
     }
