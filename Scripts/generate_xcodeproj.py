@@ -20,6 +20,8 @@ def entry(ref: str, comment: str) -> str:
 def main() -> None:
     ios_swifts = sorted((ROOT / "Sources/iOS").glob("*.swift"))
     watch_swifts = sorted((ROOT / "Sources/Watch").glob("*.swift"))
+    watch_objs = sorted((ROOT / "Sources/Watch").glob("*.m"))
+    watch_headers = sorted((ROOT / "Sources/Watch").glob("*.h"))
     widget_swifts = sorted((ROOT / "Sources/WatchWidgets").glob("*.swift"))
     ios_widget_swifts = sorted((ROOT / "Sources/iOSWidgets").glob("*.swift"))
     shared_swifts = sorted((ROOT / "Sources/Shared").glob("*.swift"))
@@ -134,7 +136,7 @@ def main() -> None:
     for p in ios_swifts + shared_swifts:
         bid = build_for(p, "ios")
         objects.append(f"\t\t{bid} /* {p.name} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref_for(p)} /* {p.name} */; }};")
-    for p in watch_swifts + shared_swifts:
+    for p in watch_swifts + watch_objs + shared_swifts:
         bid = build_for(p, "watch")
         objects.append(f"\t\t{bid} /* {p.name} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref_for(p)} /* {p.name} */; }};")
     for p in widget_swifts + widget_shared:
@@ -240,6 +242,10 @@ def main() -> None:
     def file_type(path: Path) -> str:
         if path.suffix == ".swift":
             return "sourcecode.swift"
+        if path.suffix == ".m":
+            return "sourcecode.c.objc"
+        if path.suffix == ".h":
+            return "sourcecode.c.h"
         if path.suffix == ".json":
             return "text.json"
         if path.suffix == ".entitlements":
@@ -259,7 +265,7 @@ def main() -> None:
     objects.append(f"\t\t{widgetkit_ref} /* WidgetKit.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; }};")
     objects.append(f"\t\t{speech_ref} /* Speech.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; }};")
     objects.append(f"\t\t{av_ref} /* AVFoundation.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; }};")
-    for p in ios_swifts + watch_swifts + widget_swifts + ios_widget_swifts + shared_swifts + [fixture, ios_assets, watch_assets]:
+    for p in ios_swifts + watch_swifts + watch_objs + watch_headers + widget_swifts + ios_widget_swifts + shared_swifts + [fixture, ios_assets, watch_assets]:
         rel = p.relative_to(ROOT).as_posix()
         name = p.name
         objects.append(
@@ -394,7 +400,7 @@ def main() -> None:
             \t\t{group_watch} /* Watch */ = {{
             \t\t\tisa = PBXGroup;
             \t\t\tchildren = (
-            {children(watch_swifts + [watch_assets, watch_plist, watch_entitlements])}
+            {children(watch_swifts + watch_objs + watch_headers + [watch_assets, watch_plist, watch_entitlements])}
             \t\t\t);
             \t\t\tpath = Sources/Watch;
             \t\t\tname = Watch;
@@ -454,7 +460,7 @@ def main() -> None:
         f"\t\t\t\t{build_for(p, 'ios')} /* {p.name} in Sources */," for p in ios_swifts + shared_swifts
     )
     watch_source_entries = "\n".join(
-        f"\t\t\t\t{build_for(p, 'watch')} /* {p.name} in Sources */," for p in watch_swifts + shared_swifts
+        f"\t\t\t\t{build_for(p, 'watch')} /* {p.name} in Sources */," for p in watch_swifts + watch_objs + shared_swifts
     )
     widget_source_entries = "\n".join(
         f"\t\t\t\t{build_for(p, 'widget')} /* {p.name} in Sources */," for p in widget_swifts + widget_shared
@@ -795,7 +801,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -830,7 +836,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -865,7 +871,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -887,6 +893,7 @@ def main() -> None:
 \t\t\t\tSUPPORTED_PLATFORMS = "watchos watchsimulator";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
 \t\t\t\tSWIFT_ENABLE_EXPLICIT_MODULES = NO;
+\t\t\t\tSWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t\tTARGETED_DEVICE_FAMILY = 4;
 \t\t\t\tWATCHOS_DEPLOYMENT_TARGET = 10.0;
@@ -899,7 +906,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -921,6 +928,7 @@ def main() -> None:
 \t\t\t\tSUPPORTED_PLATFORMS = "watchos watchsimulator";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
 \t\t\t\tSWIFT_ENABLE_EXPLICIT_MODULES = NO;
+\t\t\t\tSWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t\tTARGETED_DEVICE_FAMILY = 4;
 \t\t\t\tVALIDATE_PRODUCT = YES;
@@ -934,7 +942,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -964,7 +972,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -995,7 +1003,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1026,7 +1034,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 22;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
