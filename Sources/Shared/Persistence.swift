@@ -57,7 +57,7 @@ enum Persistence {
         }
     }
 
-    /// Wirft bei Encode- oder Schreibfehler — Watch-Siri kann Dialog setzen.
+    /// Wirft bei Encode- oder Schreibfehler.
     static func write(_ state: AppState) throws {
         let data = try BackupCodec.encodeLocal(state)
         try data.write(to: fileURL, options: [.atomic])
