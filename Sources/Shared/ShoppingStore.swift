@@ -82,9 +82,35 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
-    /// Watch-Diktat / später iPhone: Splitter-Teile in **einem** State-Update + **einem** `persistAndSync`.
+    /// iPhone / Tests: Splitter-Teile in **einem** State-Update + **einem** `persistAndSync`.
     @discardableResult
     func addItems(fromSpeech text: String) -> Int {
+        let count = appendSpeechItems(text)
+        if count > 0 { persistAndSync() }
+        return count
+    }
+
+    /// Watch-Übernehmen: Batch wie `addItems(fromSpeech:)`, aber nur Disk — kein WidgetKit, kein sofortiges Sync.
+    @discardableResult
+    func addItemsFromWatchVoice(_ text: String) throws -> Int {
+        let count = appendSpeechItems(text)
+        guard count > 0 else { return 0 }
+        saveTask?.cancel()
+        do {
+            try Persistence.write(state)
+        } catch {
+            throw WatchVoiceSaveError.failed
+        }
+        scheduleDeferredWatchVoiceFollowUp()
+        return count
+    }
+
+    enum WatchVoiceSaveError: Error {
+        case failed
+    }
+
+    @discardableResult
+    private func appendSpeechItems(_ text: String) -> Int {
         let names = SpeechItemSplitter.items(from: text)
         guard !names.isEmpty else { return 0 }
         var ord = nextOrd()
@@ -98,7 +124,6 @@ final class ShoppingStore: ObservableObject {
         guard !added.isEmpty else { return 0 }
         state.items.append(contentsOf: added)
         state.listRevision += 1
-        persistAndSync()
         return added.count
     }
 
@@ -436,19 +461,33 @@ final class ShoppingStore: ObservableObject {
             try? await Task.sleep(nanoseconds: 80_000_000)
             guard !Task.isCancelled else { return }
             Persistence.save(snapshot)
-#if os(watchOS)
-            WatchComplicationReload.timelines()
-#endif
-#if os(iOS)
-            HomeWidgetReload.timelines()
-#endif
+            reloadComplicationsAndWidgets()
         }
         Persistence.save(state)
+        reloadComplicationsAndWidgets()
+    }
+
+    /// Toggle/Import: WidgetKit sofort. Watch-Voice darf das nicht im Commit-Pfad.
+    private func reloadComplicationsAndWidgets() {
 #if os(watchOS)
         WatchComplicationReload.timelines()
 #endif
 #if os(iOS)
         HomeWidgetReload.timelines()
 #endif
+    }
+
+    /// Nach ~2s einmal broadcast + Complication-Reload; Fehler schlucken.
+    private func scheduleDeferredWatchVoiceFollowUp() {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+#if os(iOS) || os(watchOS)
+            sync?.broadcast(state)
+#endif
+#if os(watchOS)
+            WatchComplicationReload.timelines()
+#endif
+        }
     }
 }

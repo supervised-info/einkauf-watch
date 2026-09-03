@@ -11,6 +11,7 @@ struct WatchListView: View {
     @StateObject private var voiceAdd = WatchVoiceAddSession()
     @State private var showDictate = false
     @State private var dictateDraft = ""
+    @State private var dictateBusy = false
 
     private var visibleWalkRows: [WalkListRow] {
         store.walkListRows(hidingCompleted: hideCompleted)
@@ -38,6 +39,7 @@ struct WatchListView: View {
                 if showDictate {
                     WatchDictatePanel(
                         text: $dictateDraft,
+                        isCommitting: dictateBusy,
                         onCancel: cancelDictate,
                         onCommit: commitDictate
                     )
@@ -129,17 +131,22 @@ struct WatchListView: View {
     }
 
     private func cancelDictate() {
+        guard !dictateBusy else { return }
         dictateDraft = ""
         showDictate = false
     }
 
-    /// Panel zuerst zu, dann ein Persist — nicht während System-Diktat/Keyboard-Dismiss.
+    /// Fokus weg, Keyboard/Diktat zu, warten, dann Store — Panel erst danach zu.
     private func commitDictate() {
-        let text = dictateDraft
-        dictateDraft = ""
-        showDictate = false
+        guard !dictateBusy else { return }
+        dictateBusy = true
+        voiceAdd.markWaiting()
         Task { @MainActor in
-            voiceAdd.commit(text, store: store)
+            try? await Task.sleep(nanoseconds: 850_000_000)
+            voiceAdd.commit(dictateDraft, store: store)
+            dictateDraft = ""
+            showDictate = false
+            dictateBusy = false
         }
     }
 }
