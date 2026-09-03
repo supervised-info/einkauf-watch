@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 22" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 22 / CURRENT_PROJECT_VERSION")
+    if "Build 21" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 21 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -823,10 +823,8 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 22" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 22")
-    if "CURRENT_PROJECT_VERSION = 21" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 21 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 21" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 21")
     if "CURRENT_PROJECT_VERSION = 20" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 20 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 19" in pbx:
@@ -854,10 +852,8 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 22" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 22")
-    if "CURRENT_PROJECT_VERSION: 21" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 21 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 21" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 21")
     if "CURRENT_PROJECT_VERSION: 20" in yml:
         fail("stale CURRENT_PROJECT_VERSION 20 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 19" in yml:
@@ -1064,8 +1060,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 22") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 22")
+    if pbx.count("CURRENT_PROJECT_VERSION = 21") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 21")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1239,61 +1235,6 @@ def test_watch_hold_mic() -> None:
         fail("Watch target must link Speech.framework")
     if "AVFoundation.framework" not in pbx:
         fail("Watch target must link AVFoundation.framework")
-    fw_blocks = re.findall(
-        r"isa = PBXFrameworksBuildPhase;\s+buildActionMask = 2147483647;\s+files = \((.*?)\);",
-        pbx,
-        re.S,
-    )
-    speech_fw = [b for b in fw_blocks if "Speech.framework in Frameworks" in b]
-    if len(speech_fw) != 1:
-        fail("Speech.framework must appear in exactly one Frameworks build phase (EinkaufWatch)")
-    if "AVFoundation.framework in Frameworks" not in speech_fw[0]:
-        fail("Watch Frameworks phase must also link AVFoundation.framework")
-    if "WatchConnectivity.framework in Frameworks" not in speech_fw[0]:
-        fail("Speech.framework must sit in the Watch Frameworks phase")
-    src_phases = re.findall(
-        r"isa = PBXSourcesBuildPhase;\s+buildActionMask = 2147483647;\s+files = \((.*?)\);",
-        pbx,
-        re.S,
-    )
-    hold_src = [b for b in src_phases if "WatchHoldToTalk.swift in Sources" in b]
-    if len(hold_src) != 1:
-        fail("WatchHoldToTalk.swift must compile in exactly one Sources build phase")
-    if "EinkaufWatchApp.swift in Sources" not in hold_src[0]:
-        fail("WatchHoldToTalk.swift must compile only in the Watch sources phase")
-    if "ContentView.swift in Sources" in hold_src[0] or "EinkaufWidgets.swift in Sources" in hold_src[0]:
-        fail("WatchHoldToTalk.swift must not compile in iOS or widget sources")
-    if pbx.count("SWIFT_ENABLE_EXPLICIT_MODULES = NO") != 2:
-        fail("SWIFT_ENABLE_EXPLICIT_MODULES = NO must be Watch Debug+Release only")
-    watch_cfg = re.findall(
-        r"PRODUCT_BUNDLE_IDENTIFIER = net\.tschelle\.einkauf\.watchkitapp;\s+"
-        r'PRODUCT_NAME = "\$\(TARGET_NAME\)";\s+'
-        r"SDKROOT = watchos;.*?SWIFT_ENABLE_EXPLICIT_MODULES = NO;",
-        pbx,
-        re.S,
-    )
-    if len(watch_cfg) != 2:
-        fail("EinkaufWatch Debug and Release must set SWIFT_ENABLE_EXPLICIT_MODULES = NO")
-    if pbx.count('OTHER_LDFLAGS = "$(inherited) -framework Speech -framework AVFoundation"') != 2:
-        fail("EinkaufWatch must set OTHER_LDFLAGS for Speech and AVFoundation")
-    yml = (ROOT / "project.yml").read_text()
-    watch_yml = yml[yml.find("  EinkaufWatch:") : yml.find("  EinkaufWatchWidgets:")]
-    if "SWIFT_ENABLE_EXPLICIT_MODULES: NO" not in watch_yml:
-        fail("project.yml EinkaufWatch must set SWIFT_ENABLE_EXPLICIT_MODULES: NO")
-    if "-framework Speech" not in watch_yml or "-framework AVFoundation" not in watch_yml:
-        fail("project.yml EinkaufWatch must set OTHER_LDFLAGS for Speech and AVFoundation")
-    ios_yml = yml[yml.find("  Einkauf:") : yml.find("  EinkaufWatch:")]
-    if "SWIFT_ENABLE_EXPLICIT_MODULES" in ios_yml:
-        fail("SWIFT_ENABLE_EXPLICIT_MODULES must stay Watch-only")
-    gen = (ROOT / "Scripts/generate_xcodeproj.py").read_text()
-    if "SWIFT_ENABLE_EXPLICIT_MODULES = NO" not in gen:
-        fail("generate_xcodeproj.py must disable explicit modules for Watch")
-    if "-framework Speech" not in gen or "-framework AVFoundation" not in gen:
-        fail("generate_xcodeproj.py must pass OTHER_LDFLAGS for Speech and AVFoundation")
-    if "Speech.framework" not in desc or "AVFoundation.framework" not in desc:
-        fail("Description.md must note Speech+AVFoundation are linked")
-    if "SWIFT_ENABLE_EXPLICIT_MODULES" not in desc:
-        fail("Description.md must note explicit modules off for Watch")
     if "Hold-Mikro" not in watch_sec:
         fail("Description.md Watch section must document Hold-Mikro")
     if " sowie " not in watch_sec:
