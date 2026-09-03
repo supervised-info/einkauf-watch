@@ -1,7 +1,7 @@
 import SwiftUI
 import WatchKit
 
-/// Tap-Mikro: SwiftUI `TextFieldLink` (System-Texteingabe), kein WatchKit-Hosting-Controller.
+/// Tap-Mikro: In-App-TextField-Panel (Scribble/Diktat über die Systemsteuerung des Felds).
 @MainActor
 final class WatchVoiceAddSession: ObservableObject {
     @Published private(set) var status: String?
@@ -31,22 +31,65 @@ final class WatchVoiceAddSession: ObservableObject {
 
 /// Kompaktes Caption-Mikrofon in der Chrome-Zeile — `.plain`, kein title2, kein Toolbar-Kreis.
 struct WatchVoiceAddButton: View {
-    @EnvironmentObject private var store: ShoppingStore
     @Environment(\.einkaufTheme) private var theme
-    @ObservedObject var session: WatchVoiceAddSession
+    @Binding var showDictate: Bool
 
     var body: some View {
-        TextFieldLink(prompt: Text("Artikel diktieren")) {
-            Image(systemName: "mic")
+        Button {
+            showDictate = true
+        } label: {
+            Image(systemName: showDictate ? "mic.fill" : "mic")
                 .font(.caption)
                 .imageScale(.small)
-                .foregroundStyle(theme.muted)
+                .foregroundStyle(showDictate ? theme.oxide : theme.muted)
                 .padding(.horizontal, 8)
                 .contentShape(Rectangle())
-        } onSubmit: { text in
-            session.commit(text, store: store)
         }
         .buttonStyle(.plain)
+        .disabled(showDictate)
         .accessibilityLabel("Tippen zum Diktieren")
+    }
+}
+
+/// In-App-Feld statt System-Text-Modal: Commit erst nach **Übernehmen**.
+struct WatchDictatePanel: View {
+    @Environment(\.einkaufTheme) private var theme
+    @Binding var text: String
+    var onCancel: () -> Void
+    var onCommit: () -> Void
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 0) {
+                Button(action: onCancel) {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .imageScale(.small)
+                        .foregroundStyle(theme.muted)
+                        .padding(.horizontal, 8)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Abbrechen")
+                Spacer()
+            }
+            .frame(height: 20)
+
+            TextField("Artikel", text: $text)
+                .focused($focused)
+                .font(.caption)
+                .foregroundStyle(theme.ink)
+
+            Button("Übernehmen", action: onCommit)
+                .font(.caption)
+                .buttonStyle(.plain)
+                .foregroundStyle(theme.oxide)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Übernehmen")
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onAppear { focused = true }
     }
 }
