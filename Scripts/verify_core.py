@@ -356,8 +356,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 16" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 16 / CURRENT_PROJECT_VERSION")
+    if "Build 17" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 17 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -369,6 +369,14 @@ def test_sources() -> None:
     watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
     if "links" not in watch_sec:
         fail("Description.md must left-align the Watch eye under the title")
+    if "theme.good" not in watch_sec:
+        fail("Description.md must document Watch eye as theme.good when completed are visible")
+    if "theme.muted" not in watch_sec and "grau" not in watch_sec.lower():
+        fail("Description.md must document Watch eye.slash as muted grey when completed are hidden")
+    if "Tinte/Akzent" in watch_sec:
+        fail("Description.md still documents Watch eye as Tinte/Akzent")
+    if "immer dieselbe Farbe" in watch_sec or "immer grau" in watch_sec:
+        fail("Description.md still says both Watch eye states share one colour")
     if re.search(r"Auge.{0,80}rechts", watch_sec) or "rechts (`HStack" in watch_sec:
         fail("Description.md still right-aligns the Watch eye")
     if re.search(r"Toolbar \*\*links\*\*", desc):
@@ -582,6 +590,16 @@ def test_sources() -> None:
             fail(f"Watch eye system size {size}pt is too large (use caption or ~14–16pt)")
     if "hideCompleted.toggle" not in eye_bar:
         fail("Watch eye Button must still toggle hideCompleted")
+    if "theme.ink" in eye_bar:
+        fail("Watch eye must not use theme.ink")
+    if "theme.good" not in eye_bar:
+        fail("Watch eye (visible completed) must use theme.good like done checkmarks")
+    if "theme.muted" not in eye_bar:
+        fail("Watch eye.slash (hidden completed) must use theme.muted")
+    if not re.search(
+        r"hideCompleted\s*\?\s*theme\.muted\s*:\s*theme\.good", eye_bar
+    ):
+        fail("Watch eye colour must be muted when hidden, good when visible")
     if "Spacer()" not in eye_bar:
         fail("Watch eye must be leading via Spacer() after the Button under the title")
     if eye_bar.find("Spacer()") < eye_bar.find("Button"):
@@ -694,8 +712,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 16" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 16")
+    if "CURRENT_PROJECT_VERSION = 17" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 17")
+    if "CURRENT_PROJECT_VERSION = 16" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 16 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 15" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 15 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 14" in pbx:
@@ -713,8 +733,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 16" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 16")
+    if "CURRENT_PROJECT_VERSION: 17" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 17")
+    if "CURRENT_PROJECT_VERSION: 16" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 16 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 15" in yml:
         fail("stale CURRENT_PROJECT_VERSION 15 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 14" in yml:
@@ -909,8 +931,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 16") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 16")
+    if pbx.count("CURRENT_PROJECT_VERSION = 17") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 17")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
