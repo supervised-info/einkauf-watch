@@ -352,8 +352,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 14" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 14 / CURRENT_PROJECT_VERSION")
+    if "Build 15" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 15 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -369,6 +369,12 @@ def test_sources() -> None:
         fail("Description.md still places the Watch eye in the leading toolbar")
     if not re.search(r"nicht.{0,80}topBarLeading|topBarLeading.{0,80}nicht", desc, re.S):
         fail("Description.md must say the Watch eye is not in topBarLeading")
+    if not re.search(r"22\s*[–-]\s*28", desc):
+        fail("Description.md must specify a compact ~22–28pt Watch eye bar")
+    if re.search(r"mindestens.{0,20}44", desc):
+        fail("Description.md must not require a 44pt Watch eye tap target")
+    if "minHeight: 44" not in desc:
+        fail("Description.md must forbid .frame(minHeight: 44) on the Watch eye")
     if ".buttonStyle(.plain)" not in desc:
         fail("Description.md must require Watch Auge .buttonStyle(.plain)")
     if "gefüll" not in desc:
@@ -572,6 +578,21 @@ def test_sources() -> None:
         fail("Watch eye Button must still toggle hideCompleted")
     if "Spacer()" not in eye_bar:
         fail("Watch eye must be trailing via Spacer() under the title")
+    if re.search(r"minHeight:\s*44", eye_bar) or re.search(r"minWidth:\s*44", eye_bar):
+        fail("Watch eye must not use a 44pt min frame (creates empty bands under the title)")
+    hide_bar = extract_some_view(watch, "hideCompletedBar")
+    if re.search(r"minHeight:\s*44", hide_bar) or re.search(r"minWidth:\s*44", hide_bar):
+        fail("Watch hideCompletedBar must not use a 44pt min frame")
+    if not re.search(r"frame\(height:\s*2[2-8]\)", hide_bar) and not re.search(
+        r"maxHeight:\s*2[2-8]", hide_bar
+    ):
+        fail("Watch hideCompletedBar must be a compact ~22–28pt row")
+    if "VStack(spacing: 0)" not in watch:
+        fail("Watch must use VStack(spacing: 0) so the eye sits tight under the title")
+    if ".contentMargins(.top, 0" not in watch:
+        fail("Watch List must zero top contentMargins so the first item sits under the eye")
+    if re.search(r"\.padding\(\)", watch):
+        fail("Watch empty states must not use all-around .padding() (adds a gap under the eye)")
     body_m = re.search(r"var body:\s*some View", watch)
     list_m = re.search(r"List \{", watch)
     if not body_m or not list_m:
@@ -665,8 +686,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 14" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 14")
+    if "CURRENT_PROJECT_VERSION = 15" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 15")
+    if "CURRENT_PROJECT_VERSION = 14" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 14 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 13" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 13 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 12" in pbx:
@@ -680,8 +703,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 14" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 14")
+    if "CURRENT_PROJECT_VERSION: 15" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 15")
+    if "CURRENT_PROJECT_VERSION: 14" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 14 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 13" in yml:
         fail("stale CURRENT_PROJECT_VERSION 13 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 12" in yml:
@@ -872,8 +897,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 14") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 14")
+    if pbx.count("CURRENT_PROJECT_VERSION = 15") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 15")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")

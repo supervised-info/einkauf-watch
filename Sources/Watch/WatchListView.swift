@@ -22,13 +22,13 @@ struct WatchListView: View {
                             .font(.headline)
                             .foregroundStyle(theme.ink)
                             .multilineTextAlignment(.center)
-                            .padding()
+                            .padding(.horizontal)
                     } else if visibleWalkRows.isEmpty {
                         Text("Erledigte ausgeblendet.")
                             .font(.headline)
                             .foregroundStyle(theme.ink)
                             .multilineTextAlignment(.center)
-                            .padding()
+                            .padding(.horizontal)
                     } else {
                         List {
                             ForEach(visibleWalkRows) { row in
@@ -38,6 +38,7 @@ struct WatchListView: View {
                                         .foregroundStyle(theme.muted)
                                         .textCase(.uppercase)
                                         .listRowBackground(Color.clear)
+                                        .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
                                         .accessibilityAddTraits(.isHeader)
                                         .accessibilityLabel(Department.title(for: dept))
                                 case .item(_, let item):
@@ -61,7 +62,7 @@ struct WatchListView: View {
                                         .contentShape(Rectangle())
                                     }
                                     .buttonStyle(.plain)
-                                    .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
+                                    .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowBackground(theme.paper2)
                                     .accessibilityLabel(item.name)
                                     .accessibilityValue(item.done ? "erledigt" : "offen")
@@ -69,6 +70,7 @@ struct WatchListView: View {
                             }
                         }
                         .einkaufListChrome()
+                        .contentMargins(.top, 0, for: .scrollContent)
                         .id("\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
                     }
                 }
@@ -81,9 +83,10 @@ struct WatchListView: View {
         }
     }
 
-    /// Chrome unter dem Titel, rechts: nicht in der Toolbar (Leading kürzt xx/yy, Trailing frisst die Uhr).
+    /// Chrome direkt unter dem Titel, rechts: nicht in der Toolbar (Leading kürzt xx/yy, Trailing frisst die Uhr).
+    /// Kompakte Zeile (~24pt) — kein 44pt-minHeight, sonst leere Bänder über und unter dem Glyph.
     private var hideCompletedBar: some View {
-        HStack {
+        HStack(spacing: 0) {
             Spacer()
             Button {
                 hideCompleted.toggle()
@@ -92,12 +95,13 @@ struct WatchListView: View {
                     .font(.caption)
                     .imageScale(.small)
                     .foregroundStyle(theme.ink)
-                    .frame(minWidth: 44, minHeight: 44)
+                    .padding(.horizontal, 8)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
         }
+        .frame(height: 24)
     }
 }
 
