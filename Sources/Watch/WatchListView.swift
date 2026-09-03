@@ -80,7 +80,13 @@ struct WatchListView: View {
                         hideCompleted.toggle()
                     } label: {
                         Image(systemName: hideCompleted ? "eye.slash" : "eye")
+                            .font(.caption)
+                            .imageScale(.small)
+                            .foregroundStyle(theme.ink)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
                 }
             }
