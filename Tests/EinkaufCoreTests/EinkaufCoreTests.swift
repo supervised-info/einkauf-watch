@@ -275,6 +275,49 @@ final class WatchTitleTests: XCTestCase {
     }
 }
 
+final class ComplicationSnapshotTests: XCTestCase {
+    func testEmptyListIsZeroOverZeroNotHidden() {
+        let snap = ComplicationSnapshot.make(from: .seed)
+        XCTAssertEqual(snap.progressLabel, "0/0")
+        XCTAssertEqual(snap.storeName, "Edeka")
+        XCTAssertTrue(snap.isEmpty)
+        XCTAssertEqual(snap.inlineText, "Edeka  0/0")
+        XCTAssertTrue(snap.accessibilityLabel.contains("leer"))
+    }
+
+    func testProgressMatchesWatchTitleAndIncludesVorNach() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "v", name: "Tasche", dept: "vor", done: true, added: 1, ord: 1),
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 1),
+            Item(id: "n", name: "Pfand", dept: "nach", done: true, added: 3, ord: 1)
+        ]
+        let snap = state.complicationSnapshot
+        XCTAssertEqual(snap.progressLabel, state.progressLabel)
+        XCTAssertEqual(snap.progressLabel, "2/3")
+        XCTAssertEqual(snap.storeName, AppState.clippedWatchStoreName(state.currentStore.name))
+        XCTAssertFalse(snap.isEmpty)
+        XCTAssertEqual(snap.inlineText, "Edeka  2/3")
+        XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
+    }
+
+    func testStoreChangeAndClippedName() {
+        var state = AppState.seed
+        state.currentStoreId = "rewe"
+        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Rewe")
+        state.currentStoreId = "eigenes"
+        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Eigen…")
+        state.stores.append(Store(id: "lang", name: "Wochenmarkt Neustadt", layout: ["vor", "sonstiges", "nach"], builtin: false))
+        state.currentStoreId = "lang"
+        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Woche…")
+    }
+
+    func testWidgetKindIsStable() {
+        XCTAssertEqual(ComplicationSnapshot.widgetKind, "EinkaufProgress")
+        XCTAssertEqual(ComplicationSnapshot.openURL.scheme, "einkauf")
+    }
+}
+
 final class MergeTests: XCTestCase {
     func testNewerDoneWinsWithoutClobberingList() {
         var local = AppState.seed

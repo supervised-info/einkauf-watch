@@ -392,7 +392,13 @@ final class ShoppingStore: ObservableObject {
             try? await Task.sleep(nanoseconds: 80_000_000)
             guard !Task.isCancelled else { return }
             Persistence.save(snapshot)
+#if os(watchOS)
+            WatchComplicationReload.timelines()
+#endif
         }
         Persistence.save(state)
+#if os(watchOS)
+        WatchComplicationReload.timelines()
+#endif
     }
 }

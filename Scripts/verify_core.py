@@ -206,6 +206,11 @@ def test_sources() -> None:
         "Sources/Shared/KeywordDictionary.swift",
         "Sources/Shared/KeywordDictionaryBrowse.swift",
         "Sources/Watch/WatchListView.swift",
+        "Sources/Watch/WatchComplicationReload.swift",
+        "Sources/Watch/EinkaufWatch.entitlements",
+        "Sources/WatchWidgets/EinkaufWatchWidgets.swift",
+        "Sources/WatchWidgets/Info.plist",
+        "Sources/WatchWidgets/EinkaufWatchWidgets.entitlements",
         "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
         "Sources/Watch/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
     ]
@@ -476,8 +481,15 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 8" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 8")
+    if "CURRENT_PROJECT_VERSION = 9" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 9")
+    if "CURRENT_PROJECT_VERSION = 8" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
+    yml = (ROOT / "project.yml").read_text()
+    if "CURRENT_PROJECT_VERSION: 9" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 9")
+    if "CURRENT_PROJECT_VERSION: 8" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 8 still in project.yml")
     if not re.search(r'\.navigationTitle\(', watch):
         fail("Watch must use navigationTitle")
     title_has_store = "currentStore.name" in watch or (
@@ -540,16 +552,19 @@ def test_sources() -> None:
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
     if "Picker" in watch or "onMove" in watch:
         fail("Watch UI should stay Geh-Modus only")
-    for wfile in (ROOT / "Sources/Watch").glob("*.swift"):
-        wtxt = wfile.read_text()
-        if "Backup teilen" in wtxt or "Liste teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt or "ListPDF" in wtxt:
-            fail("Watch should not have share UI")
-        if "Liste speichern" in wtxt or "Einkaufsliste speichern" in wtxt or "Gespeicherte Listen" in wtxt:
-            fail("Watch should not have saved list UI")
-        if "Wörterbuch" in wtxt or "KeywordDictionaryView" in wtxt:
-            fail("Watch should not have Wörterbuch UI")
-        if "deleteStore" in wtxt:
-            fail("Watch must not delete stores")
+    for wdir in (ROOT / "Sources/Watch", ROOT / "Sources/WatchWidgets"):
+        for wfile in wdir.glob("*.swift"):
+            wtxt = wfile.read_text()
+            if "Backup teilen" in wtxt or "Liste teilen" in wtxt or "UIActivityViewController" in wtxt or "ShareSheet" in wtxt or "ListPDF" in wtxt:
+                fail("Watch should not have share UI")
+            if "Liste speichern" in wtxt or "Einkaufsliste speichern" in wtxt or "Gespeicherte Listen" in wtxt:
+                fail("Watch should not have saved list UI")
+            if "Wörterbuch" in wtxt or "KeywordDictionaryView" in wtxt:
+                fail("Watch should not have Wörterbuch UI")
+            if "deleteStore" in wtxt:
+                fail("Watch must not delete stores")
+            if "import ClockKit" in wtxt or "CLKComplication" in wtxt:
+                fail("Watch complication must use WidgetKit, not ClockKit")
     print("sources: ok")
 
 
@@ -566,6 +581,95 @@ def test_backup_codec_python() -> None:
     print("backup shape: ok")
 
 
+def test_watch_complication() -> None:
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+    yml = (ROOT / "project.yml").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    widget = (ROOT / "Sources/WatchWidgets/EinkaufWatchWidgets.swift").read_text()
+    models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    persist = (ROOT / "Sources/Shared/Persistence.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    reload = (ROOT / "Sources/Watch/WatchComplicationReload.swift").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    watch_ent = (ROOT / "Sources/Watch/EinkaufWatch.entitlements").read_text()
+    widget_ent = (ROOT / "Sources/WatchWidgets/EinkaufWatchWidgets.entitlements").read_text()
+    widget_plist = (ROOT / "Sources/WatchWidgets/Info.plist").read_text()
+
+    if "net.tschelle.einkauf.watchkitapp.widgets" not in pbx or "net.tschelle.einkauf.watchkitapp.widgets" not in yml:
+        fail("widget bundle id missing")
+    if "EinkaufWatchWidgets" not in pbx or "EinkaufWatchWidgets" not in yml:
+        fail("widget target missing")
+    if "Embed Foundation Extensions" not in pbx:
+        fail("widget extension not embedded in Watch app")
+    if "com.apple.widgetkit-extension" not in pbx and "com.apple.widgetkit-extension" not in widget_plist:
+        fail("NSExtensionPointIdentifier must be WidgetKit")
+    if "CLKComplication" in pbx or "ClockKit.framework" in pbx:
+        fail("must not add ClockKit")
+    if "WidgetKit" not in widget or "StaticConfiguration" not in widget:
+        fail("complication must be WidgetKit StaticConfiguration")
+    for family in ("accessoryCircular", "accessoryRectangular", "accessoryInline", "accessoryCorner"):
+        if family not in widget:
+            fail(f"complication missing family {family}")
+    if "CLKComplication" in widget or "import ClockKit" in widget:
+        fail("widget source must not use ClockKit")
+    if "Picker" in widget:
+        fail("complication must not have a store picker")
+    if "widgetURL" not in widget:
+        fail("complication tap must set widgetURL")
+    if "progressLabel" not in widget:
+        fail("complication must show progressLabel xx/yy")
+    if "struct ComplicationSnapshot" not in models:
+        fail("Models missing ComplicationSnapshot")
+    if "static let widgetKind" not in models:
+        fail("ComplicationSnapshot missing widgetKind")
+    if "func make(from state: AppState)" not in models:
+        fail("ComplicationSnapshot must be built from AppState")
+    if "clippedWatchStoreName" not in models or "storeName" not in models:
+        fail("ComplicationSnapshot must reuse clipped watch store name")
+    if "group.net.tschelle.einkauf" not in persist:
+        fail("Persistence must use App Group for Watch widget")
+    if "NSUbiquitous" in persist or "ubiquityContainer" in persist or "CKContainer" in persist:
+        fail("Persistence must not use iCloud")
+    if "group.net.tschelle.einkauf" not in watch_ent or "group.net.tschelle.einkauf" not in widget_ent:
+        fail("Watch app and widget must share App Group entitlements")
+    if "icloud" in watch_ent.lower() or "icloud" in widget_ent.lower():
+        fail("entitlements must not add iCloud")
+    if "WatchComplicationReload" not in store or "os(watchOS)" not in store:
+        fail("ShoppingStore must reload Watch complications after persist")
+    if "WidgetCenter" not in reload or "reloadTimelines" not in reload:
+        fail("WatchComplicationReload must call WidgetCenter.reloadTimelines")
+    if "EinkaufProgress" not in models:
+        fail("widget kind EinkaufProgress missing from ComplicationSnapshot")
+    if "ComplicationSnapshot.widgetKind" not in widget and "EinkaufProgress" not in widget:
+        fail("widget must use ComplicationSnapshot.widgetKind")
+    if "os(iOS)" in widget and "Widget" in widget and "TARGETED_DEVICE_FAMILY = 1" in widget:
+        fail("complication must not ship as iPhone widget")
+    if "watchkitapp.widgets" not in yml:
+        fail("project.yml missing widget bundle")
+    if "EinkaufWatchWidgets" not in yml:
+        fail("project.yml missing widget target")
+    if "Watch-Complication" not in desc or "accessoryCircular" not in desc:
+        fail("Description.md must document the Watch complication families")
+    if "nicht auf dem iPhone" not in desc.lower() and "Nicht auf dem iPhone" not in desc:
+        fail("Description.md must say the complication is not on iPhone")
+    if "WidgetKit" not in desc or "ClockKit" not in desc:
+        fail("Description.md must name WidgetKit and exclude ClockKit")
+    if "einkauf-local.json" not in desc:
+        fail("Description.md must name einkauf-local.json as complication data source")
+    if "testEmptyListIsZeroOverZeroNotHidden" not in tests:
+        fail("tests must cover empty complication 0/0")
+    if "testProgressMatchesWatchTitleAndIncludesVorNach" not in tests:
+        fail("tests must cover complication progress including vor/nach")
+    if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
+        fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
+    if pbx.count("CURRENT_PROJECT_VERSION = 9") < 6:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 9")
+    ios_info = (ROOT / "Sources/iOS/Info.plist").read_text()
+    if "widgetkit-extension" in ios_info:
+        fail("iPhone Info.plist must not declare a WidgetKit extension")
+    print("watch complication: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -573,6 +677,7 @@ def main() -> None:
     test_sonstiges_follows_layout_position()
     test_backup_codec_python()
     test_sources()
+    test_watch_complication()
     print("ALL OK")
 
 
