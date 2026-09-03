@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 29" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 29 / CURRENT_PROJECT_VERSION")
+    if "Build 30" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 30 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -803,8 +803,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 29" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 29")
+    if "CURRENT_PROJECT_VERSION = 30" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 30")
+    if "CURRENT_PROJECT_VERSION = 29" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 29 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 28" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 28 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 27" in pbx:
@@ -848,8 +850,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 29" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 29")
+    if "CURRENT_PROJECT_VERSION: 30" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 30")
+    if "CURRENT_PROJECT_VERSION: 29" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 29 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 28" in yml:
         fail("stale CURRENT_PROJECT_VERSION 28 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 27" in yml:
@@ -1072,8 +1076,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 29") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 29")
+    if pbx.count("CURRENT_PROJECT_VERSION = 30") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 30")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1214,12 +1218,21 @@ def test_siri_app_intents() -> None:
         fail("Intent parameter title must be Artikel")
     if "AppShortcutsProvider" not in intent:
         fail("AppShortcutsProvider missing")
-    if r'"Einkauf \(\.$items)"' not in intent:
-        fail("App Shortcut phrase Einkauf items missing")
-    if r'"Einkauf: \(\.$items)"' not in intent:
-        fail("App Shortcut phrase Einkauf: items missing")
-    if "applicationName" not in intent:
-        fail("App Shortcut phrases must include applicationName variants")
+    if "requestValueDialog" not in intent:
+        fail("Intent must request Artikel via requestValueDialog")
+    phrases_block = intent.split("phrases:", 1)[-1].split("shortTitle", 1)[0]
+    if ".$items" in phrases_block:
+        fail("App Shortcut phrases must not interpolate String $items (Apple: AppEntity/AppEnum only)")
+    if phrases_block.count("applicationName") < 3:
+        fail("each App Shortcut phrase must include applicationName")
+    if r'"\(.applicationName) Einkauf"' not in intent:
+        fail("App Shortcut phrase applicationName Einkauf missing")
+    if r'"Artikel zu \(.applicationName) hinzufügen"' not in intent:
+        fail("App Shortcut phrase Artikel zu applicationName hinzufügen missing")
+    if r'"Füge etwas zu \(.applicationName) hinzu"' not in intent:
+        fail("App Shortcut phrase Füge etwas zu applicationName hinzu missing")
+    if "strippingTriggerPrefix" not in intent:
+        fail("Intent perform must strip leading Einkauf / Einkauf:")
     if "addItems(fromSpeech:" not in intent:
         fail("Intent perform must call addItems(fromSpeech:)")
     if "ShoppingStore(enableSync: true)" not in intent:
@@ -1273,6 +1286,12 @@ def test_siri_app_intents() -> None:
 
     if "Siri" not in desc or "Einkauf:" not in desc:
         fail("Description.md must document Siri Einkauf phrases")
+    if "applicationName" not in desc:
+        fail("Description.md must document applicationName in Siri utterances")
+    if "AppEntity" not in desc or "AppEnum" not in desc:
+        fail("Description.md must document Apple App Shortcut type restriction")
+    if "requestValueDialog" not in desc and "fragt danach" not in desc:
+        fail("Description.md must document Siri asking for Artikel after the utterance")
     if "Speech.framework" not in desc:
         fail("Description.md must forbid Speech.framework")
     if "kein Watch-Mikro" not in desc and "Kein** In-App-Mikrofon" not in desc and "kein In-App-Mikro" not in desc:
