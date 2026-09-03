@@ -43,12 +43,22 @@ def extract_some_view(src: str, name: str) -> str:
     return extract_braced(src, m.start(), f"Watch widget {name} view")
 
 
-def extract_watch_eye_toolbar(watch: str) -> str:
-    """Watch hide-completed Button in `.topBarLeading` (not list-row Buttons)."""
-    m = re.search(r"ToolbarItem\(placement:\s*\.topBarLeading\)\s*\{", watch)
-    if not m:
-        fail("Watch hide toggle must sit in topBarLeading")
-    return extract_braced(watch, m.start(), "Watch topBarLeading ToolbarItem")
+def extract_watch_eye_bar(watch: str) -> str:
+    """Watch hide-completed chrome under the title (HStack + Spacer, not toolbar)."""
+    if re.search(r"ToolbarItem\(placement:\s*\.topBarLeading\)", watch) or "topBarLeading" in watch:
+        fail("Watch hide toggle must not sit in topBarLeading (clips Einkauf xx/yy)")
+    if "ToolbarItem" in watch:
+        fail("Watch must not put the eye in a ToolbarItem")
+    for m in re.finditer(r"HStack(?:\s*\([^)]*\))?\s*\{", watch):
+        block = extract_braced(watch, m.start(), "Watch eye HStack")
+        if "hideCompleted.toggle" in block and "eye.slash" in block:
+            if "Spacer()" not in block:
+                fail("Watch eye HStack must use Spacer() so the eye is trailing under the title")
+            if "ForEach" in block or "walkListRows" in block:
+                fail("Watch eye must not live inside a walk-list row")
+            return block
+    fail("Watch hide toggle must sit in an HStack { Spacer(); Button } below the title")
+    return ""
 
 
 LARGE_PROGRESS_FONT = re.compile(r"\.(largeTitle|title[23]?|headline)\b")
@@ -342,14 +352,23 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 13" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 13 / CURRENT_PROJECT_VERSION")
+    if "Build 14" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 14 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
         fail("Description.md must document Erledigte ausgeblendet empty line")
-    if "topBarLeading" not in desc or "eye.slash" not in desc:
-        fail("Description.md must place the Watch eye in topBarLeading")
+    if "eye.slash" not in desc:
+        fail("Description.md must document the Watch eye.slash glyph")
+    if not re.search(r"unter de[mn] Titel", desc):
+        fail("Description.md must place the Watch eye under the title")
+    watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
+    if "rechts" not in watch_sec:
+        fail("Description.md must right-align the Watch eye under the title")
+    if re.search(r"Toolbar \*\*links\*\*", desc):
+        fail("Description.md still places the Watch eye in the leading toolbar")
+    if not re.search(r"nicht.{0,80}topBarLeading|topBarLeading.{0,80}nicht", desc, re.S):
+        fail("Description.md must say the Watch eye is not in topBarLeading")
     if ".buttonStyle(.plain)" not in desc:
         fail("Description.md must require Watch Auge .buttonStyle(.plain)")
     if "gefüll" not in desc:
@@ -535,11 +554,13 @@ def test_sources() -> None:
         fail("Watch hide-completed must persist via AppStorage einkauf.watch.hideCompleted")
     if "einkauf.iphone.hideCompleted" in watch:
         fail("Watch must not reuse the iPhone AppStorage key")
-    if "topBarLeading" not in watch:
-        fail("Watch hide toggle must sit in topBarLeading (same row as the title)")
+    if "topBarLeading" in watch:
+        fail("Watch hide toggle must not sit in topBarLeading (clips the navigation title)")
+    if "ToolbarItem" in watch:
+        fail("Watch must not put the eye in a ToolbarItem")
     if '"eye"' not in watch or "eye.slash" not in watch:
         fail("Watch hide toggle must use eye / eye.slash")
-    eye_bar = extract_watch_eye_toolbar(watch)
+    eye_bar = extract_watch_eye_bar(watch)
     if ".buttonStyle(.plain)" not in eye_bar:
         fail("Watch eye Button must use .buttonStyle(.plain) (watchOS otherwise draws a huge filled circle)")
     if LARGE_PROGRESS_FONT.search(eye_bar):
@@ -549,6 +570,15 @@ def test_sources() -> None:
             fail(f"Watch eye system size {size}pt is too large (use caption or ~14–16pt)")
     if "hideCompleted.toggle" not in eye_bar:
         fail("Watch eye Button must still toggle hideCompleted")
+    if "Spacer()" not in eye_bar:
+        fail("Watch eye must be trailing via Spacer() under the title")
+    body_m = re.search(r"var body:\s*some View", watch)
+    list_m = re.search(r"List \{", watch)
+    if not body_m or not list_m:
+        fail("Watch body must keep a List")
+    body_to_list = watch[body_m.start():list_m.start()]
+    if "hideCompletedBar" not in body_to_list and "hideCompleted.toggle" not in body_to_list:
+        fail("Watch eye chrome must sit above the List / empty states")
     if "Erledigte ausblenden" not in watch or "Erledigte einblenden" not in watch:
         fail("Watch hide toggle missing accessibility labels")
     if "Erledigte ausgeblendet." not in watch:
@@ -635,8 +665,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 13" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 13")
+    if "CURRENT_PROJECT_VERSION = 14" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 14")
+    if "CURRENT_PROJECT_VERSION = 13" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 13 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 12" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 12 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 11" in pbx:
@@ -648,8 +680,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 13" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 13")
+    if "CURRENT_PROJECT_VERSION: 14" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 14")
+    if "CURRENT_PROJECT_VERSION: 13" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 13 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 12" in yml:
         fail("stale CURRENT_PROJECT_VERSION 12 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 11" in yml:
@@ -838,8 +872,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 13") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 13")
+    if pbx.count("CURRENT_PROJECT_VERSION = 14") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 14")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
