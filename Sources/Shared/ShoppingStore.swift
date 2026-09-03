@@ -13,6 +13,7 @@ final class ShoppingStore: ObservableObject {
     private var sync: ConnectivitySync?
 #endif
     private var saveTask: Task<Void, Never>?
+    private var diskObserver: NSObjectProtocol?
 
     init(state: AppState? = nil, enableSync: Bool = true) {
         if let state {
@@ -31,6 +32,28 @@ final class ShoppingStore: ObservableObject {
 #else
         _ = enableSync
 #endif
+        diskObserver = NotificationCenter.default.addObserver(
+            forName: .einkaufStateDidChangeOnDisk,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.reloadFromPersistenceIfNewer()
+            }
+        }
+    }
+
+    deinit {
+        if let diskObserver {
+            NotificationCenter.default.removeObserver(diskObserver)
+        }
+    }
+
+    /// Siri legt einen kurzlebigen Store an; die laufende App zieht neuere Disk-Stände nach.
+    func reloadFromPersistenceIfNewer() {
+        guard let loaded = Persistence.load() else { return }
+        guard loaded.listRevision > state.listRevision else { return }
+        state = BackupCodec.normalized(loaded)
     }
 
     var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
@@ -76,19 +99,42 @@ final class ShoppingStore: ObservableObject {
     }
 
     func addItem(_ rawName: String) {
+        appendNewItems([rawName])
+    }
+
+    /// Siri / gesprochene Listen: Splitter, dann derselbe Pfad wie getipptes Hinzufügen, ein Persist.
+    @discardableResult
+    func addItems(fromSpeech text: String) -> Int {
+        let names = SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTriggerPrefix(text))
+        appendNewItems(names)
+        return names.count
+    }
+
+    private static func normalizedItemName(_ rawName: String) -> String? {
         let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return }
-        let item = Item(
-            id: Item.makeID(),
-            name: name,
-            dept: DepartmentGuesser.guess(name, mappings: state.mappings),
-            done: false,
-            added: Date.nowEpochMillis,
-            ord: nextOrd(),
-            doneChangedAt: Date.nowEpochMillis
-        )
-        state.items.append(item)
+        return name.isEmpty ? nil : name
+    }
+
+    private func appendNewItems(_ rawNames: [String]) {
+        let names = rawNames.compactMap(Self.normalizedItemName)
+        guard !names.isEmpty else { return }
+        let now = Date.nowEpochMillis
+        var ord = nextOrd()
+        for name in names {
+            state.items.append(
+                Item(
+                    id: Item.makeID(),
+                    name: name,
+                    dept: DepartmentGuesser.guess(name, mappings: state.mappings),
+                    done: false,
+                    added: now,
+                    ord: ord,
+                    doneChangedAt: now
+                )
+            )
+            ord += 1
+        }
         state.listRevision += 1
         persistAndSync()
     }
@@ -395,6 +441,7 @@ final class ShoppingStore: ObservableObject {
 
     private func persistAndSync() {
         persistQuietly()
+        NotificationCenter.default.post(name: .einkaufStateDidChangeOnDisk, object: nil)
 #if os(iOS) || os(watchOS)
         sync?.broadcast(state)
 #endif

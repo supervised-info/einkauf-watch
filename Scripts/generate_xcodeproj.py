@@ -96,6 +96,9 @@ def main() -> None:
     widgetkit_watch = uid("widgetkit_watch")
     widgetkit_ios = uid("widgetkit_ios")
     widgetkit_ios_widget = uid("widgetkit_ios_widget")
+    appintents_ref = uid("appintents_ref")
+    appintents_ios = uid("appintents_ios")
+    appintents_watch = uid("appintents_watch")
 
     group_root = uid("group_root")
     group_ios = uid("group_ios")
@@ -148,6 +151,8 @@ def main() -> None:
     objects.append(f"\t\t{widgetkit_watch} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
     objects.append(f"\t\t{widgetkit_ios} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
     objects.append(f"\t\t{widgetkit_ios_widget} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
+    objects.append(f"\t\t{appintents_ios} /* AppIntents.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {appintents_ref} /* AppIntents.framework */; }};")
+    objects.append(f"\t\t{appintents_watch} /* AppIntents.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {appintents_ref} /* AppIntents.framework */; }};")
     objects.append(
         f"\t\t{watch_embed_build} /* EinkaufWatch.app in Embed Watch Content */ = {{isa = PBXBuildFile; fileRef = {watch_product} /* EinkaufWatch.app */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};"
     )
@@ -251,6 +256,7 @@ def main() -> None:
     objects.append(f"\t\t{ios_widget_product} /* EinkaufWidgets.appex */ = {{isa = PBXFileReference; explicitFileType = \"wrapper.app-extension\"; includeInIndex = 0; path = EinkaufWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; }};")
     objects.append(f"\t\t{wc_ref} /* WatchConnectivity.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; }};")
     objects.append(f"\t\t{widgetkit_ref} /* WidgetKit.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; }};")
+    objects.append(f"\t\t{appintents_ref} /* AppIntents.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; }};")
     for p in ios_swifts + watch_swifts + widget_swifts + ios_widget_swifts + shared_swifts + [fixture, ios_assets, watch_assets]:
         rel = p.relative_to(ROOT).as_posix()
         name = p.name
@@ -290,6 +296,7 @@ def main() -> None:
             \t\t\tfiles = (
             \t\t\t\t{wc_ios} /* WatchConnectivity.framework in Frameworks */,
             \t\t\t\t{widgetkit_ios} /* WidgetKit.framework in Frameworks */,
+            \t\t\t\t{appintents_ios} /* AppIntents.framework in Frameworks */,
             \t\t\t);
             \t\t\trunOnlyForDeploymentPostprocessing = 0;
             \t\t}};
@@ -299,6 +306,7 @@ def main() -> None:
             \t\t\tfiles = (
             \t\t\t\t{wc_watch} /* WatchConnectivity.framework in Frameworks */,
             \t\t\t\t{widgetkit_watch} /* WidgetKit.framework in Frameworks */,
+            \t\t\t\t{appintents_watch} /* AppIntents.framework in Frameworks */,
             \t\t\t);
             \t\t\trunOnlyForDeploymentPostprocessing = 0;
             \t\t}};
@@ -366,6 +374,7 @@ def main() -> None:
             \t\t\tchildren = (
             \t\t\t\t{wc_ref} /* WatchConnectivity.framework */,
             \t\t\t\t{widgetkit_ref} /* WidgetKit.framework */,
+            \t\t\t\t{appintents_ref} /* AppIntents.framework */,
             \t\t\t);
             \t\t\tname = Frameworks;
             \t\t\tsourceTree = "<group>";
@@ -783,7 +792,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -818,7 +827,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -853,7 +862,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -885,7 +894,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -918,7 +927,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -948,7 +957,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -979,7 +988,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1010,7 +1019,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 28;
+\t\t\t\tCURRENT_PROJECT_VERSION = 29;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1128,7 +1137,7 @@ def main() -> None:
     )
     scheme = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1500"
+   LastUpgradeVersion = "2600"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -1229,7 +1238,7 @@ def main() -> None:
     # Write a dedicated watch scheme instead.
     watch_scheme = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1500"
+   LastUpgradeVersion = "2600"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"

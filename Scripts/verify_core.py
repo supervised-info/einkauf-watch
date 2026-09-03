@@ -269,6 +269,8 @@ def test_sources() -> None:
         "Sources/iOS/AppearanceSettings.swift",
         "Sources/Shared/KeywordDictionary.swift",
         "Sources/Shared/KeywordDictionaryBrowse.swift",
+        "Sources/Shared/SpeechItemSplitter.swift",
+        "Sources/Shared/EinkaufAddItemsIntent.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/iOS/HomeWidgetReload.swift",
@@ -360,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 28" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 28 / CURRENT_PROJECT_VERSION")
+    if "Build 29" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 29 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -801,8 +803,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 28" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 28")
+    if "CURRENT_PROJECT_VERSION = 29" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 29")
+    if "CURRENT_PROJECT_VERSION = 28" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 28 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 27" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 27 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 26" in pbx:
@@ -844,8 +848,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 28" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 28")
+    if "CURRENT_PROJECT_VERSION: 29" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 29")
+    if "CURRENT_PROJECT_VERSION: 28" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 28 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 27" in yml:
         fail("stale CURRENT_PROJECT_VERSION 27 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 26" in yml:
@@ -1066,8 +1072,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 28") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 28")
+    if pbx.count("CURRENT_PROJECT_VERSION = 29") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 29")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1176,6 +1182,104 @@ def test_iphone_widget() -> None:
     print("iphone widget: ok")
 
 
+def test_siri_app_intents() -> None:
+    splitter = (ROOT / "Sources/Shared/SpeechItemSplitter.swift").read_text()
+    intent = (ROOT / "Sources/Shared/EinkaufAddItemsIntent.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+    yml = (ROOT / "project.yml").read_text()
+    pkg = (ROOT / "Package.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    watch_app = (ROOT / "Sources/Watch/EinkaufWatchApp.swift").read_text()
+    gen = (ROOT / "Scripts/generate_xcodeproj.py").read_text()
+
+    if "enum SpeechItemSplitter" not in splitter:
+        fail("SpeechItemSplitter missing")
+    if r"\s+und\s+" not in splitter or r"\s+sowie\s+" not in splitter:
+        fail("SpeechItemSplitter must split on und/sowie")
+    if "strippingTriggerPrefix" not in splitter:
+        fail("SpeechItemSplitter must strip a leading Einkauf trigger")
+    if "Keine Artikel erkannt." not in splitter:
+        fail("SpeechItemSplitter must provide empty confirmation copy")
+    if "1 Artikel hinzugefügt." not in splitter or "Artikel hinzugefügt." not in splitter:
+        fail("SpeechItemSplitter must provide German add confirmation")
+
+    if "import AppIntents" not in intent:
+        fail("EinkaufAddItemsIntent must import AppIntents")
+    if "struct EinkaufAddItemsIntent: AppIntent" not in intent:
+        fail("EinkaufAddItemsIntent missing")
+    if 'title: "Artikel"' not in intent:
+        fail("Intent parameter title must be Artikel")
+    if "AppShortcutsProvider" not in intent:
+        fail("AppShortcutsProvider missing")
+    if r'"Einkauf \(\.$items)"' not in intent:
+        fail("App Shortcut phrase Einkauf items missing")
+    if r'"Einkauf: \(\.$items)"' not in intent:
+        fail("App Shortcut phrase Einkauf: items missing")
+    if "applicationName" not in intent:
+        fail("App Shortcut phrases must include applicationName variants")
+    if "addItems(fromSpeech:" not in intent:
+        fail("Intent perform must call addItems(fromSpeech:)")
+    if "ShoppingStore(enableSync: true)" not in intent:
+        fail("Intent must use a short-lived ShoppingStore with enableSync true")
+    if "openAppWhenRun = false" not in intent:
+        fail("Intent should confirm in Siri without opening the UI")
+
+    if "func addItems(fromSpeech" not in store:
+        fail("ShoppingStore.addItems(fromSpeech:) missing")
+    if "appendNewItems" not in store:
+        fail("addItems(fromSpeech:) must batch into a single persist")
+    if "SpeechItemSplitter.strippingTriggerPrefix" not in store:
+        fail("addItems(fromSpeech:) must strip a leading Einkauf prefix")
+
+    if "testCommaUndUndKeepsQuantity" not in tests:
+        fail("tests must cover SpeechItemSplitter comma/und split")
+    if "testAddItemsFromSpeechSplitsAndGuesses" not in tests:
+        fail("tests must cover addItems(fromSpeech:)")
+    if "testAddItemsFromSpeechStripsTriggerAndPersistsOnce" not in tests:
+        fail("tests must cover trigger strip and single persist")
+    if "testConfirmationCopy" not in tests:
+        fail("tests must cover Siri confirmation copy")
+
+    if "EinkaufAddItemsIntent.swift" not in pbx:
+        fail("pbxproj must compile EinkaufAddItemsIntent.swift")
+    if "SpeechItemSplitter.swift" not in pbx:
+        fail("pbxproj must compile SpeechItemSplitter.swift")
+    if "AppIntents.framework" not in pbx:
+        fail("AppIntents.framework must be linked")
+    if "Speech.framework" in pbx:
+        fail("Speech.framework must not be linked")
+    if "AVFoundation.framework" in pbx:
+        fail("AVFoundation.framework must not be linked")
+    if "AppIntents.framework" not in yml:
+        fail("project.yml must depend on AppIntents.framework")
+    if "EinkaufAddItemsIntent.swift" not in yml:
+        fail("project.yml widgets must exclude EinkaufAddItemsIntent.swift")
+    if "EinkaufAddItemsIntent.swift" not in pkg:
+        fail("Package.swift must exclude EinkaufAddItemsIntent.swift from SPM")
+
+    if "import Speech" in watch or "import Speech" in watch_app:
+        fail("Watch UI must not import Speech")
+    if "presentTextInputController" in watch or "TextFieldLink" in watch:
+        fail("Watch must not present dictation / TextFieldLink chrome")
+    if "WatchHoldToTalk" in watch or "WatchVoiceAdd" in watch:
+        fail("Watch mic UI must stay reverted")
+    if (ROOT / "Sources/Watch/WatchHoldToTalk.swift").exists():
+        fail("WatchHoldToTalk.swift must not return")
+    if "Speech.framework" in gen:
+        fail("generate_xcodeproj.py must not link Speech.framework")
+
+    if "Siri" not in desc or "Einkauf:" not in desc:
+        fail("Description.md must document Siri Einkauf phrases")
+    if "Speech.framework" not in desc:
+        fail("Description.md must forbid Speech.framework")
+    if "kein Watch-Mikro" not in desc and "Kein** In-App-Mikrofon" not in desc and "kein In-App-Mikro" not in desc:
+        fail("Description.md must say there is no Watch mic")
+    print("siri app intents: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -1185,6 +1289,7 @@ def main() -> None:
     test_sources()
     test_watch_complication()
     test_iphone_widget()
+    test_siri_app_intents()
     print("ALL OK")
 
 

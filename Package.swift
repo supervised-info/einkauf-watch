@@ -16,7 +16,8 @@ let package = Package(
             name: "EinkaufCore",
             path: "Sources/Shared",
             exclude: [
-                "ConnectivitySync.swift"
+                "ConnectivitySync.swift",
+                "EinkaufAddItemsIntent.swift"
             ]
         ),
         .testTarget(

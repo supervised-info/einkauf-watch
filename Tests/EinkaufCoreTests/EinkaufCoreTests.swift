@@ -1510,3 +1510,93 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(AppThemePreference.dark.preferredColorScheme, .dark)
     }
 }
+
+final class SpeechItemSplitterTests: XCTestCase {
+    func testCommaUndUndKeepsQuantity() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch, Butter und zwei Eier"),
+            ["Milch", "Butter", "zwei Eier"]
+        )
+    }
+
+    func testSemicolonSowieAndNewlines() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch; Butter sowie Brot"),
+            ["Milch", "Butter", "Brot"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch\nButter\nzwei Eier"),
+            ["Milch", "Butter", "zwei Eier"]
+        )
+    }
+
+    func testTrimCollapseDropEmpty() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "  Milch ,  , Butter  und   zwei   Eier  "),
+            ["Milch", "Butter", "zwei Eier"]
+        )
+        XCTAssertEqual(SpeechItemSplitter.items(from: "  "), [])
+        XCTAssertEqual(SpeechItemSplitter.items(from: ", und ;"), [])
+    }
+
+    func testDoesNotSplitHundertOrGlueUnd() {
+        XCTAssertEqual(SpeechItemSplitter.items(from: "hundert"), ["hundert"])
+        XCTAssertEqual(SpeechItemSplitter.items(from: "MilchundButter"), ["MilchundButter"])
+    }
+
+    func testCaseInsensitiveUnd() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch UND Butter"),
+            ["Milch", "Butter"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch Sowie Butter"),
+            ["Milch", "Butter"]
+        )
+    }
+
+    func testStripsLeadingEinkaufTrigger() {
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Einkauf Milch, Butter"), "Milch, Butter")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Einkauf: Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("einkauf:Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Einkauf"), "")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Einkaufen Milch"), "Einkaufen Milch")
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTriggerPrefix("Einkauf: Milch, Butter und Eier")),
+            ["Milch", "Butter", "Eier"]
+        )
+    }
+
+    func testConfirmationCopy() {
+        XCTAssertEqual(SpeechItemSplitter.confirmation(addedCount: 0), "Keine Artikel erkannt.")
+        XCTAssertEqual(SpeechItemSplitter.confirmation(addedCount: 1), "1 Artikel hinzugefügt.")
+        XCTAssertEqual(SpeechItemSplitter.confirmation(addedCount: 3), "3 Artikel hinzugefügt.")
+    }
+}
+
+@MainActor
+final class SpeechAddItemsTests: XCTestCase {
+    func testAddItemsFromSpeechSplitsAndGuesses() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "Milch, Butter und zwei Eier"), 3)
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
+        XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
+        XCTAssertEqual(store.state.listRevision, 1)
+    }
+
+    func testAddItemsFromSpeechEmptyAddsNothing() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "  "), 0)
+        XCTAssertTrue(store.state.items.isEmpty)
+        XCTAssertEqual(store.state.listRevision, 0)
+        XCTAssertEqual(store.addItems(fromSpeech: "Einkauf"), 0)
+        XCTAssertTrue(store.state.items.isEmpty)
+    }
+
+    func testAddItemsFromSpeechStripsTriggerAndPersistsOnce() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "Einkauf: Milch, Butter und zwei Eier"), 3)
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
+        XCTAssertEqual(store.state.listRevision, 1)
+    }
+}
