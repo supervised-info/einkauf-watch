@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-03 (Build 19, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-03 (Build 20, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -96,7 +96,7 @@ Titel **Einstellungen**, Fertig schließt. Native-Sektionen **genau so** (Darste
 6. **Layout zurücksetzen** — builtin: Seed-Layout; eigener Laden: `["vor", "sonstiges", "nach"]`. Auch für Custom, nicht nur builtin.
 7. **Stamm-Artikel** — Name, Dept-Picker, Löschen; Anlegen „Milch, Butter…“. Footer zu Gesamtliste. Kein Hoch/Runter der Stamm-Zeilen.
 8. **Gespeicherte Listen** — leer: „Noch keine gespeicherten Listen.“ Sonst Tippen = `applySavedList` (auffüllen). Swipe-Delete mit Confirm „Gespeicherte Liste „{Name}“ wirklich löschen?“ Footer: Anlass-Listen, Tippen füllt auf ohne zu ersetzen, Wischen löscht.
-9. **Wörterbuch** — NavigationLink, nur lesen, lokal `KeywordDictionary.source`, Suche „Wort suchen“. Footer: Zuordnung nur lokal; Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste. Eigene Korrekturen merkt sich die App unter dem Artikelnamen (ohne Menge) und nutzt sie beim nächsten Eintragen; das Wörterbuch selbst ändert sich nicht. Kein Netz, keine Bearbeitung.
+9. **Wörterbuch** — NavigationLink, lokal `KeywordDictionary.source`, Suche „Wort suchen“ filtert **Meine Zuordnungen** und die mitgelieferten Wörter. Oben Sektion **Meine Zuordnungen**: Zeilen aus `state.mappings` (Key = `mappingKey`/Canon ohne Menge + Dept-Picker alle `Department.allCases`). Swipe-Delete ruft `removeMapping`. Leer: „Noch keine eigenen Zuordnungen. Abteilung im Bearbeiten-Modus ändern — dann erscheint der Name hier.“ Optional **Hinzufügen** (Name + Dept → `setMapping` / `mappingKey(name)`). Darunter die mitgelieferten Gruppen nur lesen. Footer: mitgelieferte Wortliste ist fest; eigene Zuordnungen stehen im Backup als `mappings` und gewinnen beim nächsten Eintragen; Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste; Korrekturen unter dem Artikelnamen (ohne Menge); das Wörterbuch selbst ändert sich nicht. Kein Netz. `setMapping` / `removeMapping` persistieren und WatchConnectivity wie andere State-Änderungen (inkl. Home-Widget-Reload).
 
 Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` (iPhone-Darstellung synct nicht).
 
@@ -193,9 +193,9 @@ Lokal, **kein Netz**. `KeywordDictionary.source` ist die mitgelieferte Kopie von
 3. Keywords aus `KeywordDictionary.source` (längstes Trefferwort)
 4. sonst `sonstiges`
 
-`mappingKey`: canon (ä→a, ö→o, ü→u, ß→ss, ae/oe/ue falten) + Mengen strippen. Select, Cross-Dept-Drop, Stamm-Dept und Rename (wenn der Key wechselt) schreiben denselben Key. `KeywordDictionary.source` bleibt zur Laufzeit unverändert (Einstellungen-Wörterbuch nur lesen).
+`mappingKey`: canon (ä→a, ö→o, ü→u, ß→ss, ae/oe/ue falten) + Mengen strippen. Select, Cross-Dept-Drop, Stamm-Dept, Wörterbuch-Picker und Rename (wenn der Key wechselt) schreiben denselben Key. `KeywordDictionary.source` bleibt zur Laufzeit unverändert.
 
-Wörterbuch-UI: Gruppen nach `Department.title`, Wörter je Abteilung alphabetisch de, Duplikate/Leer raus. `vor`/`nach`/`sonstiges` haben keine `source`-Keys. Footer: eigene Korrekturen merkt sich die App unter dem Artikelnamen (ohne Menge) und nutzt sie beim nächsten Eintragen; das Wörterbuch selbst ändert sich nicht.
+Wörterbuch-UI: zuerst **Meine Zuordnungen** aus `mappings` (edit/delete, optional Hinzufügen), Suche filtert diese und die mitgelieferten Wörter. Darunter Gruppen nach `Department.title`, Wörter je Abteilung alphabetisch de, Duplikate/Leer raus — nur lesen. `vor`/`nach`/`sonstiges` haben keine `source`-Keys. Footer: mitgelieferte Liste fest; eigene Zuordnungen im Backup als `mappings` und gewinnen beim nächsten Eintragen; Korrekturen unter dem Artikelnamen (ohne Menge); das Wörterbuch selbst ändert sich nicht. Kein zweites Backup-Feld.
 
 ## Stamm
 
@@ -254,7 +254,7 @@ HTML-Spec: Pages `einkauf/Description_index.md` (Stand 2026-09-02/03, SW `einkau
 
 - `savedLists` — Name+Dept-Snapshot, Apply **füllt** statt zu ersetzen; Backup-Feld; alte Backups `[]`
 - Sonstiges-Slot im Ladenweg — `sonstiges` bleibt an der Layout-Position; Extra-Depts mit Items nach dem letzten Nicht-`nach`-Gang; `item.dept` nicht nach `sonstiges` umschreiben
-- Wörterbuch — nur lesen, lokal aus `KeywordDictionary.source` / `DICT_SRC`, kein Netz
+- Wörterbuch — mitgelieferte Liste nur lesen, lokal aus `KeywordDictionary.source` / `DICT_SRC`, kein Netz; eigene Zuordnungen im gemeinsamen Backup-Feld `mappings` (kein zweites Feld)
 - Settings-Reihenfolge (gemeinsames Gerüst): **Aktueller Laden → Neuer Laden → Ladenweg → Stamm → Gespeicherte Listen → Wörterbuch**
 
 Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat **kein** Darstellung-Block im Sheet; Theme/Palette bleiben am Site-Mast. HTML schiebt **Alle Läden** JSON (`kind: "einkauf-laeden"`) zwischen Neuer Laden und Ladenweg — nur HTML.
@@ -287,6 +287,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 - [ ] Settings-Reihenfolge: Darstellung (Hell/Dunkel/System, Creme/Blau) → Aktueller Laden → Neuer Laden → Ladenweg (`sonstiges` movable, `vor`/`nach` locked) → Abteilungen hinzufügen → Reset → Stamm → Gespeicherte Listen (Apply + Swipe-Delete) → Wörterbuch.
 - [ ] `ListGrouping` sanitized inkl. `sonstiges`-Position; Rest-Depts mit Items nach dem letzten Nicht-`nach`-Gang; kein Remap von `item.dept` nach `sonstiges`.
 - [ ] `DepartmentGuesser` + `KeywordDictionary.source` lokal, kein Netz; Nutzer-Mapping vor Sonderregeln/Keywords.
+- [ ] Wörterbuch **Meine Zuordnungen**: View/Edit/Delete von `mappings` (Picker, Swipe-Delete, optional Hinzufügen); mitgelieferte Liste nur lesen; Backup-Feld bleibt `mappings`.
 - [ ] Gespeicherte Listen: Name+Dept-Snapshot, füllen nicht ersetzen, Backup-Feld `savedLists`.
 - [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen.
 - [ ] Watch-Titel: gekürzter Ladenname + Einkauf xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`einkauf.watch.hideCompleted`, nicht Backup); iPhone-Geh-Modus hat dasselbe Auge mit `einkauf.iphone.hideCompleted`; Bearbeiten ungefiltert; kein Picker/Edit/Share auf der Watch; WatchConnectivity.

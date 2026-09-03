@@ -46,4 +46,31 @@ extension KeywordDictionary {
         }
         return result
     }
+
+    /// Eine gelernte Nutzer-Zuordnung (`state.mappings` / Backup-Feld `mappings`).
+    struct LearnedMapping: Equatable, Identifiable, Sendable {
+        var id: String { key }
+        let key: String
+        let dept: String
+    }
+
+    /// `mappings` nach Key (de) sortiert; unbekannte Depts raus; Suche wie bei den mitgelieferten Wörtern.
+    static func learnedMappings(from mappings: [String: String], matching query: String = "") -> [LearnedMapping] {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        var rows: [LearnedMapping] = []
+        for (key, dept) in mappings {
+            guard !key.isEmpty, Department.isKnown(dept) else { continue }
+            if !needle.isEmpty {
+                let hit = key.range(
+                    of: needle,
+                    options: [.caseInsensitive, .diacriticInsensitive],
+                    locale: german
+                ) != nil
+                guard hit else { continue }
+            }
+            rows.append(LearnedMapping(key: key, dept: dept))
+        }
+        rows.sort { $0.key.compare($1.key, locale: german) == .orderedAscending }
+        return rows
+    }
 }
