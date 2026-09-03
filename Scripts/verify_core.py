@@ -44,7 +44,7 @@ def extract_some_view(src: str, name: str) -> str:
 
 
 def extract_watch_eye_bar(watch: str) -> str:
-    """Watch hide-completed chrome under the title (HStack + Spacer, not toolbar)."""
+    """Watch hide-completed chrome above the title (HStack + Spacer, not toolbar)."""
     if re.search(r"ToolbarItem\(placement:\s*\.topBarLeading\)", watch) or "topBarLeading" in watch:
         fail("Watch hide toggle must not sit in topBarLeading (clips Einkauf xx/yy)")
     if "ToolbarItem" in watch:
@@ -53,7 +53,7 @@ def extract_watch_eye_bar(watch: str) -> str:
         block = extract_braced(watch, m.start(), "Watch eye HStack")
         if "hideCompleted.toggle" in block and "eye.slash" in block:
             if "Spacer()" not in block:
-                fail("Watch eye HStack must use Spacer() so the eye is leading under the title")
+                fail("Watch eye HStack must use Spacer() so the eye is leading above the title")
             btn_pos = block.find("Button")
             spacer_pos = block.find("Spacer()")
             if btn_pos < 0 or spacer_pos < btn_pos:
@@ -61,7 +61,7 @@ def extract_watch_eye_bar(watch: str) -> str:
             if "ForEach" in block or "walkListRows" in block:
                 fail("Watch eye must not live inside a walk-list row")
             return block
-    fail("Watch hide toggle must sit in an HStack { Button; Spacer() } below the title")
+    fail("Watch hide toggle must sit in an HStack { Button; Spacer() } above the title")
     return ""
 
 
@@ -356,19 +356,25 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 17" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 17 / CURRENT_PROJECT_VERSION")
+    if "Build 18" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 18 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
         fail("Description.md must document Erledigte ausgeblendet empty line")
     if "eye.slash" not in desc:
         fail("Description.md must document the Watch eye.slash glyph")
-    if not re.search(r"unter de[mn] Titel", desc):
-        fail("Description.md must place the Watch eye under the title")
+    if re.search(r"Auge \*\*eine Zeile unter dem Titel\*\*", desc):
+        fail("Description.md still places the Watch eye under the navigation title")
     watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
     if "links" not in watch_sec:
-        fail("Description.md must left-align the Watch eye under the title")
+        fail("Description.md must left-align the Watch eye")
+    if "Text(store.state.watchTitle)" not in watch_sec:
+        fail("Description.md must place watchTitle as Text below the eye bar")
+    if "über der Titelzeile" not in watch_sec and "zuerst über" not in watch_sec:
+        fail("Description.md must place the Watch eye above the title line")
+    if "navigationTitle(watchTitle)" not in watch_sec and ".navigationTitle(watchTitle)" not in watch_sec:
+        fail("Description.md must forbid navigationTitle(watchTitle)")
     if "theme.good" not in watch_sec:
         fail("Description.md must document Watch eye as theme.good when completed are visible")
     if "theme.muted" not in watch_sec and "grau" not in watch_sec.lower():
@@ -568,8 +574,10 @@ def test_sources() -> None:
         fail("Watch list must use walkListRows(hidingCompleted:) so done items can be filtered")
     if "ForEach(visibleWalkRows)" not in watch and "ForEach(store.walkListRows" not in watch:
         fail("Watch list must ForEach walk list rows (flat store+position ids)")
-    if "navigationTitle(store.state.watchTitle)" not in watch:
-        fail("Watch navigationTitle must bind to watchTitle")
+    if "navigationTitle(store.state.watchTitle)" in watch:
+        fail("Watch must not put watchTitle in navigationTitle (that places it above the eye)")
+    if "Text(store.state.watchTitle)" not in watch:
+        fail("Watch must show watchTitle as Text below the eye bar")
     if "AppStorage" not in watch or "einkauf.watch.hideCompleted" not in watch:
         fail("Watch hide-completed must persist via AppStorage einkauf.watch.hideCompleted")
     if "einkauf.iphone.hideCompleted" in watch:
@@ -601,7 +609,7 @@ def test_sources() -> None:
     ):
         fail("Watch eye colour must be muted when hidden, good when visible")
     if "Spacer()" not in eye_bar:
-        fail("Watch eye must be leading via Spacer() after the Button under the title")
+        fail("Watch eye must be leading via Spacer() after the Button above the title")
     if eye_bar.find("Spacer()") < eye_bar.find("Button"):
         fail("Watch eye HStack must be { Button…; Spacer() }, not trailing")
     if re.search(r"minHeight:\s*44", eye_bar) or re.search(r"minWidth:\s*44", eye_bar):
@@ -614,7 +622,7 @@ def test_sources() -> None:
     ):
         fail("Watch hideCompletedBar must be a compact ~18–20pt row")
     if "VStack(spacing: 0)" not in watch:
-        fail("Watch must use VStack(spacing: 0) so the eye sits tight under the title")
+        fail("Watch must use VStack(spacing: 0) so eye, title, and list stack tightly")
     if ".contentMargins(.top, 0" not in watch:
         fail("Watch List must zero top contentMargins so the first item sits under the eye")
     if re.search(r"\.padding\(\)", watch):
@@ -626,6 +634,14 @@ def test_sources() -> None:
     body_to_list = watch[body_m.start():list_m.start()]
     if "hideCompletedBar" not in body_to_list and "hideCompleted.toggle" not in body_to_list:
         fail("Watch eye chrome must sit above the List / empty states")
+    eye_pos = body_to_list.find("hideCompletedBar")
+    if eye_pos < 0:
+        eye_pos = body_to_list.find("hideCompleted.toggle")
+    title_pos = body_to_list.find("Text(store.state.watchTitle)")
+    if title_pos < 0:
+        fail("Watch title Text must sit in the body below the eye bar (before the List)")
+    if eye_pos >= 0 and title_pos < eye_pos:
+        fail("Watch title Text must sit below the eye bar")
     if "Erledigte ausblenden" not in watch or "Erledigte einblenden" not in watch:
         fail("Watch hide toggle missing accessibility labels")
     if "Erledigte ausgeblendet." not in watch:
@@ -712,8 +728,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 17" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 17")
+    if "CURRENT_PROJECT_VERSION = 18" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 18")
+    if "CURRENT_PROJECT_VERSION = 17" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 17 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 16" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 16 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 15" in pbx:
@@ -733,8 +751,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 17" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 17")
+    if "CURRENT_PROJECT_VERSION: 18" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 18")
+    if "CURRENT_PROJECT_VERSION: 17" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 17 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 16" in yml:
         fail("stale CURRENT_PROJECT_VERSION 16 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 15" in yml:
@@ -755,6 +775,8 @@ def test_sources() -> None:
         fail("stale CURRENT_PROJECT_VERSION 8 still in project.yml")
     if not re.search(r'\.navigationTitle\(', watch):
         fail("Watch must use navigationTitle")
+    if not re.search(r'navigationTitle\(\s*""\s*\)', watch):
+        fail("Watch navigationTitle must be empty/minimal so the clock stays")
     title_has_store = "currentStore.name" in watch or (
         "watchTitle" in watch and "var watchTitle" in models and "currentStore.name" in models
     )
@@ -762,9 +784,9 @@ def test_sources() -> None:
         "watchTitle" in watch and "var watchTitle" in models and "progressLabel" in models
     )
     if not title_has_store:
-        fail("Watch navigationTitle must include currentStore.name")
+        fail("Watch title must include currentStore.name")
     if not title_has_progress:
-        fail("Watch navigationTitle must include progressLabel")
+        fail("Watch title must include progressLabel")
     if "watchTitle" in watch and not re.search(r'Einkauf \\\(progressLabel\)', models):
         fail("watchTitle must keep Einkauf plus progressLabel")
     if "topBarTrailing" in watch:
@@ -931,8 +953,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 17") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 17")
+    if pbx.count("CURRENT_PROJECT_VERSION = 18") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 18")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
