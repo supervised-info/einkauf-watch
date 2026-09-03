@@ -360,8 +360,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 20" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 20 / CURRENT_PROJECT_VERSION")
+    if "Build 28" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 28 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -801,8 +801,24 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 20" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 20")
+    if "CURRENT_PROJECT_VERSION = 28" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 28")
+    if "CURRENT_PROJECT_VERSION = 27" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 27 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 26" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 26 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 25" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 25 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 24" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 24 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 23" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 23 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 22" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 22 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 21" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 21 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 20" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 20 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 19" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 19 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 18" in pbx:
@@ -828,8 +844,24 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 20" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 20")
+    if "CURRENT_PROJECT_VERSION: 28" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 28")
+    if "CURRENT_PROJECT_VERSION: 27" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 27 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 26" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 26 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 25" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 25 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 24" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 24 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 23" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 23 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 22" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 22 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 21" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 21 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 20" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 20 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 19" in yml:
         fail("stale CURRENT_PROJECT_VERSION 19 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 18" in yml:
@@ -1034,8 +1066,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 20") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 20")
+    if pbx.count("CURRENT_PROJECT_VERSION = 28") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 28")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
