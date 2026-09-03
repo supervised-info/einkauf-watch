@@ -49,8 +49,7 @@ final class ShoppingStore: ObservableObject {
         }
     }
 
-    /// Siri legt einen kurzlebigen Store an; die laufende App zieht neuere Disk-Stände nach.
-    /// Watch-Siri schreibt nur die Datei — Sync zum iPhone erst hier, wenn die App aktiv wird.
+    /// iOS-Siri legt einen kurzlebigen Store an; die laufende App zieht neuere Disk-Stände nach.
     func reloadFromPersistenceIfNewer() {
         guard let loaded = Persistence.load() else { return }
         guard loaded.listRevision > state.listRevision else { return }
@@ -58,6 +57,14 @@ final class ShoppingStore: ObservableObject {
 #if os(iOS) || os(watchOS)
         sync?.broadcast(state)
 #endif
+    }
+
+    /// Watch-Siri: Pending-Queue drainen, dann normal persist+sync auf dem live Store.
+    func consumeSiriPendingAdds() {
+        let pending = SiriPendingAdds.drain()
+        for speech in pending {
+            addItems(fromSpeech: speech)
+        }
     }
 
     var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
@@ -114,27 +121,15 @@ final class ShoppingStore: ObservableObject {
         return names.count
     }
 
-    /// Watch-Siri: Splitter wie `addItems(fromSpeech:)`, aber nur Disk — kein WidgetKit, kein `sync?.broadcast`.
-    @discardableResult
-    func addItemsFromSiri(_ text: String) throws -> Int {
-        let names = SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTriggerPrefix(text))
-        let added = appendNewItems(names, persist: false)
-        guard added > 0 else { return names.count }
-        saveTask?.cancel()
-        try Persistence.write(state)
-        return names.count
-    }
-
     private static func normalizedItemName(_ rawName: String) -> String? {
         let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? nil : name
     }
 
-    @discardableResult
-    private func appendNewItems(_ rawNames: [String], persist: Bool = true) -> Int {
+    private func appendNewItems(_ rawNames: [String]) {
         let names = rawNames.compactMap(Self.normalizedItemName)
-        guard !names.isEmpty else { return 0 }
+        guard !names.isEmpty else { return }
         let now = Date.nowEpochMillis
         var ord = nextOrd()
         for name in names {
@@ -152,10 +147,7 @@ final class ShoppingStore: ObservableObject {
             ord += 1
         }
         state.listRevision += 1
-        if persist {
-            persistAndSync()
-        }
-        return names.count
+        persistAndSync()
     }
 
     func renameItem(_ id: String, to rawName: String) {

@@ -1619,20 +1619,46 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.state.listRevision, 1)
     }
 
-    func testAddItemsFromSiriSoftSaveSplitsAndGuesses() throws {
+}
+
+final class SiriPendingAddsTests: XCTestCase {
+    private func tempQueueURL() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("einkauf-siri-pending-\(UUID().uuidString).json")
+    }
+
+    func testEnqueueThenDrainPreservesOrder() {
+        let url = tempQueueURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        SiriPendingAdds.enqueue("Milch, Butter", at: url)
+        SiriPendingAdds.enqueue("Eier", at: url)
+        XCTAssertEqual(SiriPendingAdds.drain(at: url), ["Milch, Butter", "Eier"])
+        XCTAssertEqual(SiriPendingAdds.drain(at: url), [])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
+    func testEnqueueStripsTriggerAndSkipsBlank() {
+        let url = tempQueueURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        SiriPendingAdds.enqueue("  ", at: url)
+        SiriPendingAdds.enqueue("Besorgen", at: url)
+        SiriPendingAdds.enqueue("Besorgen: Milch und Butter", at: url)
+        SiriPendingAdds.enqueue("Einkauf: Eier", at: url)
+        XCTAssertEqual(SiriPendingAdds.drain(at: url), ["Milch und Butter", "Eier"])
+    }
+
+    func testConsumeSiriPendingAddsDrainsOntoLiveStore() {
+        let url = tempQueueURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+        SiriPendingAdds.enqueue("Besorgen: Milch, Butter und zwei Eier", at: url)
+        let pending = SiriPendingAdds.drain(at: url)
         let store = ShoppingStore(state: .seed, enableSync: false)
-        XCTAssertEqual(try store.addItemsFromSiri("Besorgen: Milch, Butter und zwei Eier"), 3)
+        for speech in pending {
+            store.addItems(fromSpeech: speech)
+        }
         XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
         XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
         XCTAssertEqual(store.state.listRevision, 1)
-    }
-
-    func testAddItemsFromSiriEmptyAddsNothing() throws {
-        let store = ShoppingStore(state: .seed, enableSync: false)
-        XCTAssertEqual(try store.addItemsFromSiri("  "), 0)
-        XCTAssertTrue(store.state.items.isEmpty)
-        XCTAssertEqual(store.state.listRevision, 0)
-        XCTAssertEqual(try store.addItemsFromSiri("Besorgen"), 0)
-        XCTAssertTrue(store.state.items.isEmpty)
+        XCTAssertEqual(SiriPendingAdds.drain(at: url), [])
     }
 }

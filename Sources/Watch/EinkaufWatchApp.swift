@@ -12,6 +12,7 @@ struct EinkaufWatchApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
+            store.consumeSiriPendingAdds()
             store.reloadFromPersistenceIfNewer()
             WatchComplicationReload.timelines()
         }

@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.0"
   CODE_SIGN_STYLE: Automatic
-  CURRENT_PROJECT_VERSION: 32
+  CURRENT_PROJECT_VERSION: 33
   MARKETING_VERSION: "1.0"
   DEVELOPMENT_TEAM: WV26CSTDDR
 targets:
@@ -88,6 +88,7 @@ targets:
           - KeywordDictionaryBrowse.swift
           - StapleApply.swift
           - EinkaufAddItemsIntent.swift
+          - SiriPendingAdds.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf.watchkitapp.widgets
       PRODUCT_NAME: EinkaufWatchWidgets
@@ -119,6 +120,7 @@ targets:
           - KeywordDictionaryBrowse.swift
           - StapleApply.swift
           - EinkaufAddItemsIntent.swift
+          - SiriPendingAdds.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf.widgets
       PRODUCT_NAME: EinkaufWidgets
