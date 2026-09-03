@@ -17,11 +17,22 @@ struct EinkaufAddItemsIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let store = ShoppingStore(enableSync: true)
-        let speech = SpeechItemSplitter.strippingTriggerPrefix(items)
-        let count = store.addItems(fromSpeech: speech)
-        let message = SpeechItemSplitter.confirmation(addedCount: count)
-        return .result(dialog: IntentDialog(stringLiteral: message))
+        do {
+            let speech = SpeechItemSplitter.strippingTriggerPrefix(items)
+            let count: Int
+#if os(watchOS)
+            // Kein WCSession.activate / WidgetKit im Siri-Prozess — sonst „Irgendwas hat nicht geklappt.“
+            let store = ShoppingStore(enableSync: false)
+            count = try store.addItemsFromSiri(speech)
+#else
+            let store = ShoppingStore(enableSync: true)
+            count = store.addItems(fromSpeech: speech)
+#endif
+            let message = SpeechItemSplitter.confirmation(addedCount: count)
+            return .result(dialog: IntentDialog(stringLiteral: message))
+        } catch {
+            return .result(dialog: IntentDialog("Speichern fehlgeschlagen."))
+        }
     }
 }
 

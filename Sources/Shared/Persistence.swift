@@ -51,11 +51,16 @@ enum Persistence {
 
     static func save(_ state: AppState) {
         do {
-            let data = try BackupCodec.encodeLocal(state)
-            try data.write(to: fileURL, options: [.atomic])
+            try write(state)
         } catch {
             // Persistenzfehler sollen die UI nicht crashen.
         }
+    }
+
+    /// Wirft bei Encode- oder Schreibfehler — Watch-Siri kann Dialog setzen.
+    static func write(_ state: AppState) throws {
+        let data = try BackupCodec.encodeLocal(state)
+        try data.write(to: fileURL, options: [.atomic])
     }
 
     private static func read(_ url: URL) -> AppState? {
