@@ -76,70 +76,21 @@ final class ShoppingStore: ObservableObject {
     }
 
     func addItem(_ rawName: String) {
-        guard let item = makeItem(from: rawName, ord: nextOrd()) else { return }
-        state.items.append(item)
-        state.listRevision += 1
-        persistAndSync()
-    }
-
-    /// iPhone / Tests: Splitter-Teile in **einem** State-Update + **einem** `persistAndSync`.
-    @discardableResult
-    func addItems(fromSpeech text: String) -> Int {
-        let count = appendSpeechItems(text)
-        if count > 0 { persistAndSync() }
-        return count
-    }
-
-    /// Watch-Übernehmen: Batch wie `addItems(fromSpeech:)`, aber nur Disk — kein WidgetKit, kein sofortiges Sync.
-    @discardableResult
-    func addItemsFromWatchVoice(_ text: String) throws -> Int {
-        let count = appendSpeechItems(text)
-        guard count > 0 else { return 0 }
-        saveTask?.cancel()
-        do {
-            try Persistence.write(state)
-        } catch {
-            throw WatchVoiceSaveError.failed
-        }
-        scheduleDeferredWatchVoiceFollowUp()
-        return count
-    }
-
-    enum WatchVoiceSaveError: Error {
-        case failed
-    }
-
-    @discardableResult
-    private func appendSpeechItems(_ text: String) -> Int {
-        let names = SpeechItemSplitter.items(from: text)
-        guard !names.isEmpty else { return 0 }
-        var ord = nextOrd()
-        var added: [Item] = []
-        added.reserveCapacity(names.count)
-        for name in names {
-            guard let item = makeItem(from: name, ord: ord) else { continue }
-            added.append(item)
-            ord += 1
-        }
-        guard !added.isEmpty else { return 0 }
-        state.items.append(contentsOf: added)
-        state.listRevision += 1
-        return added.count
-    }
-
-    private func makeItem(from rawName: String, ord: Double) -> Item? {
         let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return nil }
-        return Item(
+        guard !name.isEmpty else { return }
+        let item = Item(
             id: Item.makeID(),
             name: name,
             dept: DepartmentGuesser.guess(name, mappings: state.mappings),
             done: false,
             added: Date.nowEpochMillis,
-            ord: ord,
+            ord: nextOrd(),
             doneChangedAt: Date.nowEpochMillis
         )
+        state.items.append(item)
+        state.listRevision += 1
+        persistAndSync()
     }
 
     func renameItem(_ id: String, to rawName: String) {
@@ -461,33 +412,19 @@ final class ShoppingStore: ObservableObject {
             try? await Task.sleep(nanoseconds: 80_000_000)
             guard !Task.isCancelled else { return }
             Persistence.save(snapshot)
-            reloadComplicationsAndWidgets()
+#if os(watchOS)
+            WatchComplicationReload.timelines()
+#endif
+#if os(iOS)
+            HomeWidgetReload.timelines()
+#endif
         }
         Persistence.save(state)
-        reloadComplicationsAndWidgets()
-    }
-
-    /// Toggle/Import: WidgetKit sofort. Watch-Voice darf das nicht im Commit-Pfad.
-    private func reloadComplicationsAndWidgets() {
 #if os(watchOS)
         WatchComplicationReload.timelines()
 #endif
 #if os(iOS)
         HomeWidgetReload.timelines()
 #endif
-    }
-
-    /// Nach ~2s einmal broadcast + Complication-Reload; Fehler schlucken.
-    private func scheduleDeferredWatchVoiceFollowUp() {
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            guard !Task.isCancelled else { return }
-#if os(iOS) || os(watchOS)
-            sync?.broadcast(state)
-#endif
-#if os(watchOS)
-            WatchComplicationReload.timelines()
-#endif
-        }
     }
 }

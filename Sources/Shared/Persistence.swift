@@ -46,16 +46,11 @@ enum Persistence {
 
     static func save(_ state: AppState) {
         do {
-            try write(state)
+            let data = try BackupCodec.encodeLocal(state)
+            try data.write(to: fileURL, options: [.atomic])
         } catch {
             // Persistenzfehler sollen die UI nicht crashen.
         }
-    }
-
-    /// Wirft bei Encode- oder Schreibfehler — Watch-Voice kann Status setzen.
-    static func write(_ state: AppState) throws {
-        let data = try BackupCodec.encodeLocal(state)
-        try data.write(to: fileURL, options: [.atomic])
     }
 
     private static func read(_ url: URL) -> AppState? {
