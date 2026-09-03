@@ -6,11 +6,8 @@ import Foundation
 struct EinkaufAddItemsIntent: AppIntent {
     static var title: LocalizedStringResource = "Artikel hinzufügen"
     static var description = IntentDescription("Fügt Artikel zur Einkaufsliste hinzu.")
-#if os(watchOS)
-    static var openAppWhenRun = true
-#else
+    /// Watch und iPhone: Siri nicht zum App-Start zwingen — `true` bricht auf der Watch oft still ab.
     static var openAppWhenRun = false
-#endif
 
     @Parameter(title: "Artikel", requestValueDialog: "Was soll ich besorgen?")
     var items: String
@@ -19,27 +16,27 @@ struct EinkaufAddItemsIntent: AppIntent {
         Summary("Besorgen \(\.$items)")
     }
 
+#if os(watchOS)
+    @MainActor
+    func perform() async -> some IntentResult {
+        let speech = SpeechItemSplitter.strippingTriggerPrefix(items)
+        SiriPendingAdds.enqueue(speech)
+        return .result()
+    }
+#else
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         do {
             let speech = SpeechItemSplitter.strippingTriggerPrefix(items)
-#if os(watchOS)
-            // Kein ShoppingStore / kein AppState-Encode im Siri-Prozess — sonst „Irgendwas hat nicht geklappt.“
-            SiriPendingAdds.enqueue(speech)
-            if speech.isEmpty {
-                return .result(dialog: IntentDialog("Alles klar."))
-            }
-            return .result(dialog: IntentDialog("Wird zur Liste hinzugefügt."))
-#else
             let store = ShoppingStore(enableSync: true)
             let count = store.addItems(fromSpeech: speech)
             let message = SpeechItemSplitter.confirmation(addedCount: count)
             return .result(dialog: IntentDialog("\(message)"))
-#endif
         } catch {
             return .result(dialog: IntentDialog("Speichern fehlgeschlagen."))
         }
     }
+#endif
 }
 
 struct EinkaufShortcuts: AppShortcutsProvider {

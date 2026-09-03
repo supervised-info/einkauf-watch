@@ -86,6 +86,9 @@ struct WatchListView: View {
             .toolbar(.hidden, for: .navigationBar)
             .id(store.state.currentStoreId)
             .containerBackground(theme.paper, for: .navigation)
+            .onAppear {
+                store.consumeSiriPendingAdds()
+            }
         }
     }
 

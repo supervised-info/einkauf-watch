@@ -1661,4 +1661,35 @@ final class SiriPendingAddsTests: XCTestCase {
         XCTAssertEqual(store.state.listRevision, 1)
         XCTAssertEqual(SiriPendingAdds.drain(at: url), [])
     }
+
+    func testEnqueueThenDrainViaSuiteDefaults() {
+        let suite = "group.net.tschelle.einkauf.test.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            XCTFail("UserDefaults(suiteName:) must accept a suite name")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        SiriPendingAdds.enqueue("Milch, Butter", defaults: defaults)
+        SiriPendingAdds.enqueue("Eier", defaults: defaults)
+        XCTAssertEqual(SiriPendingAdds.drain(defaults: defaults), ["Milch, Butter", "Eier"])
+        XCTAssertEqual(SiriPendingAdds.drain(defaults: defaults), [])
+        XCTAssertNil(defaults.stringArray(forKey: SiriPendingAdds.defaultsKey))
+    }
+
+    func testSuiteDefaultsPreferredOverFileWhenBothPresent() {
+        let suite = "group.net.tschelle.einkauf.test.\(UUID().uuidString)"
+        let url = tempQueueURL()
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            XCTFail("UserDefaults(suiteName:) must accept a suite name")
+            return
+        }
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: url)
+        }
+        SiriPendingAdds.enqueue("Suite-Milch", defaults: defaults)
+        SiriPendingAdds.enqueue("Datei-Butter", at: url)
+        XCTAssertEqual(SiriPendingAdds.drain(defaults: defaults, at: url), ["Suite-Milch"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
 }
