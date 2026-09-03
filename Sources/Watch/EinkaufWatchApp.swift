@@ -9,6 +9,9 @@ struct EinkaufWatchApp: App {
         WindowGroup {
             WatchRoot()
                 .environmentObject(store)
+                .task {
+                    store.consumeSiriPendingAdds()
+                }
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }

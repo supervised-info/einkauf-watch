@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 33" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 33 / CURRENT_PROJECT_VERSION")
+    if "Build 34" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 34 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -803,8 +803,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 33" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 33")
+    if "CURRENT_PROJECT_VERSION = 34" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 34")
+    if "CURRENT_PROJECT_VERSION = 33" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 33 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 32" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 32 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 31" in pbx:
@@ -856,8 +858,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 33" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 33")
+    if "CURRENT_PROJECT_VERSION: 34" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 34")
+    if "CURRENT_PROJECT_VERSION: 33" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 33 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 32" in yml:
         fail("stale CURRENT_PROJECT_VERSION 32 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 31" in yml:
@@ -1088,8 +1092,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 33") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 33")
+    if pbx.count("CURRENT_PROJECT_VERSION = 34") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 34")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1274,21 +1278,36 @@ def test_siri_app_intents() -> None:
         fail("watchOS Intent must not construct ShoppingStore")
     if "Speichern fehlgeschlagen" not in intent:
         fail("Intent must return Speichern fehlgeschlagen instead of throwing")
-    if "openAppWhenRun = true" not in intent:
-        fail("watchOS Intent must set openAppWhenRun = true")
+    if "openAppWhenRun = true" in intent:
+        fail("watchOS Intent must not force-launch the Watch app (openAppWhenRun = false)")
     if "openAppWhenRun = false" not in intent:
-        fail("iOS Intent must keep openAppWhenRun = false")
+        fail("Intent must set openAppWhenRun = false on watchOS and iOS")
     if 'IntentDialog(stringLiteral:' in intent:
         fail("prefer IntentDialog(\"…\") over stringLiteral initializer")
-    if 'IntentDialog("Alles klar.")' not in intent:
-        fail("watchOS Intent must confirm with Alles klar.")
-    if 'IntentDialog("Wird zur Liste hinzugefügt.")' not in intent:
-        fail("watchOS Intent must confirm with Wird zur Liste hinzugefügt.")
+    watch_perform = intent.split("#if os(watchOS)", 1)[-1].split("#else", 1)[0]
+    if "ProvidesDialog" in watch_perform:
+        fail("watchOS perform must not require ProvidesDialog")
+    if "throws" in watch_perform:
+        fail("watchOS perform must not throw")
+    if "return .result()" not in watch_perform:
+        fail("watchOS perform must return .result() after enqueue")
+    if "SiriPendingAdds.enqueue" not in watch_perform.split("return", 1)[0]:
+        fail("watchOS perform must enqueue before returning")
 
     if "enum SiriPendingAdds" not in pending:
         fail("SiriPendingAdds missing")
     if "einkauf-siri-pending.json" not in pending:
-        fail("SiriPendingAdds must use a tiny JSON file next to einkauf-local.json")
+        fail("SiriPendingAdds must keep einkauf-siri-pending.json as file mirror")
+    if "UserDefaults(suiteName: Persistence.appGroupId)" not in pending:
+        fail("SiriPendingAdds must prefer UserDefaults(suiteName: Persistence.appGroupId)")
+    if "group.net.tschelle.einkauf" not in pending and "Persistence.appGroupId" not in pending:
+        fail("SiriPendingAdds suite must be Persistence.appGroupId")
+    if "einkauf.siriPendingAdds" not in pending:
+        fail("SiriPendingAdds must use defaults key einkauf.siriPendingAdds")
+    if "appGroupContainerURL" not in pending:
+        fail("SiriPendingAdds file fallback must use Persistence.appGroupContainerURL")
+    if "applicationSupport" in pending or "fileURL.deletingLastPathComponent" in pending:
+        fail("SiriPendingAdds must not fall back to Persistence.fileURL / Application Support")
     if "func enqueue" not in pending or "func drain" not in pending:
         fail("SiriPendingAdds must expose enqueue and drain")
     if "ShoppingStore" in pending or "AppState" in pending:
@@ -1324,6 +1343,8 @@ def test_siri_app_intents() -> None:
         fail("tests must cover SiriPendingAdds enqueue/drain")
     if "testEnqueueStripsTriggerAndSkipsBlank" not in tests:
         fail("tests must cover SiriPendingAdds skipping blanks")
+    if "testEnqueueThenDrainViaSuiteDefaults" not in tests:
+        fail("tests must cover SiriPendingAdds UserDefaults suite queue")
     if "testConfirmationCopy" not in tests:
         fail("tests must cover Siri confirmation copy")
 
@@ -1350,6 +1371,10 @@ def test_siri_app_intents() -> None:
 
     if "consumeSiriPendingAdds" not in watch_app:
         fail("Watch app must drain Siri pending queue when becoming active")
+    if ".task" not in watch_app:
+        fail("Watch app root must drain Siri pending queue in .task")
+    if "onAppear" not in watch or "consumeSiriPendingAdds" not in watch:
+        fail("WatchListView must drain Siri pending queue onAppear")
     if "reloadFromPersistenceIfNewer" not in watch_app:
         fail("Watch app must still reload persistence when becoming active")
     if "import Speech" in watch or "import Speech" in watch_app:
@@ -1379,10 +1404,16 @@ def test_siri_app_intents() -> None:
         fail("Description.md must document Siri asking for Artikel after the utterance")
     if "Pending-Queue" not in desc:
         fail("Description.md must document the Watch-Siri pending queue")
+    if "UserDefaults" not in desc or "einkauf.siriPendingAdds" not in desc:
+        fail("Description.md must document the App Group UserDefaults pending queue")
+    if "onAppear" not in desc or ".task" not in desc:
+        fail("Description.md must say the Watch app drains onAppear and .task")
     if "consumeSiriPendingAdds" not in desc and "beim Aktivwerden" not in desc:
         fail("Description.md must say the Watch app drains the queue when becoming active")
     if "openAppWhenRun" not in desc:
         fail("Description.md must document openAppWhenRun on Watch vs iOS")
+    if "openAppWhenRun = false" not in desc:
+        fail("Description.md must set Watch openAppWhenRun = false")
     if "Speech.framework" not in desc:
         fail("Description.md must forbid Speech.framework")
     if "kein Watch-Mikro" not in desc and "Kein** In-App-Mikrofon" not in desc and "kein In-App-Mikro" not in desc:

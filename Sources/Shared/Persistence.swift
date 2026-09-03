@@ -22,18 +22,22 @@ enum Persistence {
         return folder.appendingPathComponent(fileName)
     }
 
+    /// App-Group-Container oder `nil`. Kein Application-Support-Fallback —
+    /// Siri- und App-Prozess dürfen nicht in verschiedene Container fallen.
+    static var appGroupContainerURL: URL? {
+        #if os(iOS) || os(watchOS)
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId)
+        #else
+        nil
+        #endif
+    }
+
     /// iOS + watchOS: App und Widget lesen dieselbe `einkauf-local.json`.
     private static var appGroupFileURL: URL? {
-        #if os(iOS) || os(watchOS)
-        guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
-            return nil
-        }
+        guard let container = appGroupContainerURL else { return nil }
         let folder = container.appendingPathComponent("Einkauf", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.appendingPathComponent(fileName)
-        #else
-        return nil
-        #endif
     }
 
     static func load() -> AppState? {
