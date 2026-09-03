@@ -1,5 +1,10 @@
 import Foundation
 
+extension Notification.Name {
+    /// Nach `persistAndSync`, damit die laufende App Siri-Adds vom kurzlebigen Store übernimmt.
+    static let einkaufStateDidChangeOnDisk = Notification.Name("einkauf.stateDidChangeOnDisk")
+}
+
 enum Persistence {
     private static let fileName = "einkauf-local.json"
     /// App Group für iPhone-App, iPhone-Widget, Watch-App und Watch-Complication (nicht iCloud).

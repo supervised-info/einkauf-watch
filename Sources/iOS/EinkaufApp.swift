@@ -14,6 +14,7 @@ struct EinkaufApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
+            store.reloadFromPersistenceIfNewer()
             HomeWidgetReload.timelines()
         }
     }
