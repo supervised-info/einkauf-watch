@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.0"
   CODE_SIGN_STYLE: Automatic
-  CURRENT_PROJECT_VERSION: 21
+  CURRENT_PROJECT_VERSION: 20
   MARKETING_VERSION: "1.0"
   DEVELOPMENT_TEAM: WV26CSTDDR
 targets:
@@ -67,8 +67,6 @@ targets:
     dependencies:
       - sdk: WatchConnectivity.framework
       - sdk: WidgetKit.framework
-      - sdk: Speech.framework
-      - sdk: AVFoundation.framework
       - target: EinkaufWatchWidgets
         embed: true
         codeSign: true

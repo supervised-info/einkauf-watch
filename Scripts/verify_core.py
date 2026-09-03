@@ -269,9 +269,7 @@ def test_sources() -> None:
         "Sources/iOS/AppearanceSettings.swift",
         "Sources/Shared/KeywordDictionary.swift",
         "Sources/Shared/KeywordDictionaryBrowse.swift",
-        "Sources/Shared/SpeechItemSplitter.swift",
         "Sources/Watch/WatchListView.swift",
-        "Sources/Watch/WatchHoldToTalk.swift",
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/iOS/HomeWidgetReload.swift",
         "Sources/iOSWidgets/EinkaufWidgets.swift",
@@ -362,8 +360,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 21" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 21 / CURRENT_PROJECT_VERSION")
+    if "Build 20" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 20 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -411,16 +409,6 @@ def test_sources() -> None:
         fail("Description.md must require Watch Auge .buttonStyle(.plain)")
     if "gefüll" not in desc:
         fail("Description.md must say Watch Auge is not a filled circular button")
-    if "Hold-Mikro" not in desc:
-        fail("Description.md must document Watch Hold-Mikro")
-    if "SpeechItemSplitter" not in desc:
-        fail("Description.md must name SpeechItemSplitter")
-    if "NSMicrophoneUsageDescription" not in desc or "NSSpeechRecognitionUsageDescription" not in desc:
-        fail("Description.md must document Watch mic/speech usage keys")
-    if "iPhone-Spracheingabe kommt später" not in desc:
-        fail("Description.md must say iPhone voice comes later")
-    if "de_DE" not in desc:
-        fail("Description.md must name speech locale de_DE")
     if "Nutzerkorrektur gewinnt" not in desc:
         fail("Description.md guess order must say user correction wins")
     if "Mappings nach Keywords" in desc or "Keywords vor Mappings" in desc:
@@ -689,10 +677,6 @@ def test_sources() -> None:
         fail("Watch eye must be leading via Spacer() after the Button above the title")
     if eye_bar.find("Spacer()") < eye_bar.find("Button"):
         fail("Watch eye HStack must be { Button…; Spacer() }, not trailing")
-    if "WatchHoldToTalkButton" not in eye_bar:
-        fail("Watch chrome row must put WatchHoldToTalkButton trailing after Spacer()")
-    if eye_bar.find("WatchHoldToTalkButton") < eye_bar.find("Spacer()"):
-        fail("Watch Hold-Mikro must sit after Spacer(), opposite the leading eye")
     if re.search(r"minHeight:\s*44", eye_bar) or re.search(r"minWidth:\s*44", eye_bar):
         fail("Watch eye must not use a 44pt min frame (creates empty bands under the title)")
     hide_bar = extract_some_view(watch, "hideCompletedBar")
@@ -789,12 +773,6 @@ def test_sources() -> None:
         fail("iPhone Geh-Modus must persist hideCompleted separately from Watch")
     if "testUserMappingBeatsKeyword" not in tests or "testUserMappingBeatsSpecialRules" not in tests:
         fail("tests must cover user mapping beating keywords and special rules")
-    if "testCommaUndUndKeepsQuantity" not in tests:
-        fail("tests must cover speech splitter Milch, Butter und zwei Eier")
-    if "testAddItemsFromSpeechSplitsAndGuesses" not in tests:
-        fail("tests must cover addItems(fromSpeech:) splitting and guessing")
-    if "testAddItemsFromSpeechEmptyAddsNothing" not in tests:
-        fail("tests must cover empty speech adding nothing")
     if "testLearnedMappingsSearch" not in tests:
         fail("tests must cover Meine Zuordnungen search filter")
     if "testSetMappingWritesMappingKey" not in tests:
@@ -823,10 +801,8 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 21" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 21")
-    if "CURRENT_PROJECT_VERSION = 20" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 20 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 20" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 20")
     if "CURRENT_PROJECT_VERSION = 19" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 19 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 18" in pbx:
@@ -852,10 +828,8 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 21" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 21")
-    if "CURRENT_PROJECT_VERSION: 20" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 20 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 20" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 20")
     if "CURRENT_PROJECT_VERSION: 19" in yml:
         fail("stale CURRENT_PROJECT_VERSION 19 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 18" in yml:
@@ -1060,8 +1034,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 21") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 21")
+    if pbx.count("CURRENT_PROJECT_VERSION = 20") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 20")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1170,82 +1144,6 @@ def test_iphone_widget() -> None:
     print("iphone widget: ok")
 
 
-def test_watch_hold_mic() -> None:
-    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
-    hold = (ROOT / "Sources/Watch/WatchHoldToTalk.swift").read_text()
-    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
-    splitter = (ROOT / "Sources/Shared/SpeechItemSplitter.swift").read_text()
-    plist = (ROOT / "Sources/Watch/Info.plist").read_text()
-    ios_plist = (ROOT / "Sources/iOS/Info.plist").read_text()
-    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
-    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
-    desc = (ROOT / "Description.md").read_text()
-    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
-    watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
-
-    if "func addItems(fromSpeech" not in store:
-        fail("ShoppingStore missing addItems(fromSpeech:)")
-    if "SpeechItemSplitter.items" not in store or "addItem(name)" not in store:
-        fail("addItems(fromSpeech:) must call addItem per splitter piece")
-    if "enum SpeechItemSplitter" not in splitter:
-        fail("SpeechItemSplitter missing")
-    if r"\s+und\s+" not in splitter or r"\s+sowie\s+" not in splitter:
-        fail("SpeechItemSplitter must split on und and sowie")
-    if "NSMicrophoneUsageDescription" not in plist or "NSSpeechRecognitionUsageDescription" not in plist:
-        fail("Watch Info.plist must declare mic and speech usage descriptions")
-    if "Einkaufsliste per Sprache zu füllen" not in plist:
-        fail("Watch usage strings must state Einkaufsliste per Sprache füllen")
-    if "NSMicrophoneUsageDescription" in ios_plist or "NSSpeechRecognitionUsageDescription" in ios_plist:
-        fail("iPhone Info.plist must not gain Watch speech keys in this PR")
-    if "SFSpeechRecognizer" in content or "WatchHoldToTalk" in content or "addItems(fromSpeech" in content:
-        fail("iPhone voice UI is out of scope")
-    if "import Speech" not in hold or "SFSpeechRecognizer" not in hold:
-        fail("Watch hold-to-talk must use SFSpeechRecognizer")
-    if "requiresOnDeviceRecognition" not in hold:
-        fail("Watch speech must prefer on-device recognition")
-    if 'Locale(identifier: "de_DE")' not in hold:
-        fail("Watch speech locale must prefer de_DE")
-    if "AVAudioEngine" not in hold:
-        fail("Watch speech must use AVAudioEngine")
-    if "requestAuthorization" not in hold or "requestRecordPermission" not in hold:
-        fail("Watch must request speech and mic permission on first press")
-    if "task?.cancel()" not in hold and ".cancel()" not in hold:
-        fail("Watch must cancel recognition when release has no useful text")
-    if "Nichts verstanden." not in hold:
-        fail("Watch must show Nichts verstanden. when speech is empty")
-    if "Mikrofon nicht erlaubt." not in hold or "Spracherkennung nicht erlaubt." not in hold:
-        fail("Watch must show short German status when permission is denied")
-    if "WKInterfaceDevice" not in hold or ".play(.success)" not in hold:
-        fail("Watch must haptic when items are added")
-    if '"mic"' not in hold or "mic.fill" not in hold:
-        fail("Watch mic must use mic / mic.fill")
-    if ".buttonStyle(.plain)" not in hold:
-        fail("Watch mic Button must use .buttonStyle(.plain)")
-    if LARGE_PROGRESS_FONT.search(hold):
-        fail("Watch mic must not use large fonts (.title/.title2) — keep caption like the eye")
-    if ".title2" in hold:
-        fail("Watch mic must not use title2")
-    if "ToolbarItem" in hold or "topBarTrailing" in hold:
-        fail("Watch mic must not sit in the toolbar")
-    if "onLongPressGesture" not in hold:
-        fail("Watch mic must hold-to-talk (press start, release stop)")
-    if "toolbar(.hidden, for: .navigationBar)" not in watch:
-        fail("Hold-Mikro must not bring back the Watch navigation bar")
-    if "Speech.framework" not in pbx:
-        fail("Watch target must link Speech.framework")
-    if "AVFoundation.framework" not in pbx:
-        fail("Watch target must link AVFoundation.framework")
-    if "Hold-Mikro" not in watch_sec:
-        fail("Description.md Watch section must document Hold-Mikro")
-    if " sowie " not in watch_sec:
-        fail("Description.md must document sowie as a split separator")
-    if "iPhone-Spracheingabe kommt später" not in watch_sec:
-        fail("Description.md Watch section must defer iPhone voice")
-    if "testCommaUndUndKeepsQuantity" not in tests or '"zwei Eier"' not in tests:
-        fail("splitter tests must keep zwei Eier as one name")
-    print("watch hold mic: ok")
-
-
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -1253,7 +1151,6 @@ def main() -> None:
     test_sonstiges_follows_layout_position()
     test_backup_codec_python()
     test_sources()
-    test_watch_hold_mic()
     test_watch_complication()
     test_iphone_widget()
     print("ALL OK")

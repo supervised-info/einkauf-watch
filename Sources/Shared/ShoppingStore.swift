@@ -93,16 +93,6 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
-    /// Watch Hold-Mikro / später iPhone: jeden Splitter-Teil per `addItem` (Guesser + Mappings).
-    @discardableResult
-    func addItems(fromSpeech text: String) -> Int {
-        let names = SpeechItemSplitter.items(from: text)
-        for name in names {
-            addItem(name)
-        }
-        return names.count
-    }
-
     func renameItem(_ id: String, to rawName: String) {
         guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
         guard let result = ItemEditing.rename(state.items[idx], to: rawName, mappings: state.mappings) else { return }
