@@ -24,7 +24,7 @@ struct KeywordDictionaryView: View {
             }
             Section {
             } footer: {
-                Text("Zuordnung beim Tippen läuft nur lokal. Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste.")
+                Text("Zuordnung beim Tippen läuft nur lokal. Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste. Eigene Korrekturen merkt sich die App unter dem Artikelnamen (ohne Menge) und nutzt sie beim nächsten Eintragen; das Wörterbuch selbst ändert sich nicht.")
             }
         }
         .einkaufListChrome()

@@ -5,6 +5,12 @@ import SwiftUI
 struct WatchListView: View {
     @EnvironmentObject private var store: ShoppingStore
     @Environment(\.einkaufTheme) private var theme
+    /// Nur Watch-UserDefaults — nicht im Backup, nicht zum iPhone.
+    @AppStorage("einkauf.watch.hideCompleted") private var hideCompleted = false
+
+    private var visibleWalkRows: [WalkListRow] {
+        store.walkListRows(hidingCompleted: hideCompleted)
+    }
 
     var body: some View {
         NavigationStack {
@@ -15,9 +21,15 @@ struct WatchListView: View {
                         .foregroundStyle(theme.ink)
                         .multilineTextAlignment(.center)
                         .padding()
+                } else if visibleWalkRows.isEmpty {
+                    Text("Erledigte ausgeblendet.")
+                        .font(.headline)
+                        .foregroundStyle(theme.ink)
+                        .multilineTextAlignment(.center)
+                        .padding()
                 } else {
                     List {
-                        ForEach(store.walkListRows) { row in
+                        ForEach(visibleWalkRows) { row in
                             switch row.line {
                             case .header(_, let dept):
                                 Text(Department.title(for: dept))
@@ -62,6 +74,16 @@ struct WatchListView: View {
             .id(store.state.currentStoreId)
             .navigationBarTitleDisplayMode(.inline)
             .containerBackground(theme.paper, for: .navigation)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        hideCompleted.toggle()
+                    } label: {
+                        Image(systemName: hideCompleted ? "eye.slash" : "eye")
+                    }
+                    .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
+                }
+            }
         }
     }
 }

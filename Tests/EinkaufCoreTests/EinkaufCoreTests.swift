@@ -175,6 +175,40 @@ final class GroupingTests: XCTestCase {
         XCTAssertEqual(items.first { $0.id == "k" }?.dept, "suess")
     }
 
+    func testWalkListRowsHidingCompletedDropsDoneItemsAndEmptyHeaders() {
+        let items = [
+            Item(id: "k", name: "Kinderschokolade", dept: "suess", done: true, added: 1, ord: 1),
+            Item(id: "t", name: "Toilettenpapier", dept: "drogerie", done: false, added: 2, ord: 1),
+            Item(id: "a", name: "AXE", dept: "sonstiges", done: true, added: 3, ord: 1)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+        XCTAssertEqual(groups.map(\.dept), ["suess", "drogerie", "sonstiges"])
+
+        let allRows = ListGrouping.walkListRows(groups: groups, storeId: "edeka")
+        XCTAssertEqual(allRows.compactMap(\.line.headerDept), ["suess", "drogerie", "sonstiges"])
+        XCTAssertEqual(allRows.filter(\.line.isItem).count, 3)
+
+        let hidden = ListGrouping.walkListRows(groups: groups, storeId: "edeka", hidingCompleted: true)
+        XCTAssertEqual(hidden.compactMap(\.line.headerDept), ["drogerie"])
+        XCTAssertEqual(hidden.compactMap(\.line.itemId), ["t"])
+        XCTAssertEqual(groups.flatMap(\.items).filter(\.done).map(\.id), ["k", "a"])
+        XCTAssertEqual(items.filter(\.done).map(\.id), ["k", "a"])
+    }
+
+    func testWalkListRowsHidingCompletedEmptyWhenAllDone() {
+        let items = [
+            Item(id: "k", name: "Kinderschokolade", dept: "suess", done: true, added: 1, ord: 1),
+            Item(id: "t", name: "Toilettenpapier", dept: "drogerie", done: true, added: 2, ord: 1)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+        XCTAssertFalse(groups.isEmpty)
+        let hidden = ListGrouping.walkListRows(groups: groups, storeId: "edeka", hidingCompleted: true)
+        XCTAssertTrue(hidden.isEmpty)
+        XCTAssertEqual(ListGrouping.walkListRows(groups: groups, storeId: "edeka").filter(\.line.isItem).count, 2)
+    }
+
     private func loadFixture(_ name: String) throws -> Data {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -900,6 +934,10 @@ final class ShoppingStoreSetStoreTests: XCTestCase {
         XCTAssertEqual(store.groups.map(\.id), ["edeka|obst", "edeka|kuehlung", "edeka|drogerie"])
         XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["obst", "kuehlung", "drogerie"])
         XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 0/3")
+        store.toggle("o")
+        XCTAssertEqual(store.walkListRows.compactMap(\.line.itemId), ["o", "k", "d"])
+        XCTAssertEqual(store.walkListRows(hidingCompleted: true).compactMap(\.line.itemId), ["k", "d"])
+        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 1/3")
     }
 
     func testSetStoreWalkLinesScreenshotItemsReorder() {
@@ -1019,6 +1057,41 @@ final class GuesserTests: XCTestCase {
         XCTAssertEqual(DepartmentGuesser.guess("Chips"), "suess")
         XCTAssertEqual(DepartmentGuesser.guess("Klopapier"), "drogerie")
         XCTAssertEqual(DepartmentGuesser.guess("xyzzy-unbekannt"), "sonstiges")
+    }
+
+    func testUserMappingBeatsKeyword() {
+        let key = DepartmentGuesser.mappingKey("Milch")
+        XCTAssertEqual(DepartmentGuesser.guess("Milch", mappings: [key: "trocken"]), "trocken")
+        XCTAssertEqual(DepartmentGuesser.guess("2x Milch", mappings: [key: "getraenke"]), "getraenke")
+    }
+
+    func testUserMappingBeatsSpecialRules() {
+        XCTAssertEqual(
+            DepartmentGuesser.guess("TK-Pizza", mappings: [DepartmentGuesser.mappingKey("TK-Pizza"): "trocken"]),
+            "trocken"
+        )
+        XCTAssertEqual(
+            DepartmentGuesser.guess("Eistee", mappings: [DepartmentGuesser.mappingKey("Eistee"): "kuehlung"]),
+            "kuehlung"
+        )
+        XCTAssertEqual(
+            DepartmentGuesser.guess("Chips", mappings: [DepartmentGuesser.mappingKey("Chips"): "trocken"]),
+            "trocken"
+        )
+        XCTAssertEqual(
+            DepartmentGuesser.guess("Vanilleeis", mappings: [DepartmentGuesser.mappingKey("Vanilleeis"): "suess"]),
+            "suess"
+        )
+    }
+
+    func testUnknownMappingFallsThroughToKeyword() {
+        XCTAssertEqual(DepartmentGuesser.guess("Milch", mappings: ["milch": "nope"]), "kuehlung")
+    }
+
+    func testUserMappingDoesNotChangeKeywordDictionary() {
+        let before = KeywordDictionary.source["kuehlung"]
+        _ = DepartmentGuesser.guess("Milch", mappings: ["milch": "trocken"])
+        XCTAssertEqual(KeywordDictionary.source["kuehlung"], before)
     }
 }
 

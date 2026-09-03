@@ -50,6 +50,9 @@ enum DepartmentGuesser {
         let search = stripped.isEmpty ? folded.trimmingCharacters(in: .whitespaces) : stripped
         if search.isEmpty { return Department.sonstiges.rawValue }
 
+        let mk = mappingKey(name)
+        if let mapped = mappings[mk], Department.isKnown(mapped) { return mapped }
+
         if search.contains("tiefkuhl") || matchesTK(folded) || matchesTK(search) {
             return Department.tiefkuehl.rawValue
         }
@@ -83,8 +86,6 @@ enum DepartmentGuesser {
         }
         if let best { return best }
 
-        let mk = mappingKey(name)
-        if let mapped = mappings[mk], Department.isKnown(mapped) { return mapped }
         return Department.sonstiges.rawValue
     }
 
