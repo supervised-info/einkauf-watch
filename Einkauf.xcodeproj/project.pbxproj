@@ -35,7 +35,6 @@
 		9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499EF012DA49B4720127F282 /* WatchComplicationReload.swift */; };
 		4A32D483E0BD6C110093D553 /* WatchHoldToTalk.swift in Sources */ = {isa = PBXBuildFile; fileRef = E057481E5352117E329A4086 /* WatchHoldToTalk.swift */; };
 		98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5324308E5A34153EAF3F1962 /* WatchListView.swift */; };
-		E9BEE13513ECBB5B155C3592 /* WatchSpeechRecognizer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2A9812C2F53BCEF014B818F1 /* WatchSpeechRecognizer.m */; };
 		0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
 		CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
@@ -165,9 +164,6 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		499EF012DA49B4720127F282 /* WatchComplicationReload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchComplicationReload.swift; sourceTree = "<group>"; };
 		E057481E5352117E329A4086 /* WatchHoldToTalk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHoldToTalk.swift; sourceTree = "<group>"; };
 		5324308E5A34153EAF3F1962 /* WatchListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListView.swift; sourceTree = "<group>"; };
-		2A9812C2F53BCEF014B818F1 /* WatchSpeechRecognizer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WatchSpeechRecognizer.m; sourceTree = "<group>"; };
-		AA715C8EEB428526120821C0 /* EinkaufWatch-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EinkaufWatch-Bridging-Header.h; sourceTree = "<group>"; };
-		C99AC849980732180C808576 /* WatchSpeechRecognizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WatchSpeechRecognizer.h; sourceTree = "<group>"; };
 		63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchWidgets.swift; sourceTree = "<group>"; };
 		3FFA995AB3FFD9B93F5501A0 /* EinkaufWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWidgets.swift; sourceTree = "<group>"; };
 		142154A18A1BACA0878EF95B /* BackupCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCodec.swift; sourceTree = "<group>"; };
@@ -304,9 +300,6 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 				499EF012DA49B4720127F282 /* WatchComplicationReload.swift */,
 				E057481E5352117E329A4086 /* WatchHoldToTalk.swift */,
 				5324308E5A34153EAF3F1962 /* WatchListView.swift */,
-				2A9812C2F53BCEF014B818F1 /* WatchSpeechRecognizer.m */,
-				AA715C8EEB428526120821C0 /* EinkaufWatch-Bridging-Header.h */,
-				C99AC849980732180C808576 /* WatchSpeechRecognizer.h */,
 				ECC3FAE11911BD587AF7020C /* Assets.xcassets */,
 				0ABD7868EA98DD31F19ECB30 /* Info.plist */,
 				BA1BE9FFCB8A414E7AFCC4A1 /* EinkaufWatch.entitlements */,
@@ -581,7 +574,6 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */,
 				4A32D483E0BD6C110093D553 /* WatchHoldToTalk.swift in Sources */,
 				98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */,
-				E9BEE13513ECBB5B155C3592 /* WatchSpeechRecognizer.m in Sources */,
 				0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */,
 				619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */,
 				CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */,
@@ -772,7 +764,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -807,7 +799,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -842,7 +834,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -864,7 +856,6 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
@@ -877,7 +868,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -899,7 +890,6 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
@@ -913,7 +903,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -943,7 +933,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -974,7 +964,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1005,7 +995,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 22;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
