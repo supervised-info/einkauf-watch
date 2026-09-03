@@ -187,6 +187,8 @@ struct AppState: Equatable, Codable, Sendable {
         "\(Self.clippedWatchStoreName(currentStore.name))  Einkauf \(progressLabel)"
     }
 
+    var complicationSnapshot: ComplicationSnapshot { .make(from: self) }
+
     /// Zeichenbudget vor „Einkauf xx/yy“, passend für die 41mm-Leiste
     /// (Edeka/Aldi/Rewe/Lidl/dm ungekürzt, längere Namen mit Auslassung).
     static let watchStoreNameLimit = 6
@@ -199,6 +201,41 @@ struct AppState: Equatable, Codable, Sendable {
 
     func grouped() -> [DeptGroup] {
         ListGrouping.groups(items: items, store: currentStore)
+    }
+}
+
+/// Anzeige für die Watch-Complication: gleicher Zähler wie `watchTitle` (`doneCount/items.count`).
+struct ComplicationSnapshot: Equatable, Sendable {
+    static let widgetKind = "EinkaufProgress"
+    static let openURL = URL(string: "einkauf://list")!
+
+    var progressLabel: String
+    var storeName: String
+    var isEmpty: Bool
+
+    static let placeholder = ComplicationSnapshot(progressLabel: "2/7", storeName: "Edeka", isEmpty: false)
+
+    static func make(from state: AppState) -> ComplicationSnapshot {
+        ComplicationSnapshot(
+            progressLabel: state.progressLabel,
+            storeName: AppState.clippedWatchStoreName(state.currentStore.name),
+            isEmpty: state.items.isEmpty
+        )
+    }
+
+    /// Inline: kurzer Ladenname und `xx/yy` (leere Liste bleibt `0/0`).
+    var inlineText: String {
+        let name = storeName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty { return progressLabel }
+        return "\(name)  \(progressLabel)"
+    }
+
+    var accessibilityLabel: String {
+        let store = storeName.isEmpty ? "Einkauf" : storeName
+        if isEmpty {
+            return "\(store), Liste leer"
+        }
+        return "\(store), \(progressLabel)"
     }
 }
 

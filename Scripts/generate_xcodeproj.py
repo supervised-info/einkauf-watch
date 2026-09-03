@@ -20,7 +20,18 @@ def entry(ref: str, comment: str) -> str:
 def main() -> None:
     ios_swifts = sorted((ROOT / "Sources/iOS").glob("*.swift"))
     watch_swifts = sorted((ROOT / "Sources/Watch").glob("*.swift"))
+    widget_swifts = sorted((ROOT / "Sources/WatchWidgets").glob("*.swift"))
     shared_swifts = sorted((ROOT / "Sources/Shared").glob("*.swift"))
+    widget_shared_names = {
+        "BackupCodec.swift",
+        "Department.swift",
+        "DepartmentGuesser.swift",
+        "KeywordDictionary.swift",
+        "Models.swift",
+        "Persistence.swift",
+        "StoreLayout.swift",
+    }
+    widget_shared = [p for p in shared_swifts if p.name in widget_shared_names]
     fixture = ROOT / "Fixtures/einkauf-backup.json"
     ios_assets = ROOT / "Sources/iOS/Assets.xcassets"
     watch_assets = ROOT / "Sources/Watch/Assets.xcassets"
@@ -29,36 +40,52 @@ def main() -> None:
     project_cfg = uid("project_cfg")
     ios_target = uid("ios_target")
     watch_target = uid("watch_target")
+    widget_target = uid("widget_target")
     ios_cfg = uid("ios_cfg")
     watch_cfg = uid("watch_cfg")
+    widget_cfg = uid("widget_cfg")
     ios_debug = uid("ios_debug")
     ios_release = uid("ios_release")
     watch_debug = uid("watch_debug")
     watch_release = uid("watch_release")
+    widget_debug = uid("widget_debug")
+    widget_release = uid("widget_release")
     proj_debug = uid("proj_debug")
     proj_release = uid("proj_release")
 
     ios_sources_phase = uid("ios_sources")
     watch_sources_phase = uid("watch_sources")
+    widget_sources_phase = uid("widget_sources")
     ios_resources_phase = uid("ios_resources")
     watch_resources_phase = uid("watch_resources")
+    widget_resources_phase = uid("widget_resources")
     ios_frameworks_phase = uid("ios_frameworks")
     watch_frameworks_phase = uid("watch_frameworks")
+    widget_frameworks_phase = uid("widget_frameworks")
     embed_watch_phase = uid("embed_watch")
+    embed_widget_phase = uid("embed_widget")
     container_proxy = uid("container_proxy")
+    widget_container_proxy = uid("widget_container_proxy")
     target_dep = uid("target_dep")
+    widget_target_dep = uid("widget_target_dep")
 
     ios_product = uid("ios_product")
     watch_product = uid("watch_product")
+    widget_product = uid("widget_product")
     watch_embed_build = uid("watch_embed_build")
+    widget_embed_build = uid("widget_embed_build")
 
     wc_ref = uid("watchconnectivity_ref")
     wc_ios = uid("watchconnectivity_ios")
     wc_watch = uid("watchconnectivity_watch")
+    widgetkit_ref = uid("widgetkit_ref")
+    widgetkit_widget = uid("widgetkit_widget")
+    widgetkit_watch = uid("widgetkit_watch")
 
     group_root = uid("group_root")
     group_ios = uid("group_ios")
     group_watch = uid("group_watch")
+    group_widget = uid("group_widget")
     group_shared = uid("group_shared")
     group_fixtures = uid("group_fixtures")
     group_products = uid("group_products")
@@ -90,13 +117,21 @@ def main() -> None:
     for p in watch_swifts + shared_swifts:
         bid = build_for(p, "watch")
         objects.append(f"\t\t{bid} /* {p.name} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref_for(p)} /* {p.name} */; }};")
+    for p in widget_swifts + widget_shared:
+        bid = build_for(p, "widget")
+        objects.append(f"\t\t{bid} /* {p.name} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref_for(p)} /* {p.name} */; }};")
     objects.append(f"\t\t{build_for(ios_assets, 'ios')} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {ref_for(ios_assets)} /* Assets.xcassets */; }};")
     objects.append(f"\t\t{build_for(watch_assets, 'watch')} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {ref_for(watch_assets)} /* Assets.xcassets */; }};")
     objects.append(f"\t\t{build_for(fixture, 'ios')} /* einkauf-backup.json in Resources */ = {{isa = PBXBuildFile; fileRef = {ref_for(fixture)} /* einkauf-backup.json */; }};")
     objects.append(f"\t\t{wc_ios} /* WatchConnectivity.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {wc_ref} /* WatchConnectivity.framework */; }};")
     objects.append(f"\t\t{wc_watch} /* WatchConnectivity.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {wc_ref} /* WatchConnectivity.framework */; }};")
+    objects.append(f"\t\t{widgetkit_widget} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
+    objects.append(f"\t\t{widgetkit_watch} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
     objects.append(
         f"\t\t{watch_embed_build} /* EinkaufWatch.app in Embed Watch Content */ = {{isa = PBXBuildFile; fileRef = {watch_product} /* EinkaufWatch.app */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};"
+    )
+    objects.append(
+        f"\t\t{widget_embed_build} /* EinkaufWatchWidgets.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {widget_product} /* EinkaufWatchWidgets.appex */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, CodeSignOnCopy, ); }}; }};"
     )
     objects.append("/* End PBXBuildFile section */\n")
 
@@ -110,6 +145,13 @@ def main() -> None:
             \t\t\tproxyType = 1;
             \t\t\tremoteGlobalIDString = {watch_target};
             \t\t\tremoteInfo = EinkaufWatch;
+            \t\t}};
+            \t\t{widget_container_proxy} /* PBXContainerItemProxy */ = {{
+            \t\t\tisa = PBXContainerItemProxy;
+            \t\t\tcontainerPortal = {project} /* Project object */;
+            \t\t\tproxyType = 1;
+            \t\t\tremoteGlobalIDString = {widget_target};
+            \t\t\tremoteInfo = EinkaufWatchWidgets;
             \t\t}};
             """
         ).rstrip()
@@ -131,6 +173,17 @@ def main() -> None:
             \t\t\tname = "Embed Watch Content";
             \t\t\trunOnlyForDeploymentPostprocessing = 0;
             \t\t}};
+            \t\t{embed_widget_phase} /* Embed Foundation Extensions */ = {{
+            \t\t\tisa = PBXCopyFilesBuildPhase;
+            \t\t\tbuildActionMask = 2147483647;
+            \t\t\tdstPath = "";
+            \t\t\tdstSubfolderSpec = 13;
+            \t\t\tfiles = (
+            \t\t\t\t{widget_embed_build} /* EinkaufWatchWidgets.appex in Embed Foundation Extensions */,
+            \t\t\t);
+            \t\t\tname = "Embed Foundation Extensions";
+            \t\t\trunOnlyForDeploymentPostprocessing = 0;
+            \t\t}};
             """
         ).rstrip()
     )
@@ -141,6 +194,8 @@ def main() -> None:
             return "sourcecode.swift"
         if path.suffix == ".json":
             return "text.json"
+        if path.suffix == ".entitlements":
+            return "text.plist.entitlements"
         if path.suffix == ".plist":
             return "text.plist.xml"
         if path.suffix == ".xcassets":
@@ -150,8 +205,10 @@ def main() -> None:
     objects.append("/* Begin PBXFileReference section */")
     objects.append(f"\t\t{ios_product} /* Einkauf.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Einkauf.app; sourceTree = BUILT_PRODUCTS_DIR; }};")
     objects.append(f"\t\t{watch_product} /* EinkaufWatch.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EinkaufWatch.app; sourceTree = BUILT_PRODUCTS_DIR; }};")
+    objects.append(f"\t\t{widget_product} /* EinkaufWatchWidgets.appex */ = {{isa = PBXFileReference; explicitFileType = \"wrapper.app-extension\"; includeInIndex = 0; path = EinkaufWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; }};")
     objects.append(f"\t\t{wc_ref} /* WatchConnectivity.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; }};")
-    for p in ios_swifts + watch_swifts + shared_swifts + [fixture, ios_assets, watch_assets]:
+    objects.append(f"\t\t{widgetkit_ref} /* WidgetKit.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; }};")
+    for p in ios_swifts + watch_swifts + widget_swifts + shared_swifts + [fixture, ios_assets, watch_assets]:
         rel = p.relative_to(ROOT).as_posix()
         name = p.name
         objects.append(
@@ -160,8 +217,14 @@ def main() -> None:
     # Info.plist refs (not compiled, but visible)
     ios_plist = ROOT / "Sources/iOS/Info.plist"
     watch_plist = ROOT / "Sources/Watch/Info.plist"
+    watch_entitlements = ROOT / "Sources/Watch/EinkaufWatch.entitlements"
+    widget_plist = ROOT / "Sources/WatchWidgets/Info.plist"
+    widget_entitlements = ROOT / "Sources/WatchWidgets/EinkaufWatchWidgets.entitlements"
     objects.append(f"\t\t{ref_for(ios_plist)} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};")
     objects.append(f"\t\t{ref_for(watch_plist)} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};")
+    objects.append(f"\t\t{ref_for(watch_entitlements)} /* EinkaufWatch.entitlements */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EinkaufWatch.entitlements; sourceTree = \"<group>\"; }};")
+    objects.append(f"\t\t{ref_for(widget_plist)} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};")
+    objects.append(f"\t\t{ref_for(widget_entitlements)} /* EinkaufWatchWidgets.entitlements */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EinkaufWatchWidgets.entitlements; sourceTree = \"<group>\"; }};")
     extra_fixture = ROOT / "Fixtures/einkauf-backup-ohne-staples.json"
     objects.append(f"\t\t{ref_for(extra_fixture)} /* einkauf-backup-ohne-staples.json */ = {{isa = PBXFileReference; lastKnownFileType = text.json; path = einkauf-backup-ohne-staples.json; sourceTree = \"<group>\"; }};")
     tests_swift = ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift"
@@ -185,6 +248,15 @@ def main() -> None:
             \t\t\tbuildActionMask = 2147483647;
             \t\t\tfiles = (
             \t\t\t\t{wc_watch} /* WatchConnectivity.framework in Frameworks */,
+            \t\t\t\t{widgetkit_watch} /* WidgetKit.framework in Frameworks */,
+            \t\t\t);
+            \t\t\trunOnlyForDeploymentPostprocessing = 0;
+            \t\t}};
+            \t\t{widget_frameworks_phase} /* Frameworks */ = {{
+            \t\t\tisa = PBXFrameworksBuildPhase;
+            \t\t\tbuildActionMask = 2147483647;
+            \t\t\tfiles = (
+            \t\t\t\t{widgetkit_widget} /* WidgetKit.framework in Frameworks */,
             \t\t\t);
             \t\t\trunOnlyForDeploymentPostprocessing = 0;
             \t\t}};
@@ -210,6 +282,7 @@ def main() -> None:
             \t\t\tchildren = (
             \t\t\t\t{group_ios} /* iOS */,
             \t\t\t\t{group_watch} /* Watch */,
+            \t\t\t\t{group_widget} /* WatchWidgets */,
             \t\t\t\t{group_shared} /* Shared */,
             \t\t\t\t{group_fixtures} /* Fixtures */,
             \t\t\t\t{group_tests} /* Tests */,
@@ -223,6 +296,7 @@ def main() -> None:
             \t\t\tchildren = (
             \t\t\t\t{ios_product} /* Einkauf.app */,
             \t\t\t\t{watch_product} /* EinkaufWatch.app */,
+            \t\t\t\t{widget_product} /* EinkaufWatchWidgets.appex */,
             \t\t\t);
             \t\t\tname = Products;
             \t\t\tsourceTree = "<group>";
@@ -231,6 +305,7 @@ def main() -> None:
             \t\t\tisa = PBXGroup;
             \t\t\tchildren = (
             \t\t\t\t{wc_ref} /* WatchConnectivity.framework */,
+            \t\t\t\t{widgetkit_ref} /* WidgetKit.framework */,
             \t\t\t);
             \t\t\tname = Frameworks;
             \t\t\tsourceTree = "<group>";
@@ -247,10 +322,19 @@ def main() -> None:
             \t\t{group_watch} /* Watch */ = {{
             \t\t\tisa = PBXGroup;
             \t\t\tchildren = (
-            {children(watch_swifts + [watch_assets, watch_plist])}
+            {children(watch_swifts + [watch_assets, watch_plist, watch_entitlements])}
             \t\t\t);
             \t\t\tpath = Sources/Watch;
             \t\t\tname = Watch;
+            \t\t\tsourceTree = "<group>";
+            \t\t}};
+            \t\t{group_widget} /* WatchWidgets */ = {{
+            \t\t\tisa = PBXGroup;
+            \t\t\tchildren = (
+            {children(widget_swifts + [widget_plist, widget_entitlements])}
+            \t\t\t);
+            \t\t\tpath = Sources/WatchWidgets;
+            \t\t\tname = WatchWidgets;
             \t\t\tsourceTree = "<group>";
             \t\t}};
             \t\t{group_shared} /* Shared */ = {{
@@ -291,6 +375,9 @@ def main() -> None:
     watch_source_entries = "\n".join(
         f"\t\t\t\t{build_for(p, 'watch')} /* {p.name} in Sources */," for p in watch_swifts + shared_swifts
     )
+    widget_source_entries = "\n".join(
+        f"\t\t\t\t{build_for(p, 'widget')} /* {p.name} in Sources */," for p in widget_swifts + widget_shared
+    )
 
     objects.append("/* Begin PBXNativeTarget section */")
     objects.append(
@@ -322,15 +409,34 @@ def main() -> None:
             \t\t\t\t{watch_sources_phase} /* Sources */,
             \t\t\t\t{watch_frameworks_phase} /* Frameworks */,
             \t\t\t\t{watch_resources_phase} /* Resources */,
+            \t\t\t\t{embed_widget_phase} /* Embed Foundation Extensions */,
             \t\t\t);
             \t\t\tbuildRules = (
             \t\t\t);
             \t\t\tdependencies = (
+            \t\t\t\t{widget_target_dep} /* PBXTargetDependency */,
             \t\t\t);
             \t\t\tname = EinkaufWatch;
             \t\t\tproductName = EinkaufWatch;
             \t\t\tproductReference = {watch_product} /* EinkaufWatch.app */;
             \t\t\tproductType = "com.apple.product-type.application";
+            \t\t}};
+            \t\t{widget_target} /* EinkaufWatchWidgets */ = {{
+            \t\t\tisa = PBXNativeTarget;
+            \t\t\tbuildConfigurationList = {widget_cfg} /* Build configuration list for PBXNativeTarget "EinkaufWatchWidgets" */;
+            \t\t\tbuildPhases = (
+            \t\t\t\t{widget_sources_phase} /* Sources */,
+            \t\t\t\t{widget_frameworks_phase} /* Frameworks */,
+            \t\t\t\t{widget_resources_phase} /* Resources */,
+            \t\t\t);
+            \t\t\tbuildRules = (
+            \t\t\t);
+            \t\t\tdependencies = (
+            \t\t\t);
+            \t\t\tname = EinkaufWatchWidgets;
+            \t\t\tproductName = EinkaufWatchWidgets;
+            \t\t\tproductReference = {widget_product} /* EinkaufWatchWidgets.appex */;
+            \t\t\tproductType = "com.apple.product-type.app-extension";
             \t\t}};
             """
         ).rstrip()
@@ -356,6 +462,10 @@ def main() -> None:
             \t\t\t\t\t\tCreatedOnToolsVersion = 15.0;
             \t\t\t\t\t\tProvisioningStyle = Automatic;
             \t\t\t\t\t}};
+            \t\t\t\t\t{widget_target} = {{
+            \t\t\t\t\t\tCreatedOnToolsVersion = 15.0;
+            \t\t\t\t\t\tProvisioningStyle = Automatic;
+            \t\t\t\t\t}};
             \t\t\t\t}};
             \t\t\t}};
             \t\t\tbuildConfigurationList = {project_cfg} /* Build configuration list for PBXProject "Einkauf" */;
@@ -374,6 +484,7 @@ def main() -> None:
             \t\t\ttargets = (
             \t\t\t\t{ios_target} /* Einkauf */,
             \t\t\t\t{watch_target} /* EinkaufWatch */,
+            \t\t\t\t{widget_target} /* EinkaufWatchWidgets */,
             \t\t\t);
             \t\t}};
             """
@@ -402,6 +513,13 @@ def main() -> None:
             \t\t\t);
             \t\t\trunOnlyForDeploymentPostprocessing = 0;
             \t\t}};
+            \t\t{widget_resources_phase} /* Resources */ = {{
+            \t\t\tisa = PBXResourcesBuildPhase;
+            \t\t\tbuildActionMask = 2147483647;
+            \t\t\tfiles = (
+            \t\t\t);
+            \t\t\trunOnlyForDeploymentPostprocessing = 0;
+            \t\t}};
             """
         ).rstrip()
     )
@@ -424,6 +542,14 @@ def main() -> None:
 {watch_source_entries}
 \t\t\t);
 \t\t\trunOnlyForDeploymentPostprocessing = 0;
+\t\t}};
+\t\t{widget_sources_phase} /* Sources */ = {{
+\t\t\tisa = PBXSourcesBuildPhase;
+\t\t\tbuildActionMask = 2147483647;
+\t\t\tfiles = (
+{widget_source_entries}
+\t\t\t);
+\t\t\trunOnlyForDeploymentPostprocessing = 0;
 \t\t}};"""
     )
     objects.append("/* End PBXSourcesBuildPhase section */\n")
@@ -436,6 +562,11 @@ def main() -> None:
             \t\t\tisa = PBXTargetDependency;
             \t\t\ttarget = {watch_target} /* EinkaufWatch */;
             \t\t\ttargetProxy = {container_proxy} /* PBXContainerItemProxy */;
+            \t\t}};
+            \t\t{widget_target_dep} /* PBXTargetDependency */ = {{
+            \t\t\tisa = PBXTargetDependency;
+            \t\t\ttarget = {widget_target} /* EinkaufWatchWidgets */;
+            \t\t\ttargetProxy = {widget_container_proxy} /* PBXContainerItemProxy */;
             \t\t}};
             """
         ).rstrip()
@@ -535,8 +666,8 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 8;
-\t\t\t\tDEVELOPMENT_TEAM = "";
+\t\t\t\tCURRENT_PROJECT_VERSION = 9;
+\t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOS/Info.plist;
@@ -569,8 +700,8 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 8;
-\t\t\t\tDEVELOPMENT_TEAM = "";
+\t\t\t\tCURRENT_PROJECT_VERSION = 9;
+\t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOS/Info.plist;
@@ -602,9 +733,10 @@ def main() -> None:
 \t\t\tisa = XCBuildConfiguration;
 \t\t\tbuildSettings = {{
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+\t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 8;
-\t\t\t\tDEVELOPMENT_TEAM = "";
+\t\t\t\tCURRENT_PROJECT_VERSION = 9;
+\t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/Watch/Info.plist;
@@ -633,9 +765,10 @@ def main() -> None:
 \t\t\tisa = XCBuildConfiguration;
 \t\t\tbuildSettings = {{
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+\t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 8;
-\t\t\t\tDEVELOPMENT_TEAM = "";
+\t\t\t\tCURRENT_PROJECT_VERSION = 9;
+\t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/Watch/Info.plist;
@@ -650,6 +783,67 @@ def main() -> None:
 \t\t\t\tMARKETING_VERSION = 1.0;
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp;
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
+\t\t\t\tSDKROOT = watchos;
+\t\t\t\tSKIP_INSTALL = YES;
+\t\t\t\tSUPPORTED_PLATFORMS = "watchos watchsimulator";
+\t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
+\t\t\t\tSWIFT_VERSION = 5.0;
+\t\t\t\tTARGETED_DEVICE_FAMILY = 4;
+\t\t\t\tVALIDATE_PRODUCT = YES;
+\t\t\t\tWATCHOS_DEPLOYMENT_TARGET = 10.0;
+\t\t\t}};
+\t\t\tname = Release;
+\t\t}};
+\t\t{widget_debug} /* Debug */ = {{
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {{
+\t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
+\t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
+\t\t\t\tCODE_SIGN_STYLE = Automatic;
+\t\t\t\tCURRENT_PROJECT_VERSION = 9;
+\t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
+\t\t\t\tGENERATE_INFOPLIST_FILE = YES;
+\t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
+\t\t\t\tINFOPLIST_KEY_CFBundleDisplayName = Einkauf;
+\t\t\t\tINFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+\t\t\t\tLD_RUNPATH_SEARCH_PATHS = (
+\t\t\t\t\t"$(inherited)",
+\t\t\t\t\t"@executable_path/Frameworks",
+\t\t\t\t\t"@executable_path/../../Frameworks",
+\t\t\t\t);
+\t\t\t\tMARKETING_VERSION = 1.0;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp.widgets;
+\t\t\t\tPRODUCT_NAME = EinkaufWatchWidgets;
+\t\t\t\tSDKROOT = watchos;
+\t\t\t\tSKIP_INSTALL = YES;
+\t\t\t\tSUPPORTED_PLATFORMS = "watchos watchsimulator";
+\t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
+\t\t\t\tSWIFT_VERSION = 5.0;
+\t\t\t\tTARGETED_DEVICE_FAMILY = 4;
+\t\t\t\tWATCHOS_DEPLOYMENT_TARGET = 10.0;
+\t\t\t}};
+\t\t\tname = Debug;
+\t\t}};
+\t\t{widget_release} /* Release */ = {{
+\t\t\tisa = XCBuildConfiguration;
+\t\t\tbuildSettings = {{
+\t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
+\t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
+\t\t\t\tCODE_SIGN_STYLE = Automatic;
+\t\t\t\tCURRENT_PROJECT_VERSION = 9;
+\t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
+\t\t\t\tGENERATE_INFOPLIST_FILE = YES;
+\t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
+\t\t\t\tINFOPLIST_KEY_CFBundleDisplayName = Einkauf;
+\t\t\t\tINFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+\t\t\t\tLD_RUNPATH_SEARCH_PATHS = (
+\t\t\t\t\t"$(inherited)",
+\t\t\t\t\t"@executable_path/Frameworks",
+\t\t\t\t\t"@executable_path/../../Frameworks",
+\t\t\t\t);
+\t\t\t\tMARKETING_VERSION = 1.0;
+\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp.widgets;
+\t\t\t\tPRODUCT_NAME = EinkaufWatchWidgets;
 \t\t\t\tSDKROOT = watchos;
 \t\t\t\tSKIP_INSTALL = YES;
 \t\t\t\tSUPPORTED_PLATFORMS = "watchos watchsimulator";
@@ -692,6 +886,15 @@ def main() -> None:
             \t\t\tbuildConfigurations = (
             \t\t\t\t{watch_debug} /* Debug */,
             \t\t\t\t{watch_release} /* Release */,
+            \t\t\t);
+            \t\t\tdefaultConfigurationIsVisible = 0;
+            \t\t\tdefaultConfigurationName = Release;
+            \t\t}};
+            \t\t{widget_cfg} /* Build configuration list for PBXNativeTarget "EinkaufWatchWidgets" */ = {{
+            \t\t\tisa = XCConfigurationList;
+            \t\t\tbuildConfigurations = (
+            \t\t\t\t{widget_debug} /* Debug */,
+            \t\t\t\t{widget_release} /* Release */,
             \t\t\t);
             \t\t\tdefaultConfigurationIsVisible = 0;
             \t\t\tdefaultConfigurationName = Release;
@@ -914,7 +1117,7 @@ def main() -> None:
 """
     (proj_dir / "xcshareddata/xcschemes/EinkaufWatch.xcscheme").write_text(watch_scheme)
     print(f"Wrote {proj_dir / 'project.pbxproj'}")
-    print(f"iOS target {ios_target} Watch target {watch_target}")
+    print(f"iOS target {ios_target} Watch target {watch_target} Widget target {widget_target}")
 
 
 if __name__ == "__main__":

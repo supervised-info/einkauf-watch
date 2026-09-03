@@ -3,11 +3,16 @@ import SwiftUI
 @main
 struct EinkaufWatchApp: App {
     @StateObject private var store = ShoppingStore()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             WatchRoot()
                 .environmentObject(store)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            WatchComplicationReload.timelines()
         }
     }
 }

@@ -7,169 +7,217 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
-		0DC30FB358098A2BE19E4CC6 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */; };
 		0F37D65CA49E42F77966B30C /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BEC967DFB7A0070174933F /* AppearanceSettings.swift */; };
-		12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
-		15447CEC2167C0109789092D /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
-		1DF6F4ADB90A0943E6BF1B47 /* einkauf-backup.json in Resources */ = {isa = PBXBuildFile; fileRef = 7578566B217205F916373346 /* einkauf-backup.json */; };
-		1E2E30863C1CC0EF68250ACE /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
-		26246BA3D4001BC572F04EB2 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
-		30E871B023784F7EA0892B37 /* ShoppingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */; };
-		380ED6ADDB8D55A2097AFAD4 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */; };
-		3D291F41DFB800EAE9D7064C /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
-		3DD640118A2CA67D5ABC6DFA /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
+		D2E5181B0EE3B2B6DF332844 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B54211927DDC48EEBB30B70 /* ContentView.swift */; };
 		41907324178F605BC264F97B /* EinkaufApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2804963C38E068C930E5F599 /* EinkaufApp.swift */; };
-		4BFF78F8A835ECE8CFB7684C /* EinkaufWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4FA5A48B1D2266068C378675 /* EinkaufWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
-		55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
-		5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
-		5C8C681F8ABF91896A0F746C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ECC3FAE11911BD587AF7020C /* Assets.xcassets */; };
-		619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
-		676BB7C0E6CFB910DC8147A8 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
-		695E132DBB0BF5CA90D4890E /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */; };
-		69B46A2068B1D9DDC1A8BAB3 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
+		AC501F49ED939790B0C6A0A8 /* KeywordDictionaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90CB6773E08BB36B041C4363 /* KeywordDictionaryView.swift */; };
+		FD7DA4E4C9DA5C2B22357965 /* ListPDF.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3583E9C5CF0EF793D5C2304 /* ListPDF.swift */; };
+		0DC30FB358098A2BE19E4CC6 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */; };
+		380ED6ADDB8D55A2097AFAD4 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */; };
+		E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
+		F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
 		6BAFDC654535F8AC7412AE73 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
-		8015BEAA3E4A968A615E3843 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
+		E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
+		12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
+		3D291F41DFB800EAE9D7064C /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
+		69B46A2068B1D9DDC1A8BAB3 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
 		84257E36E8710DAF0EA4DD6B /* KeywordDictionaryBrowse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */; };
 		85750B81A16C320440D48527 /* ListShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2093A5043F58D61ED95149A /* ListShare.swift */; };
-		908FB88E65210D9332AFF961 /* KeywordDictionaryBrowse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */; };
-		96ED049D930DD9AF4AD2ABCA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03AF5479195A1C1DAE505808 /* Assets.xcassets */; };
-		98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5324308E5A34153EAF3F1962 /* WatchListView.swift */; };
-		A67DE1B4CDD2B7D8E9747F37 /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
-		AC501F49ED939790B0C6A0A8 /* KeywordDictionaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90CB6773E08BB36B041C4363 /* KeywordDictionaryView.swift */; };
+		1E2E30863C1CC0EF68250ACE /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
+		3DD640118A2CA67D5ABC6DFA /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
+		30E871B023784F7EA0892B37 /* ShoppingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */; };
+		15447CEC2167C0109789092D /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
+		5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
 		AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
-		B8ECFA4CCB0833C604C51F51 /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
-		CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
-		D2E5181B0EE3B2B6DF332844 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B54211927DDC48EEBB30B70 /* ContentView.swift */; };
-		E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
-		E1975E46420BC7D37D1E9100 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */; };
-		E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
-		E410C3E9DA23BDDB00054634 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
-		E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */; };
+		9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499EF012DA49B4720127F282 /* WatchComplicationReload.swift */; };
+		98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5324308E5A34153EAF3F1962 /* WatchListView.swift */; };
+		0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
+		619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
+		CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
+		E410C3E9DA23BDDB00054634 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
+		55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
+		A67DE1B4CDD2B7D8E9747F37 /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
+		676BB7C0E6CFB910DC8147A8 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
+		908FB88E65210D9332AFF961 /* KeywordDictionaryBrowse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */; };
 		F10732928F46FDC4B9AB9DA4 /* ListShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2093A5043F58D61ED95149A /* ListShare.swift */; };
-		F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
+		8015BEAA3E4A968A615E3843 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
+		26246BA3D4001BC572F04EB2 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
 		F77609148593B38AF721ACEB /* ShoppingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */; };
-		FD7DA4E4C9DA5C2B22357965 /* ListPDF.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3583E9C5CF0EF793D5C2304 /* ListPDF.swift */; };
+		B8ECFA4CCB0833C604C51F51 /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
+		54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
+		E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
+		16FEB03CD391A62FFC2AC325 /* EinkaufWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */; };
+		D669A4242B85D5564C2A226E /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
+		5F0866CD8C5BC4A7DDB8E11F /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
+		A506F3A9EB373EB70E906808 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
+		D5606851163E4B9DB451AF8C /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
+		9F76831DDF78F62C90EE477E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
+		6D029B115536EFE5DFE9E35C /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
+		A7AA2AEAA6B0EE99A69E5309 /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
+		96ED049D930DD9AF4AD2ABCA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03AF5479195A1C1DAE505808 /* Assets.xcassets */; };
+		5C8C681F8ABF91896A0F746C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ECC3FAE11911BD587AF7020C /* Assets.xcassets */; };
+		1DF6F4ADB90A0943E6BF1B47 /* einkauf-backup.json in Resources */ = {isa = PBXBuildFile; fileRef = 7578566B217205F916373346 /* einkauf-backup.json */; };
+		695E132DBB0BF5CA90D4890E /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */; };
+		E1975E46420BC7D37D1E9100 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */; };
+		6B51AA4EBD1E329AD34BE53B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77C32A2ADBD924DE72664400 /* WidgetKit.framework */; };
+		E4C39E26CF25F6C21D0552E5 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77C32A2ADBD924DE72664400 /* WidgetKit.framework */; };
+		4BFF78F8A835ECE8CFB7684C /* EinkaufWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 4FA5A48B1D2266068C378675 /* EinkaufWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3F44B27B4CF77F81F801488C /* EinkaufWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BEFC0D5110D2471094B23F1E /* EinkaufWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		5B0D864BD0A5C80A44B292AA /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 703A698638259F0A8FDBBA56;
-			remoteInfo = EinkaufWatch;
-		};
+5B0D864BD0A5C80A44B292AA /* PBXContainerItemProxy */ = {
+	isa = PBXContainerItemProxy;
+	containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+	proxyType = 1;
+	remoteGlobalIDString = 703A698638259F0A8FDBBA56;
+	remoteInfo = EinkaufWatch;
+};
+F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
+	isa = PBXContainerItemProxy;
+	containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+	proxyType = 1;
+	remoteGlobalIDString = 7F56226B5929950B267B5780;
+	remoteInfo = EinkaufWatchWidgets;
+};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		353D08D164EF3FA683FB29CB /* Embed Watch Content */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
-			files = (
-				4BFF78F8A835ECE8CFB7684C /* EinkaufWatch.app in Embed Watch Content */,
-			);
-			name = "Embed Watch Content";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+353D08D164EF3FA683FB29CB /* Embed Watch Content */ = {
+	isa = PBXCopyFilesBuildPhase;
+	buildActionMask = 2147483647;
+	dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+	dstSubfolderSpec = 16;
+	files = (
+		4BFF78F8A835ECE8CFB7684C /* EinkaufWatch.app in Embed Watch Content */,
+	);
+	name = "Embed Watch Content";
+	runOnlyForDeploymentPostprocessing = 0;
+};
+434E2590B66CE441737584CB /* Embed Foundation Extensions */ = {
+	isa = PBXCopyFilesBuildPhase;
+	buildActionMask = 2147483647;
+	dstPath = "";
+	dstSubfolderSpec = 13;
+	files = (
+		3F44B27B4CF77F81F801488C /* EinkaufWatchWidgets.appex in Embed Foundation Extensions */,
+	);
+	name = "Embed Foundation Extensions";
+	runOnlyForDeploymentPostprocessing = 0;
+};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		03AF5479195A1C1DAE505808 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		0ABD7868EA98DD31F19ECB30 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		12DB007C89450C8042516356 /* DepartmentGuesser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartmentGuesser.swift; sourceTree = "<group>"; };
-		142154A18A1BACA0878EF95B /* BackupCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCodec.swift; sourceTree = "<group>"; };
-		1576966105F98F0A51DBA185 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		1FEA59AE375BB26F5821D80A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
-		2804963C38E068C930E5F599 /* EinkaufApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufApp.swift; sourceTree = "<group>"; };
 		39147CC323B509E30A9A2047 /* Einkauf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Einkauf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FA5A48B1D2266068C378675 /* EinkaufWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EinkaufWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
-		5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingStore.swift; sourceTree = "<group>"; };
-		5324308E5A34153EAF3F1962 /* WatchListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListView.swift; sourceTree = "<group>"; };
-		5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StapleApply.swift; sourceTree = "<group>"; };
-		60D4629D736BF231C646237E /* ItemEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditing.swift; sourceTree = "<group>"; };
-		7578566B217205F916373346 /* einkauf-backup.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "einkauf-backup.json"; sourceTree = "<group>"; };
-		7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionaryBrowse.swift; sourceTree = "<group>"; };
-		7B54211927DDC48EEBB30B70 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BEFC0D5110D2471094B23F1E /* EinkaufWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = EinkaufWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
+		77C32A2ADBD924DE72664400 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		80BEC967DFB7A0070174933F /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
-		81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		7B54211927DDC48EEBB30B70 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2804963C38E068C930E5F599 /* EinkaufApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufApp.swift; sourceTree = "<group>"; };
 		90CB6773E08BB36B041C4363 /* KeywordDictionaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionaryView.swift; sourceTree = "<group>"; };
+		C3583E9C5CF0EF793D5C2304 /* ListPDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListPDF.swift; sourceTree = "<group>"; };
+		50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
+		81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchApp.swift; sourceTree = "<group>"; };
+		499EF012DA49B4720127F282 /* WatchComplicationReload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchComplicationReload.swift; sourceTree = "<group>"; };
+		5324308E5A34153EAF3F1962 /* WatchListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListView.swift; sourceTree = "<group>"; };
+		63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchWidgets.swift; sourceTree = "<group>"; };
+		142154A18A1BACA0878EF95B /* BackupCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCodec.swift; sourceTree = "<group>"; };
+		E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupShare.swift; sourceTree = "<group>"; };
+		D84943AB38524794E90ACDCD /* ConnectivitySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivitySync.swift; sourceTree = "<group>"; };
+		E0C1C34BBFDDF520649DD2D1 /* Department.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Department.swift; sourceTree = "<group>"; };
+		12DB007C89450C8042516356 /* DepartmentGuesser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartmentGuesser.swift; sourceTree = "<group>"; };
+		60D4629D736BF231C646237E /* ItemEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditing.swift; sourceTree = "<group>"; };
+		FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionary.swift; sourceTree = "<group>"; };
+		7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionaryBrowse.swift; sourceTree = "<group>"; };
+		C2093A5043F58D61ED95149A /* ListShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListShare.swift; sourceTree = "<group>"; };
+		1576966105F98F0A51DBA185 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingStore.swift; sourceTree = "<group>"; };
+		5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StapleApply.swift; sourceTree = "<group>"; };
 		A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreLayout.swift; sourceTree = "<group>"; };
 		A32268097AE4939ECE075B98 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
-		C2093A5043F58D61ED95149A /* ListShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListShare.swift; sourceTree = "<group>"; };
-		C3583E9C5CF0EF793D5C2304 /* ListPDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListPDF.swift; sourceTree = "<group>"; };
-		CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchApp.swift; sourceTree = "<group>"; };
-		D84943AB38524794E90ACDCD /* ConnectivitySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivitySync.swift; sourceTree = "<group>"; };
-		DCAB104B4D8FC1F886C47CB4 /* einkauf-backup-ohne-staples.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "einkauf-backup-ohne-staples.json"; sourceTree = "<group>"; };
-		E0C1C34BBFDDF520649DD2D1 /* Department.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Department.swift; sourceTree = "<group>"; };
-		E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupShare.swift; sourceTree = "<group>"; };
+		7578566B217205F916373346 /* einkauf-backup.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = einkauf-backup.json; sourceTree = "<group>"; };
+		03AF5479195A1C1DAE505808 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ECC3FAE11911BD587AF7020C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1FEA59AE375BB26F5821D80A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0ABD7868EA98DD31F19ECB30 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BA1BE9FFCB8A414E7AFCC4A1 /* EinkaufWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EinkaufWatch.entitlements; sourceTree = "<group>"; };
+		51C08FD20EC1C96E701AA9DE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0EF1DA8ED0F225A1E67BBB2D /* EinkaufWatchWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EinkaufWatchWidgets.entitlements; sourceTree = "<group>"; };
+		DCAB104B4D8FC1F886C47CB4 /* einkauf-backup-ohne-staples.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = einkauf-backup-ohne-staples.json; sourceTree = "<group>"; };
 		EEC8D9AE5EAF557803AC2453 /* EinkaufCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufCoreTests.swift; sourceTree = "<group>"; };
-		FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionary.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		06273CAF3F72B9473E852B7C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				695E132DBB0BF5CA90D4890E /* WatchConnectivity.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3CAE8BCEBBD0AE896AB6E903 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E1975E46420BC7D37D1E9100 /* WatchConnectivity.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+06273CAF3F72B9473E852B7C /* Frameworks */ = {
+	isa = PBXFrameworksBuildPhase;
+	buildActionMask = 2147483647;
+	files = (
+		695E132DBB0BF5CA90D4890E /* WatchConnectivity.framework in Frameworks */,
+	);
+	runOnlyForDeploymentPostprocessing = 0;
+};
+3CAE8BCEBBD0AE896AB6E903 /* Frameworks */ = {
+	isa = PBXFrameworksBuildPhase;
+	buildActionMask = 2147483647;
+	files = (
+		E1975E46420BC7D37D1E9100 /* WatchConnectivity.framework in Frameworks */,
+		E4C39E26CF25F6C21D0552E5 /* WidgetKit.framework in Frameworks */,
+	);
+	runOnlyForDeploymentPostprocessing = 0;
+};
+4A2980A84D6A01A242706020 /* Frameworks */ = {
+	isa = PBXFrameworksBuildPhase;
+	buildActionMask = 2147483647;
+	files = (
+		6B51AA4EBD1E329AD34BE53B /* WidgetKit.framework in Frameworks */,
+	);
+	runOnlyForDeploymentPostprocessing = 0;
+};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		30772F61AC9BDC8631745269 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				39147CC323B509E30A9A2047 /* Einkauf.app */,
-				4FA5A48B1D2266068C378675 /* EinkaufWatch.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		5BD2F155E8764D724A94CDEC /* Tests */ = {
-			isa = PBXGroup;
-			children = (
-				EEC8D9AE5EAF557803AC2453 /* EinkaufCoreTests.swift */,
-			);
-			name = Tests;
-			path = Tests/EinkaufCoreTests;
-			sourceTree = "<group>";
-		};
-		71D2E56247FE75C3DCE9B609 = {
-			isa = PBXGroup;
-			children = (
-				724EDDE34EFF51B98FC6F40B /* iOS */,
-				A30AC49F569C227C5668E48E /* Watch */,
-				9B8EA7C3EDD85BDD3B598AA8 /* Shared */,
-				ED9F0EF92C28EEF629AD16D1 /* Fixtures */,
-				5BD2F155E8764D724A94CDEC /* Tests */,
-				D8BD5DD42310CB1693158D7B /* Frameworks */,
-				30772F61AC9BDC8631745269 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		724EDDE34EFF51B98FC6F40B /* iOS */ = {
-			isa = PBXGroup;
-			children = (
-				80BEC967DFB7A0070174933F /* AppearanceSettings.swift */,
+            		71D2E56247FE75C3DCE9B609 = {
+            			isa = PBXGroup;
+            			children = (
+            				724EDDE34EFF51B98FC6F40B /* iOS */,
+            				A30AC49F569C227C5668E48E /* Watch */,
+            				DE59ADA3DBA6A74DBC12560B /* WatchWidgets */,
+            				9B8EA7C3EDD85BDD3B598AA8 /* Shared */,
+            				ED9F0EF92C28EEF629AD16D1 /* Fixtures */,
+            				5BD2F155E8764D724A94CDEC /* Tests */,
+            				D8BD5DD42310CB1693158D7B /* Frameworks */,
+            				30772F61AC9BDC8631745269 /* Products */,
+            			);
+            			sourceTree = "<group>";
+            		};
+            		30772F61AC9BDC8631745269 /* Products */ = {
+            			isa = PBXGroup;
+            			children = (
+            				39147CC323B509E30A9A2047 /* Einkauf.app */,
+            				4FA5A48B1D2266068C378675 /* EinkaufWatch.app */,
+            				BEFC0D5110D2471094B23F1E /* EinkaufWatchWidgets.appex */,
+            			);
+            			name = Products;
+            			sourceTree = "<group>";
+            		};
+            		D8BD5DD42310CB1693158D7B /* Frameworks */ = {
+            			isa = PBXGroup;
+            			children = (
+            				B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */,
+            				77C32A2ADBD924DE72664400 /* WidgetKit.framework */,
+            			);
+            			name = Frameworks;
+            			sourceTree = "<group>";
+            		};
+            		724EDDE34EFF51B98FC6F40B /* iOS */ = {
+            			isa = PBXGroup;
+            			children = (
+            				80BEC967DFB7A0070174933F /* AppearanceSettings.swift */,
 				7B54211927DDC48EEBB30B70 /* ContentView.swift */,
 				2804963C38E068C930E5F599 /* EinkaufApp.swift */,
 				90CB6773E08BB36B041C4363 /* KeywordDictionaryView.swift */,
@@ -178,15 +226,40 @@
 				81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */,
 				03AF5479195A1C1DAE505808 /* Assets.xcassets */,
 				1FEA59AE375BB26F5821D80A /* Info.plist */,
-			);
-			name = iOS;
-			path = Sources/iOS;
-			sourceTree = "<group>";
-		};
-		9B8EA7C3EDD85BDD3B598AA8 /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				142154A18A1BACA0878EF95B /* BackupCodec.swift */,
+            			);
+            			path = Sources/iOS;
+            			name = iOS;
+            			sourceTree = "<group>";
+            		};
+            		A30AC49F569C227C5668E48E /* Watch */ = {
+            			isa = PBXGroup;
+            			children = (
+            				CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */,
+				499EF012DA49B4720127F282 /* WatchComplicationReload.swift */,
+				5324308E5A34153EAF3F1962 /* WatchListView.swift */,
+				ECC3FAE11911BD587AF7020C /* Assets.xcassets */,
+				0ABD7868EA98DD31F19ECB30 /* Info.plist */,
+				BA1BE9FFCB8A414E7AFCC4A1 /* EinkaufWatch.entitlements */,
+            			);
+            			path = Sources/Watch;
+            			name = Watch;
+            			sourceTree = "<group>";
+            		};
+            		DE59ADA3DBA6A74DBC12560B /* WatchWidgets */ = {
+            			isa = PBXGroup;
+            			children = (
+            				63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */,
+				51C08FD20EC1C96E701AA9DE /* Info.plist */,
+				0EF1DA8ED0F225A1E67BBB2D /* EinkaufWatchWidgets.entitlements */,
+            			);
+            			path = Sources/WatchWidgets;
+            			name = WatchWidgets;
+            			sourceTree = "<group>";
+            		};
+            		9B8EA7C3EDD85BDD3B598AA8 /* Shared */ = {
+            			isa = PBXGroup;
+            			children = (
+            				142154A18A1BACA0878EF95B /* BackupCodec.swift */,
 				E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */,
 				D84943AB38524794E90ACDCD /* ConnectivitySync.swift */,
 				E0C1C34BBFDDF520649DD2D1 /* Department.swift */,
@@ -201,137 +274,158 @@
 				5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */,
 				A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */,
 				A32268097AE4939ECE075B98 /* Theme.swift */,
-			);
-			name = Shared;
-			path = Sources/Shared;
-			sourceTree = "<group>";
-		};
-		A30AC49F569C227C5668E48E /* Watch */ = {
-			isa = PBXGroup;
-			children = (
-				CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */,
-				5324308E5A34153EAF3F1962 /* WatchListView.swift */,
-				ECC3FAE11911BD587AF7020C /* Assets.xcassets */,
-				0ABD7868EA98DD31F19ECB30 /* Info.plist */,
-			);
-			name = Watch;
-			path = Sources/Watch;
-			sourceTree = "<group>";
-		};
-		D8BD5DD42310CB1693158D7B /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				B90843D1F3E5DBC4162E9693 /* WatchConnectivity.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		ED9F0EF92C28EEF629AD16D1 /* Fixtures */ = {
-			isa = PBXGroup;
-			children = (
-				7578566B217205F916373346 /* einkauf-backup.json */,
+            			);
+            			path = Sources/Shared;
+            			name = Shared;
+            			sourceTree = "<group>";
+            		};
+            		ED9F0EF92C28EEF629AD16D1 /* Fixtures */ = {
+            			isa = PBXGroup;
+            			children = (
+            				7578566B217205F916373346 /* einkauf-backup.json */,
 				DCAB104B4D8FC1F886C47CB4 /* einkauf-backup-ohne-staples.json */,
-			);
-			path = Fixtures;
-			sourceTree = "<group>";
-		};
+            			);
+            			path = Fixtures;
+            			name = Fixtures;
+            			sourceTree = "<group>";
+            		};
+            		5BD2F155E8764D724A94CDEC /* Tests */ = {
+            			isa = PBXGroup;
+            			children = (
+            				EEC8D9AE5EAF557803AC2453 /* EinkaufCoreTests.swift */,
+            			);
+            			path = Tests/EinkaufCoreTests;
+            			name = Tests;
+            			sourceTree = "<group>";
+            		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		10B243F3E8F88BBF5D5C0CB6 /* Einkauf */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = C45B2472D5759D99B670671E /* Build configuration list for PBXNativeTarget "Einkauf" */;
-			buildPhases = (
-				43A1A5549C53B69FBC80303F /* Sources */,
-				06273CAF3F72B9473E852B7C /* Frameworks */,
-				DD7F2CFD55C1C5051A4A9120 /* Resources */,
-				353D08D164EF3FA683FB29CB /* Embed Watch Content */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				0899665CB70B51364FD3EACC /* PBXTargetDependency */,
-			);
-			name = Einkauf;
-			productName = Einkauf;
-			productReference = 39147CC323B509E30A9A2047 /* Einkauf.app */;
-			productType = "com.apple.product-type.application";
-		};
-		703A698638259F0A8FDBBA56 /* EinkaufWatch */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = C635932B6928CC016D826188 /* Build configuration list for PBXNativeTarget "EinkaufWatch" */;
-			buildPhases = (
-				F7813825518E502E470848D5 /* Sources */,
-				3CAE8BCEBBD0AE896AB6E903 /* Frameworks */,
-				B2B650B35625E216913DF7A1 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = EinkaufWatch;
-			productName = EinkaufWatch;
-			productReference = 4FA5A48B1D2266068C378675 /* EinkaufWatch.app */;
-			productType = "com.apple.product-type.application";
-		};
+10B243F3E8F88BBF5D5C0CB6 /* Einkauf */ = {
+	isa = PBXNativeTarget;
+	buildConfigurationList = C45B2472D5759D99B670671E /* Build configuration list for PBXNativeTarget "Einkauf" */;
+	buildPhases = (
+		43A1A5549C53B69FBC80303F /* Sources */,
+		06273CAF3F72B9473E852B7C /* Frameworks */,
+		DD7F2CFD55C1C5051A4A9120 /* Resources */,
+		353D08D164EF3FA683FB29CB /* Embed Watch Content */,
+	);
+	buildRules = (
+	);
+	dependencies = (
+		0899665CB70B51364FD3EACC /* PBXTargetDependency */,
+	);
+	name = Einkauf;
+	productName = Einkauf;
+	productReference = 39147CC323B509E30A9A2047 /* Einkauf.app */;
+	productType = "com.apple.product-type.application";
+};
+703A698638259F0A8FDBBA56 /* EinkaufWatch */ = {
+	isa = PBXNativeTarget;
+	buildConfigurationList = C635932B6928CC016D826188 /* Build configuration list for PBXNativeTarget "EinkaufWatch" */;
+	buildPhases = (
+		F7813825518E502E470848D5 /* Sources */,
+		3CAE8BCEBBD0AE896AB6E903 /* Frameworks */,
+		B2B650B35625E216913DF7A1 /* Resources */,
+		434E2590B66CE441737584CB /* Embed Foundation Extensions */,
+	);
+	buildRules = (
+	);
+	dependencies = (
+		A3689843C6EC6132C8E37B88 /* PBXTargetDependency */,
+	);
+	name = EinkaufWatch;
+	productName = EinkaufWatch;
+	productReference = 4FA5A48B1D2266068C378675 /* EinkaufWatch.app */;
+	productType = "com.apple.product-type.application";
+};
+7F56226B5929950B267B5780 /* EinkaufWatchWidgets */ = {
+	isa = PBXNativeTarget;
+	buildConfigurationList = 045343B52D91093882B0E515 /* Build configuration list for PBXNativeTarget "EinkaufWatchWidgets" */;
+	buildPhases = (
+		C2C5A4B8283C41A561910384 /* Sources */,
+		4A2980A84D6A01A242706020 /* Frameworks */,
+		98B4397639580D61A45736EC /* Resources */,
+	);
+	buildRules = (
+	);
+	dependencies = (
+	);
+	name = EinkaufWatchWidgets;
+	productName = EinkaufWatchWidgets;
+	productReference = BEFC0D5110D2471094B23F1E /* EinkaufWatchWidgets.appex */;
+	productType = "com.apple.product-type.app-extension";
+};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
-			isa = PBXProject;
-			attributes = {
-				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
-				TargetAttributes = {
-					10B243F3E8F88BBF5D5C0CB6 = {
-						CreatedOnToolsVersion = 15.0;
-						ProvisioningStyle = Automatic;
-					};
-					703A698638259F0A8FDBBA56 = {
-						CreatedOnToolsVersion = 15.0;
-						ProvisioningStyle = Automatic;
-					};
-				};
+46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+	isa = PBXProject;
+	attributes = {
+		BuildIndependentTargetsInParallel = 1;
+		LastSwiftUpdateCheck = 1500;
+		LastUpgradeCheck = 1500;
+		TargetAttributes = {
+			10B243F3E8F88BBF5D5C0CB6 = {
+				CreatedOnToolsVersion = 15.0;
+				ProvisioningStyle = Automatic;
 			};
-			buildConfigurationList = 76259AC00CDA58A80074D8A9 /* Build configuration list for PBXProject "Einkauf" */;
-			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = de;
-			hasScannedForEncodings = 0;
-			knownRegions = (
-				de,
-				en,
-				Base,
-			);
-			mainGroup = 71D2E56247FE75C3DCE9B609;
-			productRefGroup = 30772F61AC9BDC8631745269 /* Products */;
-			projectDirPath = "";
-			projectRoot = "";
-			targets = (
-				10B243F3E8F88BBF5D5C0CB6 /* Einkauf */,
-				703A698638259F0A8FDBBA56 /* EinkaufWatch */,
-			);
+			703A698638259F0A8FDBBA56 = {
+				CreatedOnToolsVersion = 15.0;
+				ProvisioningStyle = Automatic;
+			};
+			7F56226B5929950B267B5780 = {
+				CreatedOnToolsVersion = 15.0;
+				ProvisioningStyle = Automatic;
+			};
 		};
+	};
+	buildConfigurationList = 76259AC00CDA58A80074D8A9 /* Build configuration list for PBXProject "Einkauf" */;
+	compatibilityVersion = "Xcode 14.0";
+	developmentRegion = de;
+	hasScannedForEncodings = 0;
+	knownRegions = (
+		de,
+		en,
+		Base,
+	);
+	mainGroup = 71D2E56247FE75C3DCE9B609;
+	productRefGroup = 30772F61AC9BDC8631745269 /* Products */;
+	projectDirPath = "";
+	projectRoot = "";
+	targets = (
+		10B243F3E8F88BBF5D5C0CB6 /* Einkauf */,
+		703A698638259F0A8FDBBA56 /* EinkaufWatch */,
+		7F56226B5929950B267B5780 /* EinkaufWatchWidgets */,
+	);
+};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		B2B650B35625E216913DF7A1 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5C8C681F8ABF91896A0F746C /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		DD7F2CFD55C1C5051A4A9120 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				96ED049D930DD9AF4AD2ABCA /* Assets.xcassets in Resources */,
-				1DF6F4ADB90A0943E6BF1B47 /* einkauf-backup.json in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+DD7F2CFD55C1C5051A4A9120 /* Resources */ = {
+	isa = PBXResourcesBuildPhase;
+	buildActionMask = 2147483647;
+	files = (
+		96ED049D930DD9AF4AD2ABCA /* Assets.xcassets in Resources */,
+		1DF6F4ADB90A0943E6BF1B47 /* einkauf-backup.json in Resources */,
+	);
+	runOnlyForDeploymentPostprocessing = 0;
+};
+B2B650B35625E216913DF7A1 /* Resources */ = {
+	isa = PBXResourcesBuildPhase;
+	buildActionMask = 2147483647;
+	files = (
+		5C8C681F8ABF91896A0F746C /* Assets.xcassets in Resources */,
+	);
+	runOnlyForDeploymentPostprocessing = 0;
+};
+98B4397639580D61A45736EC /* Resources */ = {
+	isa = PBXResourcesBuildPhase;
+	buildActionMask = 2147483647;
+	files = (
+	);
+	runOnlyForDeploymentPostprocessing = 0;
+};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -369,6 +463,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */,
+				9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */,
 				98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */,
 				0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */,
 				619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */,
@@ -388,170 +483,37 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C2C5A4B8283C41A561910384 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				16FEB03CD391A62FFC2AC325 /* EinkaufWatchWidgets.swift in Sources */,
+				D669A4242B85D5564C2A226E /* BackupCodec.swift in Sources */,
+				5F0866CD8C5BC4A7DDB8E11F /* Department.swift in Sources */,
+				A506F3A9EB373EB70E906808 /* DepartmentGuesser.swift in Sources */,
+				D5606851163E4B9DB451AF8C /* KeywordDictionary.swift in Sources */,
+				9F76831DDF78F62C90EE477E /* Models.swift in Sources */,
+				6D029B115536EFE5DFE9E35C /* Persistence.swift in Sources */,
+				A7AA2AEAA6B0EE99A69E5309 /* StoreLayout.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		0899665CB70B51364FD3EACC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 703A698638259F0A8FDBBA56 /* EinkaufWatch */;
-			targetProxy = 5B0D864BD0A5C80A44B292AA /* PBXContainerItemProxy */;
-		};
+0899665CB70B51364FD3EACC /* PBXTargetDependency */ = {
+	isa = PBXTargetDependency;
+	target = 703A698638259F0A8FDBBA56 /* EinkaufWatch */;
+	targetProxy = 5B0D864BD0A5C80A44B292AA /* PBXContainerItemProxy */;
+};
+A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
+	isa = PBXTargetDependency;
+	target = 7F56226B5929950B267B5780 /* EinkaufWatchWidgets */;
+	targetProxy = F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */;
+};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		0374831BB633DCB4F1B5B4CC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
-				DEVELOPMENT_TEAM = WV26CSTDDR;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Sources/Watch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
-				INFOPLIST_KEY_WKApplication = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = net.tschelle.einkauf;
-				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-			};
-			name = Debug;
-		};
-		7BF40F069D95C38DE60AA602 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 5.0;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-			};
-			name = Release;
-		};
-		AE455172143D27DB87214116 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
-				DEVELOPMENT_TEAM = WV26CSTDDR;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Sources/iOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		DB73D596A313D0EF7994EC6C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
-				DEVELOPMENT_TEAM = WV26CSTDDR;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Sources/iOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
 		EC86DC4F4B4C60C3EC031655 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -612,19 +574,174 @@
 			};
 			name = Debug;
 		};
-		F014C65426F04D5484087141 /* Release */ = {
+		7BF40F069D95C38DE60AA602 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+								GCC_NO_COMMON_BLOCKS = YES;
+								GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+								SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		DB73D596A313D0EF7994EC6C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = WV26CSTDDR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Sources/iOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AE455172143D27DB87214116 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = WV26CSTDDR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Sources/iOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		0374831BB633DCB4F1B5B4CC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/Watch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
-				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = net.tschelle.einkauf;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		F014C65426F04D5484087141 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = WV26CSTDDR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Sources/Watch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = net.tschelle.einkauf;
+				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -644,36 +761,107 @@
 			};
 			name = Release;
 		};
+		4814CF842614D8DE2A33CFB8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = WV26CSTDDR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp.widgets;
+				PRODUCT_NAME = EinkaufWatchWidgets;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		C11F66F6A41085DBFF305236 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 9;
+				DEVELOPMENT_TEAM = WV26CSTDDR;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Einkauf;
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp.widgets;
+				PRODUCT_NAME = EinkaufWatchWidgets;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		76259AC00CDA58A80074D8A9 /* Build configuration list for PBXProject "Einkauf" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				EC86DC4F4B4C60C3EC031655 /* Debug */,
-				7BF40F069D95C38DE60AA602 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		C45B2472D5759D99B670671E /* Build configuration list for PBXNativeTarget "Einkauf" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				DB73D596A313D0EF7994EC6C /* Debug */,
-				AE455172143D27DB87214116 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		C635932B6928CC016D826188 /* Build configuration list for PBXNativeTarget "EinkaufWatch" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				0374831BB633DCB4F1B5B4CC /* Debug */,
-				F014C65426F04D5484087141 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
+76259AC00CDA58A80074D8A9 /* Build configuration list for PBXProject "Einkauf" */ = {
+	isa = XCConfigurationList;
+	buildConfigurations = (
+		EC86DC4F4B4C60C3EC031655 /* Debug */,
+		7BF40F069D95C38DE60AA602 /* Release */,
+	);
+	defaultConfigurationIsVisible = 0;
+	defaultConfigurationName = Release;
+};
+C45B2472D5759D99B670671E /* Build configuration list for PBXNativeTarget "Einkauf" */ = {
+	isa = XCConfigurationList;
+	buildConfigurations = (
+		DB73D596A313D0EF7994EC6C /* Debug */,
+		AE455172143D27DB87214116 /* Release */,
+	);
+	defaultConfigurationIsVisible = 0;
+	defaultConfigurationName = Release;
+};
+C635932B6928CC016D826188 /* Build configuration list for PBXNativeTarget "EinkaufWatch" */ = {
+	isa = XCConfigurationList;
+	buildConfigurations = (
+		0374831BB633DCB4F1B5B4CC /* Debug */,
+		F014C65426F04D5484087141 /* Release */,
+	);
+	defaultConfigurationIsVisible = 0;
+	defaultConfigurationName = Release;
+};
+045343B52D91093882B0E515 /* Build configuration list for PBXNativeTarget "EinkaufWatchWidgets" */ = {
+	isa = XCConfigurationList;
+	buildConfigurations = (
+		4814CF842614D8DE2A33CFB8 /* Debug */,
+		C11F66F6A41085DBFF305236 /* Release */,
+	);
+	defaultConfigurationIsVisible = 0;
+	defaultConfigurationName = Release;
+};
 /* End XCConfigurationList section */
 	};
 	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
