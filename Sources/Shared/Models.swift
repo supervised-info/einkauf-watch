@@ -212,15 +212,39 @@ struct ComplicationSnapshot: Equatable, Sendable {
     var progressLabel: String
     var storeName: String
     var isEmpty: Bool
+    /// Gauge 0…1; leere Liste ist 0.
+    var progress: Double = 0
 
-    static let placeholder = ComplicationSnapshot(progressLabel: "2/7", storeName: "Edeka", isEmpty: false)
+    static let placeholder = ComplicationSnapshot(
+        progressLabel: "2/7",
+        storeName: "Edeka",
+        isEmpty: false,
+        progress: 2.0 / 7.0
+    )
 
     static func make(from state: AppState) -> ComplicationSnapshot {
-        ComplicationSnapshot(
+        let total = state.items.count
+        return ComplicationSnapshot(
             progressLabel: state.progressLabel,
             storeName: AppState.clippedWatchStoreName(state.currentStore.name),
-            isEmpty: state.items.isEmpty
+            isEmpty: state.items.isEmpty,
+            progress: total == 0 ? 0 : Double(state.doneCount) / Double(total)
         )
+    }
+
+    /// Zähler-Teile für das gestapelte Circular-Label (`xx` über `yy`).
+    var doneText: String {
+        if let slash = progressLabel.firstIndex(of: "/") {
+            return String(progressLabel[..<slash])
+        }
+        return progressLabel
+    }
+
+    var totalText: String {
+        if let slash = progressLabel.firstIndex(of: "/") {
+            return String(progressLabel[progressLabel.index(after: slash)...])
+        }
+        return ""
     }
 
     /// Inline: kurzer Ladenname und `xx/yy` (leere Liste bleibt `0/0`).

@@ -19,6 +19,38 @@ def fail(msg: str) -> None:
     sys.exit(1)
 
 
+def extract_some_view(src: str, name: str) -> str:
+    """Body of `var <name>: some View { ... }` including nested braces."""
+    m = re.search(rf"(?:private\s+)?var {re.escape(name)}\s*:\s*some View\s*\{{", src)
+    if not m:
+        fail(f"Watch widget missing {name} view")
+    brace = src.find("{", m.start())
+    depth = 0
+    for j in range(brace, len(src)):
+        if src[j] == "{":
+            depth += 1
+        elif src[j] == "}":
+            depth -= 1
+            if depth == 0:
+                return src[m.start() : j + 1]
+    fail(f"Watch widget {name} view is unclosed")
+    return ""
+
+
+LARGE_PROGRESS_FONT = re.compile(r"\.(largeTitle|title[23]?|headline)\b")
+
+
+def assert_no_large_progress_text(view_src: str, name: str) -> None:
+    if LARGE_PROGRESS_FONT.search(view_src):
+        fail(
+            f"{name} must not use large system text (.title/.title2/.title3) "
+            "on progressLabel — watchOS draws !"
+        )
+    for size in (int(n) for n in re.findall(r"\.system\(size:\s*(\d+)", view_src)):
+        if size > 13:
+            fail(f"{name} system size {size}pt is too large for accessory (use ~11–13pt)")
+
+
 def sanitized_layout(layout: list[str]) -> list[str]:
     seen: set[str] = set()
     middle: list[str] = []
@@ -487,15 +519,19 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 10" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 10")
+    if "CURRENT_PROJECT_VERSION = 11" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 11")
+    if "CURRENT_PROJECT_VERSION = 10" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 10 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 9" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 9 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 10" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 10")
+    if "CURRENT_PROJECT_VERSION: 11" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 11")
+    if "CURRENT_PROJECT_VERSION: 10" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 10 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 9" in yml:
         fail("stale CURRENT_PROJECT_VERSION 9 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 8" in yml:
@@ -666,14 +702,34 @@ def test_watch_complication() -> None:
         fail("Description.md must name WidgetKit and exclude ClockKit")
     if "einkauf-local.json" not in desc:
         fail("Description.md must name einkauf-local.json as complication data source")
+    if "title2" not in desc or "!" not in desc:
+        fail("Description.md must warn circular must not use title2 (risk of !)")
+    if "Gauge" not in desc or "containerBackground" not in desc:
+        fail("Description.md must document circular Gauge and containerBackground")
     if "testEmptyListIsZeroOverZeroNotHidden" not in tests:
         fail("tests must cover empty complication 0/0")
     if "testProgressMatchesWatchTitleAndIncludesVorNach" not in tests:
         fail("tests must cover complication progress including vor/nach")
+    if "testGaugeProgressIsZeroWhenEmptyAndFractionOtherwise" not in tests:
+        fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 10") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 10")
+    if pbx.count("CURRENT_PROJECT_VERSION = 11") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 11")
+    circular = extract_some_view(widget, "circular")
+    corner = extract_some_view(widget, "corner")
+    assert_no_large_progress_text(circular, "circular")
+    assert_no_large_progress_text(corner, "corner")
+    if "Gauge" not in circular:
+        fail("circular must use Gauge (0…1) so compact circular families fit")
+    if "entry.snapshot.progress" not in circular:
+        fail("circular Gauge must use snapshot progress 0…1")
+    if "progressLabel" not in circular:
+        fail("circular must still expose progressLabel (Gauge label or center)")
+    if "containerBackground" not in widget:
+        fail("complication view needs containerBackground for watchOS 10")
+    if "var progress: Double" not in models:
+        fail("ComplicationSnapshot must expose progress 0…1 for the circular Gauge")
     ios_info = (ROOT / "Sources/iOS/Info.plist").read_text()
     if "widgetkit-extension" in ios_info:
         fail("iPhone Info.plist must not declare a WidgetKit extension")

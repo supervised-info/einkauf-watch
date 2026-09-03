@@ -71,18 +71,28 @@ struct EinkaufComplicationView: View {
                 circular
             }
         }
+        .containerBackground(.clear, for: .widget)
         .accessibilityLabel(entry.snapshot.accessibilityLabel)
         .accessibilityHint("Öffnet die Einkaufsliste")
     }
 
-    /// Kleine runde Komplikation: nur `xx/yy`.
+    /// Runde Komplikation: Gauge 0…1, kleines `xx` über `yy` in der Mitte.
+    /// Kein `.title2` — auf der physischen Watch zeichnet watchOS sonst „!“.
     private var circular: some View {
-        Text(entry.snapshot.progressLabel)
-            .font(.system(.title2, design: .rounded).weight(.semibold))
+        Gauge(value: entry.snapshot.progress, in: 0...1) {
+            Text(entry.snapshot.progressLabel)
+        } currentValueLabel: {
+            VStack(spacing: 0) {
+                Text(entry.snapshot.doneText)
+                    .lineLimit(1)
+                Text(entry.snapshot.totalText)
+                    .lineLimit(1)
+            }
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
             .monospacedDigit()
-            .minimumScaleFactor(0.35)
-            .lineLimit(1)
-            .widgetAccentable()
+        }
+        .gaugeStyle(.accessoryCircularCapacity)
+        .widgetAccentable()
     }
 
     /// Rechteck: kurzer Ladenname plus `xx/yy`.
@@ -111,12 +121,12 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Ecke: Zähler im Bogen, Ladenname am Label.
+    /// Ecke: kleines `xx/yy` im Bogen, Ladenname am Label.
     private var corner: some View {
         Text(entry.snapshot.progressLabel)
-            .font(.system(.title3, design: .rounded).weight(.semibold))
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
             .monospacedDigit()
-            .minimumScaleFactor(0.4)
+            .lineLimit(1)
             .widgetAccentable()
             .widgetLabel {
                 Text(entry.snapshot.storeName)
