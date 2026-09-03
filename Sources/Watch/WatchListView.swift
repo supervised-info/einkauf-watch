@@ -93,7 +93,7 @@ struct WatchListView: View {
                 Image(systemName: hideCompleted ? "eye.slash" : "eye")
                     .font(.caption)
                     .imageScale(.small)
-                    .foregroundStyle(theme.muted)
+                    .foregroundStyle(hideCompleted ? theme.muted : theme.good)
                     .padding(.horizontal, 8)
                     .contentShape(Rectangle())
             }

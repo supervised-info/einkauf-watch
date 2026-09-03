@@ -369,10 +369,14 @@ def test_sources() -> None:
     watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
     if "links" not in watch_sec:
         fail("Description.md must left-align the Watch eye under the title")
-    if "theme.muted" not in watch_sec and "Grau" not in watch_sec:
-        fail("Description.md must document Watch eye as muted grey")
+    if "theme.good" not in watch_sec:
+        fail("Description.md must document Watch eye as theme.good when completed are visible")
+    if "theme.muted" not in watch_sec and "grau" not in watch_sec.lower():
+        fail("Description.md must document Watch eye.slash as muted grey when completed are hidden")
     if "Tinte/Akzent" in watch_sec:
         fail("Description.md still documents Watch eye as Tinte/Akzent")
+    if "immer dieselbe Farbe" in watch_sec or "immer grau" in watch_sec:
+        fail("Description.md still says both Watch eye states share one colour")
     if re.search(r"Auge.{0,80}rechts", watch_sec) or "rechts (`HStack" in watch_sec:
         fail("Description.md still right-aligns the Watch eye")
     if re.search(r"Toolbar \*\*links\*\*", desc):
@@ -587,11 +591,15 @@ def test_sources() -> None:
     if "hideCompleted.toggle" not in eye_bar:
         fail("Watch eye Button must still toggle hideCompleted")
     if "theme.ink" in eye_bar:
-        fail("Watch eye must not use theme.ink — eye and eye.slash stay the same muted grey")
+        fail("Watch eye must not use theme.ink")
+    if "theme.good" not in eye_bar:
+        fail("Watch eye (visible completed) must use theme.good like done checkmarks")
     if "theme.muted" not in eye_bar:
-        fail("Watch eye must use .foregroundStyle(theme.muted) (same grey as dept headers)")
-    if re.search(r"hideCompleted\s*\?\s*theme\.", eye_bar):
-        fail("Watch eye must not change color by hideCompleted state")
+        fail("Watch eye.slash (hidden completed) must use theme.muted")
+    if not re.search(
+        r"hideCompleted\s*\?\s*theme\.muted\s*:\s*theme\.good", eye_bar
+    ):
+        fail("Watch eye colour must be muted when hidden, good when visible")
     if "Spacer()" not in eye_bar:
         fail("Watch eye must be leading via Spacer() after the Button under the title")
     if eye_bar.find("Spacer()") < eye_bar.find("Button"):
