@@ -16,6 +16,13 @@ struct WatchListView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 hideCompletedBar
+                Text(store.state.watchTitle)
+                    .font(.caption)
+                    .foregroundStyle(theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
                 Group {
                     if store.groups.isEmpty {
                         Text("Noch nichts auf der Liste.")
@@ -76,14 +83,14 @@ struct WatchListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .navigationTitle(store.state.watchTitle)
+            .navigationTitle("")
             .id(store.state.currentStoreId)
             .navigationBarTitleDisplayMode(.inline)
             .containerBackground(theme.paper, for: .navigation)
         }
     }
 
-    /// Chrome direkt unter dem Titel, links: nicht in der Toolbar (Leading kürzt xx/yy, Trailing frisst die Uhr).
+    /// Chrome oben links über der Titelzeile: nicht in der Toolbar (Leading kürzt, Trailing frisst die Uhr).
     /// Kompakte Zeile (~18–20pt) — kein 44pt-minHeight, sonst leere Bänder über und unter dem Glyph.
     private var hideCompletedBar: some View {
         HStack(spacing: 0) {
