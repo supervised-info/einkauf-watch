@@ -271,7 +271,6 @@ def test_sources() -> None:
         "Sources/Shared/KeywordDictionaryBrowse.swift",
         "Sources/Shared/SpeechItemSplitter.swift",
         "Sources/Watch/WatchListView.swift",
-        "Sources/Watch/WatchVoiceAdd.swift",
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/iOS/HomeWidgetReload.swift",
         "Sources/iOSWidgets/EinkaufWidgets.swift",
@@ -362,8 +361,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 27" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 27 / CURRENT_PROJECT_VERSION")
+    if "Build 28" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 28 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -411,20 +410,19 @@ def test_sources() -> None:
         fail("Description.md must require Watch Auge .buttonStyle(.plain)")
     if "gefüll" not in desc:
         fail("Description.md must say Watch Auge is not a filled circular button")
-    if "TextFieldLink" not in desc:
-        fail("Description.md must mention TextFieldLink as not used")
-    if "Übernehmen" not in desc:
-        fail("Description.md must document Watch Übernehmen commit")
-    if "In-App" not in desc and "In-App-TextField" not in desc:
-        fail("Description.md must document the in-app TextField panel")
     if "SpeechItemSplitter" not in desc:
         fail("Description.md must name SpeechItemSplitter")
-    if "NSMicrophoneUsageDescription" not in desc or "NSSpeechRecognitionUsageDescription" not in desc:
-        fail("Description.md must note Watch dictation does not need mic/speech usage keys")
-    if "iPhone-Spracheingabe kommt später" not in desc:
-        fail("Description.md must say iPhone voice comes later")
-    if "Hold-to-Talk" not in desc and "nicht gedrückt halten" not in desc:
-        fail("Description.md must say Watch voice is tap-to-dictate, not hold-to-talk")
+    if "addItems(fromSpeech" not in desc:
+        fail("Description.md must name addItems(fromSpeech:) as shared, not Watch UI")
+    if "kein Diktat" not in watch_sec and "kein Mikrofon" not in watch_sec:
+        fail("Description.md must say Watch has no dictation/mic")
+    if re.search(r"\*\*Mikro:\*\*", desc) or "Watch-Mikro:" in desc:
+        fail("Description.md must not keep Watch-mic as a feature")
+    if "Hold-Mikro" in desc:
+        fail("Description.md must not keep Hold-Mikro as a Watch feature")
+    watch_ui_row = next((ln for ln in desc.splitlines() if ln.startswith("| Watch-UI |")), "")
+    if "WatchVoiceAdd" in watch_ui_row:
+        fail("Watch-UI table must not list WatchVoiceAdd")
     if "Nutzerkorrektur gewinnt" not in desc:
         fail("Description.md guess order must say user correction wins")
     if "Mappings nach Keywords" in desc or "Keywords vor Mappings" in desc:
@@ -657,10 +655,10 @@ def test_sources() -> None:
         fail("Watch must not put watchTitle in navigationTitle (that places it above the eye)")
     if "Text(store.state.watchTitle)" not in watch:
         fail("Watch must show watchTitle as Text below the eye bar")
-    if "NavigationStack {" in watch or "NavigationStack(" in watch:
-        fail("WatchListView must not wrap content in NavigationStack (system text dismiss kills the process)")
-    if "toolbar(.hidden, for: .navigationBar)" in watch:
-        fail("Watch must not keep a hidden NavigationStack toolbar")
+    if "NavigationStack {" not in watch and "NavigationStack(" not in watch:
+        fail("WatchListView must use NavigationStack with a hidden nav bar")
+    if "toolbar(.hidden, for: .navigationBar)" not in watch:
+        fail("Watch must hide the navigation bar (.toolbar(.hidden, for: .navigationBar))")
     if "AppStorage" not in watch or "einkauf.watch.hideCompleted" not in watch:
         fail("Watch hide-completed must persist via AppStorage einkauf.watch.hideCompleted")
     if "einkauf.iphone.hideCompleted" in watch:
@@ -695,10 +693,10 @@ def test_sources() -> None:
         fail("Watch eye must be leading via Spacer() after the Button above the title")
     if eye_bar.find("Spacer()") < eye_bar.find("Button"):
         fail("Watch eye HStack must be { Button…; Spacer() }, not trailing")
-    if "WatchVoiceAddButton" not in eye_bar:
-        fail("Watch chrome row must put WatchVoiceAddButton trailing after Spacer()")
-    if eye_bar.find("WatchVoiceAddButton") < eye_bar.find("Spacer()"):
-        fail("Watch Mikro must sit after Spacer(), opposite the leading eye")
+    if "WatchVoiceAddButton" in eye_bar or "WatchVoiceAdd" in eye_bar:
+        fail("Watch chrome row must not keep a mic / WatchVoiceAddButton")
+    if '"mic"' in eye_bar or "mic.fill" in eye_bar:
+        fail("Watch chrome row must be eye-only — no mic glyph")
     if re.search(r"minHeight:\s*44", eye_bar) or re.search(r"minWidth:\s*44", eye_bar):
         fail("Watch eye must not use a 44pt min frame (creates empty bands under the title)")
     hide_bar = extract_some_view(watch, "hideCompletedBar")
@@ -831,8 +829,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 27" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 27")
+    if "CURRENT_PROJECT_VERSION = 28" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 28")
+    if "CURRENT_PROJECT_VERSION = 27" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 27 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 26" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 26 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 25" in pbx:
@@ -872,8 +872,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 27" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 27")
+    if "CURRENT_PROJECT_VERSION: 28" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 28")
+    if "CURRENT_PROJECT_VERSION: 27" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 27 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 26" in yml:
         fail("stale CURRENT_PROJECT_VERSION 26 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 25" in yml:
@@ -930,10 +932,10 @@ def test_sources() -> None:
         fail("Watch must not use a duplicate safeAreaInset header for the counter")
     if re.search(r'Text\("Einkauf"\)', watch):
         fail("Watch must not duplicate Einkauf in a custom header HStack")
-    if "NavigationStack {" in watch or "NavigationStack(" in watch:
-        fail("Watch must not use NavigationStack so the eye sits under the clock without a nav host")
-    if "toolbar(.hidden, for: .navigationBar)" in watch:
-        fail("Watch must not keep a hidden navigation bar host")
+    if "NavigationStack {" not in watch and "NavigationStack(" not in watch:
+        fail("Watch must use NavigationStack so the hidden nav bar keeps the system clock")
+    if "toolbar(.hidden, for: .navigationBar)" not in watch:
+        fail("Watch must hide the navigation bar so the eye sits under the clock")
     if "var doneCount" not in models or "var progressLabel" not in models:
         fail("AppState missing doneCount/progressLabel")
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
@@ -1094,8 +1096,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 27") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 27")
+    if pbx.count("CURRENT_PROJECT_VERSION = 28") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 28")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1204,9 +1206,8 @@ def test_iphone_widget() -> None:
     print("iphone widget: ok")
 
 
-def test_watch_voice_add() -> None:
+def test_watch_voice_removed() -> None:
     watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
-    voice = (ROOT / "Sources/Watch/WatchVoiceAdd.swift").read_text()
     store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
     splitter = (ROOT / "Sources/Shared/SpeechItemSplitter.swift").read_text()
     plist = (ROOT / "Sources/Watch/Info.plist").read_text()
@@ -1218,18 +1219,23 @@ def test_watch_voice_add() -> None:
     watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
 
     for leftover in (
+        "Sources/Watch/WatchVoiceAdd.swift",
         "Sources/Watch/WatchHoldToTalk.swift",
         "Sources/Watch/WatchSpeechRecognizer.h",
         "Sources/Watch/WatchSpeechRecognizer.m",
         "Sources/Watch/EinkaufWatch-Bridging-Header.h",
     ):
         if (ROOT / leftover).exists():
-            fail(f"{leftover} must be deleted (no Speech on Watch)")
+            fail(f"{leftover} must be deleted (no voice on Watch)")
 
     if "func addItems(fromSpeech" not in store:
         fail("ShoppingStore missing addItems(fromSpeech:)")
-    if "func addItemsFromWatchVoice" not in store:
-        fail("ShoppingStore missing addItemsFromWatchVoice")
+    if "func addItemsFromWatchVoice" in store:
+        fail("ShoppingStore must not keep addItemsFromWatchVoice")
+    if "scheduleDeferredWatchVoiceFollowUp" in store:
+        fail("ShoppingStore must not keep scheduleDeferredWatchVoiceFollowUp")
+    if "WatchVoiceSaveError" in store:
+        fail("ShoppingStore must not keep WatchVoiceSaveError")
     if "func appendSpeechItems" not in store:
         fail("ShoppingStore must batch speech items in appendSpeechItems")
     append_fn = extract_braced(store, store.find("func appendSpeechItems"), "appendSpeechItems")
@@ -1242,35 +1248,17 @@ def test_watch_voice_add() -> None:
     add_items = extract_braced(store, store.find("func addItems(fromSpeech"), "addItems(fromSpeech:)")
     if add_items.count("persistAndSync()") != 1:
         fail("addItems(fromSpeech:) must persistAndSync once for the whole batch")
-    voice_add_fn = extract_braced(store, store.find("func addItemsFromWatchVoice"), "addItemsFromWatchVoice")
-    if "persistAndSync()" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not persistAndSync immediately")
-    if "persistQuietly()" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not persistQuietly (WidgetKit)")
-    if "WatchComplicationReload" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not reload complications in the commit path")
-    if "broadcast" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not broadcast immediately")
-    if "Persistence.write" not in voice_add_fn:
-        fail("addItemsFromWatchVoice must Persistence.write only")
-    if "scheduleDeferredWatchVoiceFollowUp" not in voice_add_fn:
-        fail("addItemsFromWatchVoice must defer sync/complications")
-    follow = extract_braced(
-        store, store.find("func scheduleDeferredWatchVoiceFollowUp"), "scheduleDeferredWatchVoiceFollowUp"
-    )
-    if "2_000_000_000" not in follow:
-        fail("Watch voice follow-up must wait ~2s")
     if "enum SpeechItemSplitter" not in splitter:
         fail("SpeechItemSplitter missing")
     if r"\s+und\s+" not in splitter or r"\s+sowie\s+" not in splitter:
         fail("SpeechItemSplitter must split on und and sowie")
     if "NSMicrophoneUsageDescription" in plist or "NSSpeechRecognitionUsageDescription" in plist:
-        fail("Watch Info.plist must not declare mic/speech usage keys (system dictation)")
+        fail("Watch Info.plist must not declare mic/speech usage keys")
     if "NSMicrophoneUsageDescription" in ios_plist or "NSSpeechRecognitionUsageDescription" in ios_plist:
-        fail("iPhone Info.plist must not gain Watch speech keys in this PR")
+        fail("iPhone Info.plist must not gain Watch speech keys")
     if "SFSpeechRecognizer" in content or "WatchHoldToTalk" in content or "addItems(fromSpeech" in content:
         fail("iPhone voice UI is out of scope")
-    if "WatchVoiceAdd" in content:
+    if "WatchVoiceAdd" in content or "WatchDictatePanel" in content:
         fail("iPhone must not gain Watch voice UI")
 
     for path in (ROOT / "Sources/Watch").iterdir():
@@ -1281,84 +1269,21 @@ def test_watch_voice_add() -> None:
             fail(f"{path.name} must not import Speech")
         if "SFSpeech" in txt:
             fail(f"{path.name} must not use Speech types")
-        if "#import <Speech/Speech.h>" in txt or "#import <Speech/Speech.h>" in txt.replace(" ", ""):
+        if "Speech/Speech.h" in txt:
             fail(f"{path.name} must not import Speech/Speech.h")
         if "WatchSpeechRecognizer" in txt:
             fail(f"{path.name} must not reference WatchSpeechRecognizer")
+        if "presentTextInputController" in txt:
+            fail(f"{path.name} must not use presentTextInputController")
+        if "TextFieldLink" in txt:
+            fail(f"{path.name} must not use TextFieldLink")
+        if "WatchDictatePanel" in txt or "WatchVoiceAdd" in txt:
+            fail(f"{path.name} must not keep Watch voice types")
+        if "showDictate" in txt or "commitDictate" in txt:
+            fail(f"{path.name} must not keep dictate panel state")
+        if '"mic"' in txt or "mic.fill" in txt:
+            fail(f"{path.name} must not show a mic glyph")
 
-    watch_dir_txt = "".join(
-        p.read_text() for p in (ROOT / "Sources/Watch").iterdir() if p.is_file()
-    )
-    if "Speech/Speech.h" in watch_dir_txt:
-        fail("Watch sources must not mention Speech/Speech.h")
-    if "import Speech" in watch_dir_txt:
-        fail("Watch sources must not import Speech")
-
-    if "presentTextInputController" in voice:
-        fail("Watch voice must not use presentTextInputController (crash-on-dismiss in SwiftUI)")
-    if "visibleInterfaceController" in voice or "rootInterfaceController" in voice or "textInputHost" in voice:
-        fail("Watch voice must not present from a WKInterfaceController host")
-    if "WKApplication" in voice:
-        fail("Watch voice must not look up WKApplication for text input")
-    if "TextFieldLink" in voice:
-        fail("Watch voice must not use TextFieldLink (system modal dismiss kills the process)")
-    if "onSubmit" in voice:
-        fail("Watch must not commit on TextField onSubmit (dismiss during persist)")
-    if "TextField" not in voice:
-        fail("Watch voice must open an in-app TextField panel")
-    if "Übernehmen" not in voice:
-        fail("Watch dictate panel must commit via Übernehmen")
-    if "xmark" not in voice:
-        fail("Watch dictate panel must have an X / cancel control")
-    if "Artikel" not in voice:
-        fail("Watch TextField prompt must be Artikel")
-    if "showDictate" not in watch:
-        fail("WatchListView must toggle an in-app dictate panel via showDictate")
-    if "WatchDictatePanel" not in watch:
-        fail("WatchListView must host WatchDictatePanel instead of a system text modal")
-    if "NavigationStack {" in watch or "NavigationStack(" in watch:
-        fail("WatchListView must not use NavigationStack around dictation")
-    if "toolbar(.hidden, for: .navigationBar)" in watch:
-        fail("Watch Mikro must not bring back a hidden NavigationStack toolbar")
-    if "containerBackground" in watch:
-        fail("WatchListView must not use containerBackground(for: .navigation)")
-    if "onLongPressGesture" in voice:
-        fail("Watch mic must be tap-to-dictate, not hold-to-talk")
-    if "addItemsFromWatchVoice" not in voice:
-        fail("Watch dictation must feed addItemsFromWatchVoice")
-    if "addItems(fromSpeech" in voice:
-        fail("Watch dictation must not use addItems(fromSpeech:) persistAndSync path")
-    if "Nichts verstanden." not in voice:
-        fail("Watch must show Nichts verstanden. when speech is empty")
-    if "Speichern fehlgeschlagen." not in voice:
-        fail("Watch must show Speichern fehlgeschlagen. on save error")
-    if '"…"' not in voice and '"..."' not in voice:
-        fail("Watch commit must show … while waiting")
-    if "WKInterfaceDevice" in voice or ".play(.success)" in voice:
-        fail("Watch voice commit must not haptic during Übernehmen")
-    if "onAppear { focused = true }" in voice or "focused = true" in voice:
-        fail("Watch dictate must not auto-focus on appear")
-    if "focused = false" not in voice:
-        fail("Übernehmen must clear TextField focus first")
-    commit = extract_braced(watch, watch.find("func commitDictate"), "commitDictate")
-    if "voiceAdd.commit" not in commit:
-        fail("commitDictate must call voiceAdd.commit")
-    if commit.find("showDictate = false") < commit.find("voiceAdd.commit"):
-        fail("commitDictate must not close the panel before add completes")
-    if "850_000_000" not in commit:
-        fail("commitDictate must wait ~0.85s on MainActor after unfocus")
-    if "markWaiting" not in commit:
-        fail("commitDictate must set … status before wait")
-    if '"mic"' not in voice:
-        fail("Watch mic must use the mic symbol")
-    if ".buttonStyle(.plain)" not in voice:
-        fail("Watch mic Button must use .buttonStyle(.plain)")
-    if LARGE_PROGRESS_FONT.search(voice):
-        fail("Watch mic must not use large fonts (.title/.title2) — keep caption like the eye")
-    if ".title2" in voice:
-        fail("Watch mic must not use title2")
-    if "ToolbarItem" in voice or "topBarTrailing" in voice:
-        fail("Watch mic must not sit in the toolbar")
     if "Speech.framework" in pbx:
         fail("Watch target must not link Speech.framework")
     if "AVFoundation.framework" in pbx:
@@ -1371,20 +1296,8 @@ def test_watch_voice_add() -> None:
         fail("Watch OTHER_LDFLAGS must not link Speech or AVFoundation")
     if "WatchSpeechRecognizer" in pbx or "EinkaufWatch-Bridging-Header" in pbx:
         fail("pbxproj must not list Speech shim or bridging header")
-    if "WatchHoldToTalk.swift" in pbx:
-        fail("pbxproj must not compile WatchHoldToTalk.swift")
-    src_phases = re.findall(
-        r"isa = PBXSourcesBuildPhase;\s+buildActionMask = 2147483647;\s+files = \((.*?)\);",
-        pbx,
-        re.S,
-    )
-    voice_src = [b for b in src_phases if "WatchVoiceAdd.swift in Sources" in b]
-    if len(voice_src) != 1:
-        fail("WatchVoiceAdd.swift must compile in exactly one Sources build phase")
-    if "EinkaufWatchApp.swift in Sources" not in voice_src[0]:
-        fail("WatchVoiceAdd.swift must compile only in the Watch sources phase")
-    if "ContentView.swift in Sources" in voice_src[0] or "EinkaufWidgets.swift in Sources" in voice_src[0]:
-        fail("WatchVoiceAdd.swift must not compile in iOS or widget sources")
+    if "WatchHoldToTalk.swift" in pbx or "WatchVoiceAdd.swift" in pbx:
+        fail("pbxproj must not compile Watch voice sources")
     yml = (ROOT / "project.yml").read_text()
     watch_yml = yml[yml.find("  EinkaufWatch:") : yml.find("  EinkaufWatchWidgets:")]
     if "Speech" in watch_yml or "AVFoundation" in watch_yml:
@@ -1404,33 +1317,17 @@ def test_watch_voice_add() -> None:
         fail("generate_xcodeproj.py must not pass Speech/AVFoundation OTHER_LDFLAGS")
     if "WatchSpeechRecognizer" in desc or "EinkaufWatch-Bridging-Header" in desc:
         fail("Description.md must not document the ObjC Speech shim")
-    if "TextFieldLink" not in desc:
-        fail("Description.md must mention TextFieldLink as not used")
-    if "Übernehmen" not in watch_sec:
-        fail("Description.md Watch section must document Übernehmen")
-    if "presentTextInputController" in voice:
-        fail("WatchVoiceAdd must not call presentTextInputController")
-    if "Hold-to-Talk" not in watch_sec and "nicht gedrückt halten" not in watch_sec:
-        fail("Description.md Watch section must say dictation is tap, not hold-to-talk")
-    if "Speech.framework" not in watch_sec and "kein `Speech.framework`" not in watch_sec and "ohne" not in desc:
-        fail("Description.md must say Watch voice does not use Speech.framework")
-    if " sowie " not in watch_sec:
-        fail("Description.md must document sowie as a split separator")
-    if "iPhone-Spracheingabe kommt später" not in watch_sec:
-        fail("Description.md Watch section must defer iPhone voice")
+    if "kein Diktat" not in watch_sec and "kein Mikrofon" not in watch_sec:
+        fail("Description.md Watch section must say there is no dictation/mic")
+    if "Speech.framework" not in watch_sec and "kein `Speech.framework`" not in watch_sec:
+        fail("Description.md must say Watch does not use Speech.framework")
     if "testCommaUndUndKeepsQuantity" not in tests or '"zwei Eier"' not in tests:
         fail("splitter tests must keep zwei Eier as one name")
     if "testAddItemsFromSpeechBatchesOneRevision" not in tests:
         fail("tests must cover batched addItems(fromSpeech:) revision")
-    if "testAddItemsFromWatchVoiceBatchesWithoutThrowing" not in tests:
-        fail("tests must cover addItemsFromWatchVoice batching")
-    if "testAddItemsFromWatchVoiceEmptyAddsNothing" not in tests:
-        fail("tests must cover empty Watch voice adding nothing")
-    if "addItemsFromWatchVoice" not in watch_sec:
-        fail("Description.md Watch section must document addItemsFromWatchVoice")
-    if "0,85s" not in watch_sec and "0.85s" not in watch_sec:
-        fail("Description.md must document Übernehmen unfocus wait")
-    print("watch voice add: ok")
+    if "testAddItemsFromWatchVoice" in tests:
+        fail("tests must not keep addItemsFromWatchVoice coverage")
+    print("watch voice removed: ok")
 
 
 def main() -> None:
@@ -1440,7 +1337,7 @@ def main() -> None:
     test_sonstiges_follows_layout_position()
     test_backup_codec_python()
     test_sources()
-    test_watch_voice_add()
+    test_watch_voice_removed()
     test_watch_complication()
     test_iphone_widget()
     print("ALL OK")

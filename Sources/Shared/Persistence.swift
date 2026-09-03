@@ -52,7 +52,7 @@ enum Persistence {
         }
     }
 
-    /// Wirft bei Encode- oder Schreibfehler — Watch-Voice kann Status setzen.
+    /// Wirft bei Encode- oder Schreibfehler. `save` schluckt den Fehler.
     static func write(_ state: AppState) throws {
         let data = try BackupCodec.encodeLocal(state)
         try data.write(to: fileURL, options: [.atomic])

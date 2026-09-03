@@ -1580,21 +1580,4 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.addItems(fromSpeech: "Brot"), 1)
         XCTAssertEqual(store.state.listRevision, 2)
     }
-
-    func testAddItemsFromWatchVoiceBatchesWithoutThrowing() throws {
-        let store = ShoppingStore(state: .seed, enableSync: false)
-        XCTAssertEqual(try store.addItemsFromWatchVoice("Milch, Butter und zwei Eier"), 3)
-        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
-        XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
-        XCTAssertEqual(store.state.listRevision, 1)
-        XCTAssertEqual(try store.addItemsFromWatchVoice("Brot"), 1)
-        XCTAssertEqual(store.state.listRevision, 2)
-    }
-
-    func testAddItemsFromWatchVoiceEmptyAddsNothing() throws {
-        let store = ShoppingStore(state: .seed, enableSync: false)
-        XCTAssertEqual(try store.addItemsFromWatchVoice("  "), 0)
-        XCTAssertTrue(store.state.items.isEmpty)
-        XCTAssertEqual(store.state.listRevision, 0)
-    }
 }
