@@ -93,7 +93,7 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
-    /// Watch-Diktat / später iPhone: jeden Splitter-Teil per `addItem` (Guesser + Mappings).
+    /// Watch Hold-Mikro / später iPhone: jeden Splitter-Teil per `addItem` (Guesser + Mappings).
     @discardableResult
     func addItems(fromSpeech text: String) -> Int {
         let names = SpeechItemSplitter.items(from: text)

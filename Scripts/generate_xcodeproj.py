@@ -98,6 +98,10 @@ def main() -> None:
     widgetkit_watch = uid("widgetkit_watch")
     widgetkit_ios = uid("widgetkit_ios")
     widgetkit_ios_widget = uid("widgetkit_ios_widget")
+    speech_ref = uid("speech_framework_ref")
+    speech_watch = uid("speech_framework_watch")
+    av_ref = uid("avfoundation_framework_ref")
+    av_watch = uid("avfoundation_framework_watch")
 
     group_root = uid("group_root")
     group_ios = uid("group_ios")
@@ -150,6 +154,8 @@ def main() -> None:
     objects.append(f"\t\t{widgetkit_watch} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
     objects.append(f"\t\t{widgetkit_ios} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
     objects.append(f"\t\t{widgetkit_ios_widget} /* WidgetKit.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {widgetkit_ref} /* WidgetKit.framework */; }};")
+    objects.append(f"\t\t{speech_watch} /* Speech.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {speech_ref} /* Speech.framework */; }};")
+    objects.append(f"\t\t{av_watch} /* AVFoundation.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {av_ref} /* AVFoundation.framework */; }};")
     objects.append(
         f"\t\t{watch_embed_build} /* EinkaufWatch.app in Embed Watch Content */ = {{isa = PBXBuildFile; fileRef = {watch_product} /* EinkaufWatch.app */; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};"
     )
@@ -257,6 +263,8 @@ def main() -> None:
     objects.append(f"\t\t{ios_widget_product} /* EinkaufWidgets.appex */ = {{isa = PBXFileReference; explicitFileType = \"wrapper.app-extension\"; includeInIndex = 0; path = EinkaufWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; }};")
     objects.append(f"\t\t{wc_ref} /* WatchConnectivity.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; }};")
     objects.append(f"\t\t{widgetkit_ref} /* WidgetKit.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; }};")
+    objects.append(f"\t\t{speech_ref} /* Speech.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = System/Library/Frameworks/Speech.framework; sourceTree = SDKROOT; }};")
+    objects.append(f"\t\t{av_ref} /* AVFoundation.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; }};")
     for p in ios_swifts + watch_swifts + watch_objs + watch_headers + widget_swifts + ios_widget_swifts + shared_swifts + [fixture, ios_assets, watch_assets]:
         rel = p.relative_to(ROOT).as_posix()
         name = p.name
@@ -305,6 +313,8 @@ def main() -> None:
             \t\t\tfiles = (
             \t\t\t\t{wc_watch} /* WatchConnectivity.framework in Frameworks */,
             \t\t\t\t{widgetkit_watch} /* WidgetKit.framework in Frameworks */,
+            \t\t\t\t{speech_watch} /* Speech.framework in Frameworks */,
+            \t\t\t\t{av_watch} /* AVFoundation.framework in Frameworks */,
             \t\t\t);
             \t\t\trunOnlyForDeploymentPostprocessing = 0;
             \t\t}};
@@ -372,6 +382,8 @@ def main() -> None:
             \t\t\tchildren = (
             \t\t\t\t{wc_ref} /* WatchConnectivity.framework */,
             \t\t\t\t{widgetkit_ref} /* WidgetKit.framework */,
+            \t\t\t\t{speech_ref} /* Speech.framework */,
+            \t\t\t\t{av_ref} /* AVFoundation.framework */,
             \t\t\t);
             \t\t\tname = Frameworks;
             \t\t\tsourceTree = "<group>";
@@ -789,7 +801,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -824,7 +836,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -859,7 +871,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -873,12 +885,15 @@ def main() -> None:
 \t\t\t\t\t"@executable_path/Frameworks",
 \t\t\t\t);
 \t\t\t\tMARKETING_VERSION = 1.0;
+\t\t\t\tOTHER_LDFLAGS = "$(inherited) -framework Speech -framework AVFoundation";
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp;
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
 \t\t\t\tSDKROOT = watchos;
 \t\t\t\tSKIP_INSTALL = YES;
 \t\t\t\tSUPPORTED_PLATFORMS = "watchos watchsimulator";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
+\t\t\t\tSWIFT_ENABLE_EXPLICIT_MODULES = NO;
+\t\t\t\tSWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t\tTARGETED_DEVICE_FAMILY = 4;
 \t\t\t\tWATCHOS_DEPLOYMENT_TARGET = 10.0;
@@ -891,7 +906,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -905,12 +920,15 @@ def main() -> None:
 \t\t\t\t\t"@executable_path/Frameworks",
 \t\t\t\t);
 \t\t\t\tMARKETING_VERSION = 1.0;
+\t\t\t\tOTHER_LDFLAGS = "$(inherited) -framework Speech -framework AVFoundation";
 \t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = net.tschelle.einkauf.watchkitapp;
 \t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
 \t\t\t\tSDKROOT = watchos;
 \t\t\t\tSKIP_INSTALL = YES;
 \t\t\t\tSUPPORTED_PLATFORMS = "watchos watchsimulator";
 \t\t\t\tSWIFT_EMIT_LOC_STRINGS = YES;
+\t\t\t\tSWIFT_ENABLE_EXPLICIT_MODULES = NO;
+\t\t\t\tSWIFT_OBJC_BRIDGING_HEADER = Sources/Watch/EinkaufWatch-Bridging-Header.h;
 \t\t\t\tSWIFT_VERSION = 5.0;
 \t\t\t\tTARGETED_DEVICE_FAMILY = 4;
 \t\t\t\tVALIDATE_PRODUCT = YES;
@@ -924,7 +942,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -954,7 +972,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -985,7 +1003,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1016,7 +1034,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 24;
+\t\t\t\tCURRENT_PROJECT_VERSION = 23;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
