@@ -2,17 +2,17 @@
 import AppIntents
 import Foundation
 
-/// Siri / Kurzbefehl: Phrase mit App-Namen; Siri fragt danach nach Artikeln.
+/// Siri / Kurzbefehl: Phrase mit App-Namen + **besorgen**; Siri fragt danach nach Artikeln.
 struct EinkaufAddItemsIntent: AppIntent {
     static var title: LocalizedStringResource = "Artikel hinzufügen"
     static var description = IntentDescription("Fügt Artikel zur Einkaufsliste hinzu.")
     static var openAppWhenRun = false
 
-    @Parameter(title: "Artikel", requestValueDialog: "Welche Artikel?")
+    @Parameter(title: "Artikel", requestValueDialog: "Was soll ich besorgen?")
     var items: String
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Einkauf \(\.$items)")
+        Summary("Besorgen \(\.$items)")
     }
 
     @MainActor
@@ -30,11 +30,11 @@ struct EinkaufShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: EinkaufAddItemsIntent(),
             phrases: [
-                "\(.applicationName) Einkauf",
-                "Artikel zu \(.applicationName) hinzufügen",
-                "Füge etwas zu \(.applicationName) hinzu",
+                "\(.applicationName) besorgen",
+                "Besorgen mit \(.applicationName)",
+                "\(.applicationName) zum Besorgen",
             ],
-            shortTitle: "Einkauf",
+            shortTitle: "Besorgen",
             systemImageName: "cart.badge.plus"
         )
     }

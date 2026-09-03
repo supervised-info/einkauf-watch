@@ -1567,6 +1567,18 @@ final class SpeechItemSplitterTests: XCTestCase {
         )
     }
 
+    func testStripsLeadingBesorgenTrigger() {
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Besorgen Milch, Butter"), "Milch, Butter")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Besorgen: Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("besorgen:Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Besorgen"), "")
+        XCTAssertEqual(SpeechItemSplitter.strippingTriggerPrefix("Besorgnis Milch"), "Besorgnis Milch")
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTriggerPrefix("Besorgen: Milch, Butter und Eier")),
+            ["Milch", "Butter", "Eier"]
+        )
+    }
+
     func testConfirmationCopy() {
         XCTAssertEqual(SpeechItemSplitter.confirmation(addedCount: 0), "Keine Artikel erkannt.")
         XCTAssertEqual(SpeechItemSplitter.confirmation(addedCount: 1), "1 Artikel hinzugefügt.")
@@ -1597,6 +1609,13 @@ final class SpeechAddItemsTests: XCTestCase {
         let store = ShoppingStore(state: .seed, enableSync: false)
         XCTAssertEqual(store.addItems(fromSpeech: "Einkauf: Milch, Butter und zwei Eier"), 3)
         XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
+        XCTAssertEqual(store.state.listRevision, 1)
+    }
+
+    func testAddItemsFromSpeechStripsBesorgenTrigger() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "Besorgen: Milch und Butter"), 2)
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter"])
         XCTAssertEqual(store.state.listRevision, 1)
     }
 }

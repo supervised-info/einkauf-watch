@@ -30,11 +30,14 @@ enum SpeechItemSplitter {
             .filter { !$0.isEmpty }
     }
 
-    /// Siri liefert den Trigger manchmal nochmal im Parameter. Nur führendes `Einkauf:` / `Einkauf`.
+    /// Siri liefert den Trigger manchmal nochmal im Parameter. Führendes `Einkauf:` / `Einkauf` / `Besorgen:` / `Besorgen`.
     static func strippingTriggerPrefix(_ text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "" }
-        guard let regex = try? NSRegularExpression(pattern: #"^einkauf(?:\s*:\s*|\s+|$)"#, options: [.caseInsensitive]) else {
+        guard let regex = try? NSRegularExpression(
+            pattern: #"^(?:einkauf|besorgen)(?:\s*:\s*|\s+|$)"#,
+            options: [.caseInsensitive]
+        ) else {
             return trimmed
         }
         let range = NSRange(trimmed.startIndex..., in: trimmed)
