@@ -1510,3 +1510,66 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(AppThemePreference.dark.preferredColorScheme, .dark)
     }
 }
+
+final class SpeechItemSplitterTests: XCTestCase {
+    func testCommaUndUndKeepsQuantity() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch, Butter und zwei Eier"),
+            ["Milch", "Butter", "zwei Eier"]
+        )
+    }
+
+    func testSemicolonSowieAndNewlines() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch; Butter sowie Brot"),
+            ["Milch", "Butter", "Brot"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch\nButter\nzwei Eier"),
+            ["Milch", "Butter", "zwei Eier"]
+        )
+    }
+
+    func testTrimCollapseDropEmpty() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "  Milch ,  , Butter  und   zwei   Eier  "),
+            ["Milch", "Butter", "zwei Eier"]
+        )
+        XCTAssertEqual(SpeechItemSplitter.items(from: "  "), [])
+        XCTAssertEqual(SpeechItemSplitter.items(from: ", und ;"), [])
+    }
+
+    func testDoesNotSplitHundertOrGlueUnd() {
+        XCTAssertEqual(SpeechItemSplitter.items(from: "hundert"), ["hundert"])
+        XCTAssertEqual(SpeechItemSplitter.items(from: "MilchundButter"), ["MilchundButter"])
+    }
+
+    func testCaseInsensitiveUnd() {
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch UND Butter"),
+            ["Milch", "Butter"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: "Milch Sowie Butter"),
+            ["Milch", "Butter"]
+        )
+    }
+}
+
+@MainActor
+final class SpeechAddItemsTests: XCTestCase {
+    func testAddItemsFromSpeechSplitsAndGuesses() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "Milch, Butter und zwei Eier"), 3)
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
+        XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
+        XCTAssertGreaterThan(store.state.listRevision, 0)
+    }
+
+    func testAddItemsFromSpeechEmptyAddsNothing() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "  "), 0)
+        XCTAssertTrue(store.state.items.isEmpty)
+        XCTAssertEqual(store.state.listRevision, 0)
+    }
+}
