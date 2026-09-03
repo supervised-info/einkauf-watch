@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-03 (Build 10, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-03 (Build 11, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -109,14 +109,16 @@ Nur auf der **Apple Watch**, nicht auf dem iPhone-Sperrbildschirm. Kein ClockKit
 
 Anzeige wie der Watch-Titel: Fortschritt `doneCount/items.count` als `xx/yy` (`AppState.progressLabel` / `ComplicationSnapshot`). Kurzer Ladenname (`clippedWatchStoreName`) nur, wenn die Family Platz hat. Leere Liste: `0/0` (weiter antippbar); VoiceOver sagt „leer“.
 
+`accessoryCircular` darf **kein** großes System-`Text` (`.title2` / `.title3` / `.title`) für `progressLabel` nutzen: auf der physischen Watch passt das in Infograph/Modular compact nicht, `minimumScaleFactor` rettet accessory-Families oft nicht, und watchOS zeichnet dann ein alleinstehendes **!** statt zu kürzen. Stattdessen Gauge 0…1 (`done/total`, leer = 0) mit kleinem Zentrum (`caption`/`caption2`/ca. 11–13pt, oder zwei Zeilen `xx` und `yy`). `accessoryCorner` ebenso kleine Schrift; Ladenname bleibt im `widgetLabel`. Alle Families: `.containerBackground` (watchOS 10).
+
 Familien, die auf gängigen watchOS-10-Zifferblättern und im Smart Stack vorkommen:
 
 | Family | Inhalt |
 |---|---|
-| `accessoryCircular` | nur `xx/yy` |
+| `accessoryCircular` | Gauge 0…1, kleines `xx/yy` in der Mitte (kein großes Text → sonst „!“) |
 | `accessoryRectangular` | Ladenname + `xx/yy` |
 | `accessoryInline` | Laden + `xx/yy`, sonst nur `xx/yy` (`ViewThatFits`) |
-| `accessoryCorner` | `xx/yy`, Ladenname im `widgetLabel` |
+| `accessoryCorner` | kleines `xx/yy`, Ladenname im `widgetLabel` |
 
 Datenquelle: dieselbe lokale Datei `einkauf-local.json` (`Persistence`, Envelope `kind: "einkauf-local"`). Watch-App und Complication teilen sie über App Group `group.net.tschelle.einkauf` (kein iCloud). Die Watch-App schreibt bei jeder `AppState`-Änderung (Artikel, Häkchen, Laden) und ruft `WidgetCenter.reloadTimelines` auf. iPhone-Änderungen kommen wie bisher per WatchConnectivity in die Watch-App und von dort in Datei + Complication. Fallback-Timeline alle 30 Minuten, falls ein Reload ausbleibt.
 

@@ -283,6 +283,28 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertTrue(snap.isEmpty)
         XCTAssertEqual(snap.inlineText, "Edeka  0/0")
         XCTAssertTrue(snap.accessibilityLabel.contains("leer"))
+        XCTAssertEqual(snap.progress, 0, accuracy: 0.0001)
+        XCTAssertEqual(snap.doneText, "0")
+        XCTAssertEqual(snap.totalText, "0")
+    }
+
+    func testGaugeProgressIsZeroWhenEmptyAndFractionOtherwise() {
+        XCTAssertEqual(ComplicationSnapshot.make(from: .seed).progress, 0, accuracy: 0.0001)
+        var state = AppState.seed
+        state.items = [
+            Item(id: "v", name: "Tasche", dept: "vor", done: true, added: 1, ord: 1),
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 1),
+            Item(id: "n", name: "Pfand", dept: "nach", done: true, added: 3, ord: 1)
+        ]
+        XCTAssertEqual(state.complicationSnapshot.progress, 2.0 / 3.0, accuracy: 0.0001)
+        XCTAssertEqual(state.complicationSnapshot.doneText, "2")
+        XCTAssertEqual(state.complicationSnapshot.totalText, "3")
+        state.items = [
+            Item(id: "a", name: "A", dept: "obst", done: true, added: 1, ord: 1),
+            Item(id: "b", name: "B", dept: "brot", done: true, added: 2, ord: 1)
+        ]
+        XCTAssertEqual(state.complicationSnapshot.progress, 1, accuracy: 0.0001)
+        XCTAssertEqual(state.complicationSnapshot.progressLabel, "2/2")
     }
 
     func testProgressMatchesWatchTitleAndIncludesVorNach() {
