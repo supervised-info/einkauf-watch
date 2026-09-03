@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 25" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 25 / CURRENT_PROJECT_VERSION")
+    if "Build 24" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 24 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -411,8 +411,8 @@ def test_sources() -> None:
         fail("Description.md must require Watch Auge .buttonStyle(.plain)")
     if "gefüll" not in desc:
         fail("Description.md must say Watch Auge is not a filled circular button")
-    if "TextFieldLink" not in desc:
-        fail("Description.md must document Watch TextFieldLink / system text input")
+    if "presentTextInputController" not in desc:
+        fail("Description.md must document Watch system dictation")
     if "SpeechItemSplitter" not in desc:
         fail("Description.md must name SpeechItemSplitter")
     if "NSMicrophoneUsageDescription" not in desc or "NSSpeechRecognitionUsageDescription" not in desc:
@@ -823,10 +823,8 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 25" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 25")
-    if "CURRENT_PROJECT_VERSION = 24" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 24 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 24" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 24")
     if "CURRENT_PROJECT_VERSION = 23" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 23 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 22" in pbx:
@@ -860,10 +858,8 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 25" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 25")
-    if "CURRENT_PROJECT_VERSION: 24" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 24 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 24" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 24")
     if "CURRENT_PROJECT_VERSION: 23" in yml:
         fail("stale CURRENT_PROJECT_VERSION 23 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 22" in yml:
@@ -1076,8 +1072,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 25") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 25")
+    if pbx.count("CURRENT_PROJECT_VERSION = 24") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 24")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1246,16 +1242,8 @@ def test_watch_voice_add() -> None:
     if "import Speech" in watch_dir_txt:
         fail("Watch sources must not import Speech")
 
-    if "presentTextInputController" in voice:
-        fail("Watch voice must not use presentTextInputController (crash-on-dismiss in SwiftUI)")
-    if "visibleInterfaceController" in voice or "rootInterfaceController" in voice or "textInputHost" in voice:
-        fail("Watch voice must not present from a WKInterfaceController host")
-    if "WKApplication" in voice:
-        fail("Watch voice must not look up WKApplication for text input")
-    if "TextFieldLink" not in voice:
-        fail("Watch voice must open SwiftUI TextFieldLink (system text input)")
-    if "onSubmit" not in voice:
-        fail("Watch TextFieldLink must commit via onSubmit")
+    if "presentTextInputController" not in voice:
+        fail("Watch voice must open presentTextInputController (system dictation)")
     if "onLongPressGesture" in voice:
         fail("Watch mic must be tap-to-dictate, not hold-to-talk")
     if "addItems(fromSpeech" not in voice:
@@ -1264,8 +1252,8 @@ def test_watch_voice_add() -> None:
         fail("Watch must show Nichts verstanden. when speech is empty")
     if "WKInterfaceDevice" not in voice or ".play(.success)" not in voice:
         fail("Watch must haptic when items are added")
-    if '"mic"' not in voice:
-        fail("Watch mic must use the mic symbol")
+    if '"mic"' not in voice or "mic.fill" not in voice:
+        fail("Watch mic must use mic / mic.fill")
     if ".buttonStyle(.plain)" not in voice:
         fail("Watch mic Button must use .buttonStyle(.plain)")
     if LARGE_PROGRESS_FONT.search(voice):
@@ -1321,10 +1309,8 @@ def test_watch_voice_add() -> None:
         fail("generate_xcodeproj.py must not pass Speech/AVFoundation OTHER_LDFLAGS")
     if "WatchSpeechRecognizer" in desc or "EinkaufWatch-Bridging-Header" in desc:
         fail("Description.md must not document the ObjC Speech shim")
-    if "TextFieldLink" not in desc:
-        fail("Description.md must document TextFieldLink")
-    if "presentTextInputController" in voice:
-        fail("WatchVoiceAdd must not call presentTextInputController")
+    if "presentTextInputController" not in desc:
+        fail("Description.md must document presentTextInputController")
     if "Hold-to-Talk" not in watch_sec and "nicht gedrückt halten" not in watch_sec:
         fail("Description.md Watch section must say dictation is tap, not hold-to-talk")
     if "Speech.framework" not in watch_sec and "kein `Speech.framework`" not in watch_sec and "ohne" not in desc:
