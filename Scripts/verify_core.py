@@ -207,6 +207,8 @@ def test_sources() -> None:
         "Sources/Shared/KeywordDictionaryBrowse.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
+        "Sources/iOS/HomeWidgetReload.swift",
+        "Sources/iOSWidgets/EinkaufWidgets.swift",
         "Sources/Watch/EinkaufWatch.entitlements",
         "Sources/WatchWidgets/EinkaufWatchWidgets.swift",
         "Sources/WatchWidgets/Info.plist",
@@ -220,8 +222,8 @@ def test_sources() -> None:
     content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
     if "Beispiel-Liste" in content or "loadSampleFromBundle" in content:
         fail("sample list still offered in UI")
-    if "Gesamtliste" not in content:
-        fail("Stamm menu missing Gesamtliste")
+    if "url.scheme == \"einkauf\"" not in content:
+        fail("ContentView onOpenURL must ignore widget tap einkauf:// URLs")
     if "Einstellungen" not in content:
         fail("Einstellungen menu missing")
     if "Geh-Modus" not in content or "Bearbeiten" not in content:
@@ -461,6 +463,10 @@ def test_sources() -> None:
         fail(r"tests must assert groups.map(\.dept) after setStore")
     if "func walkLines" not in models:
         fail("ListGrouping missing walkLines helper")
+    if "func openItemNames" not in models:
+        fail("ListGrouping missing openItemNames for the iPhone widget")
+    if "struct HomeWidgetSnapshot" not in models:
+        fail("Models missing HomeWidgetSnapshot")
     if "enum WalkLine" not in models:
         fail("Models missing WalkLine")
     if "walkListRows" not in models:
@@ -481,13 +487,17 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 9" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 9")
+    if "CURRENT_PROJECT_VERSION = 10" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 10")
+    if "CURRENT_PROJECT_VERSION = 9" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 9 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 9" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 9")
+    if "CURRENT_PROJECT_VERSION: 10" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 10")
+    if "CURRENT_PROJECT_VERSION: 9" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 9 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 8" in yml:
         fail("stale CURRENT_PROJECT_VERSION 8 still in project.yml")
     if not re.search(r'\.navigationTitle\(', watch):
@@ -662,12 +672,100 @@ def test_watch_complication() -> None:
         fail("tests must cover complication progress including vor/nach")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 9") < 6:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 9")
+    if pbx.count("CURRENT_PROJECT_VERSION = 10") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 10")
     ios_info = (ROOT / "Sources/iOS/Info.plist").read_text()
     if "widgetkit-extension" in ios_info:
         fail("iPhone Info.plist must not declare a WidgetKit extension")
     print("watch complication: ok")
+
+
+def test_iphone_widget() -> None:
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+    yml = (ROOT / "project.yml").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    widget = (ROOT / "Sources/iOSWidgets/EinkaufWidgets.swift").read_text()
+    models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    persist = (ROOT / "Sources/Shared/Persistence.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    reload = (ROOT / "Sources/iOS/HomeWidgetReload.swift").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    ios_ent = (ROOT / "Sources/iOS/Einkauf.entitlements").read_text()
+    widget_ent = (ROOT / "Sources/iOSWidgets/EinkaufWidgets.entitlements").read_text()
+    widget_plist = (ROOT / "Sources/iOSWidgets/Info.plist").read_text()
+    app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
+
+    if "net.tschelle.einkauf.widgets" not in pbx or "net.tschelle.einkauf.widgets" not in yml:
+        fail("iPhone widget bundle id missing")
+    if "watchkitapp.widgets" in widget or "EinkaufWatchWidgets" in widget:
+        fail("iPhone widget source must not be the Watch complication")
+    if "EinkaufWidgets" not in pbx or "EinkaufWidgets" not in yml:
+        fail("iPhone widget target missing")
+    if "EinkaufWidgets.appex in Embed Foundation Extensions" not in pbx:
+        fail("iPhone widget extension not embedded in iPhone app")
+    if "com.apple.widgetkit-extension" not in widget_plist:
+        fail("iPhone widget NSExtensionPointIdentifier must be WidgetKit")
+    if "CLKComplication" in widget or "import ClockKit" in widget:
+        fail("iPhone widget must not use ClockKit")
+    if "WidgetKit" not in widget or "StaticConfiguration" not in widget:
+        fail("iPhone widget must be WidgetKit StaticConfiguration")
+    for family in ("systemSmall", "systemMedium"):
+        if family not in widget:
+            fail(f"iPhone widget missing family {family}")
+    for family in ("accessoryCircular", "accessoryRectangular", "accessoryInline", "accessoryCorner"):
+        if family in widget:
+            fail(f"iPhone widget must not include Lock Screen/Watch family {family}")
+    if "systemLarge" in widget:
+        fail("iPhone widget must not add systemLarge unless asked")
+    if "Picker" in widget:
+        fail("iPhone widget must not have a store picker")
+    if "widgetURL" not in widget:
+        fail("iPhone widget tap must set widgetURL")
+    if "progressLabel" not in widget:
+        fail("iPhone widget must show progressLabel xx/yy")
+    if "openItemNames" not in widget:
+        fail("medium widget must list openItemNames")
+    if "struct HomeWidgetSnapshot" not in models:
+        fail("Models missing HomeWidgetSnapshot")
+    if "static let widgetKind" not in models or "EinkaufHome" not in models:
+        fail("HomeWidgetSnapshot missing widgetKind EinkaufHome")
+    if "func make(from state: AppState)" not in models:
+        fail("HomeWidgetSnapshot must be built from AppState")
+    if "func openItemNames" not in models:
+        fail("ListGrouping must expose openItemNames")
+    if "os(iOS)" not in persist or "os(watchOS)" not in persist:
+        fail("Persistence App Group must be used on iOS and watchOS")
+    if "watchGroupFileURL" in persist:
+        fail("Persistence must share appGroupFileURL with iPhone, not Watch-only")
+    if "NSUbiquitous" in persist or "ubiquityContainer" in persist or "CKContainer" in persist:
+        fail("Persistence must not use iCloud")
+    if "group.net.tschelle.einkauf" not in ios_ent or "group.net.tschelle.einkauf" not in widget_ent:
+        fail("iPhone app and widget must share App Group entitlements")
+    if "icloud" in ios_ent.lower() or "icloud" in widget_ent.lower():
+        fail("iPhone entitlements must not add iCloud")
+    if "CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements" not in pbx:
+        fail("iPhone app target must sign with App Group entitlements")
+    if "HomeWidgetReload" not in store or "os(iOS)" not in store:
+        fail("ShoppingStore must reload iPhone widgets after persist")
+    if "WidgetCenter" not in reload or "reloadTimelines" not in reload:
+        fail("HomeWidgetReload must call WidgetCenter.reloadTimelines")
+    if "HomeWidgetSnapshot.widgetKind" not in reload and "EinkaufHome" not in reload:
+        fail("HomeWidgetReload must use HomeWidgetSnapshot.widgetKind")
+    if "HomeWidgetReload.timelines()" not in app:
+        fail("EinkaufApp must reload the iPhone widget when becoming active")
+    if "iPhone-Widget" not in desc or "systemSmall" not in desc or "systemMedium" not in desc:
+        fail("Description.md must document the iPhone widget families")
+    if "nicht auf der Watch" not in desc.lower() and "Nicht auf der Watch" not in desc:
+        fail("Description.md must say the iPhone widget is not on Watch")
+    if "App Group `group.net.tschelle.einkauf`" not in desc:
+        fail("Description.md must name the App Group for the iPhone widget")
+    if "testOpenItemsFollowWalkOrderAndSkipDone" not in tests:
+        fail("tests must cover widget open items in Geh-Modus order")
+    if "testOpenItemLimitAndFullStoreName" not in tests:
+        fail("tests must cover widget open-item limit and full store name")
+    if "TARGETED_DEVICE_FAMILY = 1" not in pbx:
+        fail("iPhone widget/app must stay iPhone-only")
+    print("iphone widget: ok")
 
 
 def main() -> None:
@@ -678,6 +776,7 @@ def main() -> None:
     test_backup_codec_python()
     test_sources()
     test_watch_complication()
+    test_iphone_widget()
     print("ALL OK")
 
 

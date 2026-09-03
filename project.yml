@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.0"
   CODE_SIGN_STYLE: Automatic
-  CURRENT_PROJECT_VERSION: 9
+  CURRENT_PROJECT_VERSION: 10
   MARKETING_VERSION: "1.0"
   DEVELOPMENT_TEAM: WV26CSTDDR
 targets:
@@ -25,6 +25,7 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf
       PRODUCT_NAME: Einkauf
+      CODE_SIGN_ENTITLEMENTS: Sources/iOS/Einkauf.entitlements
       INFOPLIST_FILE: Sources/iOS/Info.plist
       GENERATE_INFOPLIST_FILE: YES
       INFOPLIST_KEY_CFBundleDisplayName: Einkauf
@@ -37,7 +38,11 @@ targets:
     dependencies:
       - target: EinkaufWatch
         embed: true
+      - target: EinkaufWidgets
+        embed: true
+        codeSign: true
       - sdk: WatchConnectivity.framework
+      - sdk: WidgetKit.framework
     scheme:
       testTargets: []
   EinkaufWatch:
@@ -95,6 +100,36 @@ targets:
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework
+  EinkaufWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Sources/iOSWidgets
+      - path: Sources/Shared
+        excludes:
+          - ConnectivitySync.swift
+          - ShoppingStore.swift
+          - Theme.swift
+          - ItemEditing.swift
+          - ListShare.swift
+          - BackupShare.swift
+          - KeywordDictionaryBrowse.swift
+          - StapleApply.swift
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf.widgets
+      PRODUCT_NAME: EinkaufWidgets
+      APPLICATION_EXTENSION_API_ONLY: YES
+      CODE_SIGN_ENTITLEMENTS: Sources/iOSWidgets/EinkaufWidgets.entitlements
+      INFOPLIST_FILE: Sources/iOSWidgets/Info.plist
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_CFBundleDisplayName: Einkauf
+      INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+      TARGETED_DEVICE_FAMILY: "1"
+      SKIP_INSTALL: YES
+      LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
 schemes:
   Einkauf:
     build:
@@ -102,6 +137,7 @@ schemes:
         Einkauf: all
         EinkaufWatch: all
         EinkaufWatchWidgets: all
+        EinkaufWidgets: all
     run:
       config: Debug
       executable: Einkauf

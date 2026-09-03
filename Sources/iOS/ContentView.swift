@@ -62,6 +62,7 @@ struct ContentView: View {
                 }
             }
             .onOpenURL { url in
+                if url.scheme == "einkauf" { return }
                 do {
                     try store.importBackup(from: url)
                 } catch {

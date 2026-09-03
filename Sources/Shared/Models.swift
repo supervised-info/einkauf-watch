@@ -239,6 +239,49 @@ struct ComplicationSnapshot: Equatable, Sendable {
     }
 }
 
+/// Homescreen-Widget (iPhone): gleicher Zähler wie `watchTitle` / `ComplicationSnapshot` (`doneCount/items.count`, inkl. vor/nach).
+struct HomeWidgetSnapshot: Equatable, Sendable {
+    static let widgetKind = "EinkaufHome"
+    static let openURL = URL(string: "einkauf://list")!
+    static let openItemLimit = 5
+
+    var progressLabel: String
+    var storeName: String
+    var isEmpty: Bool
+    var openItemNames: [String]
+
+    static let placeholder = HomeWidgetSnapshot(
+        progressLabel: "2/7",
+        storeName: "Edeka",
+        isEmpty: false,
+        openItemNames: ["Milch", "Äpfel", "Klopapier"]
+    )
+
+    static func make(from state: AppState) -> HomeWidgetSnapshot {
+        HomeWidgetSnapshot(
+            progressLabel: state.progressLabel,
+            storeName: state.currentStore.name,
+            isEmpty: state.items.isEmpty,
+            openItemNames: ListGrouping.openItemNames(
+                items: state.items,
+                store: state.currentStore,
+                limit: openItemLimit
+            )
+        )
+    }
+
+    var accessibilityLabel: String {
+        let store = storeName.isEmpty ? "Einkauf" : storeName
+        if isEmpty {
+            return "\(store), Liste leer"
+        }
+        if openItemNames.isEmpty {
+            return "\(store), \(progressLabel)"
+        }
+        return "\(store), \(progressLabel), als nächstes " + openItemNames.joined(separator: ", ")
+    }
+}
+
 struct DeptGroup: Identifiable, Equatable, Sendable {
     /// SwiftUI-Identität inkl. Laden, damit Abschnitte bei Ladenwechsel als neu gelten.
     var id: String
@@ -325,6 +368,19 @@ enum ListGrouping {
             }
         }
         return lines
+    }
+
+    /// Offene Artikel in Geh-Modus-Reihenfolge (erledigte ausgelassen).
+    static func openItemNames(items: [Item], store: Store, limit: Int) -> [String] {
+        guard limit > 0 else { return [] }
+        var names: [String] = []
+        for group in groups(items: items, store: store) {
+            for item in group.items where !item.done {
+                names.append(item.name)
+                if names.count >= limit { return names }
+            }
+        }
+        return names
     }
 
     /// `id` enthält Laden und Listenposition, nicht nur die Abteilungs-ID.

@@ -56,6 +56,8 @@ PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hie
 
 **Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch. **Complication:** WidgetKit auf dem Zifferblatt zeigt `xx/yy` (plus Ladenname wo Platz); Tippen öffnet die Watch-App. Scheme **EinkaufWatch** auf die physische Watch installieren, danach Komplikation auf dem Zifferblatt hinzufügen.
 
+**iPhone-Widget:** Homescreen klein (Laden + `xx/yy`) und mittel (plus nächste offene Artikel). Tippen öffnet die App **Einkaufsliste**. Scheme **Einkauf** aufs iPhone; Widget über den Homescreen-Widget-Picker hinzufügen. App Group `group.net.tschelle.einkauf` für App und Widget aktivieren, falls Xcode danach fragt.
+
 **Sync:** Jede Änderung speichert lokal und schickt den Stand per WatchConnectivity (`updateApplicationContext`, bei Erreichbarkeit `sendMessage`, sonst `transferUserInfo`). Abhaken mergen nach Zeitstempel; neue Artikel/Import folgen der höheren Listenrevision. iPhone und Watch müssen sich einmal sehen (typisch: Bluetooth, Apps im Vordergrund oder kurz aktiv).
 
 ## Tests
@@ -76,9 +78,9 @@ python3 Scripts/verify_core.py
 
 | | |
 |---|---|
-| Bundle ID | `net.tschelle.einkauf` (Watch: `.watchkitapp`) |
-| Geteilter Code | `Sources/Shared` in beiden Targets |
-| Persistenz | JSON in Application Support |
+| Bundle ID | `net.tschelle.einkauf` (Watch: `.watchkitapp`, Watch-Widget: `.watchkitapp.widgets`, iPhone-Widget: `.widgets`) |
+| Geteilter Code | `Sources/Shared` in den App-Targets |
+| Persistenz | JSON im App Group `group.net.tschelle.einkauf` (kein iCloud) |
 | Abteilungen / Läden | wie die PWA (`edeka`, `aldi`, `rewe`, `lidl`, `dm`, `eigenes`) |
 
 Stamm-Artikel lassen sich unter **Einstellungen** anlegen, entfernen und einer Abteilung zuordnen. **Stamm → Gesamtliste** setzt alle auf die Einkaufsliste (fehlende ergänzen, erledigte wieder öffnen).

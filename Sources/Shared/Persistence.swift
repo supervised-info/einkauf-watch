@@ -2,11 +2,11 @@ import Foundation
 
 enum Persistence {
     private static let fileName = "einkauf-local.json"
-    /// App Group für Watch-App und WidgetKit-Complication (nicht iCloud).
+    /// App Group für iPhone-App, iPhone-Widget, Watch-App und Watch-Complication (nicht iCloud).
     static let appGroupId = "group.net.tschelle.einkauf"
 
     static var fileURL: URL {
-        watchGroupFileURL ?? applicationSupportURL
+        appGroupFileURL ?? applicationSupportURL
     }
 
     private static var applicationSupportURL: URL {
@@ -17,9 +17,9 @@ enum Persistence {
         return folder.appendingPathComponent(fileName)
     }
 
-    /// Nur watchOS: Watch-App und Complication lesen dieselbe `einkauf-local.json`.
-    private static var watchGroupFileURL: URL? {
-        #if os(watchOS)
+    /// iOS + watchOS: App und Widget lesen dieselbe `einkauf-local.json`.
+    private static var appGroupFileURL: URL? {
+        #if os(iOS) || os(watchOS)
         guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else {
             return nil
         }
@@ -35,7 +35,7 @@ enum Persistence {
         if let state = read(fileURL) {
             return state
         }
-        #if os(watchOS)
+        #if os(iOS) || os(watchOS)
         if fileURL != applicationSupportURL, let state = read(applicationSupportURL) {
             save(state)
             return state
