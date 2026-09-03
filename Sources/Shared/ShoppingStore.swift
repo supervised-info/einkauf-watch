@@ -76,45 +76,31 @@ final class ShoppingStore: ObservableObject {
     }
 
     func addItem(_ rawName: String) {
-        guard let item = makeItem(from: rawName, ord: nextOrd()) else { return }
-        state.items.append(item)
-        state.listRevision += 1
-        persistAndSync()
-    }
-
-    /// Watch-Diktat / später iPhone: Splitter-Teile in **einem** State-Update + **einem** `persistAndSync`.
-    @discardableResult
-    func addItems(fromSpeech text: String) -> Int {
-        let names = SpeechItemSplitter.items(from: text)
-        guard !names.isEmpty else { return 0 }
-        var ord = nextOrd()
-        var added: [Item] = []
-        added.reserveCapacity(names.count)
-        for name in names {
-            guard let item = makeItem(from: name, ord: ord) else { continue }
-            added.append(item)
-            ord += 1
-        }
-        guard !added.isEmpty else { return 0 }
-        state.items.append(contentsOf: added)
-        state.listRevision += 1
-        persistAndSync()
-        return added.count
-    }
-
-    private func makeItem(from rawName: String, ord: Double) -> Item? {
         let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return nil }
-        return Item(
+        guard !name.isEmpty else { return }
+        let item = Item(
             id: Item.makeID(),
             name: name,
             dept: DepartmentGuesser.guess(name, mappings: state.mappings),
             done: false,
             added: Date.nowEpochMillis,
-            ord: ord,
+            ord: nextOrd(),
             doneChangedAt: Date.nowEpochMillis
         )
+        state.items.append(item)
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    /// Watch-Diktat / später iPhone: jeden Splitter-Teil per `addItem` (Guesser + Mappings).
+    @discardableResult
+    func addItems(fromSpeech text: String) -> Int {
+        let names = SpeechItemSplitter.items(from: text)
+        for name in names {
+            addItem(name)
+        }
+        return names.count
     }
 
     func renameItem(_ id: String, to rawName: String) {
