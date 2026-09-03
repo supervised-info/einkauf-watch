@@ -2,7 +2,7 @@
 import AppIntents
 import Foundation
 
-/// Siri / Kurzbefehl: „Einkauf …“ / „Einkauf: …“ fügt Artikel zur Liste hinzu.
+/// Siri / Kurzbefehl: Phrase mit App-Namen; Siri fragt danach nach Artikeln.
 struct EinkaufAddItemsIntent: AppIntent {
     static var title: LocalizedStringResource = "Artikel hinzufügen"
     static var description = IntentDescription("Fügt Artikel zur Einkaufsliste hinzu.")
@@ -18,7 +18,8 @@ struct EinkaufAddItemsIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let store = ShoppingStore(enableSync: true)
-        let count = store.addItems(fromSpeech: items)
+        let speech = SpeechItemSplitter.strippingTriggerPrefix(items)
+        let count = store.addItems(fromSpeech: speech)
         let message = SpeechItemSplitter.confirmation(addedCount: count)
         return .result(dialog: IntentDialog(stringLiteral: message))
     }
@@ -29,11 +30,9 @@ struct EinkaufShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: EinkaufAddItemsIntent(),
             phrases: [
-                "Einkauf \(\.$items)",
-                "Einkauf: \(\.$items)",
-                "\(.applicationName) Einkauf \(\.$items)",
-                "\(.applicationName) Einkauf: \(\.$items)",
-                "\(.applicationName) \(\.$items)",
+                "\(.applicationName) Einkauf",
+                "Artikel zu \(.applicationName) hinzufügen",
+                "Füge etwas zu \(.applicationName) hinzu",
             ],
             shortTitle: "Einkauf",
             systemImageName: "cart.badge.plus"
