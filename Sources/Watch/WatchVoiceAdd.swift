@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 /// Tap-Mikro: In-App-TextField-Panel (Scribble/Diktat über die Systemsteuerung des Felds).
 @MainActor
@@ -7,20 +8,13 @@ final class WatchVoiceAddSession: ObservableObject {
 
     private var statusClearTask: Task<Void, Never>?
 
-    func markWaiting() {
-        showStatus("…")
-    }
-
     func commit(_ text: String, store: ShoppingStore) {
-        do {
-            let count = try store.addItemsFromWatchVoice(text)
-            if count > 0 {
-                showStatus(count == 1 ? "1 Artikel." : "\(count) Artikel.")
-            } else {
-                showStatus("Nichts verstanden.")
-            }
-        } catch {
-            showStatus("Speichern fehlgeschlagen.")
+        let count = store.addItems(fromSpeech: text)
+        if count > 0 {
+            WKInterfaceDevice.current().play(.success)
+            showStatus(count == 1 ? "1 Artikel." : "\(count) Artikel.")
+        } else {
+            showStatus("Nichts verstanden.")
         }
     }
 
@@ -58,11 +52,9 @@ struct WatchVoiceAddButton: View {
 }
 
 /// In-App-Feld statt System-Text-Modal: Commit erst nach **Übernehmen**.
-/// Kein Auto-Focus — Nutzer tippt das Feld einmal (weniger System-UI-Wechsel).
 struct WatchDictatePanel: View {
     @Environment(\.einkaufTheme) private var theme
     @Binding var text: String
-    var isCommitting: Bool = false
     var onCancel: () -> Void
     var onCommit: () -> Void
     @FocusState private var focused: Bool
@@ -79,7 +71,6 @@ struct WatchDictatePanel: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .disabled(isCommitting)
                 .accessibilityLabel("Abbrechen")
                 Spacer()
             }
@@ -89,20 +80,16 @@ struct WatchDictatePanel: View {
                 .focused($focused)
                 .font(.caption)
                 .foregroundStyle(theme.ink)
-                .disabled(isCommitting)
 
-            Button("Übernehmen") {
-                focused = false
-                onCommit()
-            }
-            .font(.caption)
-            .buttonStyle(.plain)
-            .foregroundStyle(theme.oxide)
-            .frame(maxWidth: .infinity)
-            .disabled(isCommitting)
-            .accessibilityLabel("Übernehmen")
+            Button("Übernehmen", action: onCommit)
+                .font(.caption)
+                .buttonStyle(.plain)
+                .foregroundStyle(theme.oxide)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Übernehmen")
         }
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onAppear { focused = true }
     }
 }

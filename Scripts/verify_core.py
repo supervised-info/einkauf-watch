@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 27" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 27 / CURRENT_PROJECT_VERSION")
+    if "Build 26" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 26 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -831,10 +831,8 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 27" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 27")
-    if "CURRENT_PROJECT_VERSION = 26" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 26 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 26" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 26")
     if "CURRENT_PROJECT_VERSION = 25" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 25 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 24" in pbx:
@@ -872,10 +870,8 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 27" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 27")
-    if "CURRENT_PROJECT_VERSION: 26" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 26 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 26" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 26")
     if "CURRENT_PROJECT_VERSION: 25" in yml:
         fail("stale CURRENT_PROJECT_VERSION 25 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 24" in yml:
@@ -1094,8 +1090,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 27") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 27")
+    if pbx.count("CURRENT_PROJECT_VERSION = 26") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 26")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1228,38 +1224,16 @@ def test_watch_voice_add() -> None:
 
     if "func addItems(fromSpeech" not in store:
         fail("ShoppingStore missing addItems(fromSpeech:)")
-    if "func addItemsFromWatchVoice" not in store:
-        fail("ShoppingStore missing addItemsFromWatchVoice")
-    if "func appendSpeechItems" not in store:
-        fail("ShoppingStore must batch speech items in appendSpeechItems")
-    append_fn = extract_braced(store, store.find("func appendSpeechItems"), "appendSpeechItems")
-    if "SpeechItemSplitter.items" not in append_fn:
-        fail("appendSpeechItems must split via SpeechItemSplitter")
-    if "addItem(" in append_fn:
-        fail("appendSpeechItems must not loop addItem")
-    if "append(contentsOf:" not in append_fn and "append(contentsOf" not in append_fn:
-        fail("appendSpeechItems must append the batch in one state update")
-    add_items = extract_braced(store, store.find("func addItems(fromSpeech"), "addItems(fromSpeech:)")
+    add_items_idx = store.find("func addItems(fromSpeech")
+    add_items = extract_braced(store, add_items_idx, "addItems(fromSpeech:)")
+    if "SpeechItemSplitter.items" not in add_items:
+        fail("addItems(fromSpeech:) must split via SpeechItemSplitter")
+    if "addItem(" in add_items:
+        fail("addItems(fromSpeech:) must not loop addItem (each call persistAndSync)")
     if add_items.count("persistAndSync()") != 1:
         fail("addItems(fromSpeech:) must persistAndSync once for the whole batch")
-    voice_add_fn = extract_braced(store, store.find("func addItemsFromWatchVoice"), "addItemsFromWatchVoice")
-    if "persistAndSync()" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not persistAndSync immediately")
-    if "persistQuietly()" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not persistQuietly (WidgetKit)")
-    if "WatchComplicationReload" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not reload complications in the commit path")
-    if "broadcast" in voice_add_fn:
-        fail("addItemsFromWatchVoice must not broadcast immediately")
-    if "Persistence.write" not in voice_add_fn:
-        fail("addItemsFromWatchVoice must Persistence.write only")
-    if "scheduleDeferredWatchVoiceFollowUp" not in voice_add_fn:
-        fail("addItemsFromWatchVoice must defer sync/complications")
-    follow = extract_braced(
-        store, store.find("func scheduleDeferredWatchVoiceFollowUp"), "scheduleDeferredWatchVoiceFollowUp"
-    )
-    if "2_000_000_000" not in follow:
-        fail("Watch voice follow-up must wait ~2s")
+    if "append(contentsOf:" not in add_items and "append(contentsOf" not in add_items:
+        fail("addItems(fromSpeech:) must append the batch in one state update")
     if "enum SpeechItemSplitter" not in splitter:
         fail("SpeechItemSplitter missing")
     if r"\s+und\s+" not in splitter or r"\s+sowie\s+" not in splitter:
@@ -1324,31 +1298,12 @@ def test_watch_voice_add() -> None:
         fail("WatchListView must not use containerBackground(for: .navigation)")
     if "onLongPressGesture" in voice:
         fail("Watch mic must be tap-to-dictate, not hold-to-talk")
-    if "addItemsFromWatchVoice" not in voice:
-        fail("Watch dictation must feed addItemsFromWatchVoice")
-    if "addItems(fromSpeech" in voice:
-        fail("Watch dictation must not use addItems(fromSpeech:) persistAndSync path")
+    if "addItems(fromSpeech" not in voice:
+        fail("Watch dictation must feed addItems(fromSpeech:)")
     if "Nichts verstanden." not in voice:
         fail("Watch must show Nichts verstanden. when speech is empty")
-    if "Speichern fehlgeschlagen." not in voice:
-        fail("Watch must show Speichern fehlgeschlagen. on save error")
-    if '"…"' not in voice and '"..."' not in voice:
-        fail("Watch commit must show … while waiting")
-    if "WKInterfaceDevice" in voice or ".play(.success)" in voice:
-        fail("Watch voice commit must not haptic during Übernehmen")
-    if "onAppear { focused = true }" in voice or "focused = true" in voice:
-        fail("Watch dictate must not auto-focus on appear")
-    if "focused = false" not in voice:
-        fail("Übernehmen must clear TextField focus first")
-    commit = extract_braced(watch, watch.find("func commitDictate"), "commitDictate")
-    if "voiceAdd.commit" not in commit:
-        fail("commitDictate must call voiceAdd.commit")
-    if commit.find("showDictate = false") < commit.find("voiceAdd.commit"):
-        fail("commitDictate must not close the panel before add completes")
-    if "850_000_000" not in commit:
-        fail("commitDictate must wait ~0.85s on MainActor after unfocus")
-    if "markWaiting" not in commit:
-        fail("commitDictate must set … status before wait")
+    if "WKInterfaceDevice" not in voice or ".play(.success)" not in voice:
+        fail("Watch must haptic when items are added")
     if '"mic"' not in voice:
         fail("Watch mic must use the mic symbol")
     if ".buttonStyle(.plain)" not in voice:
@@ -1422,14 +1377,6 @@ def test_watch_voice_add() -> None:
         fail("splitter tests must keep zwei Eier as one name")
     if "testAddItemsFromSpeechBatchesOneRevision" not in tests:
         fail("tests must cover batched addItems(fromSpeech:) revision")
-    if "testAddItemsFromWatchVoiceBatchesWithoutThrowing" not in tests:
-        fail("tests must cover addItemsFromWatchVoice batching")
-    if "testAddItemsFromWatchVoiceEmptyAddsNothing" not in tests:
-        fail("tests must cover empty Watch voice adding nothing")
-    if "addItemsFromWatchVoice" not in watch_sec:
-        fail("Description.md Watch section must document addItemsFromWatchVoice")
-    if "0,85s" not in watch_sec and "0.85s" not in watch_sec:
-        fail("Description.md must document Übernehmen unfocus wait")
     print("watch voice add: ok")
 
 
