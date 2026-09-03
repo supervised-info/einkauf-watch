@@ -1693,3 +1693,24 @@ final class SiriPendingAddsTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
     }
 }
+
+final class MakeIDTests: XCTestCase {
+    /// watchOS arm64_32: `Int` is 32-bit; epoch millis (~1.7e12) overflow Int32.max.
+    func testMakeIDDoesNotTrapOnEpochMillis() {
+        let millis = Date().timeIntervalSince1970 * 1000
+        XCTAssertGreaterThan(millis, Double(Int32.max))
+        let t = Int64(millis)
+        XCTAssertGreaterThan(t, Int64(Int32.max))
+        XCTAssertFalse(String(t, radix: 36).isEmpty)
+
+        let items = (0..<8).map { _ in Item.makeID() }
+        let lists = (0..<8).map { _ in SavedList.makeID() }
+        let stores = (0..<8).map { _ in StoreCatalog.makeID() }
+        XCTAssertTrue(items.allSatisfy { $0.hasPrefix("i") && $0.count > 1 })
+        XCTAssertTrue(lists.allSatisfy { $0.hasPrefix("l") && $0.count > 1 })
+        XCTAssertTrue(stores.allSatisfy { $0.hasPrefix("s") && $0.count > 1 })
+        XCTAssertEqual(Set(items).count, items.count)
+        XCTAssertEqual(Set(lists).count, lists.count)
+        XCTAssertEqual(Set(stores).count, stores.count)
+    }
+}

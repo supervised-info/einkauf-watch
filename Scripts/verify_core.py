@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 34" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 34 / CURRENT_PROJECT_VERSION")
+    if "Build 35" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 35 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -718,6 +718,13 @@ def test_sources() -> None:
     if "hideCompleted" in (ROOT / "Sources/Shared/BackupCodec.swift").read_text():
         fail("hideCompleted must not enter BackupCodec / einkauf-backup")
     models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    layout = (ROOT / "Sources/Shared/StoreLayout.swift").read_text()
+    if "Int(Date().timeIntervalSince1970 * 1000)" in models or "Int(Date().timeIntervalSince1970 * 1000)" in layout:
+        fail("makeID must not cast epoch millis to Int (watchOS arm64_32 overflows)")
+    if models.count("Int64(Date().timeIntervalSince1970 * 1000)") < 2:
+        fail("Item/SavedList.makeID must use Int64 for epoch millis")
+    if "Int64(Date().timeIntervalSince1970 * 1000)" not in layout:
+        fail("StoreCatalog.makeID must use Int64 for epoch millis")
     if "hideCompleted" in models:
         fail("hideCompleted must not live in AppState / Models (device-local AppStorage)")
     if "var dept: String" not in models:
@@ -803,8 +810,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 34" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 34")
+    if "CURRENT_PROJECT_VERSION = 35" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 35")
+    if "CURRENT_PROJECT_VERSION = 34" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 34 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 33" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 33 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 32" in pbx:
@@ -858,8 +867,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 34" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 34")
+    if "CURRENT_PROJECT_VERSION: 35" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 35")
+    if "CURRENT_PROJECT_VERSION: 34" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 34 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 33" in yml:
         fail("stale CURRENT_PROJECT_VERSION 33 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 32" in yml:
@@ -1092,8 +1103,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 34") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 34")
+    if pbx.count("CURRENT_PROJECT_VERSION = 35") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 35")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1345,6 +1356,8 @@ def test_siri_app_intents() -> None:
         fail("tests must cover SiriPendingAdds skipping blanks")
     if "testEnqueueThenDrainViaSuiteDefaults" not in tests:
         fail("tests must cover SiriPendingAdds UserDefaults suite queue")
+    if "testMakeIDDoesNotTrapOnEpochMillis" not in tests:
+        fail("tests must cover makeID Int64 epoch millis (watchOS arm64_32)")
     if "testConfirmationCopy" not in tests:
         fail("tests must cover Siri confirmation copy")
 
@@ -1410,6 +1423,8 @@ def test_siri_app_intents() -> None:
         fail("Description.md must say the Watch app drains onAppear and .task")
     if "consumeSiriPendingAdds" not in desc and "beim Aktivwerden" not in desc:
         fail("Description.md must say the Watch app drains the queue when becoming active")
+    if "Int64" not in desc or "arm64_32" not in desc:
+        fail("Description.md must note Watch makeID uses Int64 (arm64_32)")
     if "openAppWhenRun" not in desc:
         fail("Description.md must document openAppWhenRun on Watch vs iOS")
     if "openAppWhenRun = false" not in desc:

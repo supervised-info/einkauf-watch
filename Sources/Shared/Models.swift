@@ -30,7 +30,7 @@ struct SavedList: Identifiable, Equatable, Codable, Sendable {
     var items: [Staple]
 
     static func makeID() -> String {
-        let t = String(Int(Date().timeIntervalSince1970 * 1000), radix: 36)
+        let t = String(Int64(Date().timeIntervalSince1970 * 1000), radix: 36)
         let r = String(UInt64.random(in: 0..<0xFFFFFF), radix: 36)
         return "l\(t)\(r)"
     }
@@ -108,7 +108,7 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
     var sortOrd: Double { ord.isFinite ? ord : added }
 
     static func makeID() -> String {
-        let t = String(Int(Date().timeIntervalSince1970 * 1000), radix: 36)
+        let t = String(Int64(Date().timeIntervalSince1970 * 1000), radix: 36)
         let r = String(UInt64.random(in: 0..<0xFFFFFF), radix: 36)
         return "i\(t)\(r)"
     }
