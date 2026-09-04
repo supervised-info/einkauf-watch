@@ -16,7 +16,7 @@ struct EinkaufComplication: Widget {
                 .widgetURL(ComplicationSnapshot.openURL)
         }
         .configurationDisplayName("Einkauf")
-        .description("Fortschritt der Einkaufsliste, erledigt/gesamt.")
+        .description("Fortschritt der Einkaufsliste, offen/erledigt/gesamt.")
         .supportedFamilies([
             .accessoryCircular,
             .accessoryRectangular,
@@ -76,26 +76,28 @@ struct EinkaufComplicationView: View {
         .accessibilityHint("Öffnet die Einkaufsliste")
     }
 
-    /// Runde Komplikation: Gauge 0…1, kleines `xx` über `yy` in der Mitte.
+    /// Runde Komplikation: Gauge 0…1 (erledigt/gesamt), kleines `oo`/`xx`/`yy` gestapelt.
     /// Kein `.title2` — auf der physischen Watch zeichnet watchOS sonst „!“.
     private var circular: some View {
         Gauge(value: entry.snapshot.progress, in: 0...1) {
             Text(entry.snapshot.progressLabel)
         } currentValueLabel: {
             VStack(spacing: 0) {
+                Text(entry.snapshot.openText)
+                    .lineLimit(1)
                 Text(entry.snapshot.doneText)
                     .lineLimit(1)
                 Text(entry.snapshot.totalText)
                     .lineLimit(1)
             }
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .font(.system(size: 8, weight: .semibold, design: .rounded))
             .monospacedDigit()
         }
         .gaugeStyle(.accessoryCircularCapacity)
         .widgetAccentable()
     }
 
-    /// Rechteck: kurzer Ladenname plus `xx/yy`.
+    /// Rechteck: kurzer Ladenname plus `oo/xx/yy`.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(entry.snapshot.storeName)
@@ -112,7 +114,7 @@ struct EinkaufComplicationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Inline-Zeile: Laden + Zähler, sonst nur `xx/yy`.
+    /// Inline-Zeile: Laden + Zähler, sonst nur `oo/xx/yy`.
     private var inline: some View {
         ViewThatFits(in: .horizontal) {
             Text(entry.snapshot.inlineText)
@@ -121,7 +123,7 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Ecke: kleines `xx/yy` im Bogen, Ladenname am Label.
+    /// Ecke: kleines `oo/xx/yy` im Bogen, Ladenname am Label.
     private var corner: some View {
         Text(entry.snapshot.progressLabel)
             .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -139,7 +141,7 @@ struct EinkaufComplicationView: View {
     EinkaufComplication()
 } timeline: {
     EinkaufTimelineEntry(date: .now, snapshot: .placeholder)
-    EinkaufTimelineEntry(date: .now, snapshot: ComplicationSnapshot(progressLabel: "0/0", storeName: "Edeka", isEmpty: true))
+    EinkaufTimelineEntry(date: .now, snapshot: ComplicationSnapshot(progressLabel: "0/0/0", storeName: "Edeka", isEmpty: true))
 }
 
 #Preview(as: .accessoryRectangular) {

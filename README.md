@@ -54,9 +54,9 @@ PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hie
 
 **iPhone:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen) und **Bearbeiten** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Löschen). Der Knopf zeigt den jeweils anderen Modus, wie in der PWA; `walkMode` bleibt im Backup. Plus Artikel hinzufügen, **Ladenwahl** (eingebaute Seeds plus eigene Läden unter Einstellungen), Stamm, Einstellungen (Hell/Dunkel/System, Creme/Blau), Import/Export/Teilen.
 
-**Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch. **Complication:** WidgetKit auf dem Zifferblatt zeigt `xx/yy` (plus Ladenname wo Platz); Tippen öffnet die Watch-App. Scheme **EinkaufWatch** auf die physische Watch installieren, danach Komplikation auf dem Zifferblatt hinzufügen.
+**Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch. **Complication:** WidgetKit auf dem Zifferblatt zeigt `oo/xx/yy` offen/erledigt/gesamt (plus Ladenname wo Platz); Tippen öffnet die Watch-App. Scheme **EinkaufWatch** auf die physische Watch installieren, danach Komplikation auf dem Zifferblatt hinzufügen.
 
-**iPhone-Widget:** Homescreen klein (Laden + `xx/yy`) und mittel (plus nächste offene Artikel). Tippen öffnet die App **Einkaufsliste**. Scheme **Einkauf** aufs iPhone; Widget über den Homescreen-Widget-Picker hinzufügen. App Group `group.net.tschelle.einkauf` für App und Widget aktivieren, falls Xcode danach fragt.
+**iPhone-Widget:** Homescreen klein (Laden + `oo/xx/yy`) und mittel (plus nächste offene Artikel). Tippen öffnet die App **Einkaufsliste**. Scheme **Einkauf** aufs iPhone; Widget über den Homescreen-Widget-Picker hinzufügen. App Group `group.net.tschelle.einkauf` für App und Widget aktivieren, falls Xcode danach fragt.
 
 **Sync:** Jede Änderung speichert lokal und schickt den Stand per WatchConnectivity (`updateApplicationContext`, bei Erreichbarkeit `sendMessage`, sonst `transferUserInfo`). Abhaken mergen nach Zeitstempel; neue Artikel/Import folgen der höheren Listenrevision. iPhone und Watch müssen sich einmal sehen (typisch: Bluetooth, Apps im Vordergrund oder kurz aktiv).
 
