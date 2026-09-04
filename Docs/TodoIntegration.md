@@ -293,7 +293,7 @@ Gelandet:
 - Siri `TodoAddItemsIntent` in `EinkaufShortcuts` (kein zweiter Provider): Phrasen **To Do**, Nachfrage **„o“**; Watch-Queue `todo.siriPendingAdds`; Einkauf-„besorgen“ unverändert
 - Build 46 (Watch-UI)
 
-### iPhone Bearbeiten + Siri „o“ — erledigt (Build 47)
+### iPhone Edit + Siri „o“ — erledigt (Build 47)
 
 - `TodoAddItemsIntent.requestValueDialog` **„o“** (wie `EinkaufAddItemsIntent`); Phrasen bleiben **To Do**
 - iPhone-Toolbar zwischen Auge und **…**: **Edit** / **Fertig** (Label **Edit**, nicht „Bearbeiten“; `@State`, Default Liste)
