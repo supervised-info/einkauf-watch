@@ -34,6 +34,20 @@ enum TodoImport {
         return try TodoMarkdown.decode(text)
     }
 
+    /// Leere Liste: sofort setzen. Sonst Anhängen/Ersetzen-Text; Aufrufer committet via `importAny`.
+    @MainActor
+    static func offer(_ data: Data, into todos: TodoStore) throws -> String? {
+        let incoming = try decode(data)
+        if todos.state.tasks.isEmpty {
+            try todos.importAny(data, append: false)
+            return nil
+        }
+        return TodoImportPrompt.message(
+            currentCount: todos.state.tasks.count,
+            incomingCount: incoming.tasks.count
+        )
+    }
+
     /// HTML-CSV-Kopf enthält `Aufgabe` und `Prio A`.
     static func looksLikeCSV(_ text: String) -> Bool {
         let first = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""

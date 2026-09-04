@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 55, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 56, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) und zur To-Do-PWA [todo](https://supervised-info.github.io/todo/). HTML-Spec Einkauf: Pages `einkauf/Description_index.md`. Brücke Einkauf: Backup-JSON (`kind: "einkauf-backup"`); To-Do: `format: "todo-v3-json"`. Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -13,15 +13,15 @@ Zwei Domains in **einer** App **Einkauf** (`TabView` **Einkauf | To-Do**, SF-Sym
 
 Sprache nur über **Siri App Intents** für **beide** Domains (kein Watch-Mikro, kein `Speech.framework`): Einkauf **besorgen** + Nachfrage **„o“**; To-Do ein Phrase-Token **Todo**, iPhone **„o“**, Watch ohne `requestValueDialog`. Ein `AppShortcutsProvider` `EinkaufShortcuts`. Siehe **Sprach-Eingabe (Siri)**.
 
-TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. Changelog der To-Do-Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Phase 10 (benannte Listen) ist geliefert (Build 55). Diese Datei beschreibt den gelieferten Stand.
+TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. Changelog der To-Do-Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Phase 10 (benannte Listen) ist geliefert (Build 55). To-Do-JSON-Backup steht unter **Einstellungen** (Build 56). Diese Datei beschreibt den gelieferten Stand.
 
 ## To-Do
 
-Geliefert (Build 55). Begleit-Slice zur HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native scrapt die Website nicht. Brücke: JSON `format: "todo-v3-json"` (`todo-liste.json`) plus MD/CSV (`TodoMarkdown` / `TodoCSV`, Dateien `todo-liste.md` / `todo-liste.csv`, **volle Liste** unabhängig vom Auge und vom Listenfilter). Kein Live-localStorage, kein Netz. **Kein** To-Do-Homescreen-Widget. Benannte Listen (Phase 10) sind nativ gelandet; **Kein** HTML-Parity für Site-Mast — HTML-Listen sind ein separates Follow-up auf derselben JSON-Schema-Erweiterung. Reopen, Sort, Suche, MD/CSV und Listen sind gelandet.
+Geliefert (Build 56). Begleit-Slice zur HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native scrapt die Website nicht. Brücke: JSON `format: "todo-v3-json"` (`todo-liste.json`) plus MD/CSV (`TodoMarkdown` / `TodoCSV`, Dateien `todo-liste.md` / `todo-liste.csv`, **volle Liste** unabhängig vom Auge und vom Listenfilter). Kein Live-localStorage, kein Netz. **Kein** To-Do-Homescreen-Widget. Benannte Listen (Phase 10) sind nativ gelandet; **Kein** HTML-Parity für Site-Mast — HTML-Listen sind ein separates Follow-up auf derselben JSON-Schema-Erweiterung. Reopen, Sort, Suche, MD/CSV, Listen und **Einstellungen → To-Do Backup** (JSON) sind gelandet.
 
 ### Isolation (nicht mit Einkauf mischen)
 
-`TabView` **Einkauf | To-Do** auf iPhone (`EinkaufRoot`) und Watch (`WatchRoot`). Einkaufs-Tab bleibt `ContentView` / `WatchListView` ohne `TodoStore` in der Einkaufs-UI.
+`TabView` **Einkauf | To-Do** auf iPhone (`EinkaufRoot`) und Watch (`WatchRoot`). Einkaufs-Tab bleibt `ContentView` / `WatchListView` ohne `TodoStore` in der Listen-UI. `SettingsSheet` (Einkauf **…** → **Einstellungen**) injiziert `TodoStore` nur für die Sektion **To-Do Backup**.
 
 | | Einkauf | To-Do |
 |---|---|---|
@@ -50,7 +50,7 @@ Toolbar (trailing nach leading-Lupe und Listenmenü):
 - Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`, Default an; Accessibility „Abgeschlossene ausblenden“ / „einblenden“). Aus = erledigte in der Liste und in **Liste teilen** (PDF) verstecken; bleiben in `todo-local.json`. **Nicht** im Backup, **nicht** Watch, **nicht** `einkauf.iphone.hideCompleted`. Alles ausgeblendet: „Abgeschlossene ausgeblendet.“
 - **Edit** / **Fertig** (`@State`, Default Listen-Modus). Toolbar-Label genau **Edit**, nicht „Bearbeiten“.
 - Sort-Menü (`arrow.up.arrow.down`, `todo.iphone.sortKey`, Default Person; nicht Backup, nicht Watch): Person, Prio, Text, Enddatum, Abgeschlossen, Geschlossen.
-- Overflow **…** (`ellipsis.circle`, „Mehr“): Backup importieren / exportieren / teilen, **MD exportieren…** / **MD teilen** / **CSV exportieren…** / **CSV teilen**, **Liste teilen**, Erledigte löschen. `fileImporter` `.json,.md,.markdown,.csv`. MD/CSV dump die **volle Liste** aller Aufgaben (`TodoMarkdown` / `TodoCSV`), nicht Auge und nicht Listenfilter; Listenmitgliedschaft optional (MD-Comment `Liste Name | list:id`, CSV-Spalten `Liste` / `List-ID` nur wenn Listen existieren). Import ohne Listeninfo bleibt gültig. PDF **Liste teilen** folgt der **aktuellen Liste und** `todo.iphone.showCompleted`. Kein Geh-Modus.
+- Overflow **…** (`ellipsis.circle`, „Mehr“): Backup importieren / exportieren / teilen, **MD exportieren…** / **MD teilen** / **CSV exportieren…** / **CSV teilen**, **Liste teilen**, Erledigte löschen. `fileImporter` `.json,.md,.markdown,.csv`. MD/CSV dump die **volle Liste** aller Aufgaben (`TodoMarkdown` / `TodoCSV`), nicht Auge und nicht Listenfilter; Listenmitgliedschaft optional (MD-Comment `Liste Name | list:id`, CSV-Spalten `Liste` / `List-ID` nur wenn Listen existieren). Import ohne Listeninfo bleibt gültig. PDF **Liste teilen** folgt der **aktuellen Liste und** `todo.iphone.showCompleted`. Kein Geh-Modus. Dasselbe JSON-Backup (**Backup importieren…** / **exportieren…** / **teilen**) liegt zusätzlich unter **Einstellungen → To-Do Backup** (`fileImporter` nur `.json`); MD/CSV bleiben nur im To-Do-**…**.
 
 **Listen-Modus vs Edit (Swipe-Löschen nur im Edit-Modus):**
 
@@ -167,7 +167,7 @@ Einkaufsliste speichern: Alert „Einkaufsliste speichern“, Feld „Name, z. B
 
 ## Einstellungen (nur iPhone, Sheet)
 
-Titel **Einstellungen**, Fertig schließt. Native-Sektionen **genau so** (Darstellung ist native-only). Gemeinsames Gerüst mit HTML: Aktueller Laden → Neuer Laden → Ladenweg → Stamm → Gespeicherte Listen → Wörterbuch. HTML schiebt **Alle Läden** JSON zwischen Neuer Laden und Ladenweg; Native hat dort nichts.
+Titel **Einstellungen**, Fertig schließt. Native-Sektionen **genau so** (Darstellung ist native-only; **To-Do Backup** hängt native nach dem HTML-Gerüst). Gemeinsames Gerüst mit HTML: Aktueller Laden → Neuer Laden → Ladenweg → Stamm → Gespeicherte Listen → Wörterbuch. HTML schiebt **Alle Läden** JSON zwischen Neuer Laden und Ladenweg; Native hat dort nichts.
 
 1. **Darstellung** — segmented Hell / Dunkel / System; segmented Creme / Blau. Footer: „Creme ist das Vintage-Papier, Blau die Navy-Palette. System folgt der iPhone-Einstellung für Hell und Dunkel.“ UserDefaults `einkauf.theme` / `einkauf.palette` (nicht im Backup).
 2. **Aktueller Laden** — `ForEach(store.stores)`, Tippen wählt (`setStore`), Checkmark am aktuellen. **Swipe-Delete nur für `builtin == false`**. Builtin: `deleteDisabled`. Bestätigung: „Laden „{Name}“ wirklich löschen?“ Builtin-Seeds werden nie gelöscht (`StoreCatalog.delete` gibt `nil`). Löschen des aktuellen eigenen Ladens fällt auf `edeka` zurück; Seeds mergen.
@@ -178,6 +178,7 @@ Titel **Einstellungen**, Fertig schließt. Native-Sektionen **genau so** (Darste
 7. **Stamm-Artikel** — Name, Dept-Picker, Löschen; Anlegen „Milch, Butter…“. Footer zu Gesamtliste. Kein Hoch/Runter der Stamm-Zeilen.
 8. **Gespeicherte Listen** — leer: „Noch keine gespeicherten Listen.“ Sonst Tippen = `applySavedList` (auffüllen). Swipe-Delete mit Confirm „Gespeicherte Liste „{Name}“ wirklich löschen?“ Footer: Anlass-Listen, Tippen füllt auf ohne zu ersetzen, Wischen löscht.
 9. **Wörterbuch** — NavigationLink, lokal `KeywordDictionary.source`, Suche „Wort suchen“ filtert **Meine Zuordnungen** und die mitgelieferten Wörter. Oben Sektion **Meine Zuordnungen**: Zeilen aus `state.mappings` (Key = `mappingKey`/Canon ohne Menge + Dept-Picker alle `Department.allCases`). Swipe-Delete ruft `removeMapping`. Leer: „Noch keine eigenen Zuordnungen. Abteilung im Bearbeiten-Modus ändern — dann erscheint der Name hier.“ Optional **Hinzufügen** (Name + Dept → `setMapping` / `mappingKey(name)`). Darunter die mitgelieferten Gruppen nur lesen. Footer: mitgelieferte Wortliste ist fest; eigene Zuordnungen stehen im Backup als `mappings` und gewinnen beim nächsten Eintragen; Sonderregeln (TK, Eistee, Schorle, Chips, Eis) stehen nicht in dieser Liste; Korrekturen unter dem Artikelnamen (ohne Menge); das Wörterbuch selbst ändert sich nicht. Kein Netz. `setMapping` / `removeMapping` persistieren und WatchConnectivity wie andere State-Änderungen (inkl. Home-Widget-Reload).
+10. **To-Do Backup** — native-only (nicht im HTML-Sheet). **Backup importieren…** / **Backup exportieren…** / **Backup teilen** für JSON `format: "todo-v3-json"` (`todo-liste.json`). `fileImporter` nur `.json`. Derselbe `TodoImport.offer` / `TodoStore.importAny`-Pfad wie To-Do-**…** und `onOpenURL`: leer → direkt setzen, sonst **Anhängen** / **Ersetzen**. Einkauf-JSON (`kind: "einkauf-backup"`) wird mit deutschem Fehler abgelehnt, nie in `ShoppingStore` geschrieben. MD/CSV bleiben im To-Do-Overflow. To-Do-**…** Backup importieren bleibt.
 
 Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` (iPhone-Darstellung synct nicht).
 
@@ -408,7 +409,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 
 **Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf oo/xx/yy, Erledigte ausblendbar, WidgetKit-Complication nur offene Anzahl bzw. „erledigt“, kein Picker/Edit/Share, **kein** In-App-Mikro); iPhone-Geh-Modus mit eigenem Auge (Edit ungefiltert); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **Siri / App Intents** für Einkauf (**besorgen** + „o“) und To-Do (**Todo**, iPhone „o“, Watch ohne `requestValueDialog`); **PDF Liste teilen** folgt dem iPhone-Auge (`einkauf.iphone.hideCompleted` bzw. To-Do `todo.iphone.showCompleted`), leere quadratische Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar; **To-Do**-Tab, Watch-Geh-To-Do, Complication **To Do**. TestFlight nicht erforderlich. Native-`guess` wertet Nutzer-Mappings vor Sonderregeln/Keywords aus (HTML-Reihenfolge kann abweichen).
 
-Native To-Do liefert MD/CSV wie HTML (Phase 8, **volle Liste**) und benannte Listen (Phase 10, Build 55). **Kein** HTML-Parity für Site-Mast; HTML-Listen folgen dem hier definierten `todo-v3-json`-Schema in einem separaten Pages-PR.
+Native To-Do liefert MD/CSV wie HTML (Phase 8, **volle Liste**) und benannte Listen (Phase 10, Build 55). To-Do-JSON-Backup zusätzlich unter **Einstellungen → To-Do Backup** (Build 56). **Kein** HTML-Parity für Site-Mast; HTML-Listen folgen dem hier definierten `todo-v3-json`-Schema in einem separaten Pages-PR.
 
 **Brücke:** Einkauf nur Backup-JSON (`kind: "einkauf-backup"`, inkl. `savedLists`); To-Do JSON `format: "todo-v3-json"` plus MD/CSV-Dateien (`todo-liste.md` / `todo-liste.csv`). Kein Live-localStorage-Sync. Unbekannte Felder jeweils ignorieren. App scrapt die Website nicht.
 
@@ -435,7 +436,7 @@ Native To-Do liefert MD/CSV wie HTML (Phase 8, **volle Liste**) und benannte Lis
 
 - [ ] Bundle `net.tschelle.einkauf`, Watch eingebettet, Geh-Modus Watch, iPhone Geh + Edit mit Cross-Dept-Drag.
 - [ ] Seeds + Custom; Neuer Laden kopiert das Layout des ausgewählten Ladens; Swipe-Delete nur Custom in Einstellungen → Aktueller Laden; Builtins nie weg.
-- [ ] Settings-Reihenfolge: Darstellung (Hell/Dunkel/System, Creme/Blau) → Aktueller Laden → Neuer Laden → Ladenweg (`sonstiges` movable, `vor`/`nach` locked) → Abteilungen hinzufügen → Reset → Stamm → Gespeicherte Listen (Apply + Swipe-Delete) → Wörterbuch.
+- [ ] Settings-Reihenfolge: Darstellung (Hell/Dunkel/System, Creme/Blau) → Aktueller Laden → Neuer Laden → Ladenweg (`sonstiges` movable, `vor`/`nach` locked) → Abteilungen hinzufügen → Reset → Stamm → Gespeicherte Listen (Apply + Swipe-Delete) → Wörterbuch → **To-Do Backup** (JSON import/export/teilen; Einkauf-JSON abgelehnt).
 - [ ] `ListGrouping` sanitized inkl. `sonstiges`-Position; Rest-Depts mit Items nach dem letzten Nicht-`nach`-Gang; kein Remap von `item.dept` nach `sonstiges`.
 - [ ] `DepartmentGuesser` + `KeywordDictionary.source` lokal, kein Netz; Nutzer-Mapping vor Sonderregeln/Keywords.
 - [ ] Wörterbuch **Meine Zuordnungen**: View/Edit/Delete von `mappings` (Picker, Swipe-Delete, optional Hinzufügen); mitgelieferte Liste nur lesen; Backup-Feld bleibt `mappings`.

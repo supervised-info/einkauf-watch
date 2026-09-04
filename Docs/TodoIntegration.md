@@ -1,6 +1,6 @@
 # To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04, Build 55. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
+Stand: 2026-09-04, Build 56. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). **Einstellungen** hat To-Do-JSON-Backup (Import/Export/Teilen). `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen bleiben die Wahrheit. HTML-PWA [todo](https://supervised-info.github.io/todo/) ist die Produktreferenz für Task-Shape und JSON-Brücke; natives To-Do-Verhalten steht in `Description.md`.
 
@@ -24,7 +24,7 @@ Nicht das Ziel: eine zweite App, ein zweites Bundle, ein zweites App Group, oder
 |---|---|
 | HTML-PWA | [todo](https://supervised-info.github.io/todo/) |
 | Spec | Pages-Repo `supervised-info/supervised-info.github.io`, Datei [`todo/Description_index.md`](https://github.com/supervised-info/supervised-info.github.io/blob/main/todo/Description_index.md) |
-| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 53) |
+| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 56) |
 
 Native scrapt die Website nicht. Brücke ist eine **eigene** JSON-Datei (siehe Backup), analog zur Einkauf-Brücke `kind: "einkauf-backup"`.
 
@@ -111,7 +111,7 @@ EinkaufApp
     Tab 2 „To-Do“   → TodoListView (eigene NavigationStack)
 ```
 
-Tab-Labels **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`. Einkaufs-Toolbar, Overflow, Einstellungen, Add-Leiste bleiben **im Einkaufs-Tab**. To-Do hat ein **eigenes** Overflow (Import/Export/Liste teilen), kein gemeinsames „…“ das beide Domains anfasst.
+Tab-Labels **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`. Einkaufs-Toolbar, Overflow, Einstellungen, Add-Leiste bleiben **im Einkaufs-Tab**. To-Do hat ein **eigenes** Overflow (Import/Export/Liste teilen), kein gemeinsames „…“ das beide Domains anfasst. **Einstellungen** (`SettingsSheet`, geöffnet vom Einkauf-**…**) hat zusätzlich die Sektion **To-Do Backup**: JSON **Backup importieren…** / **exportieren…** / **teilen** über `TodoStore` (`TodoImport.offer` / `importAny`). MD/CSV bleiben nur im To-Do-**…**. Einkauf-JSON wird dort abgelehnt, nie in `ShoppingStore` geschrieben.
 
 `onOpenURL` auf `EinkaufRoot` (`IncomingJSON`): Envelope entscheidet (`einkauf-backup` vs `todo-v3-json`). Widget-URL `einkauf://list` = Einkaufs-Tab, `einkauf://todo` = To-Do-Tab.
 
@@ -383,6 +383,17 @@ Backward-compatible optionales `lists` / `listId` auf `format: "todo-v3-json"` (
 - **Kein** Listen-UI auf der Watch. **Kein** HTML in diesem PR — Schema hier, Pages-Follow-up separat.
 - Build 55
 
+### Einstellungen: To-Do JSON-Backup — erledigt (Build 56)
+
+To-Do-JSON (`format: "todo-v3-json"`) ist unter **Einstellungen** erreichbar, denselben Ort an dem Nutzer Backup/Import suchen:
+
+- `SettingsSheet` injiziert `@EnvironmentObject TodoStore` (bereits von `EinkaufRoot` / `EinkaufApp` bereitgestellt)
+- Sektion **To-Do Backup** nach Wörterbuch: **Backup importieren…** (`fileImporter` `.json`), **Backup exportieren…**, **Backup teilen**
+- Derselbe Anhängen/Ersetzen-Flow wie To-Do-**…** (`TodoImport.offer` / `todos.importAny`)
+- Einkauf-Backup-Dateien: klarer deutscher Fehler (`TodoCodecError.einkaufFile`); nie in `ShoppingStore`
+- To-Do-**…** Backup importieren bleibt; MD/CSV bleiben dort
+- Build 56
+
 ---
 
 ## Historisch: Non-Goals für Phase 3
@@ -468,3 +479,4 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 8: iPhone MD/CSV Export/Import (volle Liste), Watch ohne MD/CSV-UI, Build 53.
 - [x] Phase 9: `Description.md` auf den gelieferten Stand inkl. **Edit**-Labels; optionale weitere Politur kein Blocker.
 - [x] Phase 10: benannte Listen `lists`/`listId`, Filter Alle, PDF+Siri+Watch, Build 55. Isolation bleibt (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Einstellungen: To-Do Backup import/export/teilen (JSON), Build 56. Einkauf-JSON abgelehnt. To-Do-**…** Import bleibt.

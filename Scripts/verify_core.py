@@ -443,8 +443,10 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 55" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 55 / CURRENT_PROJECT_VERSION")
+    if "Build 56" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 56 / CURRENT_PROJECT_VERSION")
+    if "To-Do Backup" not in desc:
+        fail("Description.md must document Einstellungen To-Do Backup")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -588,10 +590,11 @@ def test_sources() -> None:
         "Stamm-Artikel",
         "Gespeicherte Listen",
         "Wörterbuch",
+        "To-Do Backup",
     ]
     section_pos = [settings.find(label) for label in section_order]
     if any(p < 0 for p in section_pos) or section_pos != sorted(section_pos):
-        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch")
+        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch, To-Do Backup")
     neuer_idx = settings.find("Neuer Laden")
     ladenweg_idx = settings.find("Ladenweg ·")
     store_list_start = settings.find("ForEach(store.stores)")
@@ -616,6 +619,28 @@ def test_sources() -> None:
         fail("Einstellungen saved list rows must applySavedList")
     if "Wörterbuch" not in settings:
         fail("Einstellungen missing Wörterbuch")
+    if "To-Do Backup" not in settings:
+        fail("Einstellungen missing To-Do Backup")
+    if 'Button("Backup importieren…")' not in settings:
+        fail("Einstellungen To-Do Backup must offer Backup importieren…")
+    if 'Button("Backup exportieren…")' not in settings:
+        fail("Einstellungen To-Do Backup must offer Backup exportieren…")
+    if 'Button("Backup teilen")' not in settings:
+        fail("Einstellungen To-Do Backup must offer Backup teilen")
+    if "TodoStore" not in settings or "todos.importAny" not in settings:
+        fail("Einstellungen To-Do Backup must inject TodoStore and call importAny")
+    if "TodoImport.offer" not in settings:
+        fail("Einstellungen To-Do import must reuse TodoImport.offer")
+    if "Anhängen" not in settings or "Ersetzen" not in settings:
+        fail("Einstellungen To-Do import must offer Anhängen vs Ersetzen")
+    if 'defaultFilename: "todo-liste"' not in settings:
+        fail("Einstellungen To-Do export default filename must be todo-liste")
+    if "allowedContentTypes: [.json]" not in settings:
+        fail("Einstellungen To-Do import must be JSON-only")
+    if "MD exportieren" in settings or "CSV exportieren" in settings:
+        fail("Einstellungen must not grow To-Do MD/CSV export")
+    if "store.importBackup" in settings or "BackupCodec" in settings:
+        fail("Einstellungen To-Do import must never write into ShoppingStore / BackupCodec")
     if "KeywordDictionaryView" not in settings:
         fail("Einstellungen Wörterbuch row must open KeywordDictionaryView")
     if "NavigationLink" not in settings:
@@ -919,8 +944,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 55" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 55")
+    if "CURRENT_PROJECT_VERSION = 56" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 56")
+    if "CURRENT_PROJECT_VERSION = 55" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 55 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 54" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 54 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 53" in pbx:
@@ -1016,8 +1043,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 55" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 55")
+    if "CURRENT_PROJECT_VERSION: 56" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 56")
+    if "CURRENT_PROJECT_VERSION: 55" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 55 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 54" in yml:
         fail("stale CURRENT_PROJECT_VERSION 54 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 53" in yml:
@@ -1321,8 +1350,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 55") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 55")
+    if pbx.count("CURRENT_PROJECT_VERSION = 56") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 56")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1987,8 +2016,8 @@ def test_todo_store() -> None:
         fail("TodoListView must offer backup import/export")
     if "commaSeparatedText" not in todo_ui or 'filenameExtension: "md"' not in todo_ui:
         fail("To-Do fileImporter must accept JSON, Markdown and CSV")
-    if "TodoImport.decode" not in todo_ui or "todos.importAny" not in todo_ui:
-        fail("To-Do import must route JSON/MD/CSV through TodoImport/importAny")
+    if "TodoImport.offer" not in todo_ui or "todos.importAny" not in todo_ui:
+        fail("To-Do import must route JSON/MD/CSV through TodoImport.offer/importAny")
     if "Backup importieren" not in todo_ui or "Backup exportieren" not in todo_ui:
         fail("To-Do overflow must list Backup importieren/exportieren")
     if "todo-liste" not in todo_ui:
@@ -2011,6 +2040,8 @@ def test_todo_store() -> None:
         fail("TodoStore missing importBackup/exportBackup")
     if "func exportMarkdown" not in store or "func exportCSV" not in store or "func importAny" not in store:
         fail("TodoStore missing exportMarkdown/exportCSV/importAny")
+    if "static func offer" not in (ROOT / "Sources/Shared/TodoImport.swift").read_text():
+        fail("TodoImport must expose offer for Settings and To-Do overflow")
     if "NavigationStack" not in todo_ui:
         fail("TodoListView needs its own NavigationStack")
     if "Hinzufügen" not in todo_ui or "Neue Aufgabe" not in todo_ui:
@@ -2213,6 +2244,10 @@ def test_todo_store() -> None:
         fail("TodoIntegration.md must mark Phase 8 done at Build 53")
     if "erledigt (Build 55)" not in plan or "listId" not in plan:
         fail("TodoIntegration.md must mark Phase 10 Listen done at Build 55")
+    if "erledigt (Build 56)" not in plan or "To-Do Backup" not in plan:
+        fail("TodoIntegration.md must mark Einstellungen To-Do Backup done at Build 56")
+    if "testOfferAppliesWhenEmptyOtherwiseAsksAndRejectsEinkauf" not in tests:
+        fail("tests must cover TodoImport.offer empty/append-choice/einkauf reject")
     if "var listId: String?" not in models:
         fail("TodoTask must have optional listId")
     if "struct TodoNamedList" not in models or "var lists: [TodoNamedList]" not in models:
