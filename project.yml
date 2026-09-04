@@ -89,6 +89,7 @@ targets:
           - StapleApply.swift
           - EinkaufAddItemsIntent.swift
           - SiriPendingAdds.swift
+          - TodoStore.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf.watchkitapp.widgets
       PRODUCT_NAME: EinkaufWatchWidgets
@@ -121,6 +122,7 @@ targets:
           - StapleApply.swift
           - EinkaufAddItemsIntent.swift
           - SiriPendingAdds.swift
+          - TodoStore.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf.widgets
       PRODUCT_NAME: EinkaufWidgets

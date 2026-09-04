@@ -12,7 +12,7 @@ TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedac
 
 ## Geplant / WIP
 
-Zweiter Reiter **To-Do** (iPhone + Watch Geh-Modus) ist **nicht** Teil dieses Stands und ändert an der Einkaufs-Spec oben nichts. Plan und Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Diese Spec erst in Phase 9 nachziehen, wenn Verhalten landet.
+Zweiter Reiter **To-Do** (iPhone + Watch Geh-Modus) ist **nicht** Teil dieses Stands — keine Tab-UI, die App zeigt weiter nur die Einkaufsliste. Phase 2 (Models, `TodoStore`, `todo-local.json`) liegt im Repo; Plan: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Diese Spec erst in Phase 9 nachziehen, wenn Verhalten landet.
 
 ## Datei-Ort, Targets, Bundle
 
