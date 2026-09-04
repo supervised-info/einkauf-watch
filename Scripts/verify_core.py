@@ -422,8 +422,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 48" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 48 / CURRENT_PROJECT_VERSION")
+    if "Build 49" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 49 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -897,8 +897,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 48" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 48")
+    if "CURRENT_PROJECT_VERSION = 49" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 49")
+    if "CURRENT_PROJECT_VERSION = 48" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 48 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 47" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 47 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 46" in pbx:
@@ -980,8 +982,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 48" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 48")
+    if "CURRENT_PROJECT_VERSION: 49" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 49")
+    if "CURRENT_PROJECT_VERSION: 48" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 48 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 47" in yml:
         fail("stale CURRENT_PROJECT_VERSION 47 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 46" in yml:
@@ -1271,8 +1275,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 48") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 48")
+    if pbx.count("CURRENT_PROJECT_VERSION = 49") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 49")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1486,7 +1490,7 @@ def test_siri_app_intents() -> None:
         fail("App Shortcut phrases must not use generic Einkauf as the only cue")
     if 'shortTitle: "Besorgen"' not in intent:
         fail("App Shortcut shortTitle must be Besorgen")
-    if 'requestValueDialog: "o")' not in intent:
+    if 'requestValueDialog: "o"' not in intent:
         fail("requestValueDialog should ask o")
     if 'requestValueDialog: "ok"' in intent:
         fail("stale requestValueDialog ok")
@@ -1627,15 +1631,23 @@ def test_siri_app_intents() -> None:
         fail("TodoAddItemsIntent.swift must not declare AppShortcutsProvider")
     if "intent: TodoAddItemsIntent()" not in intent:
         fail("EinkaufShortcuts must include TodoAddItemsIntent")
-    if r'"\(.applicationName) To Do"' not in intent:
-        fail("To-Do App Shortcut phrase applicationName To Do missing")
-    if r'"To Do mit \(.applicationName)"' not in intent:
-        fail("To-Do App Shortcut phrase To Do mit applicationName missing")
-    if r'"\(.applicationName) zum To Do"' not in intent:
-        fail("To-Do App Shortcut phrase applicationName zum To Do missing")
+    if r'"\(.applicationName) To Do"' in intent or r'"To Do mit \(.applicationName)"' in intent:
+        fail("To-Do App Shortcut phrases must use single-token Todo, not two-token To Do")
+    if r'"\(.applicationName) zum To Do"' in intent:
+        fail("To-Do App Shortcut phrases must use single-token Todo, not two-token To Do")
+    if r'"\(.applicationName) Todo"' not in intent:
+        fail("To-Do App Shortcut phrase applicationName Todo missing")
+    if r'"Todo mit \(.applicationName)"' not in intent:
+        fail("To-Do App Shortcut phrase Todo mit applicationName missing")
+    if r'"\(.applicationName) zum Todo"' not in intent:
+        fail("To-Do App Shortcut phrase applicationName zum Todo missing")
+    if r'"\(.applicationName) Aufgaben"' not in intent:
+        fail("To-Do App Shortcut alternate phrase applicationName Aufgaben missing")
     todo_shortcut = intent.split("intent: TodoAddItemsIntent()", 1)[-1]
     todo_phrases = todo_shortcut.split("phrases:", 1)[-1].split("shortTitle", 1)[0]
-    if todo_phrases.count("applicationName") < 3:
+    if "To Do" in todo_phrases:
+        fail("To-Do App Shortcut phrases must not contain two-token To Do")
+    if todo_phrases.count("applicationName") < 4:
         fail("each To-Do App Shortcut phrase must include applicationName")
     if ".$items" in todo_phrases:
         fail("To-Do App Shortcut phrases must not interpolate String $items")
@@ -1645,6 +1657,12 @@ def test_siri_app_intents() -> None:
         fail("To-Do parameterSummary must not use multi-word To Do prefix (Siri truncates to first word)")
     if r'Summary("Todo \(\.$items)")' not in todo_intent:
         fail("To-Do parameterSummary must be single-token Todo like Besorgen")
+    if "IntentInputOptions" not in intent or "IntentInputOptions" not in todo_intent:
+        fail("both intents must set String.IntentInputOptions(capitalizationType: .sentences, multiline: true)")
+    if "capitalizationType: .sentences" not in intent or "multiline: true" not in intent:
+        fail("EinkaufAddItemsIntent must use sentence capitalization and multiline inputOptions")
+    if "capitalizationType: .sentences" not in todo_intent or "multiline: true" not in todo_intent:
+        fail("TodoAddItemsIntent must use sentence capitalization and multiline inputOptions")
     if 'requestValueDialog: "o"' not in todo_intent:
         fail("To-Do requestValueDialog must be o")
     if 'requestValueDialog: "T"' in todo_intent:
@@ -1702,6 +1720,10 @@ def test_siri_app_intents() -> None:
         fail("tests must keep multi-word To-Do phrases around und")
     if "ein Token" not in desc and "ein-tokenig" not in desc:
         fail("Description.md must document single-token To-Do parameterSummary")
+    if "Einkauf Todo" not in desc:
+        fail("Description.md must document spoken Hey Siri, Einkauf Todo")
+    if "zwei Inhaltstokens" not in desc and "zwei Phrase-Tokens" not in desc:
+        fail("Description.md must explain Siri two-token phrase capture limit")
 
     if "consumeSiriPendingAdds" not in watch_app:
         fail("Watch app must drain Siri pending queue when becoming active")

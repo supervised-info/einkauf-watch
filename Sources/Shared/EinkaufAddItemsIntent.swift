@@ -9,7 +9,11 @@ struct EinkaufAddItemsIntent: AppIntent {
     /// Watch und iPhone: Siri nicht zum App-Start zwingen — `true` bricht auf der Watch oft still ab.
     static var openAppWhenRun = false
 
-    @Parameter(title: "Artikel", requestValueDialog: "o")
+    @Parameter(
+        title: "Artikel",
+        inputOptions: String.IntentInputOptions(capitalizationType: .sentences, multiline: true),
+        requestValueDialog: "o"
+    )
     var items: String
 
     static var parameterSummary: some ParameterSummary {
@@ -40,7 +44,7 @@ struct EinkaufAddItemsIntent: AppIntent {
 }
 
 /// Apple erlaubt nur **einen** `AppShortcutsProvider` pro App.
-/// Besorgen → `EinkaufAddItemsIntent`; To Do → `TodoAddItemsIntent`.
+/// Besorgen → `EinkaufAddItemsIntent`; Todo (ein Token) → `TodoAddItemsIntent`.
 struct EinkaufShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -56,9 +60,10 @@ struct EinkaufShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: TodoAddItemsIntent(),
             phrases: [
-                "\(.applicationName) To Do",
-                "To Do mit \(.applicationName)",
-                "\(.applicationName) zum To Do",
+                "\(.applicationName) Todo",
+                "Todo mit \(.applicationName)",
+                "\(.applicationName) zum Todo",
+                "\(.applicationName) Aufgaben",
             ],
             shortTitle: "To Do",
             systemImageName: "checklist"
