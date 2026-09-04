@@ -2162,8 +2162,12 @@ def test_todo_store() -> None:
         fail("TodoTask must be Identifiable by uid for sheet(item:)")
     if "Hashable" not in task_decl:
         fail("TodoTask must be Hashable for sheet(item:)")
-    if "Bearbeiten" not in desc or "Fertig" not in desc or "TodoEditSheet" not in desc:
-        fail("Description.md must document To-Do Bearbeiten / Fertig and TodoEditSheet")
+    if "**Edit**" not in desc or "Fertig" not in desc or "TodoEditSheet" not in desc:
+        fail("Description.md must document To-Do Edit / Fertig and TodoEditSheet")
+    if "**Bearbeiten** / **Fertig**" in desc:
+        fail("Description.md To-Do toolbar must be Edit / Fertig, not Bearbeiten")
+    if "Geh-Modus** / **Bearbeiten**" in desc or "**Bearbeiten** / **Geh-Modus**" in desc:
+        fail("Description.md Einkauf toolbar must be Edit / Geh-Modus, not Bearbeiten")
     if "func add(" not in store or "func toggle(" not in store or "func delete(" not in store:
         fail("TodoStore missing add/toggle/delete")
     if "func reopen(" not in store:

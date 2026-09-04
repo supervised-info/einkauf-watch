@@ -233,7 +233,7 @@ Gelandet:
 
 - iPhone `TabView`: Tab **Einkauf** = unveränderte `ContentView`; Tab **To-Do** = `TodoListView` in eigener `NavigationStack`
 - `EinkaufApp` hält `ShoppingStore` und `TodoStore` (`environmentObject`)
-- To-Do v1: Text anlegen, Toggle `completed`, Tippen benennt um; Swipe-Löschen erst im Bearbeiten-Modus (Build 50)
+- To-Do v1: Text anlegen, Toggle `completed`, Tippen benennt um; Swipe-Löschen erst im Edit-Modus (Build 50; Toolbar-Label **Edit**)
 - SF-Symbols `basket` / `checklist`
 - Person / Prio / Datum leer (Phase 4)
 - **Kein** Watch-Tab, **kein** Backup-Menü, **kein** To-Do-WatchConnectivity
@@ -296,9 +296,9 @@ Gelandet:
 ### iPhone Bearbeiten + Siri „o“ — erledigt (Build 47)
 
 - `TodoAddItemsIntent.requestValueDialog` **„o“** (wie `EinkaufAddItemsIntent`); Phrasen bleiben **To Do**
-- iPhone-Toolbar zwischen Auge und **…**: **Bearbeiten** / **Fertig** (`@State`, Default Liste)
+- iPhone-Toolbar zwischen Auge und **…**: **Edit** / **Fertig** (Label **Edit**, nicht „Bearbeiten“; `@State`, Default Liste)
 - Listen-Modus: Checkbox toggelt `completed`; **kein** Swipe-Löschen (`.deleteDisabled`, trailing `EmptyView()`, `.id("todo-browse")`). Text-Tipp und Swipe **Bearbeiten** öffnen `TodoEditSheet`
-- Bearbeiten-Modus: Swipe-Löschen nur via `.onDelete` (`.id("todo-edit")`); Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance; Add-Leiste Person/Prio bleibt
+- Edit-Modus: Swipe-Löschen nur via `.onDelete` (`.id("todo-edit")`); Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance; Add-Leiste Person/Prio bleibt
 - `TodoTask` ist `Identifiable`/`Hashable` über `uid` für `.sheet(item:)`
 - Build 47 (iPhone-UI + Siri-Dialog)
 
@@ -319,10 +319,10 @@ Gelandet:
 - Spoken **„Hey Siri, Einkauf Todo“**
 - Build 49
 
-### Swipe-Löschen nur im Bearbeiten-Modus — erledigt (Build 50)
+### Swipe-Löschen nur im Edit-Modus — erledigt (Build 50)
 
 - iPhone-To-Do Listen-Modus: kein `.onDelete`, Zeilen `.deleteDisabled(true)`, trailing `EmptyView()`, List-`.id` `todo-browse`
-- Bearbeiten: `.onDelete`, List-`.id` `todo-edit` — Umschalten tauscht die List-Identität, damit SwiftUI keine löschbaren Zeilen wiederverwendet
+- Edit: `.onDelete`, List-`.id` `todo-edit` — Umschalten tauscht die List-Identität, damit SwiftUI keine löschbaren Zeilen wiederverwendet
 - Leading-Swipe **Bearbeiten** bleibt in beiden Modi
 - Einkauf Geh-Modus analog: `.deleteDisabled`, kein trailing Delete, List-`.id` `walk|…` vs `edit|…`
 - Build 50
@@ -354,7 +354,7 @@ Noch nicht nach Build 51: MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
 ### 9. `Description.md` — geliefert, optionale Politur
 
-`Description.md` beschreibt To-Do als **geliefertes** Produkt (Build 52): TabView, getrennte Dateien/`kind`s, iPhone-Felder/Auge/Bearbeiten vs Listen (Swipe-Löschen nur Bearbeiten), Reopen/Sort/Suche, Watch-Geh-To-Do, Complication **To Do**, WC `{einkauf, todo}`, Siri (besorgen+o / Todo ein Token, iPhone o, Watch ohne `requestValueDialog`, ein Provider, Zwei-Wort-Cap). Akzeptanzkriterien um To-Do ergänzt, Einkaufs-Häkchen unverändert. MD/CSV bleibt „nicht“ / Phase 8.
+`Description.md` beschreibt To-Do als **geliefertes** Produkt (Build 52): TabView, getrennte Dateien/`kind`s, iPhone-Felder/Auge/**Edit** vs Listen (Swipe-Löschen nur Edit-Modus), Reopen/Sort/Suche, Watch-Geh-To-Do, Complication **To Do**, WC `{einkauf, todo}`, Siri (besorgen+o / Todo ein Token, iPhone o, Watch ohne `requestValueDialog`, ein Provider, Zwei-Wort-Cap). Akzeptanzkriterien um To-Do ergänzt, Einkaufs-Häkchen unverändert. MD/CSV bleibt „nicht“ / Phase 8.
 
 Weitere Spec-Politur ist optional, kein Blocker.
 
@@ -376,7 +376,7 @@ Weitere Spec-Politur ist optional, kein Blocker.
 
 - To-Do-Homescreen-Widget, Sperrbildschirm (Watch-To-Do-Complication ist in Phase 6 gelandet)
 - To-Do-Siri verdünnt nicht „besorgen“ (ein `AppShortcutsProvider`; gelandet in Phase 6)
-- Bearbeiten / Prio / Reopen auf der Watch
+- Edit / Prio / Reopen auf der Watch
 - iCloud, CloudKit, gemeinsames JSON mit Einkauf
 - HTML Theme-Mast / Service Worker / Shared-Keys in der nativen App
 - MD/CSV Pflicht (Phase 8 optional)
@@ -429,10 +429,10 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 5: To-Do-Backup `todo-v3-json`, eigenes Overflow, `onOpenURL`-Router, Build 44.
 - [x] Liste teilen PDF folgt dem Auge (`todo.iphone.showCompleted`), Build 45.
 - [x] Phase 6: Watch-Tab, gemergter WC-Context, To-Do-Complication, Siri To Do, Build 46.
-- [x] iPhone Bearbeiten / Fertig + Siri-Nachfrage **„o“**, Build 47.
+- [x] iPhone **Edit** / **Fertig** + Siri-Nachfrage **„o“**, Build 47 (Toolbar-Label später **Edit**, nicht „Bearbeiten“).
 - [x] To-Do-Siri Mehrwort-Aufgaben: ein-tokeniges `parameterSummary`, Build 48.
 - [x] To-Do-Siri Phrase ein Token (`Todo`), gesprochen „Hey Siri, Einkauf Todo“, Build 49.
-- [x] Swipe-Löschen nur im Bearbeiten-Modus (To-Do Listen-Modus + Einkauf Geh-Modus), Build 50.
+- [x] Swipe-Löschen nur im Edit-Modus (To-Do Listen-Modus + Einkauf Geh-Modus), Build 50.
 - [x] Watch-Siri Todo Mehrwort: `shortTitle` Todo, watchOS ohne `requestValueDialog`, Build 51.
 - [x] Phase 7: iPhone Wieder öffnen, Sort, Suche; Watch ohne Reopen/Suche/Sort-UI, Build 52.
 - [x] Phase 9: `Description.md` auf den gelieferten Stand; optionale weitere Politur kein Blocker.

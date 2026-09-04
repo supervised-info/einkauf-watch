@@ -8,8 +8,8 @@ Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) u
 
 Zwei Domains in **einer** App **Einkauf** (`TabView` **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`) auf iPhone und Apple Watch:
 
-- **Einkauf:** Liste nach Ladenweg auf **iPhone** (Geh-Modus + Bearbeiten inkl. abteilungsübergreifendem Ziehen) und **Watch** (nur Geh-Modus). Dieselbe Liste, Abhaken über WatchConnectivity. Seeds plus eigene Läden, Stamm, gespeicherte Anlass-Listen, lokales Keyword-Wörterbuch, Backup-JSON (`kind: "einkauf-backup"`), Listen-PDF mit **leeren quadratischen** Kästchen.
-- **To-Do:** Aufgaben (Text, Person, Prio A/B, Datum) auf **iPhone** (Liste + Bearbeiten) und **Watch** (nur Geh-Modus). Eigener Store und eigene Dateien — siehe **To-Do**.
+- **Einkauf:** Liste nach Ladenweg auf **iPhone** (Geh-Modus + Edit inkl. abteilungsübergreifendem Ziehen) und **Watch** (nur Geh-Modus). Dieselbe Liste, Abhaken über WatchConnectivity. Seeds plus eigene Läden, Stamm, gespeicherte Anlass-Listen, lokales Keyword-Wörterbuch, Backup-JSON (`kind: "einkauf-backup"`), Listen-PDF mit **leeren quadratischen** Kästchen.
+- **To-Do:** Aufgaben (Text, Person, Prio A/B, Datum) auf **iPhone** (Liste + Edit) und **Watch** (nur Geh-Modus). Eigener Store und eigene Dateien — siehe **To-Do**.
 
 Sprache nur über **Siri App Intents** für **beide** Domains (kein Watch-Mikro, kein `Speech.framework`): Einkauf **besorgen** + Nachfrage **„o“**; To-Do ein Phrase-Token **Todo**, iPhone **„o“**, Watch ohne `requestValueDialog`. Ein `AppShortcutsProvider` `EinkaufShortcuts`. Siehe **Sprach-Eingabe (Siri)**.
 
@@ -46,14 +46,14 @@ Felder je Aufgabe: `text`, `person`, `prioA` (A–Z oder leer), `prioB` (1–9 o
 Toolbar (trailing nach leading-Lupe):
 
 - Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`, Default an; Accessibility „Abgeschlossene ausblenden“ / „einblenden“). Aus = erledigte in der Liste und in **Liste teilen** (PDF) verstecken; bleiben in `todo-local.json`. **Nicht** im Backup, **nicht** Watch, **nicht** `einkauf.iphone.hideCompleted`. Alles ausgeblendet: „Abgeschlossene ausgeblendet.“
-- **Bearbeiten** / **Fertig** (`@State`, Default Listen-Modus).
+- **Edit** / **Fertig** (`@State`, Default Listen-Modus). Toolbar-Label genau **Edit**, nicht „Bearbeiten“.
 - Sort-Menü (`arrow.up.arrow.down`, `todo.iphone.sortKey`, Default Person; nicht Backup, nicht Watch): Person, Prio, Text, Enddatum, Abgeschlossen, Geschlossen.
 - Overflow **…** (`ellipsis.circle`, „Mehr“): Backup importieren / exportieren / teilen, **Liste teilen**, Erledigte löschen. Kein MD/CSV, kein Geh-Modus.
 
-**Listen-Modus vs Bearbeiten (Swipe-Löschen nur Bearbeiten):**
+**Listen-Modus vs Edit (Swipe-Löschen nur im Edit-Modus):**
 
 - Listen-Modus: Checkbox toggelt `completed`; **kein** Swipe-Löschen (`.deleteDisabled` + trailing `EmptyView()`, List-`.id` `todo-browse`). Text-Tipp und Leading-Swipe **Bearbeiten** öffnen `TodoEditSheet`.
-- Bearbeiten-Modus: Swipe-Löschen nur via `.onDelete` (List-`.id` `todo-edit`); Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance. Umschalten tauscht die List-Identität, damit SwiftUI keine löschbaren Zeilen wiederverwendet. Leading-Swipe **Bearbeiten** bleibt in beiden Modi.
+- Edit-Modus: Swipe-Löschen nur via `.onDelete` (List-`.id` `todo-edit`); Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance. Umschalten tauscht die List-Identität, damit SwiftUI keine löschbaren Zeilen wiederverwendet. Leading-Swipe **Bearbeiten** bleibt in beiden Modi.
 
 `TodoEditSheet`: z. B. nach Siri (Person/Prio leer). `TodoTask` ist `Identifiable`/`Hashable` über `uid` für `.sheet(item:)`.
 
@@ -116,8 +116,8 @@ Watch-UI-Änderung: Build-Nummer hochzählen, sonst bleibt die alte Companion-Ap
 Toolbar:
 
 - Links: **Ladenwahl**-Menü (`accessibilityLabel` „Laden“) — alle `stores`, aktueller mit Checkmark. Nur iPhone. Das Auge ersetzt dieses Menü **nicht**.
-- Rechts: Auge `eye` / `eye.slash` (Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“) neben dem Umschalter **Geh-Modus** / **Bearbeiten**. Tippen blendet abgehakte Artikel **im iPhone-Geh-Modus** und in **Liste teilen** (PDF) aus; Bearbeiten zeigt weiter alle. Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden (Geh-Modus und PDF). Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ Flag nur iPhone (`UserDefaults` / `AppStorage` `einkauf.iphone.hideCompleted`), **nicht** im einkauf-backup, **nicht** zur Watch.
-- Rechts: Umschalter **Geh-Modus** / **Bearbeiten** (zeigt den jeweils anderen Modus, wie die PWA). `walkMode` persistiert und liegt im Backup.
+- Rechts: Auge `eye` / `eye.slash` (Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“) neben dem Umschalter **Edit** / **Geh-Modus**. Tippen blendet abgehakte Artikel **im iPhone-Geh-Modus** und in **Liste teilen** (PDF) aus; Edit zeigt weiter alle. Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden (Geh-Modus und PDF). Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ Flag nur iPhone (`UserDefaults` / `AppStorage` `einkauf.iphone.hideCompleted`), **nicht** im einkauf-backup, **nicht** zur Watch.
+- Rechts: Umschalter **Edit** / **Geh-Modus** (zeigt den jeweils anderen Modus; Toolbar-Label **Edit**, nicht „Bearbeiten“). `walkMode` persistiert und liegt im Backup.
 - Rechts: Overflow **…** (`ellipsis.circle`, Label „Mehr“).
 
 Unten Add-Leiste: Placeholder „Milch, Äpfel, Klopapier…“, Submit **Hinzufügen**. Trim + Whitespace-Normalisierung; leer = no-op. Abteilung per `DepartmentGuesser.guess`.
@@ -126,11 +126,11 @@ Thema und Palette **nicht** in der Toolbar — nur in Einstellungen.
 
 ### Geh-Modus (iPhone + Watch)
 
-Große Checkbox + Name, Durchstreichen wenn `done`. Tippen toggelt. Kein Grip, kein Dept-Select, kein Löschen, Name nicht editierbar. **Kein Swipe-Löschen** (jede Zeile `.deleteDisabled(true)`, kein `.onDelete`, trailing `swipeActions` nur `EmptyView()` gegen das System-Delete). Flache `ForEach`-Zeilen (`WalkListRow` / `WalkLine`): Überschrift dann Artikel. **Keine** SwiftUI-`Section` — die verschluckt die Abteilungsreihenfolge beim Ladenwechsel. Zeilen-IDs enthalten Laden und Position (`storeId|index|…`). List-`.id` `walk|` bzw. `edit|` plus `currentStoreId` + Layout-Join, plus Gruppen-`.id` `einkauf-walk` / `einkauf-edit`, damit Geh-Modus die Bearbeiten-Liste (inkl. Swipe-Löschen) nicht wiederverwendet.
+Große Checkbox + Name, Durchstreichen wenn `done`. Tippen toggelt. Kein Grip, kein Dept-Select, kein Löschen, Name nicht editierbar. **Kein Swipe-Löschen** (jede Zeile `.deleteDisabled(true)`, kein `.onDelete`, trailing `swipeActions` nur `EmptyView()` gegen das System-Delete). Flache `ForEach`-Zeilen (`WalkListRow` / `WalkLine`): Überschrift dann Artikel. **Keine** SwiftUI-`Section` — die verschluckt die Abteilungsreihenfolge beim Ladenwechsel. Zeilen-IDs enthalten Laden und Position (`storeId|index|…`). List-`.id` `walk|` bzw. `edit|` plus `currentStoreId` + Layout-Join, plus Gruppen-`.id` `einkauf-walk` / `einkauf-edit`, damit Geh-Modus die Edit-Liste (inkl. Swipe-Löschen) nicht wiederverwendet.
 
-iPhone-Geh-Modus kann Erledigte ausblenden (Auge, `einkauf.iphone.hideCompleted`). Dasselbe Flag gilt für **Liste teilen**. Watch-Geh-Modus hat denselben Toggle mit **eigenem** Flag (`einkauf.watch.hideCompleted`). Die Flags synct nichts, Backup enthält sie nicht. Bearbeiten auf dem iPhone filtert nicht — erledigte Artikel bleiben editierbar.
+iPhone-Geh-Modus kann Erledigte ausblenden (Auge, `einkauf.iphone.hideCompleted`). Dasselbe Flag gilt für **Liste teilen**. Watch-Geh-Modus hat denselben Toggle mit **eigenem** Flag (`einkauf.watch.hideCompleted`). Die Flags synct nichts, Backup enthält sie nicht. Edit auf dem iPhone filtert nicht — erledigte Artikel bleiben editierbar.
 
-### Bearbeiten (nur iPhone)
+### Edit (nur iPhone)
 
 Flache Liste mit Überschriften (nicht verschiebbar, nicht löschbar) und Artikeln. `editMode` active.
 
@@ -183,7 +183,7 @@ Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` 
 
 Navigationsleiste **ausgeblendet** (`.toolbar(.hidden, for: .navigationBar)`): `.navigationTitle("")` reserviert die Bar weiter und lässt eine Lücke unter der Uhr. Die **Systemuhr** bleibt Status und sichtbar. Inhalt direkt darunter (`VStack(spacing: 0)`): zuerst die Augen-Leiste, darunter die Titelzeile **eine Zeile** (`Text(store.state.watchTitle)`): gekürzter Ladenname + zwei Leerzeichen + `Einkauf oo/xx/yy` (`AppState.watchTitle`). Limit 6 Zeichen vor „Einkauf oo/xx/yy“; länger: 5 Zeichen + `…`. Edeka/Aldi/Rewe/Lidl/dm ungekürzt; „Eigenes Layout“ → `Eigen…`. Zähler inkl. `vor`/`nach` (`openCount/doneCount/items.count`). **Nicht** `.navigationTitle(watchTitle)`.
 
-Kein Store-Picker, kein Bearbeiten, kein Share, kein Backup, kein Speichern, kein Wörterbuch, kein Löschen von Läden. Digital Crown scrollt die `List`. Leer: „Noch nichts auf der Liste.“ **Kein** In-App-Mikrofon, **kein** Diktat-Panel, **kein** `Speech.framework` / AVFoundation-Speech, **kein** `TextFieldLink` / `presentTextInputController`. Sprache nur über **Siri App Intents** — siehe **Sprach-Eingabe (Siri)**.
+Kein Store-Picker, kein Edit, kein Share, kein Backup, kein Speichern, kein Wörterbuch, kein Löschen von Läden. Digital Crown scrollt die `List`. Leer: „Noch nichts auf der Liste.“ **Kein** In-App-Mikrofon, **kein** Diktat-Panel, **kein** `Speech.framework` / AVFoundation-Speech, **kein** `TextFieldLink` / `presentTextInputController`. Sprache nur über **Siri App Intents** — siehe **Sprach-Eingabe (Siri)**.
 
 Auge **zuerst über der Titelzeile**, links (`HStack { Button…; Spacer() }`, Chrome über `watchTitle` und der `List` — **nicht** in `.topBarLeading`; **nicht** `.topBarTrailing`, die Uhr überdeckt das; **nicht** in der Toolbar, Navigationsleiste ausgeblendet): kleines SF-Symbol `eye` wenn Erledigte sichtbar, `eye.slash` wenn ausgeblendet — **plain Icon**, kein gefüllter runder watchOS-Button. Schrift `.font(.caption)` / ca. 14–16pt, `.imageScale(.small)`, `.buttonStyle(.plain)`. Glyph **grün** (`theme.good`, wie die erledigten Häkchen) wenn Erledigte sichtbar (`eye`); **grau** (`theme.muted`, wie Abteilungsüberschriften) wenn ausgeblendet (`eye.slash`). **Kompakte Zeile ~18–20pt**: **kein** `.frame(minHeight: 44)` / 44pt-Tapziel auf dem Image — das erzeugt leere Bänder zwischen Auge, Titel und erstem Listenartikel. Tap-Fläche eher horizontal über `contentShape`/Padding, ohne vertikale Totfläche. Darunter die Titelzeile kompakt, eine Zeile, lesbar (`theme.ink`). List: Top-`contentMargins` 0, erster Artikel direkt unter der Titelzeile; Leerzustände ohne allseitiges `.padding()`. Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“. Tippen blendet abgehakte Artikel **nur in der Watch-Gehliste** aus; die Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden. Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ (Auge bleibt oben, Titel darunter). Flag nur auf der Watch (`UserDefaults` / `AppStorage` `einkauf.watch.hideCompleted`), **nicht** im einkauf-backup, **nicht** zum iPhone (das iPhone hat `einkauf.iphone.hideCompleted`). `watchTitle` zeigt weiter `oo/xx/yy` der vollen Liste. Die Complication zeigt nur die offene Anzahl (bei 0 „erledigt“).
 
@@ -206,7 +206,7 @@ Familien, die auf gängigen watchOS-10-Zifferblättern und im Smart Stack vorkom
 
 Datenquelle: dieselbe lokale Datei `einkauf-local.json` (`Persistence`, Envelope `kind: "einkauf-local"`). Watch-App und Complication teilen sie über App Group `group.net.tschelle.einkauf` (kein iCloud). Die Watch-App schreibt bei jeder `AppState`-Änderung (Artikel, Häkchen, Laden) und ruft `WidgetCenter.reloadTimelines` auf. iPhone-Änderungen kommen wie bisher per WatchConnectivity in die Watch-App und von dort in Datei + Complication. Fallback-Timeline alle 30 Minuten, falls ein Reload ausbleibt.
 
-Kein Store-Picker, kein Bearbeiten, kein Share, kein Wörterbuch in der Complication.
+Kein Store-Picker, kein Edit, kein Share, kein Wörterbuch in der Complication.
 
 ### Watch-To-Do-Complication (WidgetKit, watchOS 10)
 
@@ -258,7 +258,7 @@ Trigger **Todo** (ein Wort, nicht **To Do** mit Leerzeichen, nicht **besorgen**)
 - „{App} zum Todo“
 - „{App} Aufgaben“ (alternativer Ein-Token-Trigger)
 
-`shortTitle` **„Todo“** (ein Token wie die Phrase — Watch-Siri keyed oft auf `shortTitle`; zwei Tokens `To Do` cappt Diktat auf zwei Wörter). Icon `checklist`. Shortcut in `EinkaufShortcuts` (kein zweiter Provider). iPhone-Nachfrage **„o“** (`requestValueDialog` „o“, wie Einkauf). watchOS: **kein** `requestValueDialog` — Siri nutzt die generische Freitext-Nachfrage (Custom-Dialog filtert/kürzt Free-Form auf der Watch). Parameter-Titel **Aufgaben**. Beispiel: **„Hey Siri, Einkauf Todo“** → iPhone fragt „o“, Watch den generischen Prompt → Aufgabe sprechen. Nach dem Update: Shortcut in Kurzbefehle löschen und neu anlegen, dann **„Auf Apple Watch anzeigen“** erneut aktivieren (sonst bleibt der gecachte Watch-Shortcut). `parameterSummary` ist **ein Token** `Todo \(.$items)` — analog Einkauf `Besorgen \(.$items)`. `openAppWhenRun = false`. Führendes `To Do` / `To-Do` / `todo` / `Todo` / `Aufgaben:` / `Aufgaben` wird abgestreift (`SpeechItemSplitter.strippingTodoTriggerPrefix`). Split wie Einkauf (`und` / Komma), **nicht** an Leerzeichen — „Rechnung bezahlen“ bleibt eine Aufgabe, „Katze füttern und Müll rausbringen“ zwei. iPhone: `TodoStore(enableSync: true)` + `addItems(fromSpeech:)`, Dialog „1 Aufgabe hinzugefügt.“ / „Keine Aufgaben erkannt.“ Person/Prio bleiben leer — auf dem iPhone danach **Bearbeiten** / `TodoEditSheet`. Watch: **kein** `TodoStore` im Intent; Queue `todo.siriPendingAdds` / Datei `todo-siri-pending.json` (nicht die Einkauf-Queue); Drain auf dem live Store beim Aktivwerden und `WatchTodoListView.onAppear`.
+`shortTitle` **„Todo“** (ein Token wie die Phrase — Watch-Siri keyed oft auf `shortTitle`; zwei Tokens `To Do` cappt Diktat auf zwei Wörter). Icon `checklist`. Shortcut in `EinkaufShortcuts` (kein zweiter Provider). iPhone-Nachfrage **„o“** (`requestValueDialog` „o“, wie Einkauf). watchOS: **kein** `requestValueDialog` — Siri nutzt die generische Freitext-Nachfrage (Custom-Dialog filtert/kürzt Free-Form auf der Watch). Parameter-Titel **Aufgaben**. Beispiel: **„Hey Siri, Einkauf Todo“** → iPhone fragt „o“, Watch den generischen Prompt → Aufgabe sprechen. Nach dem Update: Shortcut in Kurzbefehle löschen und neu anlegen, dann **„Auf Apple Watch anzeigen“** erneut aktivieren (sonst bleibt der gecachte Watch-Shortcut). `parameterSummary` ist **ein Token** `Todo \(.$items)` — analog Einkauf `Besorgen \(.$items)`. `openAppWhenRun = false`. Führendes `To Do` / `To-Do` / `todo` / `Todo` / `Aufgaben:` / `Aufgaben` wird abgestreift (`SpeechItemSplitter.strippingTodoTriggerPrefix`). Split wie Einkauf (`und` / Komma), **nicht** an Leerzeichen — „Rechnung bezahlen“ bleibt eine Aufgabe, „Katze füttern und Müll rausbringen“ zwei. iPhone: `TodoStore(enableSync: true)` + `addItems(fromSpeech:)`, Dialog „1 Aufgabe hinzugefügt.“ / „Keine Aufgaben erkannt.“ Person/Prio bleiben leer — auf dem iPhone danach **Edit** / `TodoEditSheet`. Watch: **kein** `TodoStore` im Intent; Queue `todo.siriPendingAdds` / Datei `todo-siri-pending.json` (nicht die Einkauf-Queue); Drain auf dem live Store beim Aktivwerden und `WatchTodoListView.onAppear`.
 
 `makeID` (Item / SavedList / StoreCatalog) kodiert Epoch-Millis als **`Int64`**. watchOS `arm64_32` hat 32-bit `Int`; `Int(Date().timeIntervalSince1970 * 1000)` crasht sonst fatal in `Item.makeID` beim Drain (`consumeSiriPendingAdds`) und bei jedem neuen Item.
 
@@ -402,7 +402,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 
 **Nur HTML / in der PWA behalten:** Markdown kopieren / Datei / teilen; Import `.md`/`.txt`; nach Bring; nach Erinnerungen; extra Läden-JSON `kind: "einkauf-laeden"` (zwischen Neuer Laden und Ladenweg); Site-Mast Theme + Palette (`theme-btn`, `#paletteBtn`) und Shared Keys `supervised-info.theme` / `supervised-info.palette`; PWA Service Worker (`sw.js`, Cache-Bump, aktuell v17).
 
-**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf oo/xx/yy, Erledigte ausblendbar, WidgetKit-Complication nur offene Anzahl bzw. „erledigt“, kein Picker/Edit/Share, **kein** In-App-Mikro); iPhone-Geh-Modus mit eigenem Auge (Bearbeiten ungefiltert); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **Siri / App Intents** für Einkauf (**besorgen** + „o“) und To-Do (**Todo**, iPhone „o“, Watch ohne `requestValueDialog`); **PDF Liste teilen** folgt dem iPhone-Auge (`einkauf.iphone.hideCompleted` bzw. To-Do `todo.iphone.showCompleted`), leere quadratische Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar; **To-Do**-Tab, Watch-Geh-To-Do, Complication **To Do**. TestFlight nicht erforderlich. Native-`guess` wertet Nutzer-Mappings vor Sonderregeln/Keywords aus (HTML-Reihenfolge kann abweichen).
+**Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf oo/xx/yy, Erledigte ausblendbar, WidgetKit-Complication nur offene Anzahl bzw. „erledigt“, kein Picker/Edit/Share, **kein** In-App-Mikro); iPhone-Geh-Modus mit eigenem Auge (Edit ungefiltert); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **Siri / App Intents** für Einkauf (**besorgen** + „o“) und To-Do (**Todo**, iPhone „o“, Watch ohne `requestValueDialog`); **PDF Liste teilen** folgt dem iPhone-Auge (`einkauf.iphone.hideCompleted` bzw. To-Do `todo.iphone.showCompleted`), leere quadratische Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar; **To-Do**-Tab, Watch-Geh-To-Do, Complication **To Do**. TestFlight nicht erforderlich. Native-`guess` wertet Nutzer-Mappings vor Sonderregeln/Keywords aus (HTML-Reihenfolge kann abweichen).
 
 HTML-To-Do behält MD/CSV; native To-Do liefert das **nicht** (Phase 8).
 
@@ -415,21 +415,21 @@ HTML-To-Do behält MD/CSV; native To-Do liefert das **nicht** (Phase 8).
 - Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys, inkl. `savedLists`)
 - `ListGrouping`: `sonstiges` folgt dem Layout; Extra-Depts behalten `item.dept` (geteilt mit HTML, nicht vor `nach` kleben)
 - Guesser: Nutzer-Mapping vor Sonderregeln und Keywords; `KeywordDictionary.source` unverändert; lokal
-- Watch bleibt Geh-Modus ohne Picker/Edit/Share (Auge blendet Erledigte nur an, löscht sie nicht); iPhone-Auge nur Geh-Modus, Bearbeiten ungefiltert; Flags geräte-lokal, nicht im Backup
+- Watch bleibt Geh-Modus ohne Picker/Edit/Share (Auge blendet Erledigte nur an, löscht sie nicht); iPhone-Auge nur Geh-Modus, Edit ungefiltert; Flags geräte-lokal, nicht im Backup
 - Kein Watch-in-App-Mikrofon, kein `Speech.framework`; Siri-Utterance mit App-Namen + **besorgen**, danach Nachfrage **„o“** (`requestValueDialog` „o“; Parameter-Titel bleibt **Artikel**; getippt optional `Einkauf:` / `Besorgen:`). To-Do: Phrase-Token **Todo** (nicht `To Do`), `shortTitle` **Todo**, ein `AppShortcutsProvider`; iPhone-Nachfrage **„o“**, Watch **kein** `requestValueDialog`
 - Complication nur Watch/WidgetKit, nicht iPhone, kein ClockKit, kein iCloud. To-Do-Complication Label **To Do** (Leerzeichen), Zähler offene Anzahl / **erledigt**, Datei `todo-local.json`
 - iPhone-Widget nur Homescreen (`systemSmall`/`systemMedium`), nicht Watch, nicht Sperrbildschirm, kein iCloud; kein To-Do-Homescreen-Widget
 - Theme nur in Einstellungen; To-Do-Tab teilt `einkauf.theme` / `einkauf.palette`
 - PDF-Kästchen leer (kein Fill, kein Häkchen)
 - To-Do Isolation: eigener `TodoStore`, `todo-local.json` / `kind: "todo-local"`, Backup `todo-v3-json`; nie in `ShoppingStore` / `einkauf-local.json` / `kind: einkauf-backup`. WC merget `{einkauf, todo}`
-- Swipe-Löschen To-Do **nur** im Bearbeiten-Modus; Einkauf-Geh-Modus analog ohne Swipe-Löschen
+- Swipe-Löschen To-Do **nur** im Edit-Modus (Toolbar **Edit** / **Fertig**); Einkauf Toolbar **Edit** / **Geh-Modus**, Geh-Modus analog ohne Swipe-Löschen
 - MD/CSV für To-Do **nicht** nachrüsten als Pflicht (Phase 8 optional)
 - Bewusstes Rest-Delta zur HTML-PWA (Watch, PDF Liste teilen, System-Appearance in Einstellungen vs. Markdown/Bring/Erinnerungen/`einkauf-laeden`/Mast/SW) nicht angleichen
 - Gemeinsame Slice (savedLists, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only oder HTML-only führen
 
 ## Akzeptanzkriterien
 
-- [ ] Bundle `net.tschelle.einkauf`, Watch eingebettet, Geh-Modus Watch, iPhone Geh + Bearbeiten mit Cross-Dept-Drag.
+- [ ] Bundle `net.tschelle.einkauf`, Watch eingebettet, Geh-Modus Watch, iPhone Geh + Edit mit Cross-Dept-Drag.
 - [ ] Seeds + Custom; Neuer Laden kopiert das Layout des ausgewählten Ladens; Swipe-Delete nur Custom in Einstellungen → Aktueller Laden; Builtins nie weg.
 - [ ] Settings-Reihenfolge: Darstellung (Hell/Dunkel/System, Creme/Blau) → Aktueller Laden → Neuer Laden → Ladenweg (`sonstiges` movable, `vor`/`nach` locked) → Abteilungen hinzufügen → Reset → Stamm → Gespeicherte Listen (Apply + Swipe-Delete) → Wörterbuch.
 - [ ] `ListGrouping` sanitized inkl. `sonstiges`-Position; Rest-Depts mit Items nach dem letzten Nicht-`nach`-Gang; kein Remap von `item.dept` nach `sonstiges`.
@@ -437,13 +437,13 @@ HTML-To-Do behält MD/CSV; native To-Do liefert das **nicht** (Phase 8).
 - [ ] Wörterbuch **Meine Zuordnungen**: View/Edit/Delete von `mappings` (Picker, Swipe-Delete, optional Hinzufügen); mitgelieferte Liste nur lesen; Backup-Feld bleibt `mappings`.
 - [ ] Gespeicherte Listen: Name+Dept-Snapshot, füllen nicht ersetzen, Backup-Feld `savedLists`.
 - [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen, respektiert das iPhone-Auge (`einkauf.iphone.hideCompleted`).
-- [ ] Watch-Titel: gekürzter Ladenname + Einkauf oo/xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`einkauf.watch.hideCompleted`, nicht Backup); iPhone-Geh-Modus hat dasselbe Auge mit `einkauf.iphone.hideCompleted`; Bearbeiten ungefiltert; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
+- [ ] Watch-Titel: gekürzter Ladenname + Einkauf oo/xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`einkauf.watch.hideCompleted`, nicht Backup); iPhone-Geh-Modus hat dasselbe Auge mit `einkauf.iphone.hideCompleted`; Edit ungefiltert; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
 - [ ] Siri / App Intents: Utterance mit genau einem App-Namen + **besorgen** (kein `String`/`$items` in der Phrase; keine Bring-ähnlichen „hinzufügen“-Phrasen); Siri fragt „o“ (`requestValueDialog` „o“); getippte Antwort darf mit `Einkauf:` / `Besorgen:` beginnen; Splitter wie Sprache, Guesser+Mappings; iPhone Persistenz+WatchConnectivity, Watch-Siri schreibt nur eine Pending-Queue in App-Group-`UserDefaults` (`group.net.tschelle.einkauf`, kein `ShoppingStore` / kein volles `AppState`-Encode im Intent; `openAppWhenRun = false`; App übernimmt beim Aktivwerden **und** `onAppear` / `.task` — Watch-App ggf. einmal öffnen); leerer Text = freundliches No-op; kein Watch-Mikro, kein Speech.framework. iOS reserviert „besorgen“ nicht OS-weit (Best Effort vs Bring).
 - [ ] Watch-Complication (WidgetKit, watchOS 10): nur offene Anzahl (`compactCountText`, bei 0 „erledigt“), Ladenname wo Platz, Tap öffnet Geh-Modus; Update aus `einkauf-local.json` / WatchConnectivity; nicht auf dem iPhone.
 - [ ] iPhone-Widget (WidgetKit, iOS 17): `systemSmall` Laden + `oo/xx/yy`, `systemMedium` plus offene Artikel in Geh-Modus-Reihenfolge; Tap öffnet Einkaufsliste; App Group `group.net.tschelle.einkauf`; nicht auf der Watch.
 - [ ] Theme nur in Einstellungen; HTML-Delta bleibt: kein Markdown/Bring/Erinnerungen/`einkauf-laeden`/PWA-SW/Mast-Theme in der nativen App; kein Watch/PDF/System-Appearance im HTML. Gemeinsame Slice (Listen, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only führen.
 - [ ] `TabView` **Einkauf | To-Do** auf iPhone und Watch; getrennte Stores/Dateien/Backups (`todo-local.json` / `kind: "todo-local"` / `format: "todo-v3-json"`); WC-Context `{einkauf, todo}`; nie To-Do in `ShoppingStore` / `einkauf-local.json`.
-- [ ] iPhone-To-Do: Text, Person, Prio A/B, Datum; Auge `todo.iphone.showCompleted`; **Bearbeiten** / **Fertig** (`TodoEditSheet`); Swipe-Löschen **nur** Bearbeiten (`todo-browse` / `todo-edit`); Wieder öffnen; Sort `todo.iphone.sortKey`; Suche **Person oder Text …**; Backup `todo-v3-json`; **Liste teilen** PDF `TodoListPDF` folgt dem Auge.
+- [ ] iPhone-To-Do: Text, Person, Prio A/B, Datum; Auge `todo.iphone.showCompleted`; **Edit** / **Fertig** (`TodoEditSheet`); Swipe-Löschen **nur** Edit (`todo-browse` / `todo-edit`); Wieder öffnen; Sort `todo.iphone.sortKey`; Suche **Person oder Text …**; Backup `todo-v3-json`; **Liste teilen** PDF `TodoListPDF` folgt dem Auge.
 - [ ] Watch-To-Do nur Geh-Modus (Toggle, Auge `todo.watch.hideCompleted`); kein Reopen/Suche/Sort/Edit. Complication `TodoProgress`: Label **To Do**, offene Anzahl / **erledigt**, `todo-local.json`, Tap `einkauf://todo`.
 - [ ] To-Do-Siri: ein Phrase-Token **Todo** (`shortTitle` **Todo**, `parameterSummary` `Todo \(.$items)`), gesprochen **„Hey Siri, Einkauf Todo“**; iPhone `requestValueDialog` **„o“**; Watch **kein** `requestValueDialog`; ein `AppShortcutsProvider` `EinkaufShortcuts` (nicht „besorgen“). Nach Update Shortcut löschen/neu und **„Auf Apple Watch anzeigen“** erneut. Zwei-Wort-Cap gelöst über Phrase-Tokens + Watch-`shortTitle`/Dialog (siehe Sprach-Eingabe).
 - [ ] To-Do-MD/CSV **nicht** (Phase 8). Kein To-Do-Homescreen-Widget.
