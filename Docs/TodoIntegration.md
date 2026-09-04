@@ -202,7 +202,7 @@ Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gew
 
 Einkauf: Utterance mit App-Namen + **besorgen** (`EinkaufAddItemsIntent`). Das Wort nicht umdeuten.
 
-To-Do-Siri: `TodoAddItemsIntent`, Phrasen **To Do**, Nachfrage **„T“**. Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
+To-Do-Siri: `TodoAddItemsIntent`, Phrasen **To Do**, Nachfrage **„o“** (wie Einkauf `requestValueDialog`). Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
 
 ### Theme
 
@@ -298,8 +298,17 @@ Gelandet:
 - Application Context gemergt (`WatchSyncEnvelope`); Kinds `todo-sync` / `todo-toggle` / `todo-pull`; Legacy `einkauf-sync` top-level bleibt lesbar
 - `TodoStore.enableSync` startet `TodoConnectivitySync` am selben `WatchSessionActor`
 - Eigene Complication `TodoProgress` (Label **To Do**, offene Anzahl / „erledigt“, `todo-local.json`, `einkauf://todo`)
-- Siri `TodoAddItemsIntent` in `EinkaufShortcuts` (kein zweiter Provider): Phrasen **To Do**, Nachfrage **„T“**; Watch-Queue `todo.siriPendingAdds`; Einkauf-„besorgen“ unverändert
+- Siri `TodoAddItemsIntent` in `EinkaufShortcuts` (kein zweiter Provider): Phrasen **To Do**, Nachfrage **„o“**; Watch-Queue `todo.siriPendingAdds`; Einkauf-„besorgen“ unverändert
 - Build 46 (Watch-UI)
+
+### iPhone Bearbeiten + Siri „o“ — erledigt (Build 47)
+
+- `TodoAddItemsIntent.requestValueDialog` **„o“** (wie `EinkaufAddItemsIntent`); Phrasen bleiben **To Do**
+- iPhone-Toolbar zwischen Auge und **…**: **Bearbeiten** / **Fertig** (`@State`, Default Liste)
+- Liste: Checkbox toggelt `completed`, Swipe-Löschen; Text-Tipp und Swipe **Bearbeiten** öffnen `TodoEditSheet`
+- Bearbeiten-Modus: Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance; Add-Leiste Person/Prio bleibt
+- `TodoTask` ist `Identifiable`/`Hashable` über `uid` für `.sheet(item:)`
+- Build 47 (iPhone-UI + Siri-Dialog)
 
 Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
@@ -391,4 +400,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 5: To-Do-Backup `todo-v3-json`, eigenes Overflow, `onOpenURL`-Router, Build 44.
 - [x] Liste teilen PDF folgt dem Auge (`todo.iphone.showCompleted`), Build 45.
 - [x] Phase 6: Watch-Tab, gemergter WC-Context, To-Do-Complication, Siri To Do, Build 46.
+- [x] iPhone Bearbeiten / Fertig + Siri-Nachfrage **„o“**, Build 47.
 - [ ] Folge-PRs halten die Reihenfolge 7→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
