@@ -68,6 +68,7 @@ final class TodoStore: ObservableObject {
         let names = SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix(text))
         guard !names.isEmpty else { return 0 }
         let now = TodoTime.nowIso()
+        let listId = TodoCurrentList.addingListId
         for name in names {
             let uid = takeUid()
             state.tasks.append(
@@ -77,7 +78,8 @@ final class TodoStore: ObservableObject {
                     completed: false,
                     createdAt: now,
                     updatedAt: now,
-                    changedBy: TodoAuthor.app
+                    changedBy: TodoAuthor.app,
+                    listId: listId
                 )
             )
         }
@@ -92,7 +94,8 @@ final class TodoStore: ObservableObject {
         person: String = "",
         prioA: String = "",
         prioB: String = "",
-        dueDate: String = ""
+        dueDate: String = "",
+        listId: String? = nil
     ) -> Int64? {
         let text = rawText.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -110,7 +113,8 @@ final class TodoStore: ObservableObject {
                 person: person.trimmingCharacters(in: .whitespacesAndNewlines),
                 createdAt: now,
                 updatedAt: now,
-                changedBy: TodoAuthor.app
+                changedBy: TodoAuthor.app,
+                listId: listId
             )
         )
         state.revision += 1
@@ -194,7 +198,8 @@ final class TodoStore: ObservableObject {
         person: String? = nil,
         prioA: String? = nil,
         prioB: String? = nil,
-        dueDate: String? = nil
+        dueDate: String? = nil,
+        listId: String?? = nil
     ) {
         guard let idx = state.tasks.firstIndex(where: { $0.uid == uid }) else { return }
         if let text {
@@ -209,6 +214,9 @@ final class TodoStore: ObservableObject {
         if let prioA { state.tasks[idx].prioA = TodoJSON.prioA(prioA) }
         if let prioB { state.tasks[idx].prioB = TodoJSON.prioB(prioB) }
         if let dueDate { state.tasks[idx].dueDate = TodoJSON.isoDate(dueDate) }
+        if let listId {
+            state.tasks[idx].listId = TodoJSON.normalizedListId(listId)
+        }
         state.tasks[idx].updatedAt = TodoTime.nowIso()
         state.tasks[idx].changedBy = TodoAuthor.app
         state.revision += 1
@@ -240,6 +248,47 @@ final class TodoStore: ObservableObject {
         state.revision += 1
         persistAndSync()
         return newUid
+    }
+
+    @discardableResult
+    func addList(name: String) -> String? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let id = TodoJSON.newListId()
+        state.lists.append(TodoNamedList(id: id, name: trimmed))
+        state.revision += 1
+        persistAndSync()
+        return id
+    }
+
+    func renameList(id: String, name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let idx = state.lists.firstIndex(where: { $0.id == id }) else { return }
+        guard state.lists[idx].name != trimmed else { return }
+        state.lists[idx].name = trimmed
+        state.revision += 1
+        persistAndSync()
+    }
+
+    /// Löscht nur die Liste; `listId` der Aufgaben wird geleert (unassigned), Aufgaben bleiben.
+    func deleteList(id: String) {
+        let before = state.lists.count
+        state.lists.removeAll { $0.id == id }
+        guard state.lists.count != before else { return }
+        for i in state.tasks.indices where state.tasks[i].listId == id {
+            state.tasks[i].listId = nil
+            state.tasks[i].updatedAt = TodoTime.nowIso()
+            state.tasks[i].changedBy = TodoAuthor.app
+        }
+        state.revision += 1
+        persistAndSync()
+    }
+
+    /// WC ohne Datenänderung — sendet den Snapshot inkl. `currentListId` im Payload.
+    func broadcastCurrentList() {
+#if os(iOS) || os(watchOS)
+        sync?.broadcast(state)
+#endif
     }
 
     func exportBackup() throws -> Data {
@@ -276,6 +325,7 @@ final class TodoStore: ObservableObject {
             var merged = state
             merged.tasks.append(contentsOf: incoming.tasks)
             merged.nextUid = max(merged.nextUid, incoming.nextUid)
+            merged.lists = TodoCodec.mergeLists(merged.lists, incoming.lists)
             state = TodoCodec.normalized(merged)
         } else {
             state = TodoCodec.normalized(incoming)

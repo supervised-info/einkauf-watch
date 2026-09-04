@@ -1,6 +1,6 @@
 # To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04, Build 53. Phasen 1–8 plus Liste-teilen-PDF **geliefert** (MD/CSV volle Liste). `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels (Phase 9 = optionale Spec-Politur, kein Blocker). Listen (Phase 10) geplant, nicht implementiert.
+Stand: 2026-09-04, Build 55. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen bleiben die Wahrheit. HTML-PWA [todo](https://supervised-info.github.io/todo/) ist die Produktreferenz für Task-Shape und JSON-Brücke; natives To-Do-Verhalten steht in `Description.md`.
 
@@ -60,7 +60,8 @@ Runtime-HTML hat zusätzlich `id` (Number, DOM-Key) — **nicht** im JSON-Export
   reopenedFromUid, reopenedToUid: number | "",
   reopenedAt: "YYYY-MM-DD" | "",
   createdAt, updatedAt: ISO-Timestamp,
-  changedBy: string   // HTML-UI setzt "TS/NA"
+  changedBy: string,   // HTML-UI setzt "TS/NA"
+  listId: string | "" | null   // optional, Phase 10; fehlt/leer = unassigned / Alle
 }
 ```
 
@@ -75,11 +76,14 @@ HTML-Export (`exportJSON`): Datei `todo-liste.json`, **nicht** `einkauf-backup`.
   format: "todo-v3-json",
   exportedAt: ISO,
   nextUid: number,
-  tasks: [ /* Task-Shape ohne runtime id */ ]
+  lists: [ { id: String, name: String } ],   // optional, fehlt → []
+  tasks: [ /* Task-Shape ohne runtime id; optionales listId */ ]
 }
 ```
 
-Import HTML: Array **oder** Objekt `{ tasks, nextUid }`. Native muss beides lesen.
+`lists` und `listId` (Phase 10): fehlend/null/leer = keine Listen / Aufgabe unassigned (**Alle**). Decode ignoriert unbekannte Felder. Alte Dateien ohne diese Keys laden unverändert. HTML-Follow-up soll dasselbe Schema schreiben.
+
+Import HTML: Array **oder** Objekt `{ tasks, nextUid, lists? }`. Native muss beides lesen.
 
 Native **darf nicht** teilen:
 
@@ -361,18 +365,23 @@ Gelandet (iPhone-only, HTML-Parity `todo/Description_index.md`):
 
 ### 9. `Description.md` — geliefert, optionale Politur
 
-`Description.md` beschreibt To-Do als **geliefertes** Produkt (Build 53): TabView, getrennte Dateien/`kind`s, iPhone-Felder/Auge/**Edit** vs Listen (Swipe-Löschen nur Edit-Modus), Reopen/Sort/Suche, **MD/CSV** (`TodoMarkdown` / `TodoCSV`, volle Liste), Watch-Geh-To-Do, Complication **To Do**, WC `{einkauf, todo}`, Siri (besorgen+o / Todo ein Token, iPhone o, Watch ohne `requestValueDialog`, ein Provider, Zwei-Wort-Cap). Akzeptanzkriterien um To-Do ergänzt, Einkaufs-Häkchen unverändert. Listen (Phase 10) geplant, nicht implementiert.
+`Description.md` beschreibt To-Do als **geliefertes** Produkt: TabView, getrennte Dateien/`kind`s, iPhone-Felder/Auge/**Edit** vs Listen (Swipe-Löschen nur Edit-Modus), Reopen/Sort/Suche, **MD/CSV** (`TodoMarkdown` / `TodoCSV`, volle Liste), Watch-Geh-To-Do, Complication **To Do**, WC `{einkauf, todo}`, Siri (besorgen+o / Todo ein Token, iPhone o, Watch ohne `requestValueDialog`, ein Provider, Zwei-Wort-Cap). Akzeptanzkriterien um To-Do ergänzt, Einkaufs-Häkchen unverändert.
 
 Weitere Spec-Politur ist optional, kein Blocker.
 
-### 10. Listen (geplant)
+### 10. Listen — erledigt (Build 55)
 
-Nicht in Phase 8. Backward-compatible optionales `listId` / `lists`:
+Backward-compatible optionales `lists` / `listId` auf `format: "todo-v3-json"` (kein Format-Bump):
 
-- Aufgaben benannten Listen zuordnen, aktuelle Liste filtern
-- iPhone + Watch + HTML
-- PDF folgt dem Listenfilter
-- Siri → aktuelle Liste
+- Envelope: `lists: [{ id: String, name: String }]` — fehlt → `[]`. Stabile UUID-String-IDs. Decode ignoriert unbekannte Felder.
+- `TodoTask.listId: String?` — fehlt/null/leer = unassigned, sichtbar unter **Alle**.
+- UX: `todo.iphone.currentListId` (leer = **Alle**, ungefiltert). Nicht im Backup. Filter zuerst Liste, dann Auge / Suche / Sort.
+- Liste anlegen / umbenennen / löschen (Confirm). Löschen leert `listId`, löscht keine Aufgaben.
+- Neue Aufgaben (Add-Leiste + Siri **Todo**) → aktuelle Liste; **Alle** → `listId` leer. Edit-Sheet kann zuordnen.
+- PDF **Liste teilen** folgt Liste **und** Auge; MD/CSV bleiben voller Dump (optionale Liste-Spalte / Comment-Meta). Import ohne Listeninfo gültig; Fixtures `todo-liste.md` / `.csv` unverändert. JSON-Anhängen merget `lists` per `id`.
+- Watch Geh-Modus + Complication: gleicher Filter. `currentListId` als Geschwisterfeld im WC-`todo-sync`-Payload (nicht im Blob), Watch schreibt App-Group `todo.currentListId`. Einkauf-Multiplex `{einkauf, todo}` unverändert.
+- **Kein** Listen-UI auf der Watch. **Kein** HTML in diesem PR — Schema hier, Pages-Follow-up separat.
+- Build 55
 
 ---
 
@@ -395,7 +404,7 @@ Nicht in Phase 8. Backward-compatible optionales `listId` / `lists`:
 - Edit / Prio / Reopen auf der Watch
 - iCloud, CloudKit, gemeinsames JSON mit Einkauf
 - HTML Theme-Mast / Service Worker / Shared-Keys in der nativen App
-- Listen (Phase 10)
+- Listen-Verwaltung / Edit auf der Watch (Phase 10 filtert nur)
 - App-Store-Submit, Display-Name-Änderung (App bleibt **Einkauf**)
 
 ---
@@ -458,4 +467,4 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 7: iPhone Wieder öffnen, Sort, Suche; Watch ohne Reopen/Suche/Sort-UI, Build 52.
 - [x] Phase 8: iPhone MD/CSV Export/Import (volle Liste), Watch ohne MD/CSV-UI, Build 53.
 - [x] Phase 9: `Description.md` auf den gelieferten Stand inkl. **Edit**-Labels; optionale weitere Politur kein Blocker.
-- [ ] Phase 10 Listen nicht in diesem PR; Folge-PRs halten Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Phase 10: benannte Listen `lists`/`listId`, Filter Alle, PDF+Siri+Watch, Build 55. Isolation bleibt (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).

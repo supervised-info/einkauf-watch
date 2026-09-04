@@ -106,6 +106,13 @@ enum WatchSyncEnvelope {
         return ""
     }
 
+    /// UI-Filter, nicht im Todo-Blob / Backup. Leer = Alle.
+    static func currentListId(from payload: [String: Any]) -> String? {
+        guard let raw = payload["currentListId"] else { return nil }
+        if let s = raw as? String { return TodoListFilter.resolved(s) }
+        return nil
+    }
+
     static func isEinkaufKind(_ kind: String?) -> Bool {
         guard let kind else { return false }
         return kind == einkaufSyncKind || kind == einkaufToggleKind || kind == einkaufPullKind
@@ -118,7 +125,7 @@ enum WatchSyncEnvelope {
 
     private static func strippedDomainPayload(_ current: [String: Any]) -> [String: Any] {
         var payload: [String: Any] = [:]
-        for key in ["kind", "v", "blob", "json"] {
+        for key in ["kind", "v", "blob", "json", "currentListId"] {
             if let value = current[key] { payload[key] = value }
         }
         return payload

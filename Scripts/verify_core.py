@@ -443,8 +443,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 54" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 54 / CURRENT_PROJECT_VERSION")
+    if "Build 55" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 55 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -919,8 +919,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 54" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 54")
+    if "CURRENT_PROJECT_VERSION = 55" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 55")
+    if "CURRENT_PROJECT_VERSION = 54" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 54 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 53" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 53 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 52" in pbx:
@@ -1014,8 +1016,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 54" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 54")
+    if "CURRENT_PROJECT_VERSION: 55" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 55")
+    if "CURRENT_PROJECT_VERSION: 54" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 54 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 53" in yml:
         fail("stale CURRENT_PROJECT_VERSION 53 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 52" in yml:
@@ -1317,8 +1321,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 54") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 54")
+    if pbx.count("CURRENT_PROJECT_VERSION = 55") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 55")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2207,10 +2211,56 @@ def test_todo_store() -> None:
     plan = (ROOT / "Docs/TodoIntegration.md").read_text()
     if "Phase 8" not in plan or "erledigt (Build 53)" not in plan:
         fail("TodoIntegration.md must mark Phase 8 done at Build 53")
-    if "### 10. Listen (geplant)" not in plan or "listId" not in plan:
-        fail("TodoIntegration.md must stub Phase 10 Listen without implementing it")
-    if "listId" in (ROOT / "Sources/Shared/TodoModels.swift").read_text():
-        fail("Phase 8 must not add listId (Phase 10)")
+    if "erledigt (Build 55)" not in plan or "listId" not in plan:
+        fail("TodoIntegration.md must mark Phase 10 Listen done at Build 55")
+    if "var listId: String?" not in models:
+        fail("TodoTask must have optional listId")
+    if "struct TodoNamedList" not in models or "var lists: [TodoNamedList]" not in models:
+        fail("TodoState must carry optional lists")
+    if "todo.iphone.currentListId" not in todo_ui:
+        fail("To-Do current list must persist AppStorage todo.iphone.currentListId")
+    if "todo.iphone.currentListId" not in models:
+        fail("TodoListFilter must document todo.iphone.currentListId")
+    if "enum TodoListFilter" not in models:
+        fail("TodoListFilter helper missing")
+    if 'static let allTitle = "Alle"' not in models:
+        fail("empty currentListId must mean Alle")
+    if "func addList" not in store or "func renameList" not in store or "func deleteList" not in store:
+        fail("TodoStore missing list CRUD")
+    if "func broadcastCurrentList" not in store:
+        fail("TodoStore must broadcast currentListId via existing todo WC channel")
+    if "currentListId" not in share_todo:
+        fail("To-Do PDF must follow the current list filter")
+    if "Keine Aufgaben in dieser Liste" not in share_todo:
+        fail("empty named-list PDF must show a German empty-filter error")
+    if "TodoListFilter.allTitle" not in todo_ui or "Neue Liste" not in todo_ui:
+        fail("To-Do toolbar must offer Alle / named lists / Neue Liste")
+    if 'Button(isEditing ? "Fertig" : "Edit")' not in todo_ui:
+        fail("To-Do toolbar must keep Edit / Fertig")
+    if 'Button(isEditing ? "Fertig" : "Bearbeiten")' in todo_ui:
+        fail("To-Do toolbar labels must stay Edit / Fertig, never Bearbeiten")
+    if "currentListId" not in (ROOT / "Sources/Shared/ConnectivitySync.swift").read_text():
+        fail("todo-sync payload must carry currentListId")
+    if "currentListId" not in (ROOT / "Sources/Shared/WatchSyncEnvelope.swift").read_text():
+        fail("WatchSyncEnvelope must pass currentListId through the todo channel")
+    if "TodoCurrentList.syncedId" not in (ROOT / "Sources/WatchWidgets/TodoWatchWidgets.swift").read_text():
+        fail("To-Do complication must use the synced current list")
+    if "testLocalAndBackupRoundTripWithListsAndListId" not in tests:
+        fail("tests must cover codec lists/listId roundtrip")
+    if "testOldBackupWithoutListsLoadsUnchanged" not in tests:
+        fail("tests must cover old JSON without lists")
+    if "testListFilterAlleShowsUnassignedAndNamed" not in tests:
+        fail("tests must cover TodoListFilter Alle vs named list")
+    if "testListCRUDClearsListIdAndNeverDeletesTasks" not in tests:
+        fail("tests must cover list CRUD without deleting tasks")
+    if "testPDFAndVisibleTasksFollowListThenEye" not in tests:
+        fail("tests must cover PDF list filter then eye")
+    if "testComplicationOpenCountFollowsCurrentList" not in tests:
+        fail("tests must cover filtered complication open count")
+    if "testAppendMergesListsById" not in tests:
+        fail("tests must cover append merge lists by id")
+    if "testMarkdownAndCSVCarryListMembershipWithoutBreakingBareRoundtrip" not in tests:
+        fail("tests must cover MD/CSV list membership plus import without list info")
     einkauf_tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
     if 'loadFixture("todo-v3-json.json")' in einkauf_tests:
         fail("todo fixture must not be fed into Einkauf BackupCodec tests")
@@ -2254,6 +2304,10 @@ def test_todo_store() -> None:
     if "TabView" not in desc and "To-Do" not in desc:
         fail("Description.md must mention the To-Do tab")
     watch_todo = (ROOT / "Sources/Watch/WatchTodoListView.swift").read_text()
+    if "todo.currentListId" not in watch_todo:
+        fail("Watch To-Do must filter by synced todo.currentListId")
+    if "Neue Liste" in watch_todo or "Listen…" in watch_todo or "addList" in watch_todo:
+        fail("Watch To-Do must not offer list management")
     if "todo.watch.hideCompleted" not in watch_todo:
         fail("Watch To-Do eye must use AppStorage todo.watch.hideCompleted")
     if "einkauf.watch.hideCompleted" in watch_todo or "todo.iphone.showCompleted" in watch_todo:

@@ -41,7 +41,10 @@ struct TodoTimelineProvider: TimelineProvider {
 
     private func makeEntry() -> TodoTimelineEntry {
         let state = TodoPersistence.load() ?? .empty
-        return TodoTimelineEntry(date: Date(), snapshot: .make(from: state))
+        return TodoTimelineEntry(
+            date: Date(),
+            snapshot: .make(from: state, currentListId: TodoCurrentList.syncedId)
+        )
     }
 }
 

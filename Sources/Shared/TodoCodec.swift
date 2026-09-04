@@ -65,7 +65,8 @@ enum TodoCodec {
                 format: backupFormat,
                 exportedAt: TodoTime.nowIso(exportedAt),
                 nextUid: normalized.nextUid,
-                tasks: normalized.tasks
+                tasks: normalized.tasks,
+                lists: normalized.lists
             )
         )
     }
@@ -90,7 +91,7 @@ enum TodoCodec {
             }
             do {
                 let envelope = try JSONDecoder().decode(TodoV3Envelope.self, from: IncomingJSON.stripBOM(data))
-                return try makeImportedState(tasks: envelope.tasks, nextUid: envelope.nextUid)
+                return try makeImportedState(tasks: envelope.tasks, nextUid: envelope.nextUid, lists: envelope.lists)
             } catch let error as TodoCodecError {
                 throw error
             } catch {
@@ -113,15 +114,21 @@ enum TodoCodec {
         return BackupCodec.looksLikeBackup(dict)
     }
 
-    static func makeImportedState(tasks: [TodoTask], nextUid: Int64 = 1) throws -> TodoState {
+    static func makeImportedState(
+        tasks: [TodoTask],
+        nextUid: Int64 = 1,
+        lists: [TodoNamedList] = []
+    ) throws -> TodoState {
         let kept = tasks.filter { !$0.text.isEmpty }
         guard !kept.isEmpty else { throw TodoCodecError.empty }
-        return normalized(TodoState(tasks: kept, nextUid: max(nextUid, 1), revision: 0))
+        return normalized(TodoState(tasks: kept, nextUid: max(nextUid, 1), revision: 0, lists: lists))
     }
 
     /// Wie HTML `normalizeTasks`: fehlende/doppelte UIDs aus `nextUid`; `nextUid = max+1`.
     static func normalized(_ state: TodoState) -> TodoState {
         var next = state
+        next.lists = normalizedLists(next.lists)
+        let validListIds = Set(next.lists.map(\.id))
         var used = Set<Int64>()
         var maxUid: Int64 = 0
         for i in next.tasks.indices {
@@ -141,6 +148,11 @@ enum TodoCodec {
             next.tasks[i].updatedAt = TodoJSON.isoTimestamp(next.tasks[i].updatedAt)
             if next.tasks[i].reopenedFromUid ?? 0 <= 0 { next.tasks[i].reopenedFromUid = nil }
             if next.tasks[i].reopenedToUid ?? 0 <= 0 { next.tasks[i].reopenedToUid = nil }
+            if let listId = TodoJSON.normalizedListId(next.tasks[i].listId), validListIds.contains(listId) {
+                next.tasks[i].listId = listId
+            } else {
+                next.tasks[i].listId = nil
+            }
         }
         var nextUid = max(next.nextUid, 1)
         nextUid = max(nextUid, maxUid + 1)
@@ -152,6 +164,35 @@ enum TodoCodec {
         }
         next.nextUid = nextUid
         return next
+    }
+
+    static func normalizedLists(_ lists: [TodoNamedList]) -> [TodoNamedList] {
+        var used = Set<String>()
+        var result: [TodoNamedList] = []
+        for list in lists {
+            var id = list.id.trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = list.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { continue }
+            if id.isEmpty {
+                id = TodoJSON.newListId()
+            }
+            if used.contains(id) { continue }
+            used.insert(id)
+            result.append(TodoNamedList(id: id, name: name))
+        }
+        return result
+    }
+
+    static func mergeLists(_ local: [TodoNamedList], _ incoming: [TodoNamedList]) -> [TodoNamedList] {
+        var byId: [String: TodoNamedList] = [:]
+        var order: [String] = []
+        for list in normalizedLists(local) + normalizedLists(incoming) {
+            if byId[list.id] == nil {
+                order.append(list.id)
+                byId[list.id] = list
+            }
+        }
+        return order.compactMap { byId[$0] }
     }
 }
 
@@ -166,16 +207,18 @@ private struct TodoV3Envelope: Codable {
     var exportedAt: String
     var nextUid: Int64
     var tasks: [TodoTask]
+    var lists: [TodoNamedList]
 
     enum CodingKeys: String, CodingKey {
-        case format, exportedAt, nextUid, tasks
+        case format, exportedAt, nextUid, tasks, lists
     }
 
-    init(format: String, exportedAt: String, nextUid: Int64, tasks: [TodoTask]) {
+    init(format: String, exportedAt: String, nextUid: Int64, tasks: [TodoTask], lists: [TodoNamedList]) {
         self.format = format
         self.exportedAt = exportedAt
         self.nextUid = nextUid
         self.tasks = tasks
+        self.lists = lists
     }
 
     init(from decoder: Decoder) throws {
@@ -190,5 +233,6 @@ private struct TodoV3Envelope: Codable {
             nextUid = 1
         }
         tasks = try c.decodeIfPresent([TodoTask].self, forKey: .tasks) ?? []
+        lists = try c.decodeIfPresent([TodoNamedList].self, forKey: .lists) ?? []
     }
 }

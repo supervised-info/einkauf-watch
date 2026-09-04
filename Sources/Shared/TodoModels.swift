@@ -18,12 +18,14 @@ struct TodoTask: Equatable, Hashable, Codable, Sendable, Identifiable {
     var createdAt: String
     var updatedAt: String
     var changedBy: String
+    /// Optionale benannte Liste. `nil` / leer = keiner Liste zugeordnet (sichtbar unter **Alle**).
+    var listId: String?
 
     var id: Int64 { uid }
 
     enum CodingKeys: String, CodingKey {
         case uid, text, completed, prioA, prioB, dueDate, completedDate, person
-        case reopenedFromUid, reopenedToUid, reopenedAt, createdAt, updatedAt, changedBy
+        case reopenedFromUid, reopenedToUid, reopenedAt, createdAt, updatedAt, changedBy, listId
     }
 
     init(
@@ -40,7 +42,8 @@ struct TodoTask: Equatable, Hashable, Codable, Sendable, Identifiable {
         reopenedAt: String = "",
         createdAt: String = "",
         updatedAt: String = "",
-        changedBy: String = ""
+        changedBy: String = "",
+        listId: String? = nil
     ) {
         self.uid = uid
         self.text = text
@@ -56,6 +59,7 @@ struct TodoTask: Equatable, Hashable, Codable, Sendable, Identifiable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.changedBy = changedBy
+        self.listId = TodoJSON.normalizedListId(listId)
     }
 
     init(from decoder: Decoder) throws {
@@ -77,6 +81,7 @@ struct TodoTask: Equatable, Hashable, Codable, Sendable, Identifiable {
         createdAt = TodoJSON.isoTimestamp(try c.decodeIfPresent(String.self, forKey: .createdAt))
         updatedAt = TodoJSON.isoTimestamp(try c.decodeIfPresent(String.self, forKey: .updatedAt))
         changedBy = try c.decodeIfPresent(String.self, forKey: .changedBy) ?? ""
+        listId = TodoJSON.normalizedListId(try c.decodeIfPresent(String.self, forKey: .listId))
     }
 
     func encode(to encoder: Encoder) throws {
@@ -95,6 +100,32 @@ struct TodoTask: Equatable, Hashable, Codable, Sendable, Identifiable {
         try c.encode(createdAt, forKey: .createdAt)
         try c.encode(updatedAt, forKey: .updatedAt)
         try c.encode(changedBy, forKey: .changedBy)
+        if let listId {
+            try c.encode(listId, forKey: .listId)
+        }
+    }
+}
+
+/// Benannte To-Do-Liste. Stabile String-IDs (UUID). Fehlt `lists` im JSON → `[]`.
+struct TodoNamedList: Equatable, Hashable, Codable, Sendable, Identifiable {
+    var id: String
+    var name: String
+
+    init(id: String = UUID().uuidString, name: String) {
+        self.id = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = (try c.decodeIfPresent(String.self, forKey: .id) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        name = (try c.decodeIfPresent(String.self, forKey: .name) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
     }
 }
 
@@ -103,15 +134,18 @@ struct TodoState: Equatable, Codable, Sendable {
     var nextUid: Int64
     /// Intern (lokales Envelope), analog `listRevision` — nicht im HTML-Export.
     var revision: UInt64
+    /// Benannte Listen. Fehlt das Feld → `[]`. Nicht die aktuelle Filterwahl (`todo.iphone.currentListId`).
+    var lists: [TodoNamedList]
 
     enum CodingKeys: String, CodingKey {
-        case tasks, nextUid, revision
+        case tasks, nextUid, revision, lists
     }
 
-    init(tasks: [TodoTask] = [], nextUid: Int64 = 1, revision: UInt64 = 0) {
+    init(tasks: [TodoTask] = [], nextUid: Int64 = 1, revision: UInt64 = 0, lists: [TodoNamedList] = []) {
         self.tasks = tasks
         self.nextUid = nextUid
         self.revision = revision
+        self.lists = lists
     }
 
     init(from decoder: Decoder) throws {
@@ -125,12 +159,31 @@ struct TodoState: Equatable, Codable, Sendable {
             nextUid = 1
         }
         revision = try c.decodeIfPresent(UInt64.self, forKey: .revision) ?? 0
+        lists = try c.decodeIfPresent([TodoNamedList].self, forKey: .lists) ?? []
     }
 
     static var empty: TodoState { TodoState() }
+
+    func list(id: String?) -> TodoNamedList? {
+        guard let id = TodoJSON.normalizedListId(id) else { return nil }
+        return lists.first { $0.id == id }
+    }
+
+    func listName(for id: String?) -> String? {
+        list(id: id)?.name
+    }
 }
 
 enum TodoJSON {
+    static func normalizedListId(_ raw: String?) -> String? {
+        let s = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return s.isEmpty ? nil : s
+    }
+
+    static func newListId() -> String {
+        UUID().uuidString
+    }
+
     static func positiveInt64(_ c: KeyedDecodingContainer<TodoTask.CodingKeys>, _ key: TodoTask.CodingKeys) -> Int64? {
         guard c.contains(key) else { return nil }
         if let v = try? c.decode(Int64.self, forKey: key) { return v > 0 ? v : nil }
@@ -401,6 +454,83 @@ enum TodoAuthor {
     static let app = "TS/NA"
 }
 
+/// Listenfilter: leeres `currentListId` = **Alle** (ungefiltert, inkl. Aufgaben ohne `listId`).
+/// Eine gesetzte ID zeigt nur Aufgaben dieser Liste. Nicht im Backup-Envelope.
+enum TodoListFilter {
+    static let allTitle = "Alle"
+    static let iphoneDefaultsKey = "todo.iphone.currentListId"
+    /// Watch + Complication, per WC `todo-sync.currentListId` in die App-Group geschrieben.
+    static let syncedDefaultsKey = "todo.currentListId"
+
+    static func resolved(_ raw: String?) -> String {
+        (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// `true` wenn die Aufgabe zur aktuellen Liste gehört (Alle = immer).
+    static func matches(_ task: TodoTask, currentListId: String) -> Bool {
+        let id = resolved(currentListId)
+        if id.isEmpty { return true }
+        return TodoJSON.normalizedListId(task.listId) == id
+    }
+
+    static func tasks(_ tasks: [TodoTask], currentListId: String) -> [TodoTask] {
+        tasks.filter { matches($0, currentListId: currentListId) }
+    }
+
+    static func progressLabel(_ tasks: [TodoTask]) -> String {
+        let done = tasks.filter(\.completed).count
+        return "\(tasks.count - done)/\(done)/\(tasks.count)"
+    }
+
+    static func title(lists: [TodoNamedList], currentListId: String) -> String {
+        let id = resolved(currentListId)
+        if id.isEmpty { return allTitle }
+        return lists.first { $0.id == id }?.name ?? allTitle
+    }
+}
+
+/// Aktuelle Liste: iPhone `todo.iphone.currentListId` (Standard-UserDefaults, nicht Backup).
+/// Watch/Complication: App-Group `todo.currentListId`, gefüllt aus dem WC-Feld `currentListId`
+/// (nicht aus dem Todo-Snapshot — UI-Filter, kein `revision`-Bump).
+enum TodoCurrentList {
+    static let iphoneDefaultsKey = TodoListFilter.iphoneDefaultsKey
+    static let syncedDefaultsKey = TodoListFilter.syncedDefaultsKey
+
+    static var suiteDefaults: UserDefaults? {
+        UserDefaults(suiteName: Persistence.appGroupId)
+    }
+
+    /// iPhone-Siri und WC-Payload: Standard-Defaults der iPhone-UI.
+    /// Watch: zuletzt per WC empfangene ID.
+    static var payloadId: String {
+        #if os(watchOS)
+        return syncedId
+        #else
+        return TodoListFilter.resolved(UserDefaults.standard.string(forKey: iphoneDefaultsKey))
+        #endif
+    }
+
+    /// `nil` wenn **Alle** gewählt ist — neue Aufgaben bleiben ohne `listId`.
+    static var addingListId: String? {
+        let id = payloadId
+        return id.isEmpty ? nil : id
+    }
+
+    static var syncedId: String {
+        if let s = suiteDefaults?.string(forKey: syncedDefaultsKey) {
+            return TodoListFilter.resolved(s)
+        }
+        return TodoListFilter.resolved(UserDefaults.standard.string(forKey: syncedDefaultsKey))
+    }
+
+    static func applyRemote(_ raw: String) {
+        let value = TodoListFilter.resolved(raw)
+        UserDefaults.standard.set(value, forKey: syncedDefaultsKey)
+        suiteDefaults?.set(value, forKey: syncedDefaultsKey)
+        suiteDefaults?.synchronize()
+    }
+}
+
 /// MD/CSV-Export wie HTML `groupByPerson`: leere Person zuletzt (`U+FFFF`), dann Prio.
 /// PDF (`TodoListGrouping`) bleibt bei leerer Person zuerst / „Keine Person“ ohne Klammern.
 enum TodoHTMLGrouping {
@@ -442,15 +572,26 @@ enum TodoListGrouping {
         return trimmed.isEmpty ? unlabeledPerson : trimmed
     }
 
-    static func visibleTasks(_ tasks: [TodoTask], showCompleted: Bool) -> [TodoTask] {
-        let source = showCompleted ? tasks : tasks.filter { !$0.completed }
+    static func visibleTasks(
+        _ tasks: [TodoTask],
+        showCompleted: Bool,
+        currentListId: String = ""
+    ) -> [TodoTask] {
+        var source = TodoListFilter.tasks(tasks, currentListId: currentListId)
+        if !showCompleted {
+            source = source.filter { !$0.completed }
+        }
         return TodoOrdering.sorted(source)
     }
 
     /// Person-Gruppen in Listenreihenfolge (Person, offen zuerst, Prio).
-    static func groups(_ tasks: [TodoTask], showCompleted: Bool) -> [TodoPDFGroup] {
+    static func groups(
+        _ tasks: [TodoTask],
+        showCompleted: Bool,
+        currentListId: String = ""
+    ) -> [TodoPDFGroup] {
         var groups: [TodoPDFGroup] = []
-        for task in visibleTasks(tasks, showCompleted: showCompleted) {
+        for task in visibleTasks(tasks, showCompleted: showCompleted, currentListId: currentListId) {
             let title = personTitle(task.person)
             if var last = groups.last, last.title == title {
                 last.tasks.append(task)
@@ -503,9 +644,10 @@ struct TodoComplicationSnapshot: Equatable, Sendable {
         progress: 0.25
     )
 
-    static func make(from state: TodoState) -> TodoComplicationSnapshot {
-        let done = state.tasks.filter(\.completed).count
-        let total = state.tasks.count
+    static func make(from state: TodoState, currentListId: String = "") -> TodoComplicationSnapshot {
+        let tasks = TodoListFilter.tasks(state.tasks, currentListId: currentListId)
+        let done = tasks.filter(\.completed).count
+        let total = tasks.count
         let open = total - done
         return TodoComplicationSnapshot(
             openCount: open,

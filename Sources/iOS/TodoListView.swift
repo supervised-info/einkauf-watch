@@ -1,15 +1,17 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// iPhone-To-Do: Person / Prio / Datum, Wieder öffnen, Sort, Suche, Backup `todo-v3-json`,
-/// MD/CSV (volle Liste), Liste teilen (PDF folgt dem Auge).
-/// Watch: nur Liste + Toggle, ohne Reopen/Suche/Sort/MD/CSV-UI.
+/// iPhone-To-Do: Person / Prio / Datum, Wieder öffnen, Sort, Suche, benannte Listen,
+/// Backup `todo-v3-json`, MD/CSV (volle Liste), Liste teilen (PDF folgt Liste + Auge).
+/// Watch: nur Liste + Toggle, ohne Reopen/Suche/Sort/MD/CSV/Listen-UI.
 struct TodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @EnvironmentObject private var appearance: AppearanceSettings
     @Environment(\.einkaufTheme) private var theme
     @AppStorage("todo.iphone.showCompleted") private var showCompleted = true
     @AppStorage("todo.iphone.sortKey") private var sortKeyRaw = TodoSortKey.person.rawValue
+    /// Leer = Alle (ungefiltert). Nicht im Backup.
+    @AppStorage("todo.iphone.currentListId") private var currentListId = ""
     @State private var draft = ""
     @State private var draftPerson = ""
     @State private var draftPrioA = ""
@@ -33,6 +35,9 @@ struct TodoListView: View {
     @State private var pendingReopen: TodoTask?
     @State private var highlightUid: Int64?
     @State private var scrollToUid: Int64?
+    @State private var showCreateList = false
+    @State private var showManageLists = false
+    @State private var newListName = ""
 
     private var sortKey: TodoSortKey {
         TodoSortKey(rawValue: sortKeyRaw) ?? .person
@@ -42,8 +47,24 @@ struct TodoListView: View {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var listScopedTasks: [TodoTask] {
+        TodoListFilter.tasks(todos.state.tasks, currentListId: currentListId)
+    }
+
+    private var countTasks: [TodoTask] {
+        showCompleted ? listScopedTasks : listScopedTasks.filter { !$0.completed }
+    }
+
+    private var progressLabel: String {
+        TodoListFilter.progressLabel(countTasks)
+    }
+
+    private var currentListTitle: String {
+        TodoListFilter.title(lists: todos.state.lists, currentListId: currentListId)
+    }
+
     private var visibleTasks: [TodoTask] {
-        var source = showCompleted ? todos.state.tasks : todos.state.tasks.filter { !$0.completed }
+        var source = countTasks
         if !searchQuery.isEmpty {
             source = source.filter { TodoOrdering.matches($0, query: searchQuery) }
         }
@@ -66,6 +87,13 @@ struct TodoListView: View {
                             "Keine Treffer.",
                             systemImage: "magnifyingglass",
                             description: Text("Person oder Text ändern.")
+                        )
+                        .foregroundStyle(theme.ink)
+                    } else if !currentListId.isEmpty && listScopedTasks.isEmpty {
+                        ContentUnavailableView(
+                            "Keine Aufgaben in dieser Liste.",
+                            systemImage: "checklist",
+                            description: Text("Aufgabe hinzufügen oder eine andere Liste wählen.")
                         )
                         .foregroundStyle(theme.ink)
                     } else {
@@ -160,11 +188,47 @@ struct TodoListView: View {
                 }
                 return .ignored
             }
+            .onChange(of: currentListId) { _, id in
+                if !id.isEmpty && todos.state.list(id: id) == nil {
+                    currentListId = ""
+                }
+                todos.broadcastCurrentList()
+            }
+            .alert("Neue Liste", isPresented: $showCreateList) {
+                TextField("Name", text: $newListName)
+                Button("Anlegen") { createList() }
+                Button("Abbrechen", role: .cancel) { newListName = "" }
+            } message: {
+                Text("Aufgaben dieser Liste erscheinen, wenn sie ausgewählt ist.")
+            }
+            .sheet(isPresented: $showManageLists) {
+                TodoListsSheet(
+                    lists: todos.state.lists,
+                    onRename: { id, name in todos.renameList(id: id, name: name) },
+                    onDelete: { list in
+                        todos.deleteList(id: list.id)
+                        if currentListId == list.id {
+                            currentListId = ""
+                        }
+                    }
+                )
+                .environment(\.einkaufTheme, theme)
+                .einkaufScreen(theme)
+            }
             .sheet(item: $editingTask) { task in
                 TodoEditSheet(
                     task: task,
-                    onSave: { text, person, prioA, prioB, dueDate in
-                        todos.update(task.uid, text: text, person: person, prioA: prioA, prioB: prioB, dueDate: dueDate)
+                    lists: todos.state.lists,
+                    onSave: { text, person, prioA, prioB, dueDate, listId in
+                        todos.update(
+                            task.uid,
+                            text: text,
+                            person: person,
+                            prioA: prioA,
+                            prioB: prioB,
+                            dueDate: dueDate,
+                            listId: .some(listId)
+                        )
                     },
                     onReopen: {
                         pendingReopen = task
@@ -194,6 +258,45 @@ struct TodoListView: View {
                     .symbolVariant(isSearching || !searchQuery.isEmpty ? .fill : .none)
             }
             .accessibilityLabel(isSearching ? "Suche schließen" : "Suche")
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Menu {
+                Button {
+                    currentListId = ""
+                } label: {
+                    if currentListId.isEmpty {
+                        Label(TodoListFilter.allTitle, systemImage: "checkmark")
+                    } else {
+                        Text(TodoListFilter.allTitle)
+                    }
+                }
+                ForEach(todos.state.lists) { list in
+                    Button {
+                        currentListId = list.id
+                    } label: {
+                        if currentListId == list.id {
+                            Label(list.name, systemImage: "checkmark")
+                        } else {
+                            Text(list.name)
+                        }
+                    }
+                }
+                Divider()
+                Button("Neue Liste…", systemImage: "plus") {
+                    newListName = ""
+                    showCreateList = true
+                }
+                Button("Listen…", systemImage: "pencil") {
+                    showManageLists = true
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "list.bullet")
+                    Text(currentListTitle)
+                }
+            }
+            .accessibilityLabel("Liste")
+            .accessibilityValue("\(currentListTitle), \(progressLabel)")
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button {
@@ -542,8 +645,22 @@ struct TodoListView: View {
         }
     }
 
+    private func createList() {
+        let name = newListName
+        newListName = ""
+        guard let id = todos.addList(name: name) else { return }
+        currentListId = id
+    }
+
     private func submit() {
-        todos.add(draft, person: draftPerson, prioA: draftPrioA, prioB: draftPrioB, dueDate: draftDue)
+        todos.add(
+            draft,
+            person: draftPerson,
+            prioA: draftPrioA,
+            prioB: draftPrioB,
+            dueDate: draftDue,
+            listId: TodoJSON.normalizedListId(currentListId)
+        )
         draft = ""
         draftPerson = ""
         draftPrioA = ""
@@ -613,7 +730,7 @@ struct TodoListView: View {
         )
     }
 
-    /// Volle Liste, unabhängig vom Auge (`todo.iphone.showCompleted`) — Roundtrip mit HTML.
+    /// Volle Liste aller Aufgaben und Listen, unabhängig vom Auge und vom Listenfilter — Roundtrip.
     private func exportMarkdown() {
         do {
             exportDocument = TodoFileDocument(data: try todos.exportMarkdown())
@@ -664,10 +781,16 @@ struct TodoListView: View {
     }
 
     private func shareList() {
-        let groups = TodoListGrouping.groups(todos.state.tasks, showCompleted: showCompleted)
+        let groups = TodoListGrouping.groups(
+            todos.state.tasks,
+            showCompleted: showCompleted,
+            currentListId: currentListId
+        )
         guard !groups.isEmpty else {
             if todos.state.tasks.isEmpty {
                 alertMessage = "Die Liste ist leer."
+            } else if listScopedTasks.isEmpty {
+                alertMessage = "Keine Aufgaben in dieser Liste."
             } else {
                 alertMessage = "Keine offenen Aufgaben. Abgeschlossene sind ausgeblendet."
             }
@@ -793,7 +916,8 @@ private struct TodoDuePicker: View {
 
 private struct TodoEditSheet: View {
     let task: TodoTask
-    var onSave: (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String) -> Void
+    let lists: [TodoNamedList]
+    var onSave: (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String, _ listId: String?) -> Void
     var onReopen: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.einkaufTheme) private var theme
@@ -802,13 +926,16 @@ private struct TodoEditSheet: View {
     @State private var prioA: String
     @State private var prioB: String
     @State private var dueDate: String
+    @State private var listId: String
 
     init(
         task: TodoTask,
-        onSave: @escaping (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String) -> Void,
+        lists: [TodoNamedList] = [],
+        onSave: @escaping (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String, _ listId: String?) -> Void,
         onReopen: (() -> Void)? = nil
     ) {
         self.task = task
+        self.lists = lists
         self.onSave = onSave
         self.onReopen = onReopen
         _text = State(initialValue: task.text)
@@ -816,6 +943,7 @@ private struct TodoEditSheet: View {
         _prioA = State(initialValue: TodoJSON.prioA(task.prioA))
         _prioB = State(initialValue: TodoJSON.prioB(task.prioB))
         _dueDate = State(initialValue: TodoJSON.isoDate(task.dueDate))
+        _listId = State(initialValue: TodoJSON.normalizedListId(task.listId) ?? "")
     }
 
     var body: some View {
@@ -840,6 +968,20 @@ private struct TodoEditSheet: View {
                             .foregroundStyle(theme.muted)
                         Spacer()
                         TodoDuePicker(iso: $dueDate)
+                    }
+                    .einkaufRowChrome()
+                    HStack {
+                        Text("Liste")
+                            .foregroundStyle(theme.muted)
+                        Spacer()
+                        Picker("Liste", selection: $listId) {
+                            Text(TodoListFilter.allTitle).tag("")
+                            ForEach(lists) { list in
+                                Text(list.name).tag(list.id)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .accessibilityLabel("Liste")
                     }
                     .einkaufRowChrome()
                 }
@@ -869,8 +1011,96 @@ private struct TodoEditSheet: View {
     }
 
     private func save() {
-        onSave(text, person, prioA, prioB, dueDate)
+        onSave(text, person, prioA, prioB, dueDate, TodoJSON.normalizedListId(listId))
         dismiss()
+    }
+}
+
+private struct TodoListsSheet: View {
+    let lists: [TodoNamedList]
+    var onRename: (String, String) -> Void
+    var onDelete: (TodoNamedList) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.einkaufTheme) private var theme
+    @State private var renaming: TodoNamedList?
+    @State private var renameDraft = ""
+    @State private var pendingDelete: TodoNamedList?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if lists.isEmpty {
+                    Text("Noch keine Listen.")
+                        .foregroundStyle(theme.muted)
+                        .einkaufRowChrome()
+                } else {
+                    ForEach(lists) { list in
+                        HStack {
+                            Text(list.name)
+                                .foregroundStyle(theme.ink)
+                            Spacer()
+                            Button("Umbenennen") {
+                                renaming = list
+                                renameDraft = list.name
+                            }
+                            .buttonStyle(.borderless)
+                            Button("Löschen", role: .destructive) {
+                                pendingDelete = list
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                        .einkaufRowChrome()
+                    }
+                    .onDelete { offsets in
+                        for index in offsets where lists.indices.contains(index) {
+                            pendingDelete = lists[index]
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .einkaufListChrome()
+            .navigationTitle("Listen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig") { dismiss() }
+                }
+            }
+            .alert("Liste umbenennen", isPresented: Binding(
+                get: { renaming != nil },
+                set: { if !$0 { renaming = nil } }
+            )) {
+                TextField("Name", text: $renameDraft)
+                Button("Fertig") {
+                    if let list = renaming {
+                        onRename(list.id, renameDraft)
+                    }
+                    renaming = nil
+                }
+                Button("Abbrechen", role: .cancel) { renaming = nil }
+            }
+            .confirmationDialog(
+                "Liste löschen",
+                isPresented: Binding(
+                    get: { pendingDelete != nil },
+                    set: { if !$0 { pendingDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Löschen", role: .destructive) {
+                    if let list = pendingDelete {
+                        onDelete(list)
+                    }
+                    pendingDelete = nil
+                }
+                Button("Abbrechen", role: .cancel) { pendingDelete = nil }
+            } message: {
+                if let list = pendingDelete {
+                    Text("Liste „\(list.name)“ wirklich löschen? Aufgaben bleiben ohne Liste.")
+                }
+            }
+        }
     }
 }
 

@@ -41,6 +41,64 @@ final class TodoCodecTests: XCTestCase {
         XCTAssertEqual(again.tasks.map(\.person), ["TS"])
         XCTAssertEqual(again.nextUid, 4)
         XCTAssertEqual(again.revision, 2)
+        XCTAssertEqual(again.lists, [])
+        XCTAssertNil(again.tasks[0].listId)
+    }
+
+    func testLocalAndBackupRoundTripWithListsAndListId() throws {
+        let haus = TodoNamedList(id: "list-haus", name: "Haus")
+        let original = TodoCodec.normalized(
+            TodoState(
+                tasks: [
+                    TodoTask(uid: 1, text: "Müll", listId: "list-haus"),
+                    TodoTask(uid: 2, text: "Inbox"),
+                    TodoTask(uid: 3, text: "Geist", listId: "missing")
+                ],
+                nextUid: 4,
+                revision: 3,
+                lists: [haus, TodoNamedList(id: "", name: "  "), TodoNamedList(id: "list-haus", name: "Duplikat")]
+            )
+        )
+        XCTAssertEqual(original.lists.map(\.id), ["list-haus"])
+        XCTAssertEqual(original.tasks.map(\.listId), ["list-haus", nil, nil])
+
+        let local = try TodoCodec.encodeLocal(original)
+        let localObj = try JSONSerialization.jsonObject(with: local) as! [String: Any]
+        XCTAssertEqual(localObj["kind"] as? String, "todo-local")
+        let againLocal = try TodoCodec.decodeLocal(local)
+        XCTAssertEqual(againLocal.lists, [haus])
+        XCTAssertEqual(againLocal.tasks.map(\.listId), ["list-haus", nil, nil])
+
+        let backup = try TodoCodec.encodeBackup(original)
+        let obj = try JSONSerialization.jsonObject(with: backup) as! [String: Any]
+        XCTAssertEqual(obj["format"] as? String, "todo-v3-json")
+        XCTAssertNotNil(obj["lists"])
+        XCTAssertNil(obj["revision"])
+        let againBackup = try TodoCodec.decodeBackup(backup)
+        XCTAssertEqual(againBackup.lists.map(\.id), ["list-haus"])
+        XCTAssertEqual(againBackup.tasks[0].listId, "list-haus")
+        XCTAssertNil(againBackup.tasks[1].listId)
+    }
+
+    func testOldBackupWithoutListsLoadsUnchanged() throws {
+        let json = """
+        {"format":"todo-v3-json","nextUid":3,"tasks":[{"uid":1,"text":"Alt","completed":false},{"uid":2,"text":"Fertig","completed":true}],"future":true}
+        """
+        let state = try TodoCodec.decodeBackup(Data(json.utf8))
+        XCTAssertEqual(state.lists, [])
+        XCTAssertEqual(state.tasks.map(\.text), ["Alt", "Fertig"])
+        XCTAssertEqual(state.tasks.map(\.listId), [nil, nil] as [String?])
+        XCTAssertEqual(state.nextUid, 3)
+    }
+
+    func testUnknownFieldsAndEmptyListIdAreIgnored() throws {
+        let json = """
+        {"kind":"todo-local","v":1,"state":{"lists":[{"id":"a","name":"Arbeit","extra":1}],"tasks":[{"uid":1,"text":"X","listId":"","unknown":true},{"uid":2,"text":"Y","listId":"a"}],"nextUid":3}}
+        """
+        let state = try TodoCodec.decodeLocal(Data(json.utf8))
+        XCTAssertEqual(state.lists.map(\.name), ["Arbeit"])
+        XCTAssertNil(state.tasks[0].listId)
+        XCTAssertEqual(state.tasks[1].listId, "a")
     }
 
     func testRejectsEinkaufLocalAndBackup() throws {
@@ -302,6 +360,47 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertFalse(loadedCopy.completed)
         XCTAssertEqual(loadedCopy.reopenedFromUid, uid)
     }
+
+    func testListCRUDClearsListIdAndNeverDeletesTasks() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(state: .empty, enableSync: false)
+        XCTAssertNil(store.addList(name: "  "))
+        let haus = try XCTUnwrap(store.addList(name: "  Haus  "))
+        XCTAssertEqual(store.state.lists.map(\.name), ["Haus"])
+        let uid = try XCTUnwrap(store.add("Fenster", listId: haus))
+        XCTAssertEqual(store.state.tasks[0].listId, haus)
+        let inbox = try XCTUnwrap(store.add("Inbox"))
+        XCTAssertNil(store.state.tasks[1].listId)
+
+        store.renameList(id: haus, name: "Haushalt")
+        XCTAssertEqual(store.state.lists[0].name, "Haushalt")
+
+        store.update(uid, listId: .some(nil))
+        XCTAssertNil(store.state.tasks[0].listId)
+        store.update(uid, listId: .some(haus))
+        XCTAssertEqual(store.state.tasks[0].listId, haus)
+
+        store.toggle(uid)
+        let copyUid = try XCTUnwrap(store.reopen(uid))
+        XCTAssertEqual(store.state.tasks.first { $0.uid == copyUid }?.listId, haus)
+
+        let beforeRevision = store.state.revision
+        store.deleteList(id: haus)
+        XCTAssertTrue(store.state.lists.isEmpty)
+        XCTAssertEqual(store.state.tasks.map(\.text).sorted(), ["Fenster", "Fenster", "Inbox"])
+        XCTAssertTrue(store.state.tasks.allSatisfy { $0.listId == nil })
+        XCTAssertGreaterThan(store.state.revision, beforeRevision)
+    }
 }
 
 final class TodoOrderingTests: XCTestCase {
@@ -358,6 +457,28 @@ final class TodoOrderingTests: XCTestCase {
         XCTAssertEqual(TodoOrdering.sorted(tasks, by: .completedDate).map(\.uid), [4, 1, 3, 2, 5] as [Int64])
         XCTAssertEqual(TodoSortKey.allCases.map(\.rawValue), ["person", "prioA", "text", "dueDate", "completed", "completedDate"])
         XCTAssertEqual(TodoSortKey.iphoneDefaultsKey, "todo.iphone.sortKey")
+    }
+
+    func testListFilterAlleShowsUnassignedAndNamed() {
+        let haus = "list-haus"
+        let tasks = [
+            TodoTask(uid: 1, text: "Inbox"),
+            TodoTask(uid: 2, text: "Fenster", listId: haus),
+            TodoTask(uid: 3, text: "Garten", listId: "other")
+        ]
+        XCTAssertEqual(TodoListFilter.tasks(tasks, currentListId: "").map(\.uid), [1, 2, 3] as [Int64])
+        XCTAssertEqual(TodoListFilter.tasks(tasks, currentListId: haus).map(\.uid), [2] as [Int64])
+        XCTAssertEqual(TodoListFilter.tasks(tasks, currentListId: "   ").map(\.uid), [1, 2, 3] as [Int64])
+        XCTAssertTrue(TodoListFilter.matches(tasks[0], currentListId: ""))
+        XCTAssertFalse(TodoListFilter.matches(tasks[0], currentListId: haus))
+        XCTAssertEqual(TodoListFilter.allTitle, "Alle")
+        XCTAssertEqual(TodoListFilter.iphoneDefaultsKey, "todo.iphone.currentListId")
+        XCTAssertEqual(TodoListFilter.progressLabel(tasks), "3/0/3")
+        XCTAssertEqual(
+            TodoListFilter.title(lists: [TodoNamedList(id: haus, name: "Haus")], currentListId: haus),
+            "Haus"
+        )
+        XCTAssertEqual(TodoListFilter.title(lists: [], currentListId: ""), "Alle")
     }
 
     func testMatchesFilterPersonOrTextCaseInsensitive() {
@@ -426,6 +547,24 @@ final class TodoListGroupingTests: XCTestCase {
         let groups = TodoListGrouping.groups(tasks, showCompleted: true)
         XCTAssertEqual(groups.map(\.title), ["Keine Person"])
         XCTAssertEqual(groups[0].tasks.map(\.uid), [1, 2] as [Int64])
+    }
+
+    func testPDFAndVisibleTasksFollowListThenEye() {
+        let haus = "list-haus"
+        let tasks = [
+            TodoTask(uid: 1, text: "open haus", person: "NA", listId: haus),
+            TodoTask(uid: 2, text: "done haus", completed: true, person: "NA", listId: haus),
+            TodoTask(uid: 3, text: "open other", person: "TS")
+        ]
+        let filtered = TodoListGrouping.groups(tasks, showCompleted: false, currentListId: haus)
+        XCTAssertEqual(filtered.map(\.title), ["NA"])
+        XCTAssertEqual(filtered[0].tasks.map(\.uid), [1] as [Int64])
+        XCTAssertEqual(TodoListGrouping.progressLabel(groups: filtered), "1/0/1")
+
+        let allOpen = TodoListGrouping.groups(tasks, showCompleted: false, currentListId: "")
+        XCTAssertEqual(allOpen.map(\.title), ["NA", "TS"])
+        XCTAssertEqual(TodoListGrouping.progressLabel(groups: allOpen), "2/0/2")
+        XCTAssertTrue(TodoListGrouping.groups(tasks, showCompleted: false, currentListId: "missing").isEmpty)
     }
 
     func testMetaLinePrioAndDue() {
@@ -574,11 +713,48 @@ final class TodoStoreBackupTests: XCTestCase {
         let empty = TodoStore(state: .empty, enableSync: false)
         try empty.importBackup(exported, append: false)
         XCTAssertEqual(empty.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+        XCTAssertEqual(empty.state.lists, [])
 
         XCTAssertThrowsError(try store.importBackup(try BackupCodec.encodeExport(.seed), append: false)) { error in
             XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
         }
         XCTAssertEqual(store.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+    }
+
+    func testAppendMergesListsById() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let haus = TodoNamedList(id: "list-haus", name: "Haus")
+        let arbeit = TodoNamedList(id: "list-arbeit", name: "Arbeit")
+        let store = TodoStore(
+            state: TodoState(
+                tasks: [TodoTask(uid: 1, text: "Lokal", listId: "list-haus")],
+                nextUid: 2,
+                lists: [haus]
+            ),
+            enableSync: false
+        )
+        let incoming = try TodoCodec.encodeBackup(
+            TodoState(
+                tasks: [TodoTask(uid: 8, text: "Remote", listId: "list-arbeit")],
+                nextUid: 9,
+                lists: [TodoNamedList(id: "list-haus", name: "House"), arbeit]
+            )
+        )
+        try store.importBackup(incoming, append: true)
+        XCTAssertEqual(store.state.lists.map(\.id), ["list-haus", "list-arbeit"])
+        XCTAssertEqual(store.state.lists.map(\.name), ["Haus", "Arbeit"])
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Lokal", "Remote"])
+        XCTAssertEqual(store.state.tasks.map(\.listId), ["list-haus", "list-arbeit"])
     }
 }
 
@@ -750,6 +926,54 @@ final class TodoMarkdownCSVTests: XCTestCase {
         XCTAssertEqual(groups.map(\.person), ["NA", "TS", ""])
         XCTAssertEqual(TodoMarkdown.unlabeledPerson, "(Keine Person)")
     }
+
+    func testMarkdownAndCSVCarryListMembershipWithoutBreakingBareRoundtrip() throws {
+        let haus = TodoNamedList(id: "list-haus", name: "Haus")
+        let state = TodoState(
+            tasks: [
+                TodoTask(
+                    uid: 1,
+                    text: "Fenster",
+                    person: "TS",
+                    createdAt: "2026-08-01T10:00:00.000Z",
+                    updatedAt: "2026-08-01T10:00:00.000Z",
+                    changedBy: "TS/NA",
+                    listId: "list-haus"
+                ),
+                TodoTask(uid: 2, text: "Inbox", person: "NA")
+            ],
+            nextUid: 3,
+            lists: [haus]
+        )
+        let md = try TodoMarkdown.encode(state, exportedAt: Date(timeIntervalSince1970: 0), timeZone: TimeZone(secondsFromGMT: 0)!)
+        let mdText = String(data: md, encoding: .utf8)!
+        XCTAssertTrue(mdText.contains("Liste Haus"))
+        XCTAssertTrue(mdText.contains("list:list-haus"))
+        let fromMD = try TodoMarkdown.decode(md)
+        XCTAssertEqual(fromMD.tasks.first { $0.uid == 1 }?.listId, "list-haus")
+        XCTAssertNil(fromMD.tasks.first { $0.uid == 2 }?.listId)
+        XCTAssertEqual(fromMD.lists.map(\.id), ["list-haus"])
+        XCTAssertEqual(fromMD.lists.map(\.name), ["Haus"])
+
+        let csv = try TodoCSV.encode(state)
+        let csvText = String(data: csv, encoding: .utf8)!
+        XCTAssertTrue(csvText.contains("Liste"))
+        XCTAssertTrue(csvText.contains("List-ID"))
+        XCTAssertTrue(csvText.contains("list-haus"))
+        let fromCSV = try TodoCSV.decode(csv)
+        XCTAssertEqual(fromCSV.tasks.first { $0.uid == 1 }?.listId, "list-haus")
+        XCTAssertEqual(fromCSV.lists.map(\.name), ["Haus"])
+
+        let bareMD = try loadTodoFixture("todo-liste.md")
+        XCTAssertEqual(try TodoMarkdown.decode(bareMD).lists, [])
+        let bareCSV = """
+        Person,Prio A,Prio B,Aufgabe,Enddatum,Abgeschlossen am,UID,Reopened From UID,Reopened To UID,Reopened At,Erstellt am,Geändert am,Geändert von
+        NA,B,2,Anrufen,2026-09-10,,4,,,,04.09.2026 08:00,04.09.2026 08:00,TS/NA
+        """
+        let bare = try TodoCSV.decode(bareCSV)
+        XCTAssertEqual(bare.lists, [])
+        XCTAssertNil(bare.tasks[0].listId)
+    }
 }
 
 @MainActor
@@ -804,6 +1028,22 @@ final class WatchSyncEnvelopeTests: XCTestCase {
         let todo = WatchSyncEnvelope.dictionary(merged[WatchSyncEnvelope.todoKey])
         XCTAssertEqual(todo?["kind"] as? String, "todo-sync")
         XCTAssertEqual(todo?["blob"] as? Data, todoBlob)
+    }
+
+    func testTodoPayloadCarriesCurrentListIdWithoutTouchingEinkauf() {
+        let payload: [String: Any] = [
+            "kind": "todo-sync",
+            "v": 1,
+            "blob": Data("todo".utf8),
+            "currentListId": "list-haus"
+        ]
+        let merged = WatchSyncEnvelope.merging([:], domain: WatchSyncEnvelope.todoKey, payload: payload)
+        let todo = WatchSyncEnvelope.dictionary(merged[WatchSyncEnvelope.todoKey])
+        XCTAssertEqual(todo?["currentListId"] as? String, "list-haus")
+        XCTAssertNil(merged[WatchSyncEnvelope.einkaufKey])
+        XCTAssertEqual(WatchSyncEnvelope.currentListId(from: payload), "list-haus")
+        XCTAssertEqual(WatchSyncEnvelope.currentListId(from: ["currentListId": "  "]), "")
+        XCTAssertNil(WatchSyncEnvelope.currentListId(from: ["kind": "todo-sync"]))
     }
 
     func testMergingEinkaufDoesNotWipeTodo() {
@@ -943,6 +1183,26 @@ final class TodoComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.compactCountText, "erledigt")
         XCTAssertEqual(snap.openCount, 0)
         XCTAssertEqual(snap.progress, 1, accuracy: 0.0001)
+    }
+
+    func testComplicationOpenCountFollowsCurrentList() {
+        let state = TodoState(
+            tasks: [
+                TodoTask(uid: 1, text: "A", listId: "haus"),
+                TodoTask(uid: 2, text: "B", completed: true, listId: "haus"),
+                TodoTask(uid: 3, text: "C")
+            ],
+            nextUid: 4,
+            lists: [TodoNamedList(id: "haus", name: "Haus")]
+        )
+        let all = TodoComplicationSnapshot.make(from: state)
+        XCTAssertEqual(all.openCount, 2)
+        let filtered = TodoComplicationSnapshot.make(from: state, currentListId: "haus")
+        XCTAssertEqual(filtered.openCount, 1)
+        XCTAssertEqual(filtered.doneCount, 1)
+        XCTAssertEqual(filtered.compactCountText, "1")
+        let emptyFilter = TodoComplicationSnapshot.make(from: state, currentListId: "missing")
+        XCTAssertEqual(emptyFilter.compactCountText, "erledigt")
     }
 }
 
