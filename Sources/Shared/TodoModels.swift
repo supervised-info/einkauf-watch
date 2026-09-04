@@ -253,3 +253,55 @@ enum TodoOrdering {
 enum TodoAuthor {
     static let app = "TS/NA"
 }
+
+/// PDF-/Share-Gruppen: Person wie in der Liste, Auge filtert erledigte.
+struct TodoPDFGroup: Equatable, Sendable {
+    var title: String
+    var tasks: [TodoTask]
+}
+
+enum TodoListGrouping {
+    static let unlabeledPerson = "Keine Person"
+
+    static func personTitle(_ person: String) -> String {
+        let trimmed = person.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? unlabeledPerson : trimmed
+    }
+
+    static func visibleTasks(_ tasks: [TodoTask], showCompleted: Bool) -> [TodoTask] {
+        let source = showCompleted ? tasks : tasks.filter { !$0.completed }
+        return TodoOrdering.sorted(source)
+    }
+
+    /// Person-Gruppen in Listenreihenfolge (Person, offen zuerst, Prio).
+    static func groups(_ tasks: [TodoTask], showCompleted: Bool) -> [TodoPDFGroup] {
+        var groups: [TodoPDFGroup] = []
+        for task in visibleTasks(tasks, showCompleted: showCompleted) {
+            let title = personTitle(task.person)
+            if var last = groups.last, last.title == title {
+                last.tasks.append(task)
+                groups[groups.count - 1] = last
+            } else {
+                groups.append(TodoPDFGroup(title: title, tasks: [task]))
+            }
+        }
+        return groups
+    }
+
+    /// Offen/erledigt/gesamt der **gedruckten** Aufgaben (`oo/xx/yy`).
+    static func progressLabel(groups: [TodoPDFGroup]) -> String {
+        let tasks = groups.flatMap(\.tasks)
+        let done = tasks.filter(\.completed).count
+        return "\(tasks.count - done)/\(done)/\(tasks.count)"
+    }
+
+    /// Kompakte Nebenzeile: Prio und Datum, ohne Person (steht in der Gruppenüberschrift).
+    static func metaLine(_ task: TodoTask) -> String {
+        var parts: [String] = []
+        let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
+        if !prio.isEmpty { parts.append(prio) }
+        let due = TodoJSON.isoDate(task.dueDate)
+        if !due.isEmpty { parts.append(TodoTime.displayDay(due)) }
+        return parts.joined(separator: " · ")
+    }
+}

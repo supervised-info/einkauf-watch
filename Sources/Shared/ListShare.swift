@@ -1,7 +1,10 @@
 import Foundation
 
-/// Dateiname und Temp-Datei für „Liste teilen“ (`yyyyMMdd_HHmm-einkauf-{storeSlug}.pdf`).
+/// Dateiname und Temp-Datei für „Liste teilen“.
+/// Einkauf: `yyyyMMdd_HHmm-einkauf-{storeSlug}.pdf`. To-Do: `yyyyMMdd_HHmm-todo-liste.pdf`.
 enum ListShare {
+    static let todoStem = "todo-liste"
+
     static func timestamp(date: Date = Date(), timeZone: TimeZone = .current) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -52,6 +55,26 @@ enum ListShare {
     ) throws -> URL {
         let url = fileManager.temporaryDirectory.appendingPathComponent(
             stampedFilename(storeName: storeName, date: date, timeZone: timeZone)
+        )
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
+    static func stampedTodoFilename(
+        date: Date = Date(),
+        timeZone: TimeZone = .current
+    ) -> String {
+        "\(timestamp(date: date, timeZone: timeZone))-\(todoStem).pdf"
+    }
+
+    static func writeTodoTempFile(
+        data: Data,
+        date: Date = Date(),
+        timeZone: TimeZone = .current,
+        fileManager: FileManager = .default
+    ) throws -> URL {
+        let url = fileManager.temporaryDirectory.appendingPathComponent(
+            stampedTodoFilename(date: date, timeZone: timeZone)
         )
         try data.write(to: url, options: .atomic)
         return url
