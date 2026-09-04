@@ -1,6 +1,6 @@
 # Plan: To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04. Phase 1 (Plan) und Phase 2 (Models + Persistenz + `TodoStore`, **keine UI**) sind in diesem Branch. Tab-UI ab Phase 3. Wenn sichtbares Verhalten landet: `Description.md` nachziehen (Phase 9); diese Datei nicht als Spec der laufenden App behandeln.
+Stand: 2026-09-04. Phasen 1–3 in diesem Strang: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit grundlegendem CRUD. Watch-To-Do, Backup-UI und HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen der **Einkaufs**-App bleiben die Wahrheit für Einkauf. Für To-Do-Produktverhalten gilt die HTML-PWA, nicht diese Datei.
 
@@ -221,7 +221,7 @@ To-Do-Tab in der nativen App: **dieselbe** native Darstellung wie Einkauf (`Appe
 
 ## Phasierter Ablaufplan (Reihenfolge)
 
-Jeder Schritt ist ein eigener PR gegen `main`, sobald der vorige landet. Dieser PR ist nur Schritt 1.
+Jeder Schritt ist ein eigener PR gegen `main`, sobald der vorige landet. #65 war nur Phase 1 (Plan). Phase 2+3 folgen in einem neuen PR gegen aktuelles `main`.
 
 ### 1. Branch + dieser Plan — erledigt
 
@@ -240,14 +240,21 @@ Gelandet:
 - Tests: `Tests/EinkaufCoreTests/TodoStoreTests.swift`
 - Widgets schließen `TodoStore.swift` aus (`project.yml`), analog `ShoppingStore`
 
-Noch nicht: TabView, Backup-UI, Watch-Sync, MD/CSV.
+Noch nicht in Phase 2: TabView, Backup-UI, Watch-Sync, MD/CSV. (TabView kam in Phase 3.)
 
-### 3. iPhone-Tab-Shell + grundlegendes Listen-CRUD
+### 3. iPhone-Tab-Shell + grundlegendes Listen-CRUD — erledigt
 
-- `TabView` um die bestehende Einkaufs-UI
-- To-Do: Text anlegen, abhaken, löschen, umbenennen
-- Person / Prio / Datum noch weglassbar oder als leere Felder
-- Einkaufs-Tab pixel- und verhaltensgleich (Regression)
+Gelandet:
+
+- iPhone `TabView`: Tab **Einkauf** = unveränderte `ContentView`; Tab **To-Do** = `TodoListView` in eigener `NavigationStack`
+- `EinkaufApp` hält `ShoppingStore` und `TodoStore` (`environmentObject`)
+- To-Do v1: Text anlegen, Toggle `completed`, Swipe-Löschen, Tippen benennt um
+- SF-Symbols `basket` / `checklist`
+- Person / Prio / Datum leer (Phase 4)
+- **Kein** Watch-Tab, **kein** Backup-Menü, **kein** To-Do-WatchConnectivity
+- Build-Nummer 42 (iPhone-UI)
+
+Einkaufs-Tab bleibt `ContentView` ohne `TodoStore`.
 
 ### 4. Person / Prio A–B / dueDate + Abgeschlossen-Toggle
 
@@ -292,13 +299,13 @@ Noch nicht: TabView, Backup-UI, Watch-Sync, MD/CSV.
 
 ---
 
-## Non-Goals für Phase 2 (jetzt im selben PR)
+## Non-Goals für Phase 3
 
-- Keine TabView, kein `TodoListView`, keine Watch-To-Do-UI
-- Kein WatchConnectivity für To-Do, kein Anfassen von `ConnectivitySync`
+- Kein Watch-To-Do-Tab, kein WatchConnectivity für To-Do
 - Kein Backup-Import/Export in der UI, kein MD/CSV
+- Keine Person/Prio/dueDate-UI (Phase 4)
 - `ShoppingStore` / `AppState` / `Item` / `BackupCodec.looksLikeBackup` unverändert
-- Spec `Description.md` behauptet To-Do nicht als geliefert (WIP darf Phase-2-Code erwähnen)
+- `Description.md` behauptet kein volles HTML-Parity; WIP darf den iPhone-Tab nennen
 
 ---
 
@@ -328,14 +335,14 @@ Noch nicht: TabView, Backup-UI, Watch-Sync, MD/CSV.
 
 ---
 
-## Dateien (Phase 2 gelandet; UI später)
+## Dateien (Phase 2+3)
 
 ```
 Sources/Shared/TodoModels.swift
 Sources/Shared/TodoPersistence.swift
 Sources/Shared/TodoStore.swift
 Sources/Shared/TodoCodec.swift
-Sources/iOS/TodoListView.swift          // Phase 3
+Sources/iOS/TodoListView.swift
 Sources/Watch/WatchTodoListView.swift   // Phase 6
 Fixtures/todo-v3-json.json              // Phase 5
 Tests/EinkaufCoreTests/TodoStoreTests.swift
@@ -349,5 +356,6 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 
 - [x] Plan liegt unter `Docs/TodoIntegration.md` (Deutsch).
 - [x] `Description.md` verweist unter Geplant/WIP hierher, behauptet To-Do nicht als geliefert.
-- [x] Phase 2: Models, `todo-local.json`, `TodoStore` ohne UI/WC.
-- [ ] Folge-PRs halten die Reihenfolge 3→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Phase 2: Models, `todo-local.json`, `TodoStore` ohne WC.
+- [x] Phase 3: iPhone-Tab Einkauf | To-Do, Text-CRUD, Einkaufs-`ContentView` unverändert.
+- [ ] Folge-PRs halten die Reihenfolge 4→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
