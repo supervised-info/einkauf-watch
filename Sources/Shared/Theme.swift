@@ -39,6 +39,7 @@ struct ThemeRGB: Equatable, Sendable {
     var muted: UInt32
     var rule: UInt32
     var oxide: UInt32
+    var slate: UInt32
     var good: UInt32
 
     static func tokens(palette: AppPalette, dark: Bool) -> ThemeRGB {
@@ -52,6 +53,7 @@ struct ThemeRGB: Equatable, Sendable {
                 muted: 0x5E564D,
                 rule: 0xD2C8B8,
                 oxide: 0x9C3424,
+                slate: 0x2A5564,
                 good: 0x2C6A4A
             )
         case (.vintage, true):
@@ -63,6 +65,7 @@ struct ThemeRGB: Equatable, Sendable {
                 muted: 0xB3AA9C,
                 rule: 0x3D362C,
                 oxide: 0xE07060,
+                slate: 0x8EB8C8,
                 good: 0x7DBA96
             )
         case (.navy, false):
@@ -74,6 +77,7 @@ struct ThemeRGB: Equatable, Sendable {
                 muted: 0x4A6080,
                 rule: 0xBFCFE8,
                 oxide: 0x2060DF,
+                slate: 0x2060DF,
                 good: 0x059669
             )
         case (.navy, true):
@@ -85,6 +89,7 @@ struct ThemeRGB: Equatable, Sendable {
                 muted: 0x6E8FB0,
                 rule: 0x1B2F4A,
                 oxide: 0x4A94FF,
+                slate: 0x4A94FF,
                 good: 0x34D399
             )
         }
@@ -102,6 +107,7 @@ struct ThemeTokens: Equatable {
     var muted: Color { Color(rgb: rgb.muted) }
     var rule: Color { Color(rgb: rgb.rule) }
     var oxide: Color { Color(rgb: rgb.oxide) }
+    var slate: Color { Color(rgb: rgb.slate) }
     var good: Color { Color(rgb: rgb.good) }
 
     static func make(palette: AppPalette, scheme: ColorScheme) -> ThemeTokens {

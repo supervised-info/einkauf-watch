@@ -1,6 +1,6 @@
 # To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04, Build 57. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). **Einstellungen** hat To-Do-JSON-Backup (Import/Export/Teilen). Import hebt `revision` analog Einkauf. `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
+Stand: 2026-09-04, Build 58. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). **Einstellungen** hat To-Do-JSON-Backup (Import/Export/Teilen). Import hebt `revision` analog Einkauf. iPhone-Zeile zeigt `#uid` Badge + reopen-Pills wie HTML. `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen bleiben die Wahrheit. HTML-PWA [todo](https://supervised-info.github.io/todo/) ist die Produktreferenz für Task-Shape und JSON-Brücke; natives To-Do-Verhalten steht in `Description.md`.
 
@@ -24,7 +24,7 @@ Nicht das Ziel: eine zweite App, ein zweites Bundle, ein zweites App Group, oder
 |---|---|
 | HTML-PWA | [todo](https://supervised-info.github.io/todo/) |
 | Spec | Pages-Repo `supervised-info/supervised-info.github.io`, Datei [`todo/Description_index.md`](https://github.com/supervised-info/supervised-info.github.io/blob/main/todo/Description_index.md) |
-| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 57) |
+| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 58) |
 
 Native scrapt die Website nicht. Brücke ist eine **eigene** JSON-Datei (siehe Backup), analog zur Einkauf-Brücke `kind: "einkauf-backup"`.
 
@@ -344,7 +344,7 @@ Noch nicht: To-Do-Homescreen-Widget
 
 ### 7. Reopen-Ketten, Sort, Suche — erledigt (Build 52)
 
-- iPhone **Wieder öffnen**: Confirm wie HTML; Original bleibt `completed` + `reopenedToUid`; offene Kopie mit neuem `uid`, gleichem Text/Person/Prio/Datum, `reopenedFromUid`, `reopenedAt` = heute ISO; `TodoStore.reopen(uid)`; Swipe/Context/Edit-Sheet; Ketten-Hinweis `von #` / `→ #`
+- iPhone **Wieder öffnen**: Confirm wie HTML; Original bleibt `completed` + `reopenedToUid`; offene Kopie mit neuem `uid`, gleichem Text/Person/Prio/Datum, `reopenedFromUid`, `reopenedAt` = heute ISO; `TodoStore.reopen(uid)`; Swipe/Context/Edit-Sheet; Zeile `#uid` Badge + reopen-Pills `von #` / `reopen #` (Build 58)
 - Sort iPhone-Toolbar: person (Default), prioA, text, dueDate, completed, completedDate; `AppStorage` `todo.iphone.sortKey` (nicht im Backup, nicht Watch)
 - Suche iPhone: Lupen-Drawer, Placeholder **Person oder Text …**, filtert Person oder Text; Escape/Clear schließt; liegt über showCompleted + Sort
 - Watch bleibt Geh-Modus — kein Reopen/Suche/Sort-UI
@@ -401,6 +401,12 @@ HTML-`todo-v3-json` hat keine `revision` (`TodoCodec.decodeBackup` → 0). `appl
 Nebeninfo (iPhone/Watch/PDF-`metaLine`): erledigt + gesetztes `completedDate` → „geschlossen TT.MM.JJJJ“ nach dem Enddatum (`theme.muted`). Edit-Sheet: **Abgeschlossen am** nur lesen.
 
 - Build 57
+
+### `#uid` Badge + reopen-Pills — erledigt (Build 58)
+
+iPhone-Zeile wie HTML-Creme: `#uid` Badge (muted capsule, `theme.paper3` / `theme.muted`) vor dem Text; inline `von #N` / `reopen #N` (`theme.slate`) wenn `reopenedFromUid` / `reopenedToUid` gesetzt. Tipp scrollt/revealt weiter. Swipe/Context **Wieder öffnen** und Confirm unverändert. Watch: kompaktes `#uid`, keine reopen-Pills. VoiceOver nennt uid und Kette.
+
+- Build 58
 
 ---
 
@@ -490,3 +496,4 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Einstellungen: To-Do Backup import/export/teilen (JSON), Build 56. Einkauf-JSON abgelehnt. To-Do-**…** Import bleibt.
 - [x] To-Do-Import: `revision`-Floor `max(lokal, import) + 1` (Watch-Sync überschreibt nicht), Build 57.
 - [x] Zeile zeigt `completedDate` als „geschlossen …“ (iPhone, Watch, PDF-Meta), Build 57.
+- [x] iPhone-Zeile `#uid` Badge + reopen-Pills `von #` / `reopen #` wie HTML; Watch kompaktes `#uid`, Build 58.

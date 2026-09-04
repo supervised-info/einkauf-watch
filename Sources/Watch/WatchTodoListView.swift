@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Geh-Modus: Text (+ kompakte Person/Prio/Datum/Abgeschlossen), Tippen toggelt `completed`.
+/// Geh-Modus: kompaktes `#uid` + Text (+ Person/Prio/Datum/Abgeschlossen), Tippen toggelt `completed`.
 /// Filtert auf die vom iPhone gesyncte aktuelle Liste (`todo.currentListId`).
-/// Kein Edit, kein Prio-Picker, keine Ketten-UI, kein Import/Export, keine Suche, keine Listen-Verwaltung.
+/// Kein Edit, kein Prio-Picker, keine reopen-Pills, kein Import/Export, keine Suche, keine Listen-Verwaltung.
 struct WatchTodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @Environment(\.einkaufTheme) private var theme
@@ -71,13 +71,24 @@ struct WatchTodoListView: View {
                                             .foregroundStyle(task.completed ? theme.good : theme.muted)
                                             .frame(width: 36, height: 36)
                                         VStack(alignment: .leading, spacing: 1) {
-                                            Text(task.text)
-                                                .font(.headline)
-                                                .foregroundStyle(theme.ink)
-                                                .strikethrough(task.completed, color: theme.muted)
-                                                .lineLimit(3)
-                                                .multilineTextAlignment(.leading)
-                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                                Text("#\(task.uid)")
+                                                    .font(.caption2.weight(.bold))
+                                                    .foregroundStyle(theme.muted)
+                                                    .padding(.horizontal, 4)
+                                                    .padding(.vertical, 1)
+                                                    .background(theme.paper3, in: Capsule())
+                                                    .lineLimit(1)
+                                                    .fixedSize()
+                                                    .accessibilityHidden(true)
+                                                Text(task.text)
+                                                    .font(.headline)
+                                                    .foregroundStyle(theme.ink)
+                                                    .strikethrough(task.completed, color: theme.muted)
+                                                    .lineLimit(3)
+                                                    .multilineTextAlignment(.leading)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                            }
                                             metaLine(task)
                                         }
                                     }
@@ -87,7 +98,7 @@ struct WatchTodoListView: View {
                                 .buttonStyle(.plain)
                                 .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                 .listRowBackground(theme.paper2)
-                                .accessibilityLabel(task.text)
+                                .accessibilityLabel("Aufgabe \(task.uid), \(task.text)")
                                 .accessibilityValue(rowAccessibilityValue(task))
                             }
                         }
@@ -163,7 +174,7 @@ struct WatchTodoListView: View {
     }
 
     private func rowAccessibilityValue(_ task: TodoTask) -> String {
-        var parts = [task.completed ? "erledigt" : "offen"]
+        var parts = ["#\(task.uid)", task.completed ? "erledigt" : "offen"]
         let person = task.person.trimmingCharacters(in: .whitespacesAndNewlines)
         if !person.isEmpty { parts.append(person) }
         let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)

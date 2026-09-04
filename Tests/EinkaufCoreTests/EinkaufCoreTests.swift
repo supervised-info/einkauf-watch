@@ -1603,6 +1603,7 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(t.paper, 0xF3EEE4)
         XCTAssertEqual(t.ink, 0x1C1814)
         XCTAssertEqual(t.oxide, 0x9C3424)
+        XCTAssertEqual(t.slate, 0x2A5564)
         XCTAssertEqual(t.rule, 0xD2C8B8)
     }
 
@@ -1611,6 +1612,7 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(t.paper, 0x14110E)
         XCTAssertEqual(t.ink, 0xF3EEE4)
         XCTAssertEqual(t.oxide, 0xE07060)
+        XCTAssertEqual(t.slate, 0x8EB8C8)
         XCTAssertEqual(t.rule, 0x3D362C)
     }
 
@@ -1619,9 +1621,11 @@ final class ThemeTokenTests: XCTestCase {
         XCTAssertEqual(light.paper, 0xF0F4FF)
         XCTAssertEqual(light.ink, 0x08102A)
         XCTAssertEqual(light.oxide, 0x2060DF)
+        XCTAssertEqual(light.slate, 0x2060DF)
         let dark = ThemeRGB.tokens(palette: .navy, dark: true)
         XCTAssertEqual(dark.paper, 0x060C1A)
         XCTAssertEqual(dark.oxide, 0x4A94FF)
+        XCTAssertEqual(dark.slate, 0x4A94FF)
         XCTAssertEqual(dark.ink, 0xEDF2FF)
     }
 
