@@ -13,6 +13,7 @@ struct TodoListView: View {
     @State private var draftPrioA = ""
     @State private var draftPrioB = ""
     @State private var draftDue = ""
+    @State private var isEditing = false
     @State private var editingTask: TodoTask?
     @State private var showImporter = false
     @State private var showExporter = false
@@ -102,6 +103,12 @@ struct TodoListView: View {
             .accessibilityLabel(showCompleted ? "Abgeschlossene ausblenden" : "Abgeschlossene einblenden")
         }
         ToolbarItem(placement: .topBarTrailing) {
+            Button(isEditing ? "Fertig" : "Bearbeiten") {
+                isEditing.toggle()
+            }
+            .accessibilityLabel(isEditing ? "Fertig" : "Bearbeiten")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button("Backup importieren…", systemImage: "square.and.arrow.down") {
                     showImporter = true
@@ -152,13 +159,22 @@ struct TodoListView: View {
             Button {
                 editingTask = task
             } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(task.text)
-                        .foregroundStyle(theme.ink)
-                        .strikethrough(task.completed, color: theme.muted)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .multilineTextAlignment(.leading)
-                    metaLine(task)
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(task.text)
+                            .foregroundStyle(theme.ink)
+                            .strikethrough(task.completed, color: theme.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                        metaLine(task)
+                    }
+                    if isEditing {
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(theme.muted)
+                            .padding(.top, 4)
+                            .accessibilityHidden(true)
+                    }
                 }
             }
             .buttonStyle(.plain)
@@ -167,6 +183,13 @@ struct TodoListView: View {
         .padding(.vertical, 2)
         .einkaufRowChrome()
         .accessibilityValue(rowAccessibilityValue(task))
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                editingTask = task
+            } label: {
+                Label("Bearbeiten", systemImage: "pencil")
+            }
+        }
     }
 
     @ViewBuilder

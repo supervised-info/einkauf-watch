@@ -2,7 +2,8 @@ import Foundation
 
 /// Eine Aufgabe wie HTML `todo-v3` (ohne Runtime-`id`).
 /// `uid` ist `Int64`, damit watchOS `arm64_32` nicht bei Epoch-Millis crasht.
-struct TodoTask: Equatable, Codable, Sendable, Identifiable {
+/// `Identifiable` über `uid` — iPhone `.sheet(item:)` für `TodoEditSheet`.
+struct TodoTask: Equatable, Hashable, Codable, Sendable, Identifiable {
     var uid: Int64
     var text: String
     var completed: Bool
