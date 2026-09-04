@@ -777,6 +777,78 @@ final class TodoStoreBackupTests: XCTestCase {
         XCTAssertEqual(store.state.tasks.map(\.text), ["Lokal", "Remote"])
         XCTAssertEqual(store.state.tasks.map(\.listId), ["list-haus", "list-arbeit"])
     }
+
+    func testImportBumpsRevisionAboveLocalAndPeer() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(
+            state: TodoState(
+                tasks: [TodoTask(uid: 1, text: "Alt")],
+                nextUid: 2,
+                revision: 40
+            ),
+            enableSync: false
+        )
+        XCTAssertEqual(store.state.revision, 40)
+
+        let incoming = try TodoCodec.encodeBackup(
+            TodoState(
+                tasks: [
+                    TodoTask(uid: 10, text: "Eins"),
+                    TodoTask(uid: 11, text: "Zwei"),
+                    TodoTask(uid: 12, text: "Drei")
+                ],
+                nextUid: 13,
+                revision: 0
+            )
+        )
+        let decoded = try TodoCodec.decodeBackup(incoming)
+        XCTAssertEqual(decoded.revision, 0, "HTML-Brücke liefert revision 0")
+
+        try store.importBackup(incoming, append: false)
+        XCTAssertEqual(store.state.revision, 41)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Eins", "Zwei", "Drei"])
+
+        let persisted = try XCTUnwrap(TodoPersistence.load())
+        XCTAssertEqual(persisted.revision, 41)
+        XCTAssertEqual(persisted.tasks.map(\.text), ["Eins", "Zwei", "Drei"])
+
+        let emptyPeer = TodoState(tasks: [], nextUid: 1, revision: 40)
+        let wins = TodoMerge.merge(local: store.state, remote: emptyPeer)
+        XCTAssertEqual(wins.revision, 41)
+        XCTAssertEqual(wins.tasks.map(\.text), ["Eins", "Zwei", "Drei"])
+
+        var staleImport = store.state
+        staleImport.revision = 1
+        let loses = TodoMerge.merge(local: staleImport, remote: emptyPeer)
+        XCTAssertEqual(loses.revision, 40)
+        XCTAssertTrue(loses.tasks.isEmpty)
+
+        store.applyRemoteSnapshot(emptyPeer)
+        XCTAssertEqual(store.state.revision, 41)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Eins", "Zwei", "Drei"])
+
+        let appendStore = TodoStore(
+            state: TodoState(
+                tasks: [TodoTask(uid: 1, text: "Bleibt")],
+                nextUid: 2,
+                revision: 40
+            ),
+            enableSync: false
+        )
+        try appendStore.importBackup(incoming, append: true)
+        XCTAssertEqual(appendStore.state.revision, 41)
+        XCTAssertEqual(appendStore.state.tasks.map(\.text), ["Bleibt", "Eins", "Zwei", "Drei"])
+    }
 }
 
 final class TodoMarkdownCSVTests: XCTestCase {
