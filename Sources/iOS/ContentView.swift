@@ -93,6 +93,7 @@ struct ContentView: View {
                 editList
             }
         }
+        .id(store.walkMode ? "einkauf-walk" : "einkauf-edit")
     }
 
     private var walkList: some View {
@@ -102,9 +103,15 @@ struct ContentView: View {
                 case .header(_, let dept):
                     walkHeader(dept)
                         .deleteDisabled(true)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            EmptyView()
+                        }
                 case .item(_, let item):
                     walkRow(item)
                         .deleteDisabled(true)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            EmptyView()
+                        }
                 }
             }
         }
@@ -156,6 +163,9 @@ struct ContentView: View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .deleteDisabled(true)
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                EmptyView()
+            }
             .accessibilityAddTraits(.isHeader)
             .accessibilityLabel(Department.title(for: dept))
     }
@@ -179,6 +189,9 @@ struct ContentView: View {
         .buttonStyle(.plain)
         .einkaufRowChrome()
         .deleteDisabled(true)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            EmptyView()
+        }
         .accessibilityLabel(item.name)
         .accessibilityValue(item.done ? "erledigt" : "offen")
     }
