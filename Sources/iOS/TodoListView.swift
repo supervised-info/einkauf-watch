@@ -133,15 +133,48 @@ struct TodoListView: View {
     }
 
     private var list: some View {
+        Group {
+            if isEditing {
+                editingList
+            } else {
+                browsingList
+            }
+        }
+        .id(isEditing ? "todo-edit" : "todo-browse")
+    }
+
+    /// Listen-Modus: kein Swipe-Löschen. Trailing-`EmptyView` ersetzt das System-Delete,
+    /// das SwiftUI sonst neben Leading-„Bearbeiten“ einblendet. `.id("todo-browse")`
+    /// verhindert, dass Bearbeiten-Zeilen (mit `.onDelete`) wiederverwendet werden.
+    private var browsingList: some View {
         List {
             ForEach(visibleTasks) { task in
                 row(task)
+                    .deleteDisabled(true)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        EmptyView()
+                    }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .einkaufListChrome()
+        .environment(\.editMode, .constant(.inactive))
+        .id("todo-browse")
+    }
+
+    /// Bearbeiten: Swipe-Löschen nur hier, über `.onDelete`.
+    private var editingList: some View {
+        List {
+            ForEach(visibleTasks) { task in
+                row(task)
+                    .deleteDisabled(false)
             }
             .onDelete(perform: delete)
         }
         .listStyle(.insetGrouped)
         .einkaufListChrome()
         .environment(\.editMode, .constant(.inactive))
+        .id("todo-edit")
     }
 
     private func row(_ task: TodoTask) -> some View {
