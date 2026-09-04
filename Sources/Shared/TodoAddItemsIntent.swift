@@ -13,7 +13,7 @@ struct TodoAddItemsIntent: AppIntent {
     var items: String
 
     static var parameterSummary: some ParameterSummary {
-        Summary("To Do \(\.$items)")
+        Summary("Todo \(\.$items)")
     }
 
 #if os(watchOS)
