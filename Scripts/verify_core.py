@@ -437,8 +437,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 51" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 51 / CURRENT_PROJECT_VERSION")
+    if "Build 52" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 52 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -913,8 +913,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 51" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 51")
+    if "CURRENT_PROJECT_VERSION = 52" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 52")
+    if "CURRENT_PROJECT_VERSION = 51" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 51 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 50" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 50 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 49" in pbx:
@@ -1002,8 +1004,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 51" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 51")
+    if "CURRENT_PROJECT_VERSION: 52" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 52")
+    if "CURRENT_PROJECT_VERSION: 51" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 51 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 50" in yml:
         fail("stale CURRENT_PROJECT_VERSION 50 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 49" in yml:
@@ -1299,8 +1303,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 51") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 51")
+    if pbx.count("CURRENT_PROJECT_VERSION = 52") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 52")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2132,6 +2136,12 @@ def test_todo_store() -> None:
         fail("tests must cover prio sort key")
     if "testSortPersonThenOpenFirstThenPrio" not in tests:
         fail("tests must cover person/open/prio sort")
+    if "testSortKeysPrioTextDueCompletedAndCompletedDate" not in tests:
+        fail("tests must cover user-selectable sort keys")
+    if "testMatchesFilterPersonOrTextCaseInsensitive" not in tests:
+        fail("tests must cover To-Do search person/text filter")
+    if "testReopenKeepsOriginalCompletedAndCopiesOpen" not in tests:
+        fail("tests must cover TodoStore.reopen")
     if "testV3JsonFixtureRoundTripAndIgnoresExtraFields" not in tests:
         fail("tests must cover todo-v3-json roundtrip")
     if "testRejectsEinkaufBackupAndLocal" not in tests:
@@ -2156,6 +2166,20 @@ def test_todo_store() -> None:
         fail("Description.md WIP must document To-Do Bearbeiten / Fertig and TodoEditSheet")
     if "func add(" not in store or "func toggle(" not in store or "func delete(" not in store:
         fail("TodoStore missing add/toggle/delete")
+    if "func reopen(" not in store:
+        fail("TodoStore missing reopen")
+    if "Wieder öffnen" not in todo_ui:
+        fail("To-Do UI must offer Wieder öffnen")
+    if "todo.iphone.sortKey" not in todo_ui:
+        fail("To-Do sort must persist AppStorage todo.iphone.sortKey")
+    if "Person oder Text" not in todo_ui:
+        fail("To-Do search placeholder must be Person oder Text")
+    if "magnifyingglass" not in todo_ui:
+        fail("To-Do toolbar must offer magnifying glass search")
+    if "arrow.up.arrow.down" not in todo_ui:
+        fail("To-Do toolbar must offer sort menu")
+    if "todos.reopen" not in todo_ui:
+        fail("To-Do UI must call todos.reopen")
     if "testLocalRoundTripPreservesTasksAndNextUid" not in tests:
         fail("tests must cover todo-local roundtrip")
     if "testSaveDoesNotWriteEinkaufLocal" not in tests:
@@ -2177,6 +2201,10 @@ def test_todo_store() -> None:
         fail("Watch To-Do must not offer edit/import/search")
     if "reopenedFromUid" in watch_todo or "Wieder öffnen" in watch_todo:
         fail("Watch To-Do must not offer reopen")
+    if "todo.iphone.sortKey" in watch_todo or "arrow.up.arrow.down" in watch_todo:
+        fail("Watch To-Do must not offer sort UI")
+    if "magnifyingglass" in watch_todo or "Person oder Text" in watch_todo:
+        fail("Watch To-Do must not offer search")
     if "todo-liste.md" in watch_todo or "todo-liste.csv" in watch_todo:
         fail("Watch To-Do must not offer MD/CSV")
     if "toolbar(.hidden, for: .navigationBar)" not in watch_todo:

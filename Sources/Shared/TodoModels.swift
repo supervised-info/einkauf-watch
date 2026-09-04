@@ -214,7 +214,31 @@ enum TodoTime {
     }
 }
 
-/// Anzeige-Sortierung und Overdue wie HTML-To-Do (Phase 4). Persistenzreihenfolge bleibt unberührt.
+/// iPhone-Anzeige-Sortierung (HTML-Spalten). Watch und PDF bleiben bei Person.
+/// Persistenzreihenfolge und Backup unberührt. Key nur lokal (`todo.iphone.sortKey`).
+enum TodoSortKey: String, CaseIterable, Equatable, Sendable {
+    case person
+    case prioA
+    case text
+    case dueDate
+    case completed
+    case completedDate
+
+    static let iphoneDefaultsKey = "todo.iphone.sortKey"
+
+    var menuTitle: String {
+        switch self {
+        case .person: return "Person"
+        case .prioA: return "Prio"
+        case .text: return "Text"
+        case .dueDate: return "Enddatum"
+        case .completed: return "Abgeschlossen"
+        case .completedDate: return "Geschlossen"
+        }
+    }
+}
+
+/// Anzeige-Sortierung und Overdue wie HTML-To-Do. Persistenzreihenfolge bleibt unberührt.
 enum TodoOrdering {
     /// HTML: `prioA + (prioB||'9')`; fehlendes `prioA` ans Ende (`U+FFFF`).
     static func prioSortKey(_ task: TodoTask) -> String {
@@ -235,19 +259,86 @@ enum TodoOrdering {
         isOverdue(task.dueDate, today: today)
     }
 
+    /// Erledigt und noch ohne `reopenedToUid` — wie HTML `completed && !reopenedToUid`.
+    static func canReopen(_ task: TodoTask) -> Bool {
+        task.completed && task.reopenedToUid == nil
+    }
+
+    /// Person oder Text, case-insensitive. Leere Query trifft alles.
+    static func matches(_ task: TodoTask, query: String) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if q.isEmpty { return true }
+        return task.text.localizedStandardContains(q) || task.person.localizedStandardContains(q)
+    }
+
     /// Person aufsteigend, dann offen vor erledigt, dann Prio, Text, `uid`.
     static func sorted(_ tasks: [TodoTask]) -> [TodoTask] {
-        tasks.sorted { a, b in
+        sorted(tasks, by: .person)
+    }
+
+    static func sorted(_ tasks: [TodoTask], by key: TodoSortKey) -> [TodoTask] {
+        tasks.sorted { a, b in compare(a, b, by: key) }
+    }
+
+    static func compare(_ a: TodoTask, _ b: TodoTask, by key: TodoSortKey) -> Bool {
+        switch key {
+        case .person:
             let person = a.person.localizedStandardCompare(b.person)
             if person != .orderedSame { return person == .orderedAscending }
             if a.completed != b.completed { return !a.completed && b.completed }
-            let pa = prioSortKey(a)
-            let pb = prioSortKey(b)
-            if pa != pb { return pa < pb }
+            return tieBreakPrioTextUid(a, b)
+        case .prioA:
+            let prio = comparePrio(a, b)
+            if prio != .orderedSame { return prio == .orderedAscending }
+            let person = a.person.localizedStandardCompare(b.person)
+            if person != .orderedSame { return person == .orderedAscending }
+            return a.uid < b.uid
+        case .text:
             let text = a.text.localizedStandardCompare(b.text)
             if text != .orderedSame { return text == .orderedAscending }
             return a.uid < b.uid
+        case .dueDate:
+            let da = emptyLastDateKey(a.dueDate)
+            let db = emptyLastDateKey(b.dueDate)
+            if da != db { return da < db }
+            return tieBreakPrioUid(a, b)
+        case .completed:
+            if a.completed != b.completed { return !a.completed && b.completed }
+            return tieBreakPrioUid(a, b)
+        case .completedDate:
+            let da = emptyLastDateKey(a.completedDate)
+            let db = emptyLastDateKey(b.completedDate)
+            if da != db { return da < db }
+            return tieBreakPrioUid(a, b)
         }
+    }
+
+    /// HTML: leeres Datum als `9999` (ans Ende).
+    private static func emptyLastDateKey(_ iso: String) -> String {
+        let s = TodoJSON.isoDate(iso)
+        return s.isEmpty ? "9999" : s
+    }
+
+    private static func comparePrio(_ a: TodoTask, _ b: TodoTask) -> ComparisonResult {
+        let pa = prioSortKey(a)
+        let pb = prioSortKey(b)
+        if pa < pb { return .orderedAscending }
+        if pa > pb { return .orderedDescending }
+        return .orderedSame
+    }
+
+    private static func tieBreakPrioTextUid(_ a: TodoTask, _ b: TodoTask) -> Bool {
+        let prio = comparePrio(a, b)
+        if prio != .orderedSame { return prio == .orderedAscending }
+        let text = a.text.localizedStandardCompare(b.text)
+        if text != .orderedSame { return text == .orderedAscending }
+        return a.uid < b.uid
+    }
+
+    private static func tieBreakPrioUid(_ a: TodoTask, _ b: TodoTask) -> Bool {
+        let prio = comparePrio(a, b)
+        if prio != .orderedSame { return prio == .orderedAscending }
+        return a.uid < b.uid
     }
 }
 

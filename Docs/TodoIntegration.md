@@ -1,6 +1,6 @@
 # Plan: To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04. Phasen 1–6 plus Liste-teilen-PDF: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle, To-Do-Backup `todo-v3-json`, **Liste teilen** (PDF folgt dem Auge), Watch-Tab Geh-Modus, gemergter WatchConnectivity-Context, To-Do-Complication `TodoProgress`, Siri **Todo** (ein Wort). Volle HTML-Parity (Reopen/Suche/MD/CSV) fehlt. Volle Spec in `Description.md` erst Phase 9.
+Stand: 2026-09-04. Phasen 1–7 plus Liste-teilen-PDF: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle, To-Do-Backup `todo-v3-json`, **Liste teilen** (PDF folgt dem Auge), Watch-Tab Geh-Modus, gemergter WatchConnectivity-Context, To-Do-Complication `TodoProgress`, Siri **Todo** (ein Wort), iPhone **Wieder öffnen** / Sort / Suche. MD/CSV (Phase 8) fehlt. Volle Spec in `Description.md` erst Phase 9.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen der **Einkaufs**-App bleiben die Wahrheit für Einkauf. Für To-Do-Produktverhalten gilt die HTML-PWA, nicht diese Datei.
 
@@ -344,14 +344,15 @@ Gelandet:
 - Spoken weiter **„Hey Siri, Einkauf Todo“**
 - Build 51 (Watch-UI / Siri)
 
-Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
+Noch nicht: MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
-### 7. Reopen-Ketten, Sort, Suche (HTML-Parity, Stretch)
+### 7. Reopen-Ketten, Sort, Suche — erledigt (Build 52)
 
-- Wieder öffnen: Original bleibt `completed` + `reopenedToUid`; Kopie offen mit neuem `uid` + `reopenedFromUid`
-- Sort: person (Default), prioA, text, dueDate, completed, completedDate
-- Suche Person oder Text
-- Ketten-UI einklappbar — auf der Watch weiter weglassen
+- iPhone **Wieder öffnen**: Confirm wie HTML; Original bleibt `completed` + `reopenedToUid`; offene Kopie mit neuem `uid`, gleichem Text/Person/Prio/Datum, `reopenedFromUid`, `reopenedAt` = heute ISO; `TodoStore.reopen(uid)`; Swipe/Context/Edit-Sheet; Ketten-Hinweis `von #` / `→ #`
+- Sort iPhone-Toolbar: person (Default), prioA, text, dueDate, completed, completedDate; `AppStorage` `todo.iphone.sortKey` (nicht im Backup, nicht Watch)
+- Suche iPhone: Lupen-Drawer, Placeholder **Person oder Text …**, filtert Person oder Text; Escape/Clear schließt; liegt über showCompleted + Sort
+- Watch bleibt Geh-Modus — kein Reopen/Suche/Sort-UI
+- Build 52 (iPhone-UI)
 
 ### 8. MD/CSV-Export optional später
 
@@ -439,4 +440,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] To-Do-Siri Phrase ein Token (`Todo`), gesprochen „Hey Siri, Einkauf Todo“, Build 49.
 - [x] Swipe-Löschen nur im Bearbeiten-Modus (To-Do Listen-Modus + Einkauf Geh-Modus), Build 50.
 - [x] Watch-Siri Todo Mehrwort: `shortTitle` Todo, watchOS ohne `requestValueDialog`, Build 51.
-- [ ] Folge-PRs halten die Reihenfolge 7→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Phase 7: iPhone Wieder öffnen, Sort, Suche; Watch ohne Reopen/Suche/Sort-UI, Build 52.
+- [ ] Folge-PRs halten die Reihenfolge 8→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
