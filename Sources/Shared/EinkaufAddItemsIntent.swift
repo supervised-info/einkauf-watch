@@ -9,7 +9,7 @@ struct EinkaufAddItemsIntent: AppIntent {
     /// Watch und iPhone: Siri nicht zum App-Start zwingen — `true` bricht auf der Watch oft still ab.
     static var openAppWhenRun = false
 
-    @Parameter(title: "Artikel", requestValueDialog: "ok")
+    @Parameter(title: "Artikel", requestValueDialog: "o")
     var items: String
 
     static var parameterSummary: some ParameterSummary {
