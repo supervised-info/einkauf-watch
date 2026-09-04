@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 45, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 46, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -12,7 +12,7 @@ TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedac
 
 ## Geplant / WIP
 
-Zweiter Reiter **To-Do** auf dem **iPhone** (`TabView` Einkauf | To-Do): Text, Person, Prio A/B, Datum; Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`, nur Gerät); Backup JSON (`todo-v3-json`), **Liste teilen** (PDF `TodoListPDF`, folgt dem Auge) und Erledigte löschen im To-Do-Overflow **…**. **Kein** HTML-Parity — Reopen, Suche, MD/CSV und Watch-To-Do fehlen (Phasen 6–8). Plan: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Volle Spec erst in Phase 9.
+Zweiter Reiter **To-Do** auf **iPhone und Watch** (`TabView` Einkauf | To-Do). iPhone: Text, Person, Prio A/B, Datum; Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`); Backup JSON (`todo-v3-json`), **Liste teilen** (PDF `TodoListPDF`) und Erledigte löschen im To-Do-Overflow **…**. Watch: nur Geh-Modus (Toggle `completed`, Auge `todo.watch.hideCompleted`); eigene Complication `TodoProgress` (Label **To Do**, offene Anzahl / „erledigt“); Siri-Intent **To Do** (Nachfrage **„T“**, nicht „besorgen“). **Kein** HTML-Parity — Reopen, Suche, MD/CSV fehlen (Phasen 7–8). Kein To-Do-Homescreen-Widget. Plan: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Volle Spec erst in Phase 9.
 
 ## Datei-Ort, Targets, Bundle
 
@@ -22,10 +22,10 @@ Zweiter Reiter **To-Do** auf dem **iPhone** (`TabView` Einkauf | To-Do): Text, P
 | Watch | Target `EinkaufWatch`, Bundle `net.tschelle.einkauf.watchkitapp`, eingebettet (`embed: true`), Companion `net.tschelle.einkauf`, `WKRunsIndependentlyOfCompanionApp` YES |
 | Watch-Complication | Target `EinkaufWatchWidgets`, Bundle `net.tschelle.einkauf.watchkitapp.widgets`, WidgetKit (watchOS 10, **kein ClockKit**), eingebettet in die Watch-App (`Embed Foundation Extensions`). Nicht auf dem iPhone. |
 | iPhone-Widget | Target `EinkaufWidgets`, Bundle `net.tschelle.einkauf.widgets`, WidgetKit (iOS 17), Homescreen `systemSmall`/`systemMedium`, eingebettet in die iPhone-App. Nicht auf der Watch, nicht Sperrbildschirm. |
-| Geteilter Code | `Sources/Shared` in beiden App-Targets (`ConnectivitySync.swift` nur Apple-Targets, nicht im SPM-Paket). **Siri:** `SpeechItemSplitter.swift` + `SiriPendingAdds.swift` + `EinkaufAddItemsIntent.swift` (`AppIntent` + `AppShortcutsProvider`) in iPhone- und Watch-App, nicht in den Widgets, Intent nicht im SPM-Paket. Widgets laden `einkauf-local.json` über `Persistence` (ohne `ShoppingStore` / WatchConnectivity im Widget-Prozess). |
+| Geteilter Code | `Sources/Shared` in beiden App-Targets (`ConnectivitySync.swift` nur Apple-Targets, nicht im SPM-Paket). **Siri:** `SpeechItemSplitter.swift` + `SiriPendingAdds.swift` / `TodoSiriPendingAdds.swift` + `EinkaufAddItemsIntent.swift` / `TodoAddItemsIntent.swift` (`AppIntent` + je ein `AppShortcutsProvider`) in iPhone- und Watch-App, nicht in den Widgets, Intents nicht im SPM-Paket. Widgets laden `einkauf-local.json` über `Persistence` und `todo-local.json` über `TodoPersistence` (ohne `ShoppingStore` / `TodoStore` / WatchConnectivity im Widget-Prozess). |
 | iOS-UI | `Sources/iOS` — `EinkaufApp`, `ContentView`, `TodoListView`, `SettingsSheet`, `KeywordDictionaryView`, `ListPDF`, `TodoListPDF`, `ShareSheet`, `AppearanceSettings`, `HomeWidgetReload` |
-| Watch-UI | `Sources/Watch` — `EinkaufWatchApp`, `WatchListView`, `WatchComplicationReload` |
-| Watch-Complication | `Sources/WatchWidgets` — `EinkaufWatchWidgets` (WidgetKit `StaticConfiguration`) |
+| Watch-UI | `Sources/Watch` — `EinkaufWatchApp`, `WatchListView`, `WatchTodoListView`, `WatchComplicationReload` |
+| Watch-Complication | `Sources/WatchWidgets` — `EinkaufWatchWidgets` + `TodoWatchWidgets` (WidgetKit `StaticConfiguration`, kinds `EinkaufProgress` / `TodoProgress`) |
 | iPhone-Widget | `Sources/iOSWidgets` — `EinkaufWidgets` (WidgetKit `StaticConfiguration`) |
 | Persistenz | `einkauf-local.json` im App Group `group.net.tschelle.einkauf` (iPhone-App + iPhone-Widget bzw. Watch-App + Complication; Geräte-Container getrennt). Fallback Application Support `Einkauf/einkauf-local.json` beim ersten Umzug. Envelope `kind: "einkauf-local"`. Kein iCloud. |
 | Backup-Dokumenttyp | JSON, UTType `net.tschelle.einkauf.backup` |
@@ -78,7 +78,7 @@ Je Artikel: Checkbox, Name (Tipp → Rename; leer/Abbrechen = keine Änderung), 
 9. Divider
 10. Einstellungen
 
-Import: `fileImporter` JSON, ersetzt den Stand (kein Confirm). `onOpenURL` sitzt auf `EinkaufRoot` (nicht `ContentView`): Peek JSON — `todo-v3-json` / To-Do-Shape → `TodoStore` und To-Do-Tab; `kind: "einkauf-backup"` / `looksLikeBackup` → Einkauf wie bisher; sonst Fehler, nie still ins falsche Store. Widget-URL `einkauf://` bleibt Einkaufs-Tab. Unbekannte Felder ignorieren. Fehlende `staples` / `savedLists` → `[]`.
+Import: `fileImporter` JSON, ersetzt den Stand (kein Confirm). `onOpenURL` sitzt auf `EinkaufRoot` (nicht `ContentView`): Peek JSON — `todo-v3-json` / To-Do-Shape → `TodoStore` und To-Do-Tab; `kind: "einkauf-backup"` / `looksLikeBackup` → Einkauf wie bisher; sonst Fehler, nie still ins falsche Store. Widget-URL `einkauf://list` bleibt Einkaufs-Tab; `einkauf://todo` öffnet den To-Do-Tab. Unbekannte Felder ignorieren. Fehlende `staples` / `savedLists` → `[]`.
 
 Export: `fileExporter`, Defaultname `einkauf-backup`.
 
@@ -106,7 +106,9 @@ Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` 
 
 ## Watch
 
-Nur Geh-Modus. Navigationsleiste **ausgeblendet** (`.toolbar(.hidden, for: .navigationBar)`): `.navigationTitle("")` reserviert die Bar weiter und lässt eine Lücke unter der Uhr. Die **Systemuhr** bleibt Status und sichtbar. Inhalt direkt darunter (`VStack(spacing: 0)`): zuerst die Augen-Leiste, darunter die Titelzeile **eine Zeile** (`Text(store.state.watchTitle)`): gekürzter Ladenname + zwei Leerzeichen + `Einkauf oo/xx/yy` (`AppState.watchTitle`). Limit 6 Zeichen vor „Einkauf oo/xx/yy“; länger: 5 Zeichen + `…`. Edeka/Aldi/Rewe/Lidl/dm ungekürzt; „Eigenes Layout“ → `Eigen…`. Zähler inkl. `vor`/`nach` (`openCount/doneCount/items.count`). **Nicht** `.navigationTitle(watchTitle)`.
+`TabView` **Einkauf | To-Do** (`basket` / `checklist`). Einkaufs-Tab: nur Geh-Modus, wie bisher. To-Do-Tab: nur Geh-Modus — Text (+ kompakte Person/Prio/Datum); Tippen toggelt `completed`; Auge `todo.watch.hideCompleted` (nicht `einkauf.watch.hideCompleted`, nicht Backup, nicht iPhone). Kein Edit, kein Prio-Picker, kein Reopen, kein Import/Export, keine Suche auf der Watch.
+
+Navigationsleiste **ausgeblendet** (`.toolbar(.hidden, for: .navigationBar)`): `.navigationTitle("")` reserviert die Bar weiter und lässt eine Lücke unter der Uhr. Die **Systemuhr** bleibt Status und sichtbar. Inhalt direkt darunter (`VStack(spacing: 0)`): zuerst die Augen-Leiste, darunter die Titelzeile **eine Zeile** (`Text(store.state.watchTitle)`): gekürzter Ladenname + zwei Leerzeichen + `Einkauf oo/xx/yy` (`AppState.watchTitle`). Limit 6 Zeichen vor „Einkauf oo/xx/yy“; länger: 5 Zeichen + `…`. Edeka/Aldi/Rewe/Lidl/dm ungekürzt; „Eigenes Layout“ → `Eigen…`. Zähler inkl. `vor`/`nach` (`openCount/doneCount/items.count`). **Nicht** `.navigationTitle(watchTitle)`.
 
 Kein Store-Picker, kein Bearbeiten, kein Share, kein Backup, kein Speichern, kein Wörterbuch, kein Löschen von Läden. Digital Crown scrollt die `List`. Leer: „Noch nichts auf der Liste.“ **Kein** In-App-Mikrofon, **kein** Diktat-Panel, **kein** `Speech.framework` / AVFoundation-Speech, **kein** `TextFieldLink` / `presentTextInputController`. Sprache nur über **Siri App Intents** — siehe **Sprach-Eingabe (Siri)**.
 
@@ -133,6 +135,12 @@ Datenquelle: dieselbe lokale Datei `einkauf-local.json` (`Persistence`, Envelope
 
 Kein Store-Picker, kein Bearbeiten, kein Share, kein Wörterbuch in der Complication.
 
+### Watch-To-Do-Complication (WidgetKit, watchOS 10)
+
+Eigene Complication `TodoComplication` / kind `TodoProgress` im selben WatchWidgets-Bundle, **neben** `EinkaufComplication` — kein Mix mit `einkauf-local.json`. Tippen: `widgetURL` `einkauf://todo` (Watch-Tab To-Do).
+
+Label-Text genau **To Do** (Leerzeichen, nicht „To-Do“). Zähler nur offene Aufgaben (`TodoComplicationSnapshot.compactCountText`); bei 0 **erledigt**. Corner: offene Anzahl ~19pt, Label **To Do** ~11pt im `widgetLabel` (wie Einkauf-Ecke). Circular: Gauge, kleines Zentrum, kein `.title2`. Datenquelle `todo-local.json` (`TodoPersistence` / `TodoCodec`, `kind: "todo-local"`). Reload: `WatchComplicationReload.todoTimelines()` nach `TodoStore`-Persist. Kein To-Do-Homescreen-Widget.
+
 ### iPhone-Widget (WidgetKit, iOS 17)
 
 Nur auf dem **iPhone-Homescreen**, nicht auf der Watch und nicht auf dem Sperrbildschirm. Tippen öffnet die iPhone-App auf der Einkaufsliste (`widgetURL` `einkauf://list`). Leere Liste: `0/0/0`, weiter antippbar.
@@ -148,7 +156,7 @@ Datenquelle: dieselbe lokale Datei `einkauf-local.json` über App Group `group.n
 
 ## Sprach-Eingabe (Siri)
 
-Sprache ist **kein** In-App-Mikrofon. Es gibt keinen Hold-to-Talk-Button, kein `Speech.framework`, kein `TextFieldLink`, kein `presentTextInputController` und kein In-App-`TextField` zum Diktat — diese Pfade sind bewusst tot. Artikel per Stimme laufen nur über **Siri App Intents** auf iPhone (`Einkauf`) und Watch (`EinkaufWatch`): `EinkaufAddItemsIntent` + `EinkaufShortcuts` (`AppShortcutsProvider`). Shared: `SpeechItemSplitter.swift`, `SiriPendingAdds.swift`, `EinkaufAddItemsIntent.swift` — in beiden App-Targets, nicht in den Widgets, Intent nicht im SPM-Paket.
+Sprache ist **kein** In-App-Mikrofon. Es gibt keinen Hold-to-Talk-Button, kein `Speech.framework`, kein `TextFieldLink`, kein `presentTextInputController` und kein In-App-`TextField` zum Diktat — diese Pfade sind bewusst tot. Artikel per Stimme laufen nur über **Siri App Intents** auf iPhone (`Einkauf`) und Watch (`EinkaufWatch`): `EinkaufAddItemsIntent` + `EinkaufShortcuts` (`AppShortcutsProvider`). To-Do analog: `TodoAddItemsIntent` + **eigener** `TodoShortcuts` — Einkauf-„besorgen“ bleibt unverdünnt. Shared: `SpeechItemSplitter.swift`, `SiriPendingAdds.swift`, `TodoSiriPendingAdds.swift`, `EinkaufAddItemsIntent.swift`, `TodoAddItemsIntent.swift` — in beiden App-Targets, nicht in den Widgets, Intents nicht im SPM-Paket.
 
 ### Was funktioniert
 
@@ -165,6 +173,16 @@ Split wie `SpeechItemSplitter`: Komma, Semikolon, Zeilenumbruch, ` und `, ` sowi
 **iPhone:** Intent legt `ShoppingStore(enableSync: true)` an und ruft `addItems(fromSpeech:)` — Persist + WatchConnectivity. Die laufende App zieht den neueren Disk-Stand bei `scenePhase == .active` nach (`reloadFromPersistenceIfNewer`). Siri-Dialog: „1 Artikel hinzugefügt.“ / „3 Artikel hinzugefügt.“ / leer → „Keine Artikel erkannt.“ `perform()` wirft nicht; Fehler → Dialog „Speichern fehlgeschlagen.“
 
 **Watch:** Intent konstruiert **keinen** `ShoppingStore` und schreibt **keinen** vollen `AppState` (`Persistence.write`). `perform()` gibt ein schlichtes `IntentResult` **ohne** `ProvidesDialog` / `throws` zurück: zuerst `SiriPendingAdds.enqueue`, dann `return .result()`. Pending-Queue **primär** in `UserDefaults(suiteName: Persistence.appGroupId)` — Suite genau `group.net.tschelle.einkauf`, Key `einkauf.siriPendingAdds` (zuverlässiger zwischen Siri- und App-Prozess als eine Seitendatei). Datei `einkauf-siri-pending.json` nur als Spiegel unter der **expliziten App-Group-Container-URL** (`Persistence.appGroupContainerURL` / `Einkauf/`), nie Application Support eines anderen Prozesses. Suite `nil` → Fallback nur auf diese Container-Datei. Die Watch-App drain't `consumeSiriPendingAdds()` beim Aktivwerden (`scenePhase == .active`) **und** bei `WatchListView.onAppear` / Root-`.task`: `addItems(fromSpeech:)` auf dem **live** Store, Persist+Sync, Complication-Reload. Nach Siri die Watch-App einmal öffnen, falls die Phase verpasst wurde.
+
+### To-Do Siri (`TodoAddItemsIntent`)
+
+Trigger **To Do** (nicht **besorgen**). Phrasen mit genau einem App-Namen:
+
+- „{App} To Do“
+- „To Do mit {App}“
+- „{App} zum To Do“
+
+`shortTitle` „To Do“, Icon `checklist`. Nachfrage **„T“** (`requestValueDialog` „T“). Parameter-Titel **Aufgaben**. `openAppWhenRun = false`. Führendes `To Do` / `To-Do` / `todo` wird abgestreift (`SpeechItemSplitter.strippingTodoTriggerPrefix`). Split wie Einkauf (`und` / Komma). iPhone: `TodoStore(enableSync: true)` + `addItems(fromSpeech:)`, Dialog „1 Aufgabe hinzugefügt.“ / „Keine Aufgaben erkannt.“ Watch: **kein** `TodoStore` im Intent; Queue `todo.siriPendingAdds` / Datei `todo-siri-pending.json` (nicht die Einkauf-Queue); Drain auf dem live Store beim Aktivwerden und `WatchTodoListView.onAppear`.
 
 `makeID` (Item / SavedList / StoreCatalog) kodiert Epoch-Millis als **`Int64`**. watchOS `arm64_32` hat 32-bit `Int`; `Int(Date().timeIntervalSince1970 * 1000)` crasht sonst fatal in `Item.makeID` beim Drain (`consumeSiriPendingAdds`) und bei jedem neuen Item.
 
@@ -274,9 +292,18 @@ Import ersetzt den Stand und setzt `listRevision = max(lokal, import) + 1`.
 
 ## WatchConnectivity
 
-`ConnectivitySync`: `updateApplicationContext`; wenn erreichbar `sendMessage`, sonst `transferUserInfo`. Payload `kind: "einkauf-sync"` + `blob` (lokales JSON). Toggle zusätzlich `kind: "einkauf-toggle"` (`id`, `done`, `at`). Watch pull: `kind: "einkauf-pull"`.
+`WCSession.applicationContext` ist **ein** Dictionary — letzter Schreiber gewinnt. Deshalb gemergtes Envelope (`WatchSyncEnvelope`):
 
-Merge (`StateMerge`): Listenstruktur folgt höherer `listRevision`; `done` je Artikel über `doneChangedAt`. Ohne Stempel und Konflikt: erledigt gewinnt. iPhone und Watch müssen sich einmal sehen (Bluetooth, Apps kurz aktiv).
+```
+{
+  einkauf: { kind: "einkauf-sync", v: 1, blob },
+  todo:    { kind: "todo-sync",    v: 1, blob }
+}
+```
+
+Beim Senden einer Domain: aktuellen `session.applicationContext` lesen, nur den eigenen Key setzen, zurückschreiben. Legacy top-level `kind == "einkauf-sync"` weiter als Einkauf-only lesen. Messages bleiben domain-spezifisch: `einkauf-sync` / `einkauf-toggle` / `einkauf-pull` und `todo-sync` / `todo-toggle` (`uid` als `Int64`/`NSNumber`) / `todo-pull`. Ein `WatchSessionActor` (kein zweites `WCSession.delegate`). To-Do-Blob = `kind: "todo-local"` (`TodoCodec`); Einkauf-Blob nie als To-Do dekodieren und umgekehrt.
+
+Einkauf-Merge (`StateMerge`): Listenstruktur folgt höherer `listRevision`; `done` je Artikel über `doneChangedAt`. To-Do-Merge (`TodoMerge`): Struktur über `revision`; `completed` über `updatedAt`. Ohne Stempel: erledigt gewinnt. iPhone und Watch müssen sich einmal sehen (Bluetooth, Apps kurz aktiv).
 
 ## Theme-Tokens
 

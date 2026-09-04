@@ -32,17 +32,12 @@ enum SpeechItemSplitter {
 
     /// Siri liefert den Trigger manchmal nochmal im Parameter. Führendes `Einkauf:` / `Einkauf` / `Besorgen:` / `Besorgen`.
     static func strippingTriggerPrefix(_ text: String) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return "" }
-        guard let regex = try? NSRegularExpression(
-            pattern: #"^(?:einkauf|besorgen)(?:\s*:\s*|\s+|$)"#,
-            options: [.caseInsensitive]
-        ) else {
-            return trimmed
-        }
-        let range = NSRange(trimmed.startIndex..., in: trimmed)
-        let stripped = regex.stringByReplacingMatches(in: trimmed, range: range, withTemplate: "")
-        return stripped.trimmingCharacters(in: .whitespacesAndNewlines)
+        stripLeadingTrigger(text, pattern: #"^(?:einkauf|besorgen)(?:\s*:\s*|\s+|$)"#)
+    }
+
+    /// To-Do-Siri: führendes `To Do` / `To-Do` / `todo` (nicht `besorgen`).
+    static func strippingTodoTriggerPrefix(_ text: String) -> String {
+        stripLeadingTrigger(text, pattern: #"^(?:to[\s-]*do|todo)(?:\s*:\s*|\s+|$)"#)
     }
 
     static func confirmation(addedCount: Int) -> String {
@@ -54,6 +49,28 @@ enum SpeechItemSplitter {
         default:
             return "\(addedCount) Artikel hinzugefügt."
         }
+    }
+
+    static func todoConfirmation(addedCount: Int) -> String {
+        switch addedCount {
+        case 0:
+            return "Keine Aufgaben erkannt."
+        case 1:
+            return "1 Aufgabe hinzugefügt."
+        default:
+            return "\(addedCount) Aufgaben hinzugefügt."
+        }
+    }
+
+    private static func stripLeadingTrigger(_ text: String, pattern: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return trimmed
+        }
+        let range = NSRange(trimmed.startIndex..., in: trimmed)
+        let stripped = regex.stringByReplacingMatches(in: trimmed, range: range, withTemplate: "")
+        return stripped.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static let mark = "\u{1E}"

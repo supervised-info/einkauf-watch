@@ -81,7 +81,7 @@ struct EinkaufRoot: View {
 #if os(iOS)
     private func handleOpenURL(_ url: URL) {
         if url.scheme == "einkauf" {
-            selectedTab = .einkauf
+            selectedTab = url.host == "todo" ? .todo : .einkauf
             return
         }
         do {

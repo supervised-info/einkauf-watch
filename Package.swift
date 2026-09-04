@@ -17,7 +17,8 @@ let package = Package(
             path: "Sources/Shared",
             exclude: [
                 "ConnectivitySync.swift",
-                "EinkaufAddItemsIntent.swift"
+                "EinkaufAddItemsIntent.swift",
+                "TodoAddItemsIntent.swift"
             ]
         ),
         .testTarget(

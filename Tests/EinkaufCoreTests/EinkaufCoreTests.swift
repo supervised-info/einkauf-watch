@@ -1686,6 +1686,23 @@ final class SpeechItemSplitterTests: XCTestCase {
         )
     }
 
+    func testStripsLeadingTodoTriggerNotBesorgen() {
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("To Do Steuer, Anruf"), "Steuer, Anruf")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("To Do: Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("todo:Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("To-Do Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("To Do"), "")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Today Milch"), "Today Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Besorgen Milch"), "Besorgen Milch")
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix("To Do: Steuer und Anruf")),
+            ["Steuer", "Anruf"]
+        )
+        XCTAssertEqual(SpeechItemSplitter.todoConfirmation(addedCount: 0), "Keine Aufgaben erkannt.")
+        XCTAssertEqual(SpeechItemSplitter.todoConfirmation(addedCount: 1), "1 Aufgabe hinzugefügt.")
+        XCTAssertEqual(SpeechItemSplitter.todoConfirmation(addedCount: 3), "3 Aufgaben hinzugefügt.")
+    }
+
     func testConfirmationCopy() {
         XCTAssertEqual(SpeechItemSplitter.confirmation(addedCount: 0), "Keine Artikel erkannt.")
         XCTAssertEqual(SpeechItemSplitter.confirmation(addedCount: 1), "1 Artikel hinzugefügt.")

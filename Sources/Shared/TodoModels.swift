@@ -305,3 +305,55 @@ enum TodoListGrouping {
         return parts.joined(separator: " · ")
     }
 }
+
+/// Watch-Complication nur für To-Do. Liest `todo-local.json`, nie `einkauf-local.json`.
+/// Label-Text genau **To Do** (mit Leerzeichen). Zähler = offene Aufgaben, bei 0 „erledigt“.
+struct TodoComplicationSnapshot: Equatable, Sendable {
+    static let widgetKind = "TodoProgress"
+    static let openURL = URL(string: "einkauf://todo")!
+    /// Genau diese Schreibweise — nicht „To-Do“.
+    static let labelText = "To Do"
+
+    var openCount: Int
+    var doneCount: Int
+    var total: Int
+    var isEmpty: Bool
+    /// Gauge 0…1 (erledigt/gesamt); leere Liste ist 0.
+    var progress: Double
+
+    static let placeholder = TodoComplicationSnapshot(
+        openCount: 3,
+        doneCount: 1,
+        total: 4,
+        isEmpty: false,
+        progress: 0.25
+    )
+
+    static func make(from state: TodoState) -> TodoComplicationSnapshot {
+        let done = state.tasks.filter(\.completed).count
+        let total = state.tasks.count
+        let open = total - done
+        return TodoComplicationSnapshot(
+            openCount: open,
+            doneCount: done,
+            total: total,
+            isEmpty: total == 0,
+            progress: total == 0 ? 0 : Double(done) / Double(total)
+        )
+    }
+
+    var compactCountText: String {
+        openCount == 0 ? "erledigt" : "\(openCount)"
+    }
+
+    var inlineText: String {
+        "\(Self.labelText)  \(compactCountText)"
+    }
+
+    var accessibilityLabel: String {
+        if openCount == 0 {
+            return "\(Self.labelText), Liste erledigt"
+        }
+        return "\(Self.labelText), \(openCount) offen"
+    }
+}

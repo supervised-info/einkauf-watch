@@ -1,6 +1,6 @@
 # Plan: To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04. Phasen 1–5 plus Liste-teilen-PDF: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle, To-Do-Backup `todo-v3-json` und **Liste teilen** (PDF folgt dem Auge). Watch-To-Do und volle HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
+Stand: 2026-09-04. Phasen 1–6 plus Liste-teilen-PDF: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle, To-Do-Backup `todo-v3-json`, **Liste teilen** (PDF folgt dem Auge), Watch-Tab Geh-Modus, gemergter WatchConnectivity-Context, To-Do-Complication `TodoProgress`, Siri **To Do**. Volle HTML-Parity (Reopen/Suche/MD/CSV) fehlt. Volle Spec in `Description.md` erst Phase 9.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen der **Einkaufs**-App bleiben die Wahrheit für Einkauf. Für To-Do-Produktverhalten gilt die HTML-PWA, nicht diese Datei.
 
@@ -174,17 +174,9 @@ Import-Menü **nur im To-Do-Tab**. Einkaufs-Overflow bleibt bei Einkauf-Backups.
 
 ### WatchConnectivity
 
-`WCSession.applicationContext` ist **ein** Dictionary — letzter Schreiber gewinnt. Wenn To-Do denselben Slot mit einem eigenen Payload überschreibt, verliert die Watch den Einkaufs-Stand bis zum nächsten Einkaufs-Write.
+`WCSession.applicationContext` ist **ein** Dictionary — letzter Schreiber gewinnt. To-Do darf denselben Slot nicht mit einem eigenen Payload überschreiben.
 
-Heutige `kind`-Werte (unverändert lassen, weiter routen):
-
-- `einkauf-sync` + `blob` (lokales Einkauf-JSON)
-- `einkauf-toggle` (`id`, `done`, `at`)
-- `einkauf-pull`
-
-Pflicht: **Diskriminator**, sodass Payloads nie in den anderen Store laufen.
-
-Vorschlag (Phase 6, nicht dieser PR):
+Gelandertes Envelope (Phase 6):
 
 ```
 applicationContext = {
@@ -193,17 +185,18 @@ applicationContext = {
 }
 ```
 
-oder gleichberechtigte Geschwister-Keys, die `ConnectivitySync.handleIncoming` **ignoriert**, solange `kind` nicht `einkauf-*` ist.
+Beim Senden einer Domain: `session.applicationContext` lesen (`WatchSyncEnvelope.merging`), nur den eigenen Key setzen, zurückschreiben. Backward-compat: top-level `kind == "einkauf-sync"` gilt weiter als Einkauf-only.
 
-Zusätzlich eigene Message-Kinds:
+Message-Kinds:
 
-- `todo-sync` / `todo-toggle` / `todo-pull`
+- `einkauf-sync` / `einkauf-toggle` / `einkauf-pull` (unverändert)
+- `todo-sync` / `todo-toggle` (`uid` Int64 oder NSNumber) / `todo-pull`
 
-`handleIncoming` heute: unbekanntes `kind` ohne Blob wird ignoriert; mit Blob wird `BackupCodec.decodeLocal` versucht (Catch bei Fehlschlag). To-Do-Blob darf **nicht** zufällig als `AppState` dekodieren. Decoder an `kind: "todo-local"` binden.
+To-Do-Blob = `TodoCodec.encodeLocal` / `decodeLocal` (`kind: "todo-local"`). `BackupCodec.decodeLocal` darf To-Do-Blobs nicht als `AppState` schlucken.
 
-`WatchSessionActor` ist ein Singleton am `WCSession.default`. Ein zweiter Delegate geht nicht. Phase 6: denselben Actor um eine zweite `weak var todoStore` (oder einen Multiplexer) erweitern — Einkaufs-Pfad nicht regressieren.
+`WatchSessionActor` bleibt Singleton am `WCSession.default`. `attach` (`ConnectivitySync`) und `attachTodo` (`TodoConnectivitySync`) — kein zweites Delegate. Einkaufs-Pfad unverändert, außer dass `updateApplicationContext` merget.
 
-Toggle-Merge analog Einkauf: Zeitstempel (`updatedAt` oder natives `completedChangedAt`); ohne Stempel: erledigt gewinnt. Listenstruktur: `nextUid` / Revision, nicht `listRevision` von Einkauf wiederverwenden.
+Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gewinnt. Listenstruktur: `revision` / `nextUid`, nicht `listRevision` von Einkauf.
 
 ### Siri
 
@@ -236,7 +229,7 @@ Gelandet:
 - `Sources/Shared/TodoModels.swift` — `TodoTask` / `TodoState`, `uid`/`nextUid` als `Int64`
 - `Sources/Shared/TodoCodec.swift` — Envelope `kind: "todo-local"`; lehnt `einkauf-local` / `einkauf-backup` ab; `normalizeTasks`
 - `Sources/Shared/TodoPersistence.swift` — `todo-local.json` im Ordner `Einkauf/` derselben App Group; Notification `.todoStateDidChangeOnDisk`; schreibt nicht `einkauf-local.json`
-- `Sources/Shared/TodoStore.swift` — `@MainActor` ObservableObject, `enableSync` ignoriert, **kein** WatchConnectivity; `add` / `toggle` / `delete` / `update`
+- `Sources/Shared/TodoStore.swift` — `@MainActor` ObservableObject, `enableSync` startet `TodoConnectivitySync` (Phase 6); `add` / `toggle` / `delete` / `update`
 - Tests: `Tests/EinkaufCoreTests/TodoStoreTests.swift`
 - Widgets schließen `TodoStore.swift` aus (`project.yml`), analog `ShoppingStore`
 
@@ -296,12 +289,19 @@ Gelandet (kein eigener Phasen-Slot im ursprünglichen Plan; iPhone-only):
 - Share-Sheet wie Einkauf (`BackupShareItem` / `ShareSheet`)
 - **Kein** Watch, kein MD/CSV
 
-### 6. Watch Geh-Modus + Sync nur für To-Do
+### 6. Watch Geh-Modus + Sync + Complication + Siri — erledigt (Build 46)
 
-- Watch-Tab To-Do: offene Aufgaben, Toggle done
-- WatchConnectivity-Diskriminator; Application-Context **beide** Domains
-- Einkaufs-Sync und Complication unverändert
-- Build-Nummer hochzählen (Watch-UI)
+Gelandet:
+
+- Watch-`TabView` **Einkauf | To-Do** (`WatchListView` + `WatchTodoListView`); Labels/Symbole `basket` / `checklist`
+- To-Do nur Geh-Modus: Text (+ kompakte Person/Prio/Datum); Tippen toggelt `completed`; Auge `todo.watch.hideCompleted` (eigenes Flag)
+- Application Context gemergt (`WatchSyncEnvelope`); Kinds `todo-sync` / `todo-toggle` / `todo-pull`; Legacy `einkauf-sync` top-level bleibt lesbar
+- `TodoStore.enableSync` startet `TodoConnectivitySync` am selben `WatchSessionActor`
+- Eigene Complication `TodoProgress` (Label **To Do**, offene Anzahl / „erledigt“, `todo-local.json`, `einkauf://todo`)
+- Siri `TodoAddItemsIntent` + `TodoShortcuts`: Phrasen **To Do**, Nachfrage **„T“**; Watch-Queue `todo.siriPendingAdds`; Einkauf-„besorgen“ unverändert
+- Build 46 (Watch-UI)
+
+Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
 ### 7. Reopen-Ketten, Sort, Suche (HTML-Parity, Stretch)
 
@@ -336,8 +336,8 @@ Gelandet (kein eigener Phasen-Slot im ursprünglichen Plan; iPhone-only):
 
 ## Non-Goals für To-Do-v1 (über diesen PR hinaus)
 
-- To-Do-Homescreen-Widget, Watch-Complication, Sperrbildschirm
-- To-Do-Siri; keine Kollision mit „besorgen“
+- To-Do-Homescreen-Widget, Sperrbildschirm (Watch-To-Do-Complication ist in Phase 6 gelandet)
+- To-Do-Siri verdünnt nicht „besorgen“ (eigener Provider; gelandet in Phase 6)
 - Bearbeiten / Prio / Reopen auf der Watch
 - iCloud, CloudKit, gemeinsames JSON mit Einkauf
 - HTML Theme-Mast / Service Worker / Shared-Keys in der nativen App
@@ -368,7 +368,11 @@ Sources/Shared/TodoPersistence.swift
 Sources/Shared/TodoStore.swift
 Sources/Shared/TodoCodec.swift
 Sources/iOS/TodoListView.swift
-Sources/Watch/WatchTodoListView.swift   // Phase 6
+Sources/Watch/WatchTodoListView.swift
+Sources/Shared/WatchSyncEnvelope.swift
+Sources/WatchWidgets/TodoWatchWidgets.swift
+Sources/Shared/TodoAddItemsIntent.swift
+Sources/Shared/TodoSiriPendingAdds.swift
 Fixtures/todo-v3-json.json              // Phase 5
 Tests/EinkaufCoreTests/TodoStoreTests.swift
 ```
@@ -386,4 +390,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 4: Person/Prio/Datum, Overdue, Abgeschlossen-Toggle (`todo.iphone.showCompleted`), Build 43.
 - [x] Phase 5: To-Do-Backup `todo-v3-json`, eigenes Overflow, `onOpenURL`-Router, Build 44.
 - [x] Liste teilen PDF folgt dem Auge (`todo.iphone.showCompleted`), Build 45.
-- [ ] Folge-PRs halten die Reihenfolge 6→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Phase 6: Watch-Tab, gemergter WC-Context, To-Do-Complication, Siri To Do, Build 46.
+- [ ] Folge-PRs halten die Reihenfolge 7→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
