@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 53, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 54, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) und zur To-Do-PWA [todo](https://supervised-info.github.io/todo/). HTML-Spec Einkauf: Pages `einkauf/Description_index.md`. Brücke Einkauf: Backup-JSON (`kind: "einkauf-backup"`); To-Do: `format: "todo-v3-json"`. Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -52,8 +52,8 @@ Toolbar (trailing nach leading-Lupe):
 
 **Listen-Modus vs Edit (Swipe-Löschen nur im Edit-Modus):**
 
-- Listen-Modus: Checkbox toggelt `completed`; **kein** Swipe-Löschen (`.deleteDisabled` + trailing `EmptyView()`, List-`.id` `todo-browse`). Text-Tipp und Leading-Swipe **Bearbeiten** öffnen `TodoEditSheet`.
-- Edit-Modus: Swipe-Löschen nur via `.onDelete` (List-`.id` `todo-edit`); Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance. Umschalten tauscht die List-Identität, damit SwiftUI keine löschbaren Zeilen wiederverwendet. Leading-Swipe **Bearbeiten** bleibt in beiden Modi.
+- Listen-Modus: Checkbox toggelt `completed`; **kein** Swipe-Löschen (`.deleteDisabled` + trailing `EmptyView()`, List-`.id` `todo-browse`). Text-Tipp und Leading-Swipe **Edit** öffnen `TodoEditSheet`.
+- Edit-Modus: Swipe-Löschen nur via `.onDelete` (List-`.id` `todo-edit`); Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance. Umschalten tauscht die List-Identität, damit SwiftUI keine löschbaren Zeilen wiederverwendet. Leading-Swipe **Edit** bleibt in beiden Modi.
 
 `TodoEditSheet`: z. B. nach Siri (Person/Prio leer). `TodoTask` ist `Identifiable`/`Hashable` über `uid` für `.sheet(item:)`.
 

@@ -204,10 +204,10 @@ struct TodoListView: View {
             .accessibilityLabel(showCompleted ? "Abgeschlossene ausblenden" : "Abgeschlossene einblenden")
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button(isEditing ? "Fertig" : "Bearbeiten") {
+            Button(isEditing ? "Fertig" : "Edit") {
                 isEditing.toggle()
             }
-            .accessibilityLabel(isEditing ? "Fertig" : "Bearbeiten")
+            .accessibilityLabel(isEditing ? "Fertig" : "Edit")
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
@@ -314,7 +314,7 @@ struct TodoListView: View {
     }
 
     /// Listen-Modus: kein Swipe-Löschen. Trailing-`EmptyView` ersetzt das System-Delete,
-    /// das SwiftUI sonst neben Leading-„Bearbeiten“ einblendet. `.id("todo-browse")`
+    /// das SwiftUI sonst neben Leading-„Edit“ einblendet. `.id("todo-browse")`
     /// verhindert, dass Bearbeiten-Zeilen (mit `.onDelete`) wiederverwendet werden.
     private var browsingList: some View {
         List {
@@ -386,7 +386,7 @@ struct TodoListView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Bearbeiten: \(task.text)")
+                .accessibilityLabel("Edit: \(task.text)")
                 chainHint(task)
             }
         }
@@ -397,7 +397,7 @@ struct TodoListView: View {
             Button {
                 editingTask = task
             } label: {
-                Label("Bearbeiten", systemImage: "pencil")
+                Label("Edit", systemImage: "pencil")
             }
             if TodoOrdering.canReopen(task) {
                 Button {
@@ -412,7 +412,7 @@ struct TodoListView: View {
             Button {
                 editingTask = task
             } label: {
-                Label("Bearbeiten", systemImage: "pencil")
+                Label("Edit", systemImage: "pencil")
             }
             if TodoOrdering.canReopen(task) {
                 Button {

@@ -292,13 +292,13 @@ struct ContentView: View {
             .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button(store.walkMode ? "Bearbeiten" : "Geh-Modus") {
+            Button(store.walkMode ? "Edit" : "Geh-Modus") {
                 if store.walkMode == false {
                     commitRename()
                 }
                 store.toggleWalkMode()
             }
-            .accessibilityLabel(store.walkMode ? "Bearbeiten" : "Geh-Modus")
+            .accessibilityLabel(store.walkMode ? "Edit" : "Geh-Modus")
             .accessibilityAddTraits(store.walkMode ? .isSelected : [])
         }
         ToolbarItem(placement: .topBarTrailing) {
