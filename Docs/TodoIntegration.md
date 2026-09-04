@@ -1,6 +1,6 @@
 # Plan: To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04. Phasen 1–6 plus Liste-teilen-PDF: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle, To-Do-Backup `todo-v3-json`, **Liste teilen** (PDF folgt dem Auge), Watch-Tab Geh-Modus, gemergter WatchConnectivity-Context, To-Do-Complication `TodoProgress`, Siri **To Do**. Volle HTML-Parity (Reopen/Suche/MD/CSV) fehlt. Volle Spec in `Description.md` erst Phase 9.
+Stand: 2026-09-04. Phasen 1–6 plus Liste-teilen-PDF: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle, To-Do-Backup `todo-v3-json`, **Liste teilen** (PDF folgt dem Auge), Watch-Tab Geh-Modus, gemergter WatchConnectivity-Context, To-Do-Complication `TodoProgress`, Siri **Todo** (ein Wort). Volle HTML-Parity (Reopen/Suche/MD/CSV) fehlt. Volle Spec in `Description.md` erst Phase 9.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen der **Einkaufs**-App bleiben die Wahrheit für Einkauf. Für To-Do-Produktverhalten gilt die HTML-PWA, nicht diese Datei.
 
@@ -202,7 +202,7 @@ Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gew
 
 Einkauf: Utterance mit App-Namen + **besorgen** (`EinkaufAddItemsIntent`). Das Wort nicht umdeuten.
 
-To-Do-Siri: `TodoAddItemsIntent`, Phrasen **To Do**, Nachfrage **„o“** (wie Einkauf `requestValueDialog`). `parameterSummary` **ein Token** `Todo \(.$items)` (nicht `To Do …` — App Intents bindet sonst oft nur das erste Wort). Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
+To-Do-Siri: `TodoAddItemsIntent`, Phrasen **Todo** (ein Token, nicht `To Do` — Siri begrenzt zwei Phrase-Tokens auf zwei Wörter Capture), optional **Aufgaben**, Nachfrage **„o“** (wie Einkauf `requestValueDialog`). `parameterSummary` **ein Token** `Todo \(.$items)`. Spoken: **„Hey Siri, Einkauf Todo“**. Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
 
 ### Theme
 
@@ -318,6 +318,15 @@ Gelandet:
 - Split weiter nur an `,;` / `und` / `sowie` — „Rechnung bezahlen“ bleibt eine Aufgabe
 - Build 48
 
+### To-Do Siri Phrase ein Token — erledigt (Build 49)
+
+- Entdeckungs-Phrasen **Todo** (ein Wort), analog Besorgen; nicht `To Do` mit Leerzeichen (Siri-2-Token-Limit: Aufgabe blieb sonst bei genau 2 Wörtern)
+- Optional „{App} Aufgaben“
+- `shortTitle` bleibt „To Do“ (Kurzbefehle-Anzeige)
+- `parameterSummary` weiter `Todo \(.$items)`, Nachfrage **„o“**
+- Spoken **„Hey Siri, Einkauf Todo“**
+- Build 49
+
 Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
 ### 7. Reopen-Ketten, Sort, Suche (HTML-Parity, Stretch)
@@ -410,4 +419,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 6: Watch-Tab, gemergter WC-Context, To-Do-Complication, Siri To Do, Build 46.
 - [x] iPhone Bearbeiten / Fertig + Siri-Nachfrage **„o“**, Build 47.
 - [x] To-Do-Siri Mehrwort-Aufgaben: ein-tokeniges `parameterSummary`, Build 48.
+- [x] To-Do-Siri Phrase ein Token (`Todo`), gesprochen „Hey Siri, Einkauf Todo“, Build 49.
 - [ ] Folge-PRs halten die Reihenfolge 7→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).

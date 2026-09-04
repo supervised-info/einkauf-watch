@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 48, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 49, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -12,7 +12,7 @@ TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedac
 
 ## Geplant / WIP
 
-Zweiter Reiter **To-Do** auf **iPhone und Watch** (`TabView` Einkauf | To-Do). iPhone: Text, Person, Prio A/B, Datum; Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`); Toolbar **Bearbeiten** / **Fertig** (Liste: Checkbox + Swipe-Löschen, Sheet per Text oder Swipe **Bearbeiten**; Bearbeiten-Modus: Zeile öffnet `TodoEditSheet` für Text/Person/Prio/Datum — z. B. nach Siri ohne Person/Prio); Backup JSON (`todo-v3-json`), **Liste teilen** (PDF `TodoListPDF`) und Erledigte löschen im To-Do-Overflow **…**. Watch: nur Geh-Modus (Toggle `completed`, Auge `todo.watch.hideCompleted`); eigene Complication `TodoProgress` (Label **To Do**, offene Anzahl / „erledigt“); Siri-Intent **To Do** (Nachfrage **„o“**, nicht „besorgen“). **Kein** HTML-Parity — Reopen, Suche, MD/CSV fehlen (Phasen 7–8). Kein To-Do-Homescreen-Widget. Plan: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Volle Spec erst in Phase 9.
+Zweiter Reiter **To-Do** auf **iPhone und Watch** (`TabView` Einkauf | To-Do). iPhone: Text, Person, Prio A/B, Datum; Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`); Toolbar **Bearbeiten** / **Fertig** (Liste: Checkbox + Swipe-Löschen, Sheet per Text oder Swipe **Bearbeiten**; Bearbeiten-Modus: Zeile öffnet `TodoEditSheet` für Text/Person/Prio/Datum — z. B. nach Siri ohne Person/Prio); Backup JSON (`todo-v3-json`), **Liste teilen** (PDF `TodoListPDF`) und Erledigte löschen im To-Do-Overflow **…**. Watch: nur Geh-Modus (Toggle `completed`, Auge `todo.watch.hideCompleted`); eigene Complication `TodoProgress` (Label **To Do**, offene Anzahl / „erledigt“); Siri-Intent **Todo** (ein Wort; Nachfrage **„o“**, nicht „besorgen“). **Kein** HTML-Parity — Reopen, Suche, MD/CSV fehlen (Phasen 7–8). Kein To-Do-Homescreen-Widget. Plan: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Volle Spec erst in Phase 9.
 
 ## Datei-Ort, Targets, Bundle
 
@@ -156,7 +156,7 @@ Datenquelle: dieselbe lokale Datei `einkauf-local.json` über App Group `group.n
 
 ## Sprach-Eingabe (Siri)
 
-Sprache ist **kein** In-App-Mikrofon. Es gibt keinen Hold-to-Talk-Button, kein `Speech.framework`, kein `TextFieldLink`, kein `presentTextInputController` und kein In-App-`TextField` zum Diktat — diese Pfade sind bewusst tot. Artikel per Stimme laufen nur über **Siri App Intents** auf iPhone (`Einkauf`) und Watch (`EinkaufWatch`): `EinkaufAddItemsIntent` und `TodoAddItemsIntent` in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`; Apple erlaubt nur eine Conformance). Einkauf-„besorgen“ und To-Do-„To Do“ bleiben getrennte Phrasen. Shared: `SpeechItemSplitter.swift`, `SiriPendingAdds.swift`, `TodoSiriPendingAdds.swift`, `EinkaufAddItemsIntent.swift`, `TodoAddItemsIntent.swift` — in beiden App-Targets, nicht in den Widgets, Intents nicht im SPM-Paket.
+Sprache ist **kein** In-App-Mikrofon. Es gibt keinen Hold-to-Talk-Button, kein `Speech.framework`, kein `TextFieldLink`, kein `presentTextInputController` und kein In-App-`TextField` zum Diktat — diese Pfade sind bewusst tot. Artikel per Stimme laufen nur über **Siri App Intents** auf iPhone (`Einkauf`) und Watch (`EinkaufWatch`): `EinkaufAddItemsIntent` und `TodoAddItemsIntent` in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`; Apple erlaubt nur eine Conformance). Einkauf-„besorgen“ und To-Do-„Todo“ bleiben getrennte Phrasen (je ein Content-Token). Shared: `SpeechItemSplitter.swift`, `SiriPendingAdds.swift`, `TodoSiriPendingAdds.swift`, `EinkaufAddItemsIntent.swift`, `TodoAddItemsIntent.swift` — in beiden App-Targets, nicht in den Widgets, Intents nicht im SPM-Paket.
 
 ### Was funktioniert
 
@@ -176,13 +176,14 @@ Split wie `SpeechItemSplitter`: Komma, Semikolon, Zeilenumbruch, ` und `, ` sowi
 
 ### To-Do Siri (`TodoAddItemsIntent`)
 
-Trigger **To Do** (nicht **besorgen**). Phrasen mit genau einem App-Namen:
+Trigger **Todo** (ein Wort, nicht **To Do** mit Leerzeichen, nicht **besorgen**). Siri-App-Shortcut-Phrasen mit zwei Inhaltstokens (`To Do`) begrenzen die danach gesprochene Aufgabe hart auf zwei Wörter — deshalb dasselbe Muster wie Besorgen: **ein** Content-Token. Phrasen mit genau einem App-Namen:
 
-- „{App} To Do“
-- „To Do mit {App}“
-- „{App} zum To Do“
+- „{App} Todo“
+- „Todo mit {App}“
+- „{App} zum Todo“
+- „{App} Aufgaben“ (alternativer Ein-Token-Trigger)
 
-`shortTitle` „To Do“, Icon `checklist`. Shortcut in `EinkaufShortcuts` (kein zweiter Provider). Nachfrage **„o“** (`requestValueDialog` „o“, wie Einkauf). Parameter-Titel **Aufgaben**. Phrasen bleiben **To Do** (nicht „besorgen“). `parameterSummary` ist **ein Token** `Todo \(.$items)` — analog Einkauf `Besorgen \(.$items)`; ein Leerzeichen im Prefix (`To Do …`) bindet in App Intents/Siri oft nur das erste gesprochene Wort. `openAppWhenRun = false`. Führendes `To Do` / `To-Do` / `todo` / `Todo` / `Aufgaben:` / `Aufgaben` wird abgestreift (`SpeechItemSplitter.strippingTodoTriggerPrefix`). Split wie Einkauf (`und` / Komma), **nicht** an Leerzeichen — „Rechnung bezahlen“ bleibt eine Aufgabe, „Katze füttern und Müll rausbringen“ zwei. iPhone: `TodoStore(enableSync: true)` + `addItems(fromSpeech:)`, Dialog „1 Aufgabe hinzugefügt.“ / „Keine Aufgaben erkannt.“ Person/Prio bleiben leer — auf dem iPhone danach **Bearbeiten** / `TodoEditSheet`. Watch: **kein** `TodoStore` im Intent; Queue `todo.siriPendingAdds` / Datei `todo-siri-pending.json` (nicht die Einkauf-Queue); Drain auf dem live Store beim Aktivwerden und `WatchTodoListView.onAppear`.
+`shortTitle` „To Do“ (Anzeige in der Kurzbefehle-App; Leerzeichen dort ok), Icon `checklist`. Shortcut in `EinkaufShortcuts` (kein zweiter Provider). Nachfrage **„o“** (`requestValueDialog` „o“, wie Einkauf). Parameter-Titel **Aufgaben**. Beispiel: **„Hey Siri, Einkauf Todo“** → Siri fragt „o“ → Aufgabe sprechen. `parameterSummary` ist **ein Token** `Todo \(.$items)` — analog Einkauf `Besorgen \(.$items)`. `openAppWhenRun = false`. Führendes `To Do` / `To-Do` / `todo` / `Todo` / `Aufgaben:` / `Aufgaben` wird abgestreift (`SpeechItemSplitter.strippingTodoTriggerPrefix`). Split wie Einkauf (`und` / Komma), **nicht** an Leerzeichen — „Rechnung bezahlen“ bleibt eine Aufgabe, „Katze füttern und Müll rausbringen“ zwei. iPhone: `TodoStore(enableSync: true)` + `addItems(fromSpeech:)`, Dialog „1 Aufgabe hinzugefügt.“ / „Keine Aufgaben erkannt.“ Person/Prio bleiben leer — auf dem iPhone danach **Bearbeiten** / `TodoEditSheet`. Watch: **kein** `TodoStore` im Intent; Queue `todo.siriPendingAdds` / Datei `todo-siri-pending.json` (nicht die Einkauf-Queue); Drain auf dem live Store beim Aktivwerden und `WatchTodoListView.onAppear`.
 
 `makeID` (Item / SavedList / StoreCatalog) kodiert Epoch-Millis als **`Int64`**. watchOS `arm64_32` hat 32-bit `Int`; `Int(Date().timeIntervalSince1970 * 1000)` crasht sonst fatal in `Item.makeID` beim Drain (`consumeSiriPendingAdds`) und bei jedem neuen Item.
 
@@ -195,6 +196,7 @@ Trigger **To Do** (nicht **besorgen**). Phrasen mit genau einem App-Namen:
 5. Der Watch-Intent darf **keinen** `ShoppingStore` / vollen `AppState` bauen, **kein** `openAppWhenRun = true`, keine schweren Dialoge (`ProvidesDialog`) — sonst stiller Abbruch oder Crash, sobald der Artikel erkannt ist.
 6. Deshalb Pending-Queue in der App Group; der live Store konsumiert später (`consumeSiriPendingAdds` beim Aktivwerden / `onAppear` / `.task`).
 7. `makeID` **muss** Epoch-Millis als **`Int64`** nehmen. Auf der Watch ist `Int` 32-bit (`arm64_32`); ein Cast der Epoch-Millis nach `Int` overflowed und macht `consumeSiriPendingAdds` in `Item.makeID` fatal.
+8. **To-Do-Phrase zwei Tokens** — Entdeckungs-Phrasen mit `To Do` (Leerzeichen) cappt Siri die gebundene Aufgabe auf genau zwei Wörter (3/4/5-Wort-Sätze wurden auf 2 gekürzt; `parameterSummary` `Todo \(.$items)` allein hat das nicht gelöst). Fix wie Besorgen: **ein** Phrase-Token `Todo`. Gesprochen **„Hey Siri, Einkauf Todo“**, Nachfrage weiter **„o“**.
 
 ## Abteilungen `Department` (IDs nicht ändern)
 

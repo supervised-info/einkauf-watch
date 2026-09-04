@@ -36,7 +36,7 @@ enum SpeechItemSplitter {
     }
 
     /// To-Do-Siri: führendes `To Do` / `To-Do` / `todo` / `Todo` / `Aufgaben` (nicht `besorgen`).
-    /// `Aufgaben` spiegelt den Parameter-Titel; `Todo` das ein-tokenige `parameterSummary`.
+    /// `Aufgaben` spiegelt Parameter-Titel und Alternate-Phrase; `Todo` Phrase + `parameterSummary`.
     static func strippingTodoTriggerPrefix(_ text: String) -> String {
         stripLeadingTrigger(text, pattern: #"^(?:to[\s-]*do|todo|aufgaben)(?:\s*:\s*|\s+|$)"#)
     }
