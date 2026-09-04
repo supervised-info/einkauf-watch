@@ -41,15 +41,12 @@ struct TodoAddItemsIntent: AppIntent {
 #else
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        do {
-            let speech = SpeechItemSplitter.strippingTodoTriggerPrefix(items)
-            let store = TodoStore(enableSync: true)
-            let count = store.addItems(fromSpeech: speech)
-            let message = SpeechItemSplitter.todoConfirmation(addedCount: count)
-            return .result(dialog: IntentDialog("\(message)"))
-        } catch {
-            return .result(dialog: IntentDialog("Speichern fehlgeschlagen."))
-        }
+        // Persistenz-Fehler werden im Store geschluckt (Dialog wäre „Speichern fehlgeschlagen.“).
+        let speech = SpeechItemSplitter.strippingTodoTriggerPrefix(items)
+        let store = TodoStore(enableSync: true)
+        let count = store.addItems(fromSpeech: speech)
+        let message = SpeechItemSplitter.todoConfirmation(addedCount: count)
+        return .result(dialog: IntentDialog("\(message)"))
     }
 #endif
 }
