@@ -721,6 +721,27 @@ final class TodoStoreBackupTests: XCTestCase {
         XCTAssertEqual(store.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
     }
 
+    func testOfferAppliesWhenEmptyOtherwiseAsksAndRejectsEinkauf() throws {
+        let incoming = try loadTodoFixture("todo-v3-json.json")
+        let empty = TodoStore(state: .empty, enableSync: false)
+        XCTAssertNil(try TodoImport.offer(incoming, into: empty))
+        XCTAssertEqual(empty.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+
+        let populated = TodoStore(state: empty.state, enableSync: false)
+        let before = populated.state.tasks.count
+        let summary = try TodoImport.offer(incoming, into: populated)
+        XCTAssertEqual(
+            summary,
+            TodoImportPrompt.message(currentCount: before, incomingCount: 2)
+        )
+        XCTAssertEqual(populated.state.tasks.count, before)
+
+        XCTAssertThrowsError(try TodoImport.offer(try BackupCodec.encodeExport(.seed), into: populated)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+        XCTAssertEqual(populated.state.tasks.count, before)
+    }
+
     func testAppendMergesListsById() throws {
         let todo = TodoPersistence.fileURL
         let previous = try? Data(contentsOf: todo)

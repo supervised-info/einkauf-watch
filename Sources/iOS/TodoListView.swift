@@ -930,17 +930,11 @@ struct TodoListView: View {
     }
 
     private func offerOrApply(_ data: Data) throws {
-        let incoming = try TodoImport.decode(data)
-        if todos.state.tasks.isEmpty {
-            try todos.importAny(data, append: false)
-            return
+        if let summary = try TodoImport.offer(data, into: todos) {
+            pendingImport = data
+            importSummary = summary
+            showImportChoice = true
         }
-        pendingImport = data
-        importSummary = TodoImportPrompt.message(
-            currentCount: todos.state.tasks.count,
-            incomingCount: incoming.tasks.count
-        )
-        showImportChoice = true
     }
 
     private func commitPending(append: Bool) {

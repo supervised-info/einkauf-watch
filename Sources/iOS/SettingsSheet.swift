@@ -1,7 +1,9 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsSheet: View {
     @EnvironmentObject private var store: ShoppingStore
+    @EnvironmentObject private var todos: TodoStore
     @EnvironmentObject private var appearance: AppearanceSettings
     @Environment(\.einkaufTheme) private var theme
     @Environment(\.dismiss) private var dismiss
@@ -11,6 +13,14 @@ struct SettingsSheet: View {
     @State private var pendingDeleteStoreId: String?
     @State private var confirmDeleteSavedList = false
     @State private var pendingDeleteSavedListId: String?
+    @State private var showTodoImporter = false
+    @State private var showTodoExporter = false
+    @State private var todoExportDocument = BackupFileDocument(data: Data())
+    @State private var todoShareItem: BackupShareItem?
+    @State private var todoAlertMessage: String?
+    @State private var pendingTodoImport: Data?
+    @State private var showTodoImportChoice = false
+    @State private var todoImportSummary = ""
 
     private var layout: [String] {
         StoreLayout.sanitized(store.state.currentStore.layout)
@@ -190,6 +200,26 @@ struct SettingsSheet: View {
                     }
                     .einkaufRowChrome()
                 }
+
+                Section {
+                    Button("Backup importieren…") {
+                        showTodoImporter = true
+                    }
+                    .einkaufRowChrome()
+                    Button("Backup exportieren…") {
+                        exportTodoJSON()
+                    }
+                    .einkaufRowChrome()
+                    Button("Backup teilen") {
+                        shareTodoJSON()
+                    }
+                    .einkaufRowChrome()
+                } header: {
+                    Text("To-Do Backup")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("JSON-Backup der To-Do-Liste (todo-liste.json). Einkauf-Backups werden abgelehnt.")
+                }
             }
             .einkaufListChrome()
             .navigationTitle("Einstellungen")
@@ -228,6 +258,45 @@ struct SettingsSheet: View {
                 Button("Abbrechen", role: .cancel) {
                     pendingDeleteSavedListId = nil
                 }
+            }
+            .fileImporter(
+                isPresented: $showTodoImporter,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                handleTodoImport(result)
+            }
+            .fileExporter(
+                isPresented: $showTodoExporter,
+                document: todoExportDocument,
+                contentType: .json,
+                defaultFilename: "todo-liste"
+            ) { result in
+                if case .failure(let error) = result {
+                    todoAlertMessage = error.localizedDescription
+                }
+            }
+            .sheet(item: $todoShareItem) { item in
+                ShareSheet(url: item.url)
+                    .ignoresSafeArea()
+            }
+            .alert("Hinweis", isPresented: Binding(
+                get: { todoAlertMessage != nil },
+                set: { if !$0 { todoAlertMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { todoAlertMessage = nil }
+            } message: {
+                Text(todoAlertMessage ?? "")
+            }
+            .confirmationDialog("To-Do importieren", isPresented: $showTodoImportChoice, titleVisibility: .visible) {
+                Button("Anhängen") { commitPendingTodo(append: true) }
+                Button("Ersetzen") { commitPendingTodo(append: false) }
+                Button("Abbrechen", role: .cancel) { pendingTodoImport = nil }
+            } message: {
+                Text(todoImportSummary)
+            }
+            .onChange(of: todos.lastError) { _, new in
+                if let new { todoAlertMessage = new }
             }
         }
     }
@@ -342,11 +411,68 @@ struct SettingsSheet: View {
         pendingDeleteSavedListId = store.savedLists[idx].id
         confirmDeleteSavedList = true
     }
+
+    private func exportTodoJSON() {
+        do {
+            todoExportDocument = BackupFileDocument(data: try todos.exportBackup())
+            showTodoExporter = true
+        } catch {
+            todoAlertMessage = error.localizedDescription
+        }
+    }
+
+    private func shareTodoJSON() {
+        do {
+            let data = try todos.exportBackup()
+            let url = try BackupShare.writeTempFile(data: data, stem: BackupShare.todoStem, ext: "json")
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                todoAlertMessage = "Backup-Datei konnte nicht erzeugt werden."
+                return
+            }
+            todoShareItem = BackupShareItem(url: url)
+        } catch {
+            todoAlertMessage = error.localizedDescription
+        }
+    }
+
+    private func handleTodoImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            todoAlertMessage = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            do {
+                let data = try IncomingJSON.data(from: url)
+                try offerOrApplyTodo(data)
+            } catch {
+                todoAlertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func offerOrApplyTodo(_ data: Data) throws {
+        if let summary = try TodoImport.offer(data, into: todos) {
+            pendingTodoImport = data
+            todoImportSummary = summary
+            showTodoImportChoice = true
+        }
+    }
+
+    private func commitPendingTodo(append: Bool) {
+        guard let data = pendingTodoImport else { return }
+        pendingTodoImport = nil
+        do {
+            try todos.importAny(data, append: append)
+        } catch {
+            todoAlertMessage = error.localizedDescription
+        }
+    }
 }
 
 #Preview {
     SettingsSheet()
         .environmentObject(ShoppingStore(state: .seed, enableSync: false))
+        .environmentObject(TodoStore(state: .empty, enableSync: false))
         .environmentObject(AppearanceSettings())
         .environment(\.einkaufTheme, ThemeTokens.make(palette: .vintage, scheme: .light))
 }

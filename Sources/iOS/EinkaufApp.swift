@@ -103,18 +103,12 @@ struct EinkaufRoot: View {
     }
 
     private func offerOrApplyTodo(_ data: Data) throws {
-        let incoming = try TodoImport.decode(data)
         selectedTab = .todo
-        if todos.state.tasks.isEmpty {
-            try todos.importAny(data, append: false)
-            return
+        if let summary = try TodoImport.offer(data, into: todos) {
+            pendingTodoData = data
+            todoImportSummary = summary
+            showTodoImportChoice = true
         }
-        pendingTodoData = data
-        todoImportSummary = TodoImportPrompt.message(
-            currentCount: todos.state.tasks.count,
-            incomingCount: incoming.tasks.count
-        )
-        showTodoImportChoice = true
     }
 
     private func commitPendingTodo(append: Bool) {
