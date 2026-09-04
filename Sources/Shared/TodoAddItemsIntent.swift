@@ -3,7 +3,7 @@ import AppIntents
 import Foundation
 
 /// Siri / Kurzbefehl: Phrase mit App-Namen + **To Do**; Siri fragt danach **„T“**.
-/// Eigener `AppShortcutsProvider` — Einkauf-Shortcuts bleiben in `EinkaufShortcuts`.
+/// AppShortcut steht in `EinkaufShortcuts` (Apple: nur ein Provider pro App).
 struct TodoAddItemsIntent: AppIntent {
     static var title: LocalizedStringResource = "Aufgaben hinzufügen"
     static var description = IntentDescription("Fügt Aufgaben zur To-Do-Liste hinzu.")
@@ -37,20 +37,5 @@ struct TodoAddItemsIntent: AppIntent {
         }
     }
 #endif
-}
-
-struct TodoShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: TodoAddItemsIntent(),
-            phrases: [
-                "\(.applicationName) To Do",
-                "To Do mit \(.applicationName)",
-                "\(.applicationName) zum To Do",
-            ],
-            shortTitle: "To Do",
-            systemImageName: "checklist"
-        )
-    }
 }
 #endif

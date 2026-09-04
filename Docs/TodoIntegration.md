@@ -202,7 +202,7 @@ Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gew
 
 Einkauf: Utterance mit App-Namen + **besorgen** (`EinkaufAddItemsIntent`). Das Wort nicht umdeuten.
 
-To-Do-Siri: **nicht v1**, wenn überhaupt später. Keine zweite Phrase mit „besorgen“. Kein `AppShortcutsProvider`, der Einkaufs-Phrasen verdünnt.
+To-Do-Siri: `TodoAddItemsIntent`, Phrasen **To Do**, Nachfrage **„T“**. Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
 
 ### Theme
 
@@ -298,7 +298,7 @@ Gelandet:
 - Application Context gemergt (`WatchSyncEnvelope`); Kinds `todo-sync` / `todo-toggle` / `todo-pull`; Legacy `einkauf-sync` top-level bleibt lesbar
 - `TodoStore.enableSync` startet `TodoConnectivitySync` am selben `WatchSessionActor`
 - Eigene Complication `TodoProgress` (Label **To Do**, offene Anzahl / „erledigt“, `todo-local.json`, `einkauf://todo`)
-- Siri `TodoAddItemsIntent` + `TodoShortcuts`: Phrasen **To Do**, Nachfrage **„T“**; Watch-Queue `todo.siriPendingAdds`; Einkauf-„besorgen“ unverändert
+- Siri `TodoAddItemsIntent` in `EinkaufShortcuts` (kein zweiter Provider): Phrasen **To Do**, Nachfrage **„T“**; Watch-Queue `todo.siriPendingAdds`; Einkauf-„besorgen“ unverändert
 - Build 46 (Watch-UI)
 
 Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
@@ -337,7 +337,7 @@ Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 ## Non-Goals für To-Do-v1 (über diesen PR hinaus)
 
 - To-Do-Homescreen-Widget, Sperrbildschirm (Watch-To-Do-Complication ist in Phase 6 gelandet)
-- To-Do-Siri verdünnt nicht „besorgen“ (eigener Provider; gelandet in Phase 6)
+- To-Do-Siri verdünnt nicht „besorgen“ (ein `AppShortcutsProvider`; gelandet in Phase 6)
 - Bearbeiten / Prio / Reopen auf der Watch
 - iCloud, CloudKit, gemeinsames JSON mit Einkauf
 - HTML Theme-Mast / Service Worker / Shared-Keys in der nativen App
@@ -355,7 +355,7 @@ Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 5. **`WatchSessionActor.shared` + ein `ConnectivitySync.store: ShoppingStore?`**: Multiplex, nicht zweites `WCSession.delegate`.
 6. **Application Context last-write-wins**: To-Do darf den Einkaufs-Snapshot nicht verdrängen.
 7. **`makeID` / `Int64`**: Watch `arm64_32` — UIDs als `Int64`/`UInt64`, nicht 32-bit `Int` aus Epoch-Millis.
-8. **Siri `AppShortcutsProvider`**: keine zweite Phrase, die „besorgen“ oder den App-Namen verdünnt.
+8. **Siri `AppShortcutsProvider`**: nur eine Conformance pro App; To-Do-Phrasen in `EinkaufShortcuts`, keine zweite Phrase mit „besorgen“.
 9. **Tests `EinkaufCoreTests`**: Fixtures und `kind: einkauf-backup`-Asserts nicht für To-Do umbiegen; neue Test-Datei.
 
 ---
