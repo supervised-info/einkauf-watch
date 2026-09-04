@@ -202,7 +202,7 @@ Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gew
 
 Einkauf: Utterance mit App-Namen + **besorgen** (`EinkaufAddItemsIntent`). Das Wort nicht umdeuten.
 
-To-Do-Siri: `TodoAddItemsIntent`, Phrasen **Todo** (ein Token, nicht `To Do` — Siri begrenzt zwei Phrase-Tokens auf zwei Wörter Capture), optional **Aufgaben**, Nachfrage **„o“** (wie Einkauf `requestValueDialog`). `parameterSummary` **ein Token** `Todo \(.$items)`. Spoken: **„Hey Siri, Einkauf Todo“**. Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
+To-Do-Siri: `TodoAddItemsIntent`, Phrasen **Todo** (ein Token, nicht `To Do` — Siri begrenzt zwei Phrase-Tokens auf zwei Wörter Capture), optional **Aufgaben**, `shortTitle` **Todo**. iPhone-Nachfrage **„o“** (`requestValueDialog`); watchOS **ohne** `requestValueDialog` (generische Freitext-Nachfrage). `parameterSummary` **ein Token** `Todo \(.$items)`. Spoken: **„Hey Siri, Einkauf Todo“**. Nach Update Shortcut löschen/neu und **„Auf Apple Watch anzeigen“** erneut. Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
 
 ### Theme
 
@@ -322,7 +322,7 @@ Gelandet:
 
 - Entdeckungs-Phrasen **Todo** (ein Wort), analog Besorgen; nicht `To Do` mit Leerzeichen (Siri-2-Token-Limit: Aufgabe blieb sonst bei genau 2 Wörtern)
 - Optional „{App} Aufgaben“
-- `shortTitle` bleibt „To Do“ (Kurzbefehle-Anzeige)
+- `shortTitle` war noch „To Do“ (Kurzbefehle-Anzeige; Build 51: **Todo**)
 - `parameterSummary` weiter `Todo \(.$items)`, Nachfrage **„o“**
 - Spoken **„Hey Siri, Einkauf Todo“**
 - Build 49
@@ -334,6 +334,15 @@ Gelandet:
 - Leading-Swipe **Bearbeiten** bleibt in beiden Modi
 - Einkauf Geh-Modus analog: `.deleteDisabled`, kein trailing Delete, List-`.id` `walk|…` vs `edit|…`
 - Build 50
+
+### Watch-Siri Todo Mehrwort — erledigt (Build 51)
+
+- `shortTitle` **Todo** (ein Token; nicht `To Do` — Watch-Siri keyed oft auf `shortTitle`)
+- watchOS `TodoAddItemsIntent`: `@Parameter` mit `IntentInputOptions` **ohne** `requestValueDialog` (generische Freitext-Nachfrage)
+- iPhone behält `requestValueDialog` **„o“**
+- Nach Update: Shortcut löschen/neu und **„Auf Apple Watch anzeigen“** erneut
+- Spoken weiter **„Hey Siri, Einkauf Todo“**
+- Build 51 (Watch-UI / Siri)
 
 Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
@@ -429,4 +438,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] To-Do-Siri Mehrwort-Aufgaben: ein-tokeniges `parameterSummary`, Build 48.
 - [x] To-Do-Siri Phrase ein Token (`Todo`), gesprochen „Hey Siri, Einkauf Todo“, Build 49.
 - [x] Swipe-Löschen nur im Bearbeiten-Modus (To-Do Listen-Modus + Einkauf Geh-Modus), Build 50.
+- [x] Watch-Siri Todo Mehrwort: `shortTitle` Todo, watchOS ohne `requestValueDialog`, Build 51.
 - [ ] Folge-PRs halten die Reihenfolge 7→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).

@@ -437,8 +437,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 50" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 50 / CURRENT_PROJECT_VERSION")
+    if "Build 51" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 51 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -913,8 +913,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 50" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 50")
+    if "CURRENT_PROJECT_VERSION = 51" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 51")
+    if "CURRENT_PROJECT_VERSION = 50" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 50 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 49" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 49 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 48" in pbx:
@@ -1000,8 +1002,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 50" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 50")
+    if "CURRENT_PROJECT_VERSION: 51" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 51")
+    if "CURRENT_PROJECT_VERSION: 50" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 50 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 49" in yml:
         fail("stale CURRENT_PROJECT_VERSION 49 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 48" in yml:
@@ -1295,8 +1299,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 50") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 50")
+    if pbx.count("CURRENT_PROJECT_VERSION = 51") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 51")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1667,6 +1671,11 @@ def test_siri_app_intents() -> None:
     todo_phrases = todo_shortcut.split("phrases:", 1)[-1].split("shortTitle", 1)[0]
     if "To Do" in todo_phrases:
         fail("To-Do App Shortcut phrases must not contain two-token To Do")
+    todo_title_block = todo_shortcut.split("shortTitle", 1)[-1].split("systemImageName", 1)[0]
+    if "To Do" in todo_title_block:
+        fail("To-Do App Shortcut shortTitle must not contain two-token To Do")
+    if '"Todo"' not in todo_title_block:
+        fail("To-Do App Shortcut shortTitle must be single-token Todo")
     if todo_phrases.count("applicationName") < 4:
         fail("each To-Do App Shortcut phrase must include applicationName")
     if ".$items" in todo_phrases:
@@ -1683,8 +1692,18 @@ def test_siri_app_intents() -> None:
         fail("EinkaufAddItemsIntent must use sentence capitalization and multiline inputOptions")
     if "capitalizationType: .sentences" not in todo_intent or "multiline: true" not in todo_intent:
         fail("TodoAddItemsIntent must use sentence capitalization and multiline inputOptions")
-    if 'requestValueDialog: "o"' not in todo_intent:
-        fail("To-Do requestValueDialog must be o")
+    if todo_intent.count("#if os(watchOS)") < 2:
+        fail("TodoAddItemsIntent must #if os(watchOS) Parameter (no requestValueDialog) and perform")
+    todo_watch_param = todo_intent.split("#if os(watchOS)", 1)[-1].split("#else", 1)[0]
+    todo_ios_param = todo_intent.split("#if os(watchOS)", 1)[-1].split("#else", 1)[1].split("#endif", 1)[0]
+    if "requestValueDialog" in todo_watch_param:
+        fail("watchOS Todo Parameter must omit requestValueDialog (generic free-form prompt)")
+    if "var items: String" not in todo_watch_param or "IntentInputOptions" not in todo_watch_param:
+        fail("watchOS Todo Parameter must keep Aufgaben + IntentInputOptions")
+    if 'requestValueDialog: "o"' not in todo_ios_param:
+        fail("iPhone Todo Parameter must keep requestValueDialog o")
+    if "var items: String" not in todo_ios_param:
+        fail("iPhone Todo Parameter must declare items")
     if 'requestValueDialog: "T"' in todo_intent:
         fail("stale To-Do requestValueDialog T")
     if "Nachfrage **„T“**" in desc:
@@ -1696,13 +1715,20 @@ def test_siri_app_intents() -> None:
         fail("TodoIntegration.md still quotes To-Do Siri follow-up T")
     if "requestValueDialog` „o“" not in desc and "requestValueDialog „o“" not in desc:
         fail("Description.md must document To-Do Siri asking o")
-    if 'shortTitle: "To Do"' not in intent:
-        fail("To-Do App Shortcut shortTitle must be To Do")
+    if 'shortTitle: "To Do"' in intent:
+        fail("To-Do App Shortcut shortTitle must not be two-token To Do")
+    if 'shortTitle: "Todo"' not in intent:
+        fail("To-Do App Shortcut shortTitle must be Todo")
+    if "Auf Apple Watch anzeigen" not in desc:
+        fail("Description.md must tell users to re-enable Auf Apple Watch anzeigen after shortcut update")
+    if "kein** `requestValueDialog`" not in desc and "kein `requestValueDialog`" not in desc:
+        fail("Description.md must document watchOS Todo omitting requestValueDialog")
     if "openAppWhenRun = false" not in todo_intent:
         fail("To-Do Intent must set openAppWhenRun = false")
     if "TodoSiriPendingAdds.enqueue" not in todo_intent:
         fail("watchOS To-Do Intent must enqueue TodoSiriPendingAdds")
-    if "TodoStore" in todo_intent.split("#if os(watchOS)", 1)[-1].split("#else", 1)[0]:
+    todo_watch_perform = todo_intent.rsplit("#if os(watchOS)", 1)[-1].split("#else", 1)[0]
+    if "TodoStore" in todo_watch_perform:
         fail("watchOS To-Do Intent must not construct TodoStore")
     if "TodoStore(enableSync: true)" not in todo_intent:
         fail("iOS To-Do Intent must use TodoStore(enableSync: true)")
@@ -1710,7 +1736,6 @@ def test_siri_app_intents() -> None:
         fail("iOS To-Do Intent must call addItems(fromSpeech:)")
     if "strippingTodoTriggerPrefix" not in todo_intent:
         fail("To-Do Intent must strip To Do / todo prefix")
-    todo_watch_perform = todo_intent.split("#if os(watchOS)", 1)[-1].split("#else", 1)[0]
     if "ProvidesDialog" in todo_watch_perform or "throws" in todo_watch_perform:
         fail("watchOS To-Do perform must be plain .result() without dialog/throws")
     if "return .result()" not in todo_watch_perform:
