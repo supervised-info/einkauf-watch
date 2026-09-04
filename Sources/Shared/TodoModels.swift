@@ -157,6 +157,9 @@ enum TodoJSON {
         return s
     }
 
+    static let prioAChoices: [String] = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map(String.init)
+    static let prioBChoices: [String] = (1...9).map(String.init)
+
     static func isoDate(_ raw: String?) -> String {
         guard let s = raw, s.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else {
             return ""
@@ -184,6 +187,66 @@ enum TodoTime {
     /// Wie HTML `toISOString().slice(0, 10)` (UTC-Kalendertag).
     static func todayIso(_ date: Date = Date()) -> String {
         String(nowIso(date).prefix(10))
+    }
+
+    /// Kalendertag der DatePicker-Zeitzone, `YYYY-MM-DD`.
+    static func localDayIso(_ date: Date = Date(), calendar: Calendar = .current) -> String {
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+
+    static func date(fromLocalDay iso: String, calendar: Calendar = .current) -> Date? {
+        let s = TodoJSON.isoDate(iso)
+        guard s.count == 10 else { return nil }
+        var c = DateComponents()
+        c.year = Int(s.prefix(4))
+        c.month = Int(s.dropFirst(5).prefix(2))
+        c.day = Int(s.suffix(2))
+        return calendar.date(from: c)
+    }
+
+    /// `2026-09-04` → `04.09.2026`.
+    static func displayDay(_ iso: String) -> String {
+        let s = TodoJSON.isoDate(iso)
+        guard s.count == 10 else { return iso }
+        return "\(s.suffix(2)).\(s.dropFirst(5).prefix(2)).\(s.prefix(4))"
+    }
+}
+
+/// Anzeige-Sortierung und Overdue wie HTML-To-Do (Phase 4). Persistenzreihenfolge bleibt unberührt.
+enum TodoOrdering {
+    /// HTML: `prioA + (prioB||'9')`; fehlendes `prioA` ans Ende (`U+FFFF`).
+    static func prioSortKey(_ task: TodoTask) -> String {
+        let a = TodoJSON.prioA(task.prioA)
+        if a.isEmpty { return "\u{FFFF}" }
+        let b = TodoJSON.prioB(task.prioB)
+        return a + (b.isEmpty ? "9" : b)
+    }
+
+    /// `dueDate < today` und nicht mit `9999` beginnend.
+    static func isOverdue(_ dueDate: String, today: String) -> Bool {
+        let due = TodoJSON.isoDate(dueDate)
+        guard !due.isEmpty, !due.hasPrefix("9999") else { return false }
+        return due < today
+    }
+
+    static func isOverdue(_ task: TodoTask, today: String) -> Bool {
+        isOverdue(task.dueDate, today: today)
+    }
+
+    /// Person aufsteigend, dann offen vor erledigt, dann Prio, Text, `uid`.
+    static func sorted(_ tasks: [TodoTask]) -> [TodoTask] {
+        tasks.sorted { a, b in
+            let person = a.person.localizedStandardCompare(b.person)
+            if person != .orderedSame { return person == .orderedAscending }
+            if a.completed != b.completed { return !a.completed && b.completed }
+            let pa = prioSortKey(a)
+            let pb = prioSortKey(b)
+            if pa != pb { return pa < pb }
+            let text = a.text.localizedStandardCompare(b.text)
+            if text != .orderedSame { return text == .orderedAscending }
+            return a.uid < b.uid
+        }
     }
 }
 

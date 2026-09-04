@@ -192,8 +192,12 @@ final class TodoStoreTests: XCTestCase {
         XCTAssertTrue(store.state.tasks[0].completed)
         XCTAssertFalse(store.state.tasks[0].completedDate.isEmpty)
 
-        store.update(uid, text: "Milch holen")
+        store.update(uid, text: "Milch holen", person: "TS", prioA: "C", prioB: "3", dueDate: "2026-09-20")
         XCTAssertEqual(store.state.tasks[0].text, "Milch holen")
+        XCTAssertEqual(store.state.tasks[0].person, "TS")
+        XCTAssertEqual(store.state.tasks[0].prioA, "C")
+        XCTAssertEqual(store.state.tasks[0].prioB, "3")
+        XCTAssertEqual(store.state.tasks[0].dueDate, "2026-09-20")
 
         let loaded = try XCTUnwrap(TodoPersistence.load())
         XCTAssertEqual(loaded.tasks.map(\.text), ["Milch holen"])
@@ -201,5 +205,44 @@ final class TodoStoreTests: XCTestCase {
 
         store.delete(uid)
         XCTAssertTrue(store.state.tasks.isEmpty)
+    }
+}
+
+final class TodoOrderingTests: XCTestCase {
+    func testPrioSortKeyMissingAGoesLast() {
+        let missing = TodoTask(uid: 1, text: "x")
+        let aDefaultB = TodoTask(uid: 2, text: "x", prioA: "A")
+        let a1 = TodoTask(uid: 3, text: "x", prioA: "A", prioB: "1")
+        let z = TodoTask(uid: 4, text: "x", prioA: "Z", prioB: "9")
+        XCTAssertEqual(TodoOrdering.prioSortKey(a1), "A1")
+        XCTAssertEqual(TodoOrdering.prioSortKey(aDefaultB), "A9")
+        XCTAssertEqual(TodoOrdering.prioSortKey(z), "Z9")
+        XCTAssertEqual(TodoOrdering.prioSortKey(missing), "\u{FFFF}")
+        XCTAssertTrue(TodoOrdering.prioSortKey(a1) < TodoOrdering.prioSortKey(aDefaultB))
+        XCTAssertTrue(TodoOrdering.prioSortKey(z) < TodoOrdering.prioSortKey(missing))
+    }
+
+    func testIsOverdueIgnoresTodayFutureEmptyAnd9999() {
+        XCTAssertTrue(TodoOrdering.isOverdue("2026-09-03", today: "2026-09-04"))
+        XCTAssertFalse(TodoOrdering.isOverdue("2026-09-04", today: "2026-09-04"))
+        XCTAssertFalse(TodoOrdering.isOverdue("2026-09-05", today: "2026-09-04"))
+        XCTAssertFalse(TodoOrdering.isOverdue("", today: "2026-09-04"))
+        XCTAssertFalse(TodoOrdering.isOverdue("10.09.2026", today: "2026-09-04"))
+        XCTAssertFalse(TodoOrdering.isOverdue("9999-12-31", today: "2026-09-04"))
+        XCTAssertFalse(TodoOrdering.isOverdue("9999-01-01", today: "2026-09-04"))
+        XCTAssertFalse(TodoOrdering.isOverdue(TodoTask(uid: 1, text: "x", dueDate: "9999-06-01"), today: "2026-09-04"))
+        XCTAssertTrue(TodoOrdering.isOverdue(TodoTask(uid: 1, text: "x", dueDate: "2020-01-01"), today: "2026-09-04"))
+    }
+
+    func testSortPersonThenOpenFirstThenPrio() {
+        let tasks = [
+            TodoTask(uid: 1, text: "done TS", completed: true, prioA: "A", person: "TS"),
+            TodoTask(uid: 2, text: "open B", prioA: "B", person: "NA"),
+            TodoTask(uid: 3, text: "open A2", prioA: "A", prioB: "2", person: "NA"),
+            TodoTask(uid: 4, text: "open A1", prioA: "A", prioB: "1", person: "NA"),
+            TodoTask(uid: 5, text: "no person", prioA: "A"),
+            TodoTask(uid: 6, text: "open TS", person: "TS"),
+        ]
+        XCTAssertEqual(TodoOrdering.sorted(tasks).map(\.uid), [5, 4, 3, 2, 6, 1] as [Int64])
     }
 }

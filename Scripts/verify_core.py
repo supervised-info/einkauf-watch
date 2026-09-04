@@ -389,8 +389,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 42" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 42 / CURRENT_PROJECT_VERSION")
+    if "Build 43" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 43 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -864,8 +864,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 42" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 42")
+    if "CURRENT_PROJECT_VERSION = 43" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 43")
+    if "CURRENT_PROJECT_VERSION = 42" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 42 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 41" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 41 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 40" in pbx:
@@ -935,8 +937,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 42" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 42")
+    if "CURRENT_PROJECT_VERSION: 43" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 43")
+    if "CURRENT_PROJECT_VERSION: 42" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 42 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 41" in yml:
         fail("stale CURRENT_PROJECT_VERSION 41 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 40" in yml:
@@ -1214,8 +1218,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 42") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 42")
+    if pbx.count("CURRENT_PROJECT_VERSION = 43") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 43")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1629,6 +1633,28 @@ def test_todo_store() -> None:
         fail("TodoListView must toggle completed")
     if "todos.update" not in todo_ui:
         fail("TodoListView must rename via todos.update")
+    if "todo.iphone.showCompleted" not in todo_ui:
+        fail("To-Do show-completed must use AppStorage todo.iphone.showCompleted")
+    if "einkauf.iphone.hideCompleted" in todo_ui:
+        fail("To-Do must not reuse einkauf.iphone.hideCompleted")
+    if "Abgeschlossen einblenden" not in todo_ui:
+        fail("To-Do must offer Abgeschlossen einblenden")
+    if "– Prio" not in todo_ui:
+        fail("To-Do add form needs – Prio empty option")
+    if 'TextField("Person"' not in todo_ui:
+        fail("To-Do add form needs Person field")
+    if "person: draftPerson" not in todo_ui or "prioA: draftPrioA" not in todo_ui or "dueDate: draftDue" not in todo_ui:
+        fail("TodoListView must add with person/prio/due")
+    if "TodoOrdering" not in models or "prioSortKey" not in models or "isOverdue" not in models:
+        fail("TodoOrdering must expose overdue and prio sort")
+    if "testIsOverdueIgnoresTodayFutureEmptyAnd9999" not in tests:
+        fail("tests must cover overdue helper")
+    if "testPrioSortKeyMissingAGoesLast" not in tests:
+        fail("tests must cover prio sort key")
+    if "testSortPersonThenOpenFirstThenPrio" not in tests:
+        fail("tests must cover person/open/prio sort")
+    if "todo-v3-json" in todo_ui or "fileImporter" in todo_ui:
+        fail("Phase 4 must not add To-Do JSON backup UI")
     if "Int64" not in models:
         fail("Todo uid must be Int64")
     if "func add(" not in store or "func toggle(" not in store or "func delete(" not in store:

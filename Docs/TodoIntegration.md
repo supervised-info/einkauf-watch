@@ -1,6 +1,6 @@
 # Plan: To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04. Phasen 1–3 in diesem Strang: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit grundlegendem CRUD. Watch-To-Do, Backup-UI und HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
+Stand: 2026-09-04. Phasen 1–4: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum und Abgeschlossen-Toggle. Watch-To-Do, Backup-UI und volle HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen der **Einkaufs**-App bleiben die Wahrheit für Einkauf. Für To-Do-Produktverhalten gilt die HTML-PWA, nicht diese Datei.
 
@@ -256,12 +256,19 @@ Gelandet:
 
 Einkaufs-Tab bleibt `ContentView` ohne `TodoStore`.
 
-### 4. Person / Prio A–B / dueDate + Abgeschlossen-Toggle
+### 4. Person / Prio A–B / dueDate + Abgeschlossen-Toggle — erledigt (Build 43)
 
-- Felder wie HTML-Add-Form
-- „Abgeschlossen einblenden“ analog HTML (`todo-v3-show-completed` Verhalten; natives Flag geräte-lokal)
-- Overdue-Markierung: `dueDate < heute` und nicht `9999*`
-- Prio-Compare-Hinweis: `prioA + (prioB||'9')`, fehlendes `prioA` ans Ende
+Gelandet:
+
+- Add-Form: Person, Prio A (A–Z oder „– Prio“), Prio B (1–9 oder leer), Datum, Text + Hinzufügen; kompakt, Einkauf-Theme
+- Zeile: Person / Prio / Datum als Nebeninfo, wenn gesetzt; Overdue `dueDate < heute` (lokal) und nicht `9999*` in `theme.oxide`
+- Bearbeiten: Sheet (Text, Person, Prio, Datum) über `TodoStore.update`
+- „Abgeschlossen einblenden“: `AppStorage` / UserDefaults `todo.iphone.showCompleted` (Default an). Aus = erledigte in der Liste verstecken, bleiben in `todo-local.json`. **Nicht** im Envelope, **nicht** Watch, **nicht** `einkauf.iphone.hideCompleted`
+- Anzeige-Sortierung (`TodoOrdering`): Person asc, offen zuerst, Prio `prioA + (prioB || "9")`, fehlendes `prioA` zuletzt (`U+FFFF`)
+- Tests: Overdue / Prio-Key / Sort
+- Build 43 (iPhone-UI)
+
+Noch nicht: Backup-UI (Phase 5), Watch (Phase 6), Reopen/Suche/volle Sort-Header (Phase 7).
 
 ### 5. Backup Import/Export JSON (eigenes Menü im To-Do-Tab)
 
@@ -358,4 +365,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] `Description.md` verweist unter Geplant/WIP hierher, behauptet To-Do nicht als geliefert.
 - [x] Phase 2: Models, `todo-local.json`, `TodoStore` ohne WC.
 - [x] Phase 3: iPhone-Tab Einkauf | To-Do, Text-CRUD, Einkaufs-`ContentView` unverändert.
-- [ ] Folge-PRs halten die Reihenfolge 4→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Phase 4: Person/Prio/Datum, Overdue, Abgeschlossen-Toggle (`todo.iphone.showCompleted`), Build 43.
+- [ ] Folge-PRs halten die Reihenfolge 5→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
