@@ -298,6 +298,7 @@ def test_sources() -> None:
         "Sources/iOS/KeywordDictionaryView.swift",
         "Sources/iOS/ShareSheet.swift",
         "Sources/iOS/ListPDF.swift",
+        "Sources/iOS/TodoListPDF.swift",
         "Sources/iOS/AppearanceSettings.swift",
         "Sources/Shared/KeywordDictionary.swift",
         "Sources/Shared/KeywordDictionaryBrowse.swift",
@@ -403,8 +404,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 44" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 44 / CURRENT_PROJECT_VERSION")
+    if "Build 45" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 45 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -878,8 +879,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 44" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 44")
+    if "CURRENT_PROJECT_VERSION = 45" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 45")
+    if "CURRENT_PROJECT_VERSION = 44" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 44 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 43" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 43 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 42" in pbx:
@@ -953,8 +956,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 44" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 44")
+    if "CURRENT_PROJECT_VERSION: 45" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 45")
+    if "CURRENT_PROJECT_VERSION: 44" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 44 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 43" in yml:
         fail("stale CURRENT_PROJECT_VERSION 43 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 42" in yml:
@@ -1236,8 +1241,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 44") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 44")
+    if pbx.count("CURRENT_PROJECT_VERSION = 45") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 45")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1592,6 +1597,74 @@ def test_siri_app_intents() -> None:
     print("siri app intents: ok")
 
 
+def todo_prio_key(task: dict) -> str:
+    a = task.get("prioA") or ""
+    if not a:
+        return "\uffff"
+    b = task.get("prioB") or "9"
+    return a + b
+
+
+def todo_pdf_groups(tasks: list[dict], show_completed: bool) -> list[tuple[str, list[dict]]]:
+    visible = [t for t in tasks if show_completed or not t.get("completed")]
+    visible.sort(
+        key=lambda t: (
+            t.get("person") or "",
+            bool(t.get("completed")),
+            todo_prio_key(t),
+            t.get("text") or "",
+            t.get("uid") or 0,
+        )
+    )
+    groups: list[tuple[str, list[dict]]] = []
+    for t in visible:
+        title = (t.get("person") or "").strip() or "Keine Person"
+        if groups and groups[-1][0] == title:
+            groups[-1][1].append(t)
+        else:
+            groups.append((title, [t]))
+    return groups
+
+
+def todo_progress(groups: list[tuple[str, list[dict]]]) -> str:
+    tasks = [t for _, g in groups for t in g]
+    done = sum(1 for t in tasks if t.get("completed"))
+    return f"{len(tasks) - done}/{done}/{len(tasks)}"
+
+
+def test_todo_pdf_grouping_python() -> None:
+    tasks = [
+        {"uid": 1, "text": "done TS", "completed": True, "prioA": "A", "person": "TS"},
+        {"uid": 2, "text": "open B", "completed": False, "prioA": "B", "person": "NA"},
+        {"uid": 3, "text": "open A2", "completed": False, "prioA": "A", "prioB": "2", "person": "NA"},
+        {"uid": 4, "text": "open A1", "completed": False, "prioA": "A", "prioB": "1", "person": "NA"},
+        {"uid": 5, "text": "no person", "completed": False, "prioA": "A", "person": ""},
+        {"uid": 6, "text": "open TS", "completed": False, "prioA": "", "person": "TS"},
+    ]
+    shown = todo_pdf_groups(tasks, True)
+    if [g[0] for g in shown] != ["Keine Person", "NA", "TS"]:
+        fail("todo PDF groups must be Keine Person, then people, sorted")
+    if [t["uid"] for t in shown[1][1]] != [4, 3, 2]:
+        fail("todo PDF must sort open tasks by prio within a person")
+    if [t["uid"] for t in shown[2][1]] != [6, 1]:
+        fail("todo PDF must put open tasks before completed within a person")
+    if todo_progress(shown) != "5/1/6":
+        fail("todo PDF progress must be oo/xx/yy of printed tasks")
+    hidden = todo_pdf_groups(tasks, False)
+    if [g[0] for g in hidden] != ["Keine Person", "NA", "TS"]:
+        fail("hiding completed must drop done rows but keep people with open tasks")
+    if any(t.get("completed") for _, g in hidden for t in g):
+        fail("hiding completed must omit completed tasks from the PDF")
+    if todo_progress(hidden) != "5/0/5":
+        fail("open-only PDF progress must be n/0/n")
+    only_done = todo_pdf_groups(
+        [{"uid": 1, "text": "x", "completed": True, "person": "TS"}],
+        False,
+    )
+    if only_done:
+        fail("all-completed + eye closed must yield no PDF groups")
+
+
 def test_todo_store() -> None:
     pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
     persist = (ROOT / "Sources/Shared/TodoPersistence.swift").read_text()
@@ -1606,7 +1679,7 @@ def test_todo_store() -> None:
     watch_app = (ROOT / "Sources/Watch/EinkaufWatchApp.swift").read_text()
     einkauf_app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
 
-    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoPersistence.swift", "TodoStore.swift", "TodoListView.swift", "IncomingJSON.swift"):
+    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoPersistence.swift", "TodoStore.swift", "TodoListView.swift", "IncomingJSON.swift", "TodoListPDF.swift"):
         if name not in pbx:
             fail(f"pbxproj must compile {name}")
     if "todo-local.json" not in persist:
@@ -1685,8 +1758,81 @@ def test_todo_store() -> None:
         fail("To-Do overflow must offer Erledigte löschen")
     if "func clearCompleted" not in store:
         fail("TodoStore missing clearCompleted")
-    if "Geh-Modus" in todo_ui or "Stamm" in todo_ui or "Liste teilen" in todo_ui:
-        fail("To-Do toolbar must not copy Einkauf Geh-Modus / Stamm / PDF")
+    if "Geh-Modus" in todo_ui or "Stamm" in todo_ui:
+        fail("To-Do toolbar must not copy Einkauf Geh-Modus / Stamm")
+    if 'Button("Liste teilen", systemImage: "list.bullet.rectangle")' not in todo_ui:
+        fail("To-Do overflow must offer Liste teilen")
+    backup_todo = todo_ui.find('Button("Backup teilen"')
+    liste_todo = todo_ui.find('Button("Liste teilen"')
+    clear_todo = todo_ui.find('Button("Erledigte löschen"')
+    if backup_todo < 0 or liste_todo < 0 or clear_todo < 0 or not (backup_todo < liste_todo < clear_todo):
+        fail("To-Do Liste teilen must sit after Backup teilen and before Erledigte löschen")
+    if todo_ui[backup_todo:liste_todo].count("Button(") != 1:
+        fail("To-Do Liste teilen must come immediately after Backup teilen")
+    share_todo_m = re.search(r"private func shareList\(\)\s*\{", todo_ui)
+    if not share_todo_m:
+        fail("TodoListView missing shareList")
+    share_todo = extract_braced(todo_ui, share_todo_m.start(), "todo shareList")
+    if "TodoListPDF.render" not in share_todo:
+        fail("To-Do Liste teilen must render via TodoListPDF")
+    if "ListPDF.render" in todo_ui.replace("TodoListPDF.render", ""):
+        fail("To-Do PDF must use TodoListPDF, not ListPDF")
+    if "TodoListPDF" in content:
+        fail("Einkauf share must stay on ListPDF")
+    if "showCompleted" not in share_todo:
+        fail("To-Do PDF must follow todo.iphone.showCompleted")
+    if "einkauf.iphone.hideCompleted" in share_todo:
+        fail("To-Do PDF must not use einkauf hideCompleted")
+    if "TodoListGrouping.groups" not in share_todo or "TodoListGrouping.progressLabel" not in share_todo:
+        fail("To-Do PDF must group via TodoListGrouping and print oo/xx/yy of that set")
+    if "dark: false" not in share_todo or "ThemeRGB.tokens" not in share_todo:
+        fail("To-Do PDF must use light ThemeRGB like Einkauf")
+    if "ListShare.writeTodoTempFile" not in share_todo:
+        fail("To-Do PDF temp file must use ListShare.writeTodoTempFile")
+    if "Die Liste ist leer." not in share_todo:
+        fail("empty To-Do list must show Die Liste ist leer.")
+    if "Keine offenen Aufgaben" not in share_todo or "ausgeblendet" not in share_todo:
+        fail("hidden-completed empty To-Do PDF must show a German empty-filter error")
+    if "BackupShareItem" not in share_todo:
+        fail("To-Do Liste teilen must open ShareSheet via BackupShareItem")
+    if "markdown" in todo_ui.lower() or "todo-liste.csv" in todo_ui or "todo-liste.md" in todo_ui:
+        fail("To-Do Liste teilen must not add MD/CSV export")
+    todo_pdf = (ROOT / "Sources/iOS/TodoListPDF.swift").read_text()
+    if "UIGraphicsPDFRenderer" not in todo_pdf:
+        fail("TodoListPDF must use UIGraphicsPDFRenderer")
+    if "To-Do Liste" not in todo_pdf:
+        fail("TodoListPDF title must be To-Do Liste")
+    if "checkmark.circle.fill" in todo_pdf or "checkmark" in todo_pdf.lower():
+        fail("TodoListPDF checkbox must not draw a checkmark")
+    todo_box_fn = re.search(r"func drawCheckbox\([^)]*\) \{.*?\n        \}", todo_pdf, re.S)
+    if not todo_box_fn:
+        fail("TodoListPDF missing drawCheckbox")
+    todo_box = todo_box_fn.group(0)
+    if "setFill" in todo_box or ".fill(" in todo_box or "path.fill" in todo_box:
+        fail("TodoListPDF checkbox must not fill (empty square for pen ticks)")
+    if "done" in todo_box or "completed" in todo_box:
+        fail("TodoListPDF checkbox must ignore completed (same empty box for every task)")
+    if not re.search(r"roundedRect|addRect|\.stroke\(|strokePath", todo_box):
+        fail("TodoListPDF checkbox must stroke an empty square/rect")
+    if "strikethroughStyle" not in todo_pdf:
+        fail("TodoListPDF must strikethrough completed tasks when they print")
+    if "guard !groups.isEmpty" not in todo_pdf and "groups.isEmpty" not in todo_pdf:
+        fail("TodoListPDF must refuse an empty group list")
+    list_share = (ROOT / "Sources/Shared/ListShare.swift").read_text()
+    if "todo-liste.pdf" not in list_share or "stampedTodoFilename" not in list_share:
+        fail("ListShare must stamp yyyyMMdd_HHmm-todo-liste.pdf without changing einkauf filenames")
+    if 'stampedFilename(storeName: "Edeka"' not in (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text():
+        fail("Einkauf ListShare tests must keep einkauf-{slug}.pdf")
+    if "testPDFGroupsByPersonOpenFirstAndPrio" not in tests:
+        fail("tests must cover To-Do PDF person groups")
+    if "testPDFHidesCompletedWhenEyeClosed" not in tests:
+        fail("tests must cover To-Do PDF eye filter")
+    if "testTodoFilenameIsTodoListeStem" not in (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text():
+        fail("tests must cover todo-liste.pdf filename")
+    if "TodoListPDF" not in desc or "todo.iphone.showCompleted" not in desc:
+        fail("Description.md WIP must mention To-Do Liste teilen PDF and the eye key")
+    if "TodoListView" in watch or "TodoListPDF" in watch:
+        fail("Watch must not get To-Do PDF / Liste teilen")
     if "testClearCompletedRemovesOnlyDone" not in tests:
         fail("tests must cover clearCompleted")
     if "– Prio" not in todo_ui:
@@ -1697,6 +1843,9 @@ def test_todo_store() -> None:
         fail("TodoListView must add with person/prio/due")
     if "TodoOrdering" not in models or "prioSortKey" not in models or "isOverdue" not in models:
         fail("TodoOrdering must expose overdue and prio sort")
+    if "TodoListGrouping" not in models or "Keine Person" not in models:
+        fail("TodoListGrouping must group by person with Keine Person")
+    test_todo_pdf_grouping_python()
     if "testIsOverdueIgnoresTodayFutureEmptyAnd9999" not in tests:
         fail("tests must cover overdue helper")
     if "testPrioSortKeyMissingAGoesLast" not in tests:

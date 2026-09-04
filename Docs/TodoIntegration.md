@@ -1,6 +1,6 @@
 # Plan: To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04. Phasen 1–5: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle und To-Do-Backup `todo-v3-json`. Watch-To-Do und volle HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
+Stand: 2026-09-04. Phasen 1–5 plus Liste-teilen-PDF: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle, To-Do-Backup `todo-v3-json` und **Liste teilen** (PDF folgt dem Auge). Watch-To-Do und volle HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen der **Einkaufs**-App bleiben die Wahrheit für Einkauf. Für To-Do-Produktverhalten gilt die HTML-PWA, nicht diese Datei.
 
@@ -284,6 +284,18 @@ Gelandet:
 
 Noch nicht: Watch (Phase 6), Reopen/Suche (Phase 7), MD/CSV (Phase 8).
 
+### Liste teilen (PDF) — erledigt (Build 45)
+
+Gelandet (kein eigener Phasen-Slot im ursprünglichen Plan; iPhone-only):
+
+- Overflow **Liste teilen** (`list.bullet.rectangle`) nach Backup teilen, vor Erledigte löschen
+- `TodoListPDF` (iOS, analog `ListPDF`, Einkauf-PDF unangetastet): A4, Light-`ThemeRGB`, leere Quadrat-Kästchen, Durchstreichen für sichtbare Erledigte
+- Folgt `todo.iphone.showCompleted`: ausgeblendet → nur offene; sichtbar → alle. Gruppierung nach Person (leer → „Keine Person“), Sortierung wie die Liste
+- Meta `oo/xx/yy` der **gedruckten** Aufgaben; Dateiname `yyyyMMdd_HHmm-todo-liste.pdf` (`ListShare.stampedTodoFilename`)
+- Leere gefilterte Liste: deutscher Hinweis, kein leeres PDF
+- Share-Sheet wie Einkauf (`BackupShareItem` / `ShareSheet`)
+- **Kein** Watch, kein MD/CSV
+
 ### 6. Watch Geh-Modus + Sync nur für To-Do
 
 - Watch-Tab To-Do: offene Aufgaben, Toggle done
@@ -373,4 +385,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 3: iPhone-Tab Einkauf | To-Do, Text-CRUD, Einkaufs-`ContentView` unverändert.
 - [x] Phase 4: Person/Prio/Datum, Overdue, Abgeschlossen-Toggle (`todo.iphone.showCompleted`), Build 43.
 - [x] Phase 5: To-Do-Backup `todo-v3-json`, eigenes Overflow, `onOpenURL`-Router, Build 44.
+- [x] Liste teilen PDF folgt dem Auge (`todo.iphone.showCompleted`), Build 45.
 - [ ] Folge-PRs halten die Reihenfolge 6→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).

@@ -273,6 +273,76 @@ final class TodoOrderingTests: XCTestCase {
     }
 }
 
+final class TodoListGroupingTests: XCTestCase {
+    func testPDFGroupsByPersonOpenFirstAndPrio() {
+        let tasks = [
+            TodoTask(uid: 1, text: "done TS", completed: true, prioA: "A", person: "TS"),
+            TodoTask(uid: 2, text: "open B", prioA: "B", person: "NA"),
+            TodoTask(uid: 3, text: "open A2", prioA: "A", prioB: "2", person: "NA"),
+            TodoTask(uid: 4, text: "open A1", prioA: "A", prioB: "1", person: "NA"),
+            TodoTask(uid: 5, text: "no person", prioA: "A"),
+            TodoTask(uid: 6, text: "open TS", person: "TS"),
+        ]
+        let groups = TodoListGrouping.groups(tasks, showCompleted: true)
+        XCTAssertEqual(groups.map(\.title), ["Keine Person", "NA", "TS"])
+        XCTAssertEqual(groups[0].tasks.map(\.uid), [5] as [Int64])
+        XCTAssertEqual(groups[1].tasks.map(\.uid), [4, 3, 2] as [Int64])
+        XCTAssertEqual(groups[2].tasks.map(\.uid), [6, 1] as [Int64])
+        XCTAssertEqual(TodoListGrouping.progressLabel(groups: groups), "5/1/6")
+    }
+
+    func testPDFHidesCompletedWhenEyeClosed() {
+        let tasks = [
+            TodoTask(uid: 1, text: "open", person: "NA"),
+            TodoTask(uid: 2, text: "done", completed: true, person: "NA"),
+            TodoTask(uid: 3, text: "done other", completed: true, person: "TS"),
+        ]
+        let hidden = TodoListGrouping.groups(tasks, showCompleted: false)
+        XCTAssertEqual(hidden.map(\.title), ["NA"])
+        XCTAssertEqual(hidden[0].tasks.map(\.uid), [1] as [Int64])
+        XCTAssertEqual(TodoListGrouping.progressLabel(groups: hidden), "1/0/1")
+
+        let shown = TodoListGrouping.groups(tasks, showCompleted: true)
+        XCTAssertEqual(shown.map(\.title), ["NA", "TS"])
+        XCTAssertEqual(TodoListGrouping.progressLabel(groups: shown), "1/2/3")
+    }
+
+    func testPDFEmptyWhenOnlyCompletedHidden() {
+        let tasks = [TodoTask(uid: 1, text: "done", completed: true, person: "TS")]
+        XCTAssertTrue(TodoListGrouping.groups(tasks, showCompleted: false).isEmpty)
+        XCTAssertEqual(
+            TodoListGrouping.progressLabel(groups: TodoListGrouping.groups(tasks, showCompleted: false)),
+            "0/0/0"
+        )
+    }
+
+    func testBlankPersonGroupsAsKeinePerson() {
+        let tasks = [
+            TodoTask(uid: 1, text: "a", person: "  "),
+            TodoTask(uid: 2, text: "b", person: ""),
+        ]
+        let groups = TodoListGrouping.groups(tasks, showCompleted: true)
+        XCTAssertEqual(groups.map(\.title), ["Keine Person"])
+        XCTAssertEqual(groups[0].tasks.map(\.uid), [1, 2] as [Int64])
+    }
+
+    func testMetaLinePrioAndDue() {
+        XCTAssertEqual(TodoListGrouping.metaLine(TodoTask(uid: 1, text: "x")), "")
+        XCTAssertEqual(
+            TodoListGrouping.metaLine(TodoTask(uid: 1, text: "x", prioA: "B", prioB: "2")),
+            "B2"
+        )
+        XCTAssertEqual(
+            TodoListGrouping.metaLine(TodoTask(uid: 1, text: "x", dueDate: "2026-09-04")),
+            "04.09.2026"
+        )
+        XCTAssertEqual(
+            TodoListGrouping.metaLine(TodoTask(uid: 1, text: "x", prioA: "A", dueDate: "2026-09-10")),
+            "A · 10.09.2026"
+        )
+    }
+}
+
 final class TodoBackupCodecTests: XCTestCase {
     func testV3JsonFixtureRoundTripAndIgnoresExtraFields() throws {
         let data = try loadTodoFixture("todo-v3-json.json")

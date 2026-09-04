@@ -1557,6 +1557,26 @@ final class ListShareTests: XCTestCase {
         XCTAssertEqual(url.lastPathComponent, "20260902_1641-einkauf-edeka.pdf")
         XCTAssertEqual(try Data(contentsOf: url), data)
     }
+
+    func testTodoFilenameIsTodoListeStem() {
+        XCTAssertEqual(ListShare.todoStem, "todo-liste")
+        XCTAssertEqual(
+            ListShare.stampedTodoFilename(date: date(2026, 9, 4, 15, 39), timeZone: utc),
+            "20260904_1539-todo-liste.pdf"
+        )
+    }
+
+    func testWriteTodoTempFile() throws {
+        let data = Data("%PDF-1.4-todo\n".utf8)
+        let url = try ListShare.writeTodoTempFile(
+            data: data,
+            date: date(2026, 9, 4, 15, 40),
+            timeZone: utc
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+        XCTAssertEqual(url.lastPathComponent, "20260904_1540-todo-liste.pdf")
+        XCTAssertEqual(try Data(contentsOf: url), data)
+    }
 }
 
 final class ThemeTokenTests: XCTestCase {

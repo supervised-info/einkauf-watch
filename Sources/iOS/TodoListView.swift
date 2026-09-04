@@ -1,10 +1,11 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// iPhone-To-Do Phase 5: Person / Prio / Datum plus Backup `todo-v3-json`.
+/// iPhone-To-Do: Person / Prio / Datum, Backup `todo-v3-json`, Liste teilen (PDF).
 /// Watch: Phase 6.
 struct TodoListView: View {
     @EnvironmentObject private var todos: TodoStore
+    @EnvironmentObject private var appearance: AppearanceSettings
     @Environment(\.einkaufTheme) private var theme
     @AppStorage("todo.iphone.showCompleted") private var showCompleted = true
     @State private var draft = ""
@@ -110,6 +111,9 @@ struct TodoListView: View {
                 }
                 Button("Backup teilen", systemImage: "square.and.arrow.up.on.square") {
                     shareBackup()
+                }
+                Button("Liste teilen", systemImage: "list.bullet.rectangle") {
+                    shareList()
                 }
                 Button("Erledigte löschen", systemImage: "trash") {
                     todos.clearCompleted()
@@ -275,6 +279,33 @@ struct TodoListView: View {
             let url = try BackupShare.writeTempFile(data: data, stem: BackupShare.todoStem)
             guard FileManager.default.fileExists(atPath: url.path) else {
                 alertMessage = "Backup-Datei konnte nicht erzeugt werden."
+                return
+            }
+            shareItem = BackupShareItem(url: url)
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func shareList() {
+        let groups = TodoListGrouping.groups(todos.state.tasks, showCompleted: showCompleted)
+        guard !groups.isEmpty else {
+            if todos.state.tasks.isEmpty {
+                alertMessage = "Die Liste ist leer."
+            } else {
+                alertMessage = "Keine offenen Aufgaben. Abgeschlossene sind ausgeblendet."
+            }
+            return
+        }
+        do {
+            let data = try TodoListPDF.render(
+                groups: groups,
+                progressLabel: TodoListGrouping.progressLabel(groups: groups),
+                colors: ThemeRGB.tokens(palette: appearance.palette, dark: false)
+            )
+            let url = try ListShare.writeTodoTempFile(data: data)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                alertMessage = "PDF-Datei konnte nicht erzeugt werden."
                 return
             }
             shareItem = BackupShareItem(url: url)
@@ -469,5 +500,6 @@ private struct TodoEditSheet: View {
 #Preview {
     TodoListView()
         .environmentObject(TodoStore(state: .empty, enableSync: false))
+        .environmentObject(AppearanceSettings())
         .environment(\.einkaufTheme, ThemeTokens.make(palette: .vintage, scheme: .light))
 }

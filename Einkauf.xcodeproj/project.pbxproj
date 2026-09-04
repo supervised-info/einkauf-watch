@@ -15,6 +15,7 @@
 		FD7DA4E4C9DA5C2B22357965 /* ListPDF.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3583E9C5CF0EF793D5C2304 /* ListPDF.swift */; };
 		0DC30FB358098A2BE19E4CC6 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */; };
 		380ED6ADDB8D55A2097AFAD4 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */; };
+		192024EEAFAE2182A30E0051 /* TodoListPDF.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7313D1C9326AE60ADA5182CD /* TodoListPDF.swift */; };
 		E37D9FF51762A609C315F774 /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36199C1187279D1FEB2A27B4 /* TodoListView.swift */; };
 		E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
@@ -173,6 +174,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		C3583E9C5CF0EF793D5C2304 /* ListPDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListPDF.swift; sourceTree = "<group>"; };
 		50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 		81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		7313D1C9326AE60ADA5182CD /* TodoListPDF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListPDF.swift; sourceTree = "<group>"; };
 		36199C1187279D1FEB2A27B4 /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
 		CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchApp.swift; sourceTree = "<group>"; };
 		499EF012DA49B4720127F282 /* WatchComplicationReload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchComplicationReload.swift; sourceTree = "<group>"; };
@@ -305,6 +307,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 				C3583E9C5CF0EF793D5C2304 /* ListPDF.swift */,
 				50E5FB0C14AFA8497BF88F0F /* SettingsSheet.swift */,
 				81E51CBA7C9AA1D746714F95 /* ShareSheet.swift */,
+				7313D1C9326AE60ADA5182CD /* TodoListPDF.swift */,
 				36199C1187279D1FEB2A27B4 /* TodoListView.swift */,
 				03AF5479195A1C1DAE505808 /* Assets.xcassets */,
 				1FEA59AE375BB26F5821D80A /* Info.plist */,
@@ -575,6 +578,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				FD7DA4E4C9DA5C2B22357965 /* ListPDF.swift in Sources */,
 				0DC30FB358098A2BE19E4CC6 /* SettingsSheet.swift in Sources */,
 				380ED6ADDB8D55A2097AFAD4 /* ShareSheet.swift in Sources */,
+				192024EEAFAE2182A30E0051 /* TodoListPDF.swift in Sources */,
 				E37D9FF51762A609C315F774 /* TodoListView.swift in Sources */,
 				E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */,
 				F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */,
@@ -806,7 +810,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -841,7 +845,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -876,7 +880,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -908,7 +912,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -941,7 +945,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -971,7 +975,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1002,7 +1006,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1033,7 +1037,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
