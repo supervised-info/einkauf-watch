@@ -721,7 +721,8 @@ def test_sources() -> None:
         fail("Watch should not have a store picker")
     if "deleteStore" in watch:
         fail("Watch must not delete stores")
-    if list_id not in watch:
+    watch_list_id = '.id("\\(store.state.currentStoreId)|\\(store.state.currentStore.layout.joined())")'
+    if watch_list_id not in watch:
         fail("Watch list must .id(currentStoreId|layout) so store switch rebuilds")
     if "Section {" in watch:
         fail("Watch list must not use List+Section")
