@@ -418,19 +418,28 @@ enum ListGrouping {
         return names
     }
 
-    /// `id` enthält Laden und Listenposition, nicht nur die Abteilungs-ID.
-    /// `hidingCompleted` filtert nur die Anzeige (Watch-Gehliste); Artikel bleiben in der Liste.
-    static func walkListRows(groups: [DeptGroup], storeId: String, hidingCompleted: Bool = false) -> [WalkListRow] {
-        let visible: [DeptGroup]
-        if hidingCompleted {
-            visible = groups.compactMap { group in
-                let open = group.items.filter { !$0.done }
-                guard !open.isEmpty else { return nil }
-                return DeptGroup(storeId: group.storeId, dept: group.dept, items: open)
-            }
-        } else {
-            visible = groups
+    /// Gleiche Abteilungsreihenfolge wie `groups`. Bei `hidingCompleted` nur offene Artikel;
+    /// Abteilungen ohne offene Artikel fallen weg. Artikel bleiben in der Liste.
+    static func visibleGroups(_ groups: [DeptGroup], hidingCompleted: Bool) -> [DeptGroup] {
+        guard hidingCompleted else { return groups }
+        return groups.compactMap { group in
+            let open = group.items.filter { !$0.done }
+            guard !open.isEmpty else { return nil }
+            return DeptGroup(storeId: group.storeId, dept: group.dept, items: open)
         }
+    }
+
+    /// Fortschritt der übergebenen Gruppen: offen/erledigt/gesamt (`oo/xx/yy`).
+    static func progressLabel(groups: [DeptGroup]) -> String {
+        let items = groups.flatMap(\.items)
+        let done = items.filter(\.done).count
+        return "\(items.count - done)/\(done)/\(items.count)"
+    }
+
+    /// `id` enthält Laden und Listenposition, nicht nur die Abteilungs-ID.
+    /// `hidingCompleted` filtert nur die Anzeige (Geh-Liste / PDF); Artikel bleiben in der Liste.
+    static func walkListRows(groups: [DeptGroup], storeId: String, hidingCompleted: Bool = false) -> [WalkListRow] {
+        let visible = visibleGroups(groups, hidingCompleted: hidingCompleted)
         return walkLines(groups: visible, storeId: storeId).enumerated().map { index, line in
             WalkListRow(id: "\(storeId)|\(index)|\(line.id)", line: line)
         }

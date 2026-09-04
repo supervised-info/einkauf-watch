@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 38, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 39, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -39,7 +39,7 @@ Watch-UI-Änderung: Build-Nummer hochzählen, sonst bleibt die alte Companion-Ap
 Toolbar:
 
 - Links: **Ladenwahl**-Menü (`accessibilityLabel` „Laden“) — alle `stores`, aktueller mit Checkmark. Nur iPhone. Das Auge ersetzt dieses Menü **nicht**.
-- Rechts: Auge `eye` / `eye.slash` (Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“) neben dem Umschalter **Geh-Modus** / **Bearbeiten**. Tippen blendet abgehakte Artikel **nur im iPhone-Geh-Modus** aus; Bearbeiten zeigt weiter alle. Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden. Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ Flag nur iPhone (`UserDefaults` / `AppStorage` `einkauf.iphone.hideCompleted`), **nicht** im einkauf-backup, **nicht** zur Watch.
+- Rechts: Auge `eye` / `eye.slash` (Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“) neben dem Umschalter **Geh-Modus** / **Bearbeiten**. Tippen blendet abgehakte Artikel **im iPhone-Geh-Modus** und in **Liste teilen** (PDF) aus; Bearbeiten zeigt weiter alle. Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden (Geh-Modus und PDF). Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ Flag nur iPhone (`UserDefaults` / `AppStorage` `einkauf.iphone.hideCompleted`), **nicht** im einkauf-backup, **nicht** zur Watch.
 - Rechts: Umschalter **Geh-Modus** / **Bearbeiten** (zeigt den jeweils anderen Modus, wie die PWA). `walkMode` persistiert und liegt im Backup.
 - Rechts: Overflow **…** (`ellipsis.circle`, Label „Mehr“).
 
@@ -51,7 +51,7 @@ Thema und Palette **nicht** in der Toolbar — nur in Einstellungen.
 
 Große Checkbox + Name, Durchstreichen wenn `done`. Tippen toggelt. Kein Grip, kein Dept-Select, kein Löschen, Name nicht editierbar. Flache `ForEach`-Zeilen (`WalkListRow` / `WalkLine`): Überschrift dann Artikel. **Keine** SwiftUI-`Section` — die verschluckt die Abteilungsreihenfolge beim Ladenwechsel. Zeilen-IDs enthalten Laden und Position (`storeId|index|…`). List-`.id` aus `currentStoreId` + Layout-Join.
 
-iPhone-Geh-Modus kann Erledigte ausblenden (Auge, `einkauf.iphone.hideCompleted`). Watch-Geh-Modus hat denselben Toggle mit **eigenem** Flag (`einkauf.watch.hideCompleted`). Die Flags synct nichts, Backup enthält sie nicht. Bearbeiten auf dem iPhone filtert nicht — erledigte Artikel bleiben editierbar.
+iPhone-Geh-Modus kann Erledigte ausblenden (Auge, `einkauf.iphone.hideCompleted`). Dasselbe Flag gilt für **Liste teilen**. Watch-Geh-Modus hat denselben Toggle mit **eigenem** Flag (`einkauf.watch.hideCompleted`). Die Flags synct nichts, Backup enthält sie nicht. Bearbeiten auf dem iPhone filtert nicht — erledigte Artikel bleiben editierbar.
 
 ### Bearbeiten (nur iPhone)
 
@@ -80,7 +80,7 @@ Export: `fileExporter`, Defaultname `einkauf-backup`.
 
 Backup teilen: Temp-Datei `yyyyMMdd_HHmm-einkauf-backup.json` (`BackupShare.stampedFilename`), System-Share-Sheet (`.sheet(item:)`, immer existierende URL).
 
-Liste teilen: A4-PDF (`ListPDF`), Dateiname `yyyyMMdd_HHmm-einkauf-{storeSlug}.pdf`. Light-Tokens der gewählten Palette (`dark: false`). Meta-Zeile `progressLabel` als `oo/xx/yy` (`openCount`/`doneCount`/`items.count`). Checkboxen: **leeres Quadrat** (Stroke ~1.75pt, `roundedRect` radius 2.5, kein Fill, kein Häkchen) — `done` gilt nur für Durchstreichen/Farbe. Leere Liste: „Noch nichts auf der Liste.“
+Liste teilen: A4-PDF (`ListPDF`), Dateiname `yyyyMMdd_HHmm-einkauf-{storeSlug}.pdf`. Light-Tokens der gewählten Palette (`dark: false`). Folgt dem Auge (`einkauf.iphone.hideCompleted`): Erledigte ausgeblendet → nur offene Artikel, gleiche Abteilungsreihenfolge wie `store.groups`, erledigte und leere Abteilungen weg (`ListGrouping.visibleGroups`); Erledigte sichtbar → alle Artikel. Meta-Zeile `progressLabel` als `oo/xx/yy` neu aus den **gedruckten** Zeilen (`openCount`/`doneCount` der PDF-Gruppen — nur offen: `n/0/n`). Checkboxen: **leeres Quadrat** (Stroke ~1.75pt, `roundedRect` radius 2.5, kein Fill, kein Häkchen) — `done` gilt nur für Durchstreichen/Farbe; gedruckte Zeilen behalten das leere Quadrat. Leere Liste: „Noch nichts auf der Liste.“
 
 Einkaufsliste speichern: Alert „Einkaufsliste speichern“, Feld „Name, z. B. Grillen“, max 60. Leere aktuelle Liste → „Die Liste ist leer.“ Ungültiger Name → „Bitte einen Namen eingeben.“ Snapshot inkl. erledigter Artikel, nur `name`+`dept`, ohne Häkchen.
 
@@ -292,7 +292,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 - [ ] `DepartmentGuesser` + `KeywordDictionary.source` lokal, kein Netz; Nutzer-Mapping vor Sonderregeln/Keywords.
 - [ ] Wörterbuch **Meine Zuordnungen**: View/Edit/Delete von `mappings` (Picker, Swipe-Delete, optional Hinzufügen); mitgelieferte Liste nur lesen; Backup-Feld bleibt `mappings`.
 - [ ] Gespeicherte Listen: Name+Dept-Snapshot, füllen nicht ersetzen, Backup-Feld `savedLists`.
-- [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen.
+- [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen, respektiert das iPhone-Auge (`einkauf.iphone.hideCompleted`).
 - [ ] Watch-Titel: gekürzter Ladenname + Einkauf oo/xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`einkauf.watch.hideCompleted`, nicht Backup); iPhone-Geh-Modus hat dasselbe Auge mit `einkauf.iphone.hideCompleted`; Bearbeiten ungefiltert; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
 - [ ] Siri / App Intents: Utterance mit genau einem App-Namen + **besorgen** (kein `String`/`$items` in der Phrase; keine Bring-ähnlichen „hinzufügen“-Phrasen); Siri fragt nach Artikel; getippte Antwort darf mit `Einkauf:` / `Besorgen:` beginnen; Splitter wie Sprache, Guesser+Mappings; iPhone Persistenz+WatchConnectivity, Watch-Siri schreibt nur eine Pending-Queue in App-Group-`UserDefaults` (`group.net.tschelle.einkauf`, kein `ShoppingStore` / kein volles `AppState`-Encode im Intent; `openAppWhenRun = false`; App übernimmt beim Aktivwerden **und** `onAppear` / `.task` — Watch-App ggf. einmal öffnen); leerer Text = freundliches No-op; kein Watch-Mikro, kein Speech.framework. iOS reserviert „besorgen“ nicht OS-weit (Best Effort vs Bring).
 - [ ] Watch-Complication (WidgetKit, watchOS 10): nur offene Anzahl (`compactCountText`, bei 0 „erledigt“), Ladenname wo Platz, Tap öffnet Geh-Modus; Update aus `einkauf-local.json` / WatchConnectivity; nicht auf dem iPhone.
