@@ -86,7 +86,7 @@ enum TodoCodec {
             }
             do {
                 let envelope = try JSONDecoder().decode(TodoV3Envelope.self, from: IncomingJSON.stripBOM(data))
-                return makeImportedState(tasks: envelope.tasks, nextUid: envelope.nextUid)
+                return try makeImportedState(tasks: envelope.tasks, nextUid: envelope.nextUid)
             } catch let error as TodoCodecError {
                 throw error
             } catch {
@@ -96,7 +96,7 @@ enum TodoCodec {
         if let _ = obj as? [Any] {
             do {
                 let tasks = try JSONDecoder().decode([TodoTask].self, from: IncomingJSON.stripBOM(data))
-                return makeImportedState(tasks: tasks, nextUid: 1)
+                return try makeImportedState(tasks: tasks, nextUid: 1)
             } catch {
                 throw TodoCodecError.invalidJSON
             }
