@@ -179,9 +179,9 @@ struct AppState: Equatable, Codable, Sendable {
 
     var openCount: Int { items.filter { !$0.done }.count }
     var doneCount: Int { items.filter(\.done).count }
-    /// Kompakter Fortschritt für die Watch-Leiste: erledigt/gesamt, inkl. vor/nach.
-    var progressLabel: String { "\(doneCount)/\(items.count)" }
-    /// Eine Zeile für die Watch-Nav: Laden links, dann Einkauf xx/yy. Lange Namen
+    /// Kompakter Fortschritt: offen/erledigt/gesamt, inkl. vor/nach. Leer: `0/0/0`.
+    var progressLabel: String { "\(openCount)/\(doneCount)/\(items.count)" }
+    /// Eine Zeile für die Watch-Nav: Laden links, dann Einkauf oo/xx/yy. Lange Namen
     /// kürzen, damit der Zähler auf 41mm nicht vom Systemtitel abgeschnitten wird.
     var watchTitle: String {
         "\(Self.clippedWatchStoreName(currentStore.name))  Einkauf \(progressLabel)"
@@ -189,7 +189,7 @@ struct AppState: Equatable, Codable, Sendable {
 
     var complicationSnapshot: ComplicationSnapshot { .make(from: self) }
 
-    /// Zeichenbudget vor „Einkauf xx/yy“, passend für die 41mm-Leiste
+    /// Zeichenbudget vor „Einkauf oo/xx/yy“, passend für die 41mm-Leiste
     /// (Edeka/Aldi/Rewe/Lidl/dm ungekürzt, längere Namen mit Auslassung).
     static let watchStoreNameLimit = 6
 
@@ -204,7 +204,7 @@ struct AppState: Equatable, Codable, Sendable {
     }
 }
 
-/// Anzeige für die Watch-Complication: gleicher Zähler wie `watchTitle` (`doneCount/items.count`).
+/// Anzeige für die Watch-Complication: gleicher Zähler wie `watchTitle` (`openCount/doneCount/items.count`).
 struct ComplicationSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufProgress"
     static let openURL = URL(string: "einkauf://list")!
@@ -212,11 +212,11 @@ struct ComplicationSnapshot: Equatable, Sendable {
     var progressLabel: String
     var storeName: String
     var isEmpty: Bool
-    /// Gauge 0…1; leere Liste ist 0.
+    /// Gauge 0…1 (erledigt/gesamt); leere Liste ist 0.
     var progress: Double = 0
 
     static let placeholder = ComplicationSnapshot(
-        progressLabel: "2/7",
+        progressLabel: "5/2/7",
         storeName: "Edeka",
         isEmpty: false,
         progress: 2.0 / 7.0
@@ -232,22 +232,16 @@ struct ComplicationSnapshot: Equatable, Sendable {
         )
     }
 
-    /// Zähler-Teile für das gestapelte Circular-Label (`xx` über `yy`).
-    var doneText: String {
-        if let slash = progressLabel.firstIndex(of: "/") {
-            return String(progressLabel[..<slash])
-        }
-        return progressLabel
+    /// Zähler-Teile für das gestapelte Circular-Label (`oo` / `xx` / `yy`).
+    private var progressParts: [String] {
+        progressLabel.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
     }
 
-    var totalText: String {
-        if let slash = progressLabel.firstIndex(of: "/") {
-            return String(progressLabel[progressLabel.index(after: slash)...])
-        }
-        return ""
-    }
+    var openText: String { progressParts.indices.contains(0) ? progressParts[0] : progressLabel }
+    var doneText: String { progressParts.indices.contains(1) ? progressParts[1] : "" }
+    var totalText: String { progressParts.indices.contains(2) ? progressParts[2] : "" }
 
-    /// Inline: kurzer Ladenname und `xx/yy` (leere Liste bleibt `0/0`).
+    /// Inline: kurzer Ladenname und `oo/xx/yy` (leere Liste bleibt `0/0/0`).
     var inlineText: String {
         let name = storeName.trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty { return progressLabel }
@@ -263,7 +257,7 @@ struct ComplicationSnapshot: Equatable, Sendable {
     }
 }
 
-/// Homescreen-Widget (iPhone): gleicher Zähler wie `watchTitle` / `ComplicationSnapshot` (`doneCount/items.count`, inkl. vor/nach).
+/// Homescreen-Widget (iPhone): gleicher Zähler wie `watchTitle` / `ComplicationSnapshot` (`openCount/doneCount/items.count`, inkl. vor/nach).
 struct HomeWidgetSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufHome"
     static let openURL = URL(string: "einkauf://list")!
@@ -275,7 +269,7 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
     var openItemNames: [String]
 
     static let placeholder = HomeWidgetSnapshot(
-        progressLabel: "2/7",
+        progressLabel: "5/2/7",
         storeName: "Edeka",
         isEmpty: false,
         openItemNames: ["Milch", "Äpfel", "Klopapier"]

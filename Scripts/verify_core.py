@@ -46,7 +46,7 @@ def extract_some_view(src: str, name: str) -> str:
 def extract_watch_eye_bar(watch: str) -> str:
     """Watch hide-completed chrome above the title (HStack + Spacer, not toolbar)."""
     if re.search(r"ToolbarItem\(placement:\s*\.topBarLeading\)", watch) or "topBarLeading" in watch:
-        fail("Watch hide toggle must not sit in topBarLeading (clips Einkauf xx/yy)")
+        fail("Watch hide toggle must not sit in topBarLeading (clips Einkauf oo/xx/yy)")
     if "ToolbarItem" in watch:
         fail("Watch must not put the eye in a ToolbarItem")
     for m in re.finditer(r"HStack(?:\s*\([^)]*\))?\s*\{", watch):
@@ -362,8 +362,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 36" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 36 / CURRENT_PROJECT_VERSION")
+    if "Build 37" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 37 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     if "Erledigte ausgeblendet" not in desc:
@@ -810,8 +810,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 36" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 36")
+    if "CURRENT_PROJECT_VERSION = 37" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 37")
+    if "CURRENT_PROJECT_VERSION = 36" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 36 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 35" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 35 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 34" in pbx:
@@ -869,8 +871,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 36" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 36")
+    if "CURRENT_PROJECT_VERSION: 37" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 37")
+    if "CURRENT_PROJECT_VERSION: 36" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 36 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 35" in yml:
         fail("stale CURRENT_PROJECT_VERSION 35 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 34" in yml:
@@ -947,8 +951,10 @@ def test_sources() -> None:
         fail("Watch must not duplicate Einkauf in a custom header HStack")
     if "toolbar(.hidden, for: .navigationBar)" not in watch:
         fail("Watch must hide the navigation bar so the eye sits under the clock")
-    if "var doneCount" not in models or "var progressLabel" not in models:
-        fail("AppState missing doneCount/progressLabel")
+    if "var openCount" not in models or "var doneCount" not in models or "var progressLabel" not in models:
+        fail("AppState missing openCount/doneCount/progressLabel")
+    if r'"\(openCount)/\(doneCount)/\(items.count)"' not in models:
+        fail("progressLabel must be openCount/doneCount/items.count")
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
         fail("preferredColorScheme not applied from setting")
     theme = (ROOT / "Sources/Shared/Theme.swift").read_text()
@@ -1056,7 +1062,7 @@ def test_watch_complication() -> None:
     if "widgetURL" not in widget:
         fail("complication tap must set widgetURL")
     if "progressLabel" not in widget:
-        fail("complication must show progressLabel xx/yy")
+        fail("complication must show progressLabel oo/xx/yy")
     if "struct ComplicationSnapshot" not in models:
         fail("Models missing ComplicationSnapshot")
     if "static let widgetKind" not in models:
@@ -1087,6 +1093,12 @@ def test_watch_complication() -> None:
         fail("project.yml missing widget bundle")
     if "EinkaufWatchWidgets" not in yml:
         fail("project.yml missing widget target")
+    if "oo/xx/yy" not in desc or "0/0/0" not in desc:
+        fail("Description.md must document progress as oo/xx/yy (empty 0/0/0)")
+    if "openCount/doneCount/items.count" not in desc:
+        fail("Description.md must document progress as openCount/doneCount/items.count")
+    if "var openText" not in models:
+        fail("ComplicationSnapshot must expose openText for three-part labels")
     if "Watch-Complication" not in desc or "accessoryCircular" not in desc:
         fail("Description.md must document the Watch complication families")
     if "nicht auf dem iPhone" not in desc.lower() and "Nicht auf dem iPhone" not in desc:
@@ -1099,16 +1111,22 @@ def test_watch_complication() -> None:
         fail("Description.md must warn circular must not use title2 (risk of !)")
     if "Gauge" not in desc or "containerBackground" not in desc:
         fail("Description.md must document circular Gauge and containerBackground")
+    if '"0/0/0"' not in tests:
+        fail("tests must assert empty progress 0/0/0")
+    if '"1/2/3"' not in tests:
+        fail("tests must assert open/done/total 1/2/3")
+    if 'progressLabel, "0/0"' in tests or 'progressLabel, "2/3"' in tests:
+        fail("tests still assert two-part progress labels")
     if "testEmptyListIsZeroOverZeroNotHidden" not in tests:
-        fail("tests must cover empty complication 0/0")
+        fail("tests must cover empty complication 0/0/0")
     if "testProgressMatchesWatchTitleAndIncludesVorNach" not in tests:
         fail("tests must cover complication progress including vor/nach")
     if "testGaugeProgressIsZeroWhenEmptyAndFractionOtherwise" not in tests:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 36") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 36")
+    if pbx.count("CURRENT_PROJECT_VERSION = 37") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 37")
     circular = extract_some_view(widget, "circular")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
@@ -1119,6 +1137,8 @@ def test_watch_complication() -> None:
         fail("circular Gauge must use snapshot progress 0…1")
     if "progressLabel" not in circular:
         fail("circular must still expose progressLabel (Gauge label or center)")
+    if "openText" not in circular or "doneText" not in circular or "totalText" not in circular:
+        fail("circular must stack openText/doneText/totalText")
     if "containerBackground" not in widget:
         fail("complication view needs containerBackground for watchOS 10")
     if "var progress: Double" not in models:
@@ -1171,7 +1191,7 @@ def test_iphone_widget() -> None:
     if "widgetURL" not in widget:
         fail("iPhone widget tap must set widgetURL")
     if "progressLabel" not in widget:
-        fail("iPhone widget must show progressLabel xx/yy")
+        fail("iPhone widget must show progressLabel oo/xx/yy")
     if "openItemNames" not in widget:
         fail("medium widget must list openItemNames")
     if "struct HomeWidgetSnapshot" not in models:

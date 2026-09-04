@@ -244,9 +244,10 @@ final class GroupingTests: XCTestCase {
 
 final class ListProgressTests: XCTestCase {
     func testEmptyIsZeroOverZero() {
+        XCTAssertEqual(AppState.seed.openCount, 0)
         XCTAssertEqual(AppState.seed.doneCount, 0)
         XCTAssertEqual(AppState.seed.items.count, 0)
-        XCTAssertEqual(AppState.seed.progressLabel, "0/0")
+        XCTAssertEqual(AppState.seed.progressLabel, "0/0/0")
     }
 
     func testCountsDoneAcrossAllDepartmentsIncludingVorNach() {
@@ -258,7 +259,7 @@ final class ListProgressTests: XCTestCase {
         ]
         XCTAssertEqual(state.doneCount, 2)
         XCTAssertEqual(state.items.count, 3)
-        XCTAssertEqual(state.progressLabel, "2/3")
+        XCTAssertEqual(state.progressLabel, "1/2/3")
         XCTAssertEqual(state.openCount, 1)
     }
 
@@ -268,21 +269,23 @@ final class ListProgressTests: XCTestCase {
             Item(id: "a", name: "A", dept: "obst", done: true, added: 1, ord: 1),
             Item(id: "b", name: "B", dept: "brot", done: true, added: 2, ord: 1)
         ]
-        XCTAssertEqual(state.progressLabel, "2/2")
+        XCTAssertEqual(state.openCount, 0)
+        XCTAssertEqual(state.doneCount, 2)
+        XCTAssertEqual(state.progressLabel, "0/2/2")
     }
 }
 
 final class WatchTitleTests: XCTestCase {
     func testSeedShowsStoreAndProgress() {
-        XCTAssertEqual(AppState.seed.watchTitle, "Edeka  Einkauf 0/0")
+        XCTAssertEqual(AppState.seed.watchTitle, "Edeka  Einkauf 0/0/0")
     }
 
     func testUpdatesWhenCurrentStoreChanges() {
         var state = AppState.seed
         state.currentStoreId = "rewe"
-        XCTAssertEqual(state.watchTitle, "Rewe  Einkauf 0/0")
+        XCTAssertEqual(state.watchTitle, "Rewe  Einkauf 0/0/0")
         state.currentStoreId = "aldi"
-        XCTAssertEqual(state.watchTitle, "Aldi  Einkauf 0/0")
+        XCTAssertEqual(state.watchTitle, "Aldi  Einkauf 0/0/0")
     }
 
     func testKeepsProgressLabelOnTheSameLine() {
@@ -292,9 +295,9 @@ final class WatchTitleTests: XCTestCase {
             Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1),
             Item(id: "c", name: "C", dept: "obst", done: false, added: 3, ord: 1)
         ]
-        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 0/3")
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 3/0/3")
         state.items[0].done = true
-        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 1/3")
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 2/1/3")
     }
 
     func testTruncatesLongStoreNameSoProgressFits() {
@@ -306,7 +309,7 @@ final class WatchTitleTests: XCTestCase {
             Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1),
             Item(id: "c", name: "C", dept: "obst", done: false, added: 3, ord: 1)
         ]
-        XCTAssertEqual(state.watchTitle, "Woche…  Einkauf 0/3")
+        XCTAssertEqual(state.watchTitle, "Woche…  Einkauf 3/0/3")
         XCTAssertTrue(state.watchTitle.hasSuffix("Einkauf \(state.progressLabel)"))
         XCTAssertLessThanOrEqual(AppState.clippedWatchStoreName(state.currentStore.name).count, AppState.watchStoreNameLimit)
     }
@@ -315,7 +318,7 @@ final class WatchTitleTests: XCTestCase {
         var state = AppState.seed
         state.currentStoreId = "eigenes"
         XCTAssertEqual(state.currentStore.name, "Eigenes Layout")
-        XCTAssertEqual(state.watchTitle, "Eigen…  Einkauf 0/0")
+        XCTAssertEqual(state.watchTitle, "Eigen…  Einkauf 0/0/0")
     }
 
     func testRemoteSetStoreUpdatesTitleViaMerge() {
@@ -327,19 +330,20 @@ final class WatchTitleTests: XCTestCase {
         remote.currentStoreId = "aldi"
         let merged = StateMerge.merge(local: local, remote: remote)
         XCTAssertEqual(merged.currentStoreId, "aldi")
-        XCTAssertEqual(merged.watchTitle, "Aldi  Einkauf 0/0")
+        XCTAssertEqual(merged.watchTitle, "Aldi  Einkauf 0/0/0")
     }
 }
 
 final class ComplicationSnapshotTests: XCTestCase {
     func testEmptyListIsZeroOverZeroNotHidden() {
         let snap = ComplicationSnapshot.make(from: .seed)
-        XCTAssertEqual(snap.progressLabel, "0/0")
+        XCTAssertEqual(snap.progressLabel, "0/0/0")
         XCTAssertEqual(snap.storeName, "Edeka")
         XCTAssertTrue(snap.isEmpty)
-        XCTAssertEqual(snap.inlineText, "Edeka  0/0")
+        XCTAssertEqual(snap.inlineText, "Edeka  0/0/0")
         XCTAssertTrue(snap.accessibilityLabel.contains("leer"))
         XCTAssertEqual(snap.progress, 0, accuracy: 0.0001)
+        XCTAssertEqual(snap.openText, "0")
         XCTAssertEqual(snap.doneText, "0")
         XCTAssertEqual(snap.totalText, "0")
     }
@@ -353,6 +357,7 @@ final class ComplicationSnapshotTests: XCTestCase {
             Item(id: "n", name: "Pfand", dept: "nach", done: true, added: 3, ord: 1)
         ]
         XCTAssertEqual(state.complicationSnapshot.progress, 2.0 / 3.0, accuracy: 0.0001)
+        XCTAssertEqual(state.complicationSnapshot.openText, "1")
         XCTAssertEqual(state.complicationSnapshot.doneText, "2")
         XCTAssertEqual(state.complicationSnapshot.totalText, "3")
         state.items = [
@@ -360,7 +365,10 @@ final class ComplicationSnapshotTests: XCTestCase {
             Item(id: "b", name: "B", dept: "brot", done: true, added: 2, ord: 1)
         ]
         XCTAssertEqual(state.complicationSnapshot.progress, 1, accuracy: 0.0001)
-        XCTAssertEqual(state.complicationSnapshot.progressLabel, "2/2")
+        XCTAssertEqual(state.complicationSnapshot.progressLabel, "0/2/2")
+        XCTAssertEqual(state.complicationSnapshot.openText, "0")
+        XCTAssertEqual(state.complicationSnapshot.doneText, "2")
+        XCTAssertEqual(state.complicationSnapshot.totalText, "2")
     }
 
     func testProgressMatchesWatchTitleAndIncludesVorNach() {
@@ -372,10 +380,10 @@ final class ComplicationSnapshotTests: XCTestCase {
         ]
         let snap = state.complicationSnapshot
         XCTAssertEqual(snap.progressLabel, state.progressLabel)
-        XCTAssertEqual(snap.progressLabel, "2/3")
+        XCTAssertEqual(snap.progressLabel, "1/2/3")
         XCTAssertEqual(snap.storeName, AppState.clippedWatchStoreName(state.currentStore.name))
         XCTAssertFalse(snap.isEmpty)
-        XCTAssertEqual(snap.inlineText, "Edeka  2/3")
+        XCTAssertEqual(snap.inlineText, "Edeka  1/2/3")
         XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
     }
 
@@ -390,6 +398,14 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Woche…")
     }
 
+    func testPlaceholderSplitsThreeParts() {
+        XCTAssertEqual(ComplicationSnapshot.placeholder.progressLabel, "5/2/7")
+        XCTAssertEqual(ComplicationSnapshot.placeholder.openText, "5")
+        XCTAssertEqual(ComplicationSnapshot.placeholder.doneText, "2")
+        XCTAssertEqual(ComplicationSnapshot.placeholder.totalText, "7")
+        XCTAssertEqual(HomeWidgetSnapshot.placeholder.progressLabel, "5/2/7")
+    }
+
     func testWidgetKindIsStable() {
         XCTAssertEqual(ComplicationSnapshot.widgetKind, "EinkaufProgress")
         XCTAssertEqual(ComplicationSnapshot.openURL.scheme, "einkauf")
@@ -399,7 +415,7 @@ final class ComplicationSnapshotTests: XCTestCase {
 final class HomeWidgetSnapshotTests: XCTestCase {
     func testEmptyListIsZeroOverZeroNotHidden() {
         let snap = HomeWidgetSnapshot.make(from: .seed)
-        XCTAssertEqual(snap.progressLabel, "0/0")
+        XCTAssertEqual(snap.progressLabel, "0/0/0")
         XCTAssertEqual(snap.storeName, "Edeka")
         XCTAssertTrue(snap.isEmpty)
         XCTAssertTrue(snap.openItemNames.isEmpty)
@@ -415,7 +431,7 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         ]
         let snap = HomeWidgetSnapshot.make(from: state)
         XCTAssertEqual(snap.progressLabel, state.progressLabel)
-        XCTAssertEqual(snap.progressLabel, "2/3")
+        XCTAssertEqual(snap.progressLabel, "1/2/3")
         XCTAssertEqual(snap.storeName, state.currentStore.name)
         XCTAssertFalse(snap.isEmpty)
         XCTAssertEqual(snap.openItemNames, ["Milch"])
@@ -955,11 +971,11 @@ final class ShoppingStoreSetStoreTests: XCTestCase {
         XCTAssertEqual(store.groups.map(\.dept), ["obst", "kuehlung", "drogerie"])
         XCTAssertEqual(store.groups.map(\.id), ["edeka|obst", "edeka|kuehlung", "edeka|drogerie"])
         XCTAssertEqual(store.walkLines.compactMap(\.headerDept), ["obst", "kuehlung", "drogerie"])
-        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 0/3")
+        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 3/0/3")
         store.toggle("o")
         XCTAssertEqual(store.walkListRows.compactMap(\.line.itemId), ["o", "k", "d"])
         XCTAssertEqual(store.walkListRows(hidingCompleted: true).compactMap(\.line.itemId), ["k", "d"])
-        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 1/3")
+        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 2/1/3")
     }
 
     func testSetStoreWalkLinesScreenshotItemsReorder() {
@@ -1027,7 +1043,7 @@ final class ShoppingStoreDeleteStoreTests: XCTestCase {
         XCTAssertEqual(store.groups.map(\.dept), ["drogerie", "obst"])
         XCTAssertEqual(
             store.state.watchTitle,
-            "\(AppState.clippedWatchStoreName("Mein Markt"))  Einkauf 0/2"
+            "\(AppState.clippedWatchStoreName("Mein Markt"))  Einkauf 2/0/2"
         )
 
         store.deleteStore(id: "s-custom")
@@ -1035,7 +1051,7 @@ final class ShoppingStoreDeleteStoreTests: XCTestCase {
         XCTAssertFalse(store.stores.contains(where: { $0.id == "s-custom" }))
         XCTAssertTrue(store.stores.contains(where: { $0.id == "edeka" }))
         XCTAssertEqual(store.groups.map(\.dept), ["obst", "drogerie"])
-        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 0/2")
+        XCTAssertEqual(store.state.watchTitle, "Edeka  Einkauf 2/0/2")
         XCTAssertGreaterThan(store.state.listRevision, seed.listRevision)
     }
 

@@ -16,7 +16,7 @@ struct EinkaufHomeWidget: Widget {
                 .widgetURL(HomeWidgetSnapshot.openURL)
         }
         .configurationDisplayName("Einkauf")
-        .description("Laden und Fortschritt der Einkaufsliste.")
+        .description("Laden und Fortschritt der Einkaufsliste, offen/erledigt/gesamt.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -68,7 +68,7 @@ struct EinkaufHomeWidgetView: View {
         .accessibilityHint("Öffnet die Einkaufsliste")
     }
 
-    /// Klein: Ladenname plus `xx/yy`.
+    /// Klein: Ladenname plus `oo/xx/yy`.
     private var small: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(entry.snapshot.storeName)
@@ -83,7 +83,7 @@ struct EinkaufHomeWidgetView: View {
         }
     }
 
-    /// Mittel: Laden, `xx/yy`, danach die nächsten offenen Artikel in Geh-Modus-Reihenfolge.
+    /// Mittel: Laden, `oo/xx/yy`, danach die nächsten offenen Artikel in Geh-Modus-Reihenfolge.
     private var medium: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(entry.snapshot.storeName)
@@ -107,7 +107,7 @@ struct EinkaufHomeWidgetView: View {
     EinkaufHomeWidget()
 } timeline: {
     EinkaufHomeTimelineEntry(date: .now, snapshot: .placeholder)
-    EinkaufHomeTimelineEntry(date: .now, snapshot: HomeWidgetSnapshot(progressLabel: "0/0", storeName: "Edeka", isEmpty: true, openItemNames: []))
+    EinkaufHomeTimelineEntry(date: .now, snapshot: HomeWidgetSnapshot(progressLabel: "0/0/0", storeName: "Edeka", isEmpty: true, openItemNames: []))
 }
 
 #Preview(as: .systemMedium) {
