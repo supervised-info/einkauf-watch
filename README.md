@@ -1,6 +1,6 @@
 # Einkauf für iPhone und Apple Watch
 
-Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/). Dieselbe Liste auf iPhone und Watch, Abhaken synchronisiert über **WatchConnectivity**. Brücke zur PWA ist das JSON-Backup (`kind: einkauf-backup`) — die App scrapt die Website nicht.
+Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). Zwei Reiter **Einkauf | To-Do** auf iPhone und Apple Watch. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
 
 Mindestens **Xcode 15**, iOS 17, watchOS 10. Im Apple-Developer-Account ein Team wählen. v1 ist nicht für den App-Store-Submit gedacht.
 
@@ -27,7 +27,7 @@ Wenn [XcodeGen](https://github.com/yonaskolb/XcodeGen) installiert ist: `xcodege
 
 ## Backup importieren
 
-Die App versteht PWA-Backups mit `"kind": "einkauf-backup"`. Unbekannte Felder werden ignoriert, fehlende `staples` sind in Ordnung.
+Die App versteht PWA-Backups mit `"kind": "einkauf-backup"` (Einkaufs-Tab) und `"format": "todo-v3-json"` (To-Do-Tab). Unbekannte Felder werden ignoriert, fehlende `staples` sind in Ordnung. Der Import-Router entscheidet am Envelope, nie still ins falsche Store.
 
 **In der App**
 
@@ -47,16 +47,23 @@ Beispiel-Dateien im Repo:
 
 - `Fixtures/einkauf-backup.json` — volle Liste inkl. Stamm-Artikel und einem unbekannten Feld
 - `Fixtures/einkauf-backup-ohne-staples.json` — ohne `staples`
+- `Fixtures/todo-v3-json.json` — To-Do-Backup (`format: "todo-v3-json"`), nicht Einkauf
+
+To-Do-Backup importiert man im **To-Do**-Tab (**…**), nicht über das Einkaufs-Overflow.
 
 PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hier importieren. Die Watch zeigt die Liste in Laden-/Abteilungsreihenfolge (`vor` zuerst, `nach` zuletzt).
 
 ## Bedienung
 
-**iPhone:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen) und **Bearbeiten** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Löschen). Der Knopf zeigt den jeweils anderen Modus, wie in der PWA; `walkMode` bleibt im Backup. Auge blendet Erledigte im Geh-Modus und in **Liste teilen** (PDF) aus; Bearbeiten zeigt weiter alle. Plus Artikel hinzufügen, **Ladenwahl** (eingebaute Seeds plus eigene Läden unter Einstellungen), Stamm, Einstellungen (Hell/Dunkel/System, Creme/Blau), Import/Export/Teilen.
+Zwei Reiter **Einkauf | To-Do** (`TabView`). Getrennte Stores, Dateien und Backups — Einkauf ändert nicht `todo-local.json` und umgekehrt.
 
-**Watch (Geh-Modus):** große Checkbox + Name, gruppiert nach Abteilung. Tippen schaltet erledigt um. Digital Crown scrollt. In v1 kein Bearbeiten auf der Watch. Titel: gekürzter Laden + `Einkauf oo/xx/yy`. Auge blendet Erledigte nur in der Watch-Liste aus. **Kein** In-App-Mikrofon. **Complication:** WidgetKit auf dem Zifferblatt zeigt nur die offene Anzahl (bei 0 **erledigt**, nicht `0` und nicht `oo/xx/yy`; plus Ladenname wo Platz); Tippen öffnet die Watch-App. Scheme **EinkaufWatch** auf die physische Watch installieren, danach Komplikation auf dem Zifferblatt hinzufügen.
+**iPhone Einkauf:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen, **kein** Swipe-Löschen) und **Edit** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Swipe-Löschen). Toolbar **Edit** / **Geh-Modus** (zeigt den jeweils anderen Modus; nicht „Bearbeiten“); `walkMode` bleibt im Backup. Auge blendet Erledigte im Geh-Modus und in **Liste teilen** (PDF) aus; Edit zeigt weiter alle. Plus Artikel hinzufügen, **Ladenwahl** (eingebaute Seeds plus eigene Läden unter Einstellungen), Stamm, Einstellungen (Hell/Dunkel/System, Creme/Blau), Import/Export/Teilen.
 
-**Sprache / Siri:** Kein Watch-Mikro, kein `Speech.framework`. Stattdessen Siri App Intents auf iPhone und Watch: „Hey Siri, Einkauf besorgen“ (App-Name + **besorgen**). To-Do: **„Hey Siri, Einkauf Todo“** (ein Wort **Todo**, nicht „To Do“ — Siri begrenzt zwei Phrase-Tokens auf zwei Wörter; `shortTitle` ebenfalls **Todo**). iPhone fragt **„o“**; Watch-To-Do nutzt die generische Freitext-Nachfrage (kein `requestValueDialog`). Dann Artikel bzw. Aufgabe sprechen (Komma / `und` trennt mehrere, `SpeechItemSplitter`). Nach einem Update: Shortcut in Kurzbefehle löschen/neu und **„Auf Apple Watch anzeigen“** erneut aktivieren. iPhone schreibt sofort in den Store und synct. Watch legt nur in eine App-Group-Queue (`UserDefaults` + Datei-Spiegel); die Watch-App drain't beim Öffnen — ggf. einmal die App antippen. Details und Verlauf: `Description.md` → **Sprach-Eingabe (Siri)**.
+**iPhone To-Do:** Text, Person, Prio A/B, Datum. Auge blendet Abgeschlossene (`todo.iphone.showCompleted`). Toolbar **Edit** / **Fertig**: Swipe-Löschen **nur** im Edit-Modus; Listen-Modus öffnet `TodoEditSheet` per Text oder Swipe **Bearbeiten**. Wieder öffnen, Sort, Suche (**Person oder Text …**), eigenes Backup `todo-v3-json`, **Liste teilen** (PDF folgt dem Auge). Kein MD/CSV.
+
+**Watch (Geh-Modus):** Einkauf: große Checkbox + Name, gruppiert nach Abteilung. To-Do: Text (+ kompakte Person/Prio/Datum); **kein** Edit, kein Reopen, keine Suche. Tippen schaltet erledigt um. Digital Crown scrollt. Titel Einkauf: gekürzter Laden + `Einkauf oo/xx/yy`. Auge blendet Erledigte nur in der jeweiligen Watch-Liste aus (eigene Flags). **Kein** In-App-Mikrofon. **Complication:** Einkauf zeigt offene Anzahl (bei 0 **erledigt**); To-Do-Label genau **To Do** plus offene Anzahl / **erledigt**. Tippen öffnet den passenden Watch-Tab. Scheme **EinkaufWatch** auf die physische Watch installieren, danach Komplikation auf dem Zifferblatt hinzufügen.
+
+**Sprache / Siri:** Kein Watch-Mikro, kein `Speech.framework`. Stattdessen Siri App Intents auf iPhone und Watch in **einem** `AppShortcutsProvider`: „Hey Siri, Einkauf besorgen“ (App-Name + **besorgen**, Nachfrage **„o“**). To-Do: **„Hey Siri, Einkauf Todo“** (ein Wort **Todo**, nicht „To Do“ — Siri begrenzt zwei Phrase-Tokens auf zwei Wörter; `shortTitle` ebenfalls **Todo**). iPhone-To-Do fragt **„o“**; Watch-To-Do nutzt die generische Freitext-Nachfrage (kein `requestValueDialog`, sonst kürzt die Watch Free-Form). Dann Artikel bzw. Aufgabe sprechen (Komma / `und` trennt mehrere, `SpeechItemSplitter`). Nach einem Update: Shortcut in Kurzbefehle löschen/neu und **„Auf Apple Watch anzeigen“** erneut aktivieren. iPhone schreibt sofort in den Store und synct. Watch legt nur in eine App-Group-Queue (`UserDefaults` + Datei-Spiegel); die Watch-App drain't beim Öffnen — ggf. einmal die App antippen. Details und Verlauf: `Description.md` → **Sprach-Eingabe (Siri)**.
 
 **iPhone-Widget:** Homescreen klein (Laden + `oo/xx/yy`) und mittel (plus nächste offene Artikel). Tippen öffnet die App **Einkaufsliste**. Scheme **Einkauf** aufs iPhone; Widget über den Homescreen-Widget-Picker hinzufügen. App Group `group.net.tschelle.einkauf` für App und Widget aktivieren, falls Xcode danach fragt.
 
@@ -82,7 +89,7 @@ python3 Scripts/verify_core.py
 |---|---|
 | Bundle ID | `net.tschelle.einkauf` (Watch: `.watchkitapp`, Watch-Widget: `.watchkitapp.widgets`, iPhone-Widget: `.widgets`) |
 | Geteilter Code | `Sources/Shared` in den App-Targets |
-| Persistenz | JSON im App Group `group.net.tschelle.einkauf` (kein iCloud) |
+| Persistenz | JSON im App Group `group.net.tschelle.einkauf` (kein iCloud): `einkauf-local.json` und `todo-local.json` |
 | Abteilungen / Läden | wie die PWA (`edeka`, `aldi`, `rewe`, `lidl`, `dm`, `eigenes`) |
 
 Stamm-Artikel lassen sich unter **Einstellungen** anlegen, entfernen und einer Abteilung zuordnen. **Stamm → Gesamtliste** setzt alle auf die Einkaufsliste (fehlende ergänzen, erledigte wieder öffnen).

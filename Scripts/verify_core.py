@@ -2114,7 +2114,7 @@ def test_todo_store() -> None:
     if "testTodoFilenameIsTodoListeStem" not in (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text():
         fail("tests must cover todo-liste.pdf filename")
     if "TodoListPDF" not in desc or "todo.iphone.showCompleted" not in desc:
-        fail("Description.md WIP must mention To-Do Liste teilen PDF and the eye key")
+        fail("Description.md must mention To-Do Liste teilen PDF and the eye key")
     if "TodoListView" in watch or "TodoListPDF" in watch:
         fail("Watch must not get To-Do PDF / Liste teilen")
     if "testClearCompletedRemovesOnlyDone" not in tests:
@@ -2162,8 +2162,12 @@ def test_todo_store() -> None:
         fail("TodoTask must be Identifiable by uid for sheet(item:)")
     if "Hashable" not in task_decl:
         fail("TodoTask must be Hashable for sheet(item:)")
-    if "Bearbeiten" not in desc or "Fertig" not in desc or "TodoEditSheet" not in desc:
-        fail("Description.md WIP must document To-Do Bearbeiten / Fertig and TodoEditSheet")
+    if "**Edit**" not in desc or "Fertig" not in desc or "TodoEditSheet" not in desc:
+        fail("Description.md must document To-Do Edit / Fertig and TodoEditSheet")
+    if "**Bearbeiten** / **Fertig**" in desc:
+        fail("Description.md To-Do toolbar must be Edit / Fertig, not Bearbeiten")
+    if "Geh-Modus** / **Bearbeiten**" in desc or "**Bearbeiten** / **Geh-Modus**" in desc:
+        fail("Description.md Einkauf toolbar must be Edit / Geh-Modus, not Bearbeiten")
     if "func add(" not in store or "func toggle(" not in store or "func delete(" not in store:
         fail("TodoStore missing add/toggle/delete")
     if "func reopen(" not in store:
@@ -2187,9 +2191,9 @@ def test_todo_store() -> None:
     if "testNormalizeAssignsMissingUidsFromNextUid" not in tests:
         fail("tests must cover normalize missing uids")
     if "kein HTML-Parity" not in desc.lower() and "Kein** HTML-Parity" not in desc and "**Kein** HTML-Parity" not in desc:
-        fail("Description.md WIP must not claim full To-Do HTML parity")
+        fail("Description.md must not claim full To-Do HTML parity")
     if "TabView" not in desc and "To-Do" not in desc:
-        fail("Description.md WIP must mention the To-Do tab")
+        fail("Description.md must mention the To-Do tab")
     watch_todo = (ROOT / "Sources/Watch/WatchTodoListView.swift").read_text()
     if "todo.watch.hideCompleted" not in watch_todo:
         fail("Watch To-Do eye must use AppStorage todo.watch.hideCompleted")
