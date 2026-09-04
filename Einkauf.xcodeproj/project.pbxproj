@@ -33,6 +33,10 @@
 		15447CEC2167C0109789092D /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
 		5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
 		AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
+		742F79F1BBDE805C90A4CC1D /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
+		39975D35AD8DD10272B34BC1 /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
+		705AA7BC3BBDFC4BE12927CA /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
+		8266DACD0CE3E59230B441F3 /* TodoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */; };
 		E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */; };
 		9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499EF012DA49B4720127F282 /* WatchComplicationReload.swift */; };
 		98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5324308E5A34153EAF3F1962 /* WatchListView.swift */; };
@@ -54,6 +58,10 @@
 		B8ECFA4CCB0833C604C51F51 /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
 		54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
 		E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
+		4C4F0FB308F4D24538902950 /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
+		93EF02CDF09906D3554E33D9 /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
+		9E4949263D8E3FF743694CDE /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
+		C6D0033EFA54ADA6566FE4FE /* TodoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */; };
 		16FEB03CD391A62FFC2AC325 /* EinkaufWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */; };
 		D669A4242B85D5564C2A226E /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		5F0866CD8C5BC4A7DDB8E11F /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
@@ -185,6 +193,10 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StapleApply.swift; sourceTree = "<group>"; };
 		A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreLayout.swift; sourceTree = "<group>"; };
 		A32268097AE4939ECE075B98 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoCodec.swift; sourceTree = "<group>"; };
+		861F958ACA5618757971F25B /* TodoModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoModels.swift; sourceTree = "<group>"; };
+		283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoPersistence.swift; sourceTree = "<group>"; };
+		75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStore.swift; sourceTree = "<group>"; };
 		7578566B217205F916373346 /* einkauf-backup.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = einkauf-backup.json; sourceTree = "<group>"; };
 		03AF5479195A1C1DAE505808 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ECC3FAE11911BD587AF7020C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -352,6 +364,10 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 				5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */,
 				A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */,
 				A32268097AE4939ECE075B98 /* Theme.swift */,
+				D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */,
+				861F958ACA5618757971F25B /* TodoModels.swift */,
+				283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */,
+				75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */,
             			);
             			path = Sources/Shared;
             			name = Shared;
@@ -568,6 +584,10 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				15447CEC2167C0109789092D /* StapleApply.swift in Sources */,
 				5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */,
 				AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */,
+				742F79F1BBDE805C90A4CC1D /* TodoCodec.swift in Sources */,
+				39975D35AD8DD10272B34BC1 /* TodoModels.swift in Sources */,
+				705AA7BC3BBDFC4BE12927CA /* TodoPersistence.swift in Sources */,
+				8266DACD0CE3E59230B441F3 /* TodoStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -596,6 +616,10 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				B8ECFA4CCB0833C604C51F51 /* StapleApply.swift in Sources */,
 				54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */,
 				E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */,
+				4C4F0FB308F4D24538902950 /* TodoCodec.swift in Sources */,
+				93EF02CDF09906D3554E33D9 /* TodoModels.swift in Sources */,
+				9E4949263D8E3FF743694CDE /* TodoPersistence.swift in Sources */,
+				C6D0033EFA54ADA6566FE4FE /* TodoStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

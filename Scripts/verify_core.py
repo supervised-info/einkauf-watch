@@ -293,6 +293,10 @@ def test_sources() -> None:
         "Sources/Shared/KeywordDictionaryBrowse.swift",
         "Sources/Shared/SpeechItemSplitter.swift",
         "Sources/Shared/EinkaufAddItemsIntent.swift",
+        "Sources/Shared/TodoModels.swift",
+        "Sources/Shared/TodoCodec.swift",
+        "Sources/Shared/TodoPersistence.swift",
+        "Sources/Shared/TodoStore.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/iOS/HomeWidgetReload.swift",
@@ -1496,6 +1500,8 @@ def test_siri_app_intents() -> None:
         fail("project.yml widgets must exclude EinkaufAddItemsIntent.swift")
     if "SiriPendingAdds.swift" not in yml:
         fail("project.yml widgets must exclude SiriPendingAdds.swift")
+    if "TodoStore.swift" not in yml:
+        fail("project.yml widgets must exclude TodoStore.swift")
     if "EinkaufAddItemsIntent.swift" not in pkg:
         fail("Package.swift must exclude EinkaufAddItemsIntent.swift from SPM")
 
@@ -1559,6 +1565,52 @@ def test_siri_app_intents() -> None:
     print("siri app intents: ok")
 
 
+def test_todo_phase2() -> None:
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+    persist = (ROOT / "Sources/Shared/TodoPersistence.swift").read_text()
+    codec = (ROOT / "Sources/Shared/TodoCodec.swift").read_text()
+    store = (ROOT / "Sources/Shared/TodoStore.swift").read_text()
+    models = (ROOT / "Sources/Shared/TodoModels.swift").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/TodoStoreTests.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    einkauf_app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
+
+    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoPersistence.swift", "TodoStore.swift"):
+        if name not in pbx:
+            fail(f"pbxproj must compile {name}")
+    if "todo-local.json" not in persist:
+        fail("TodoPersistence must write todo-local.json")
+    if "einkauf-local.json" in persist:
+        fail("TodoPersistence must never mention einkauf-local.json")
+    if "BackupCodec." in persist or "BackupCodec." in store:
+        fail("Todo persist/store must not route through BackupCodec")
+    if 'kind: "todo-local"' not in codec and 'localKind = "todo-local"' not in codec:
+        fail("TodoCodec must use kind todo-local")
+    if "ConnectivitySync" in store or "WCSession" in store:
+        fail("TodoStore must not wire WatchConnectivity yet")
+    if "TabView" in store or "TabView" in einkauf_app:
+        fail("Phase 2 must not add TabView")
+    if "TodoListView" in content or "TodoStore" in content:
+        fail("ContentView must not host Todo UI yet")
+    if "TodoStore" in watch:
+        fail("Watch list must not host TodoStore yet")
+    if "Int64" not in models:
+        fail("Todo uid must be Int64")
+    if "func add(" not in store or "func toggle(" not in store or "func delete(" not in store:
+        fail("TodoStore missing add/toggle/delete")
+    if "testLocalRoundTripPreservesTasksAndNextUid" not in tests:
+        fail("tests must cover todo-local roundtrip")
+    if "testSaveDoesNotWriteEinkaufLocal" not in tests:
+        fail("tests must cover todo persist isolation")
+    if "testNormalizeAssignsMissingUidsFromNextUid" not in tests:
+        fail("tests must cover normalize missing uids")
+    if "Tab-UI" not in desc and "keine Tab-UI" not in desc:
+        fail("Description.md WIP must still say To-Do has no tab UI")
+    print("todo phase 2: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -1569,6 +1621,7 @@ def main() -> None:
     test_watch_complication()
     test_iphone_widget()
     test_siri_app_intents()
+    test_todo_phase2()
     print("ALL OK")
 
 
