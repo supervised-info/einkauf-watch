@@ -1,14 +1,22 @@
 import SwiftUI
 
-/// iPhone-To-Do v1: Text anlegen, abhaken, löschen, umbenennen.
-/// Person / Prio / Datum: Phase 4. Backup: Phase 5. Watch: Phase 6.
+/// iPhone-To-Do Phase 4: Person / Prio / Datum, Abgeschlossen-Toggle.
+/// Backup: Phase 5. Watch: Phase 6.
 struct TodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @Environment(\.einkaufTheme) private var theme
+    @AppStorage("todo.iphone.showCompleted") private var showCompleted = true
     @State private var draft = ""
-    @State private var renamingUID: Int64?
-    @State private var renameDraft = ""
-    @FocusState private var renameFocused: Bool
+    @State private var draftPerson = ""
+    @State private var draftPrioA = ""
+    @State private var draftPrioB = ""
+    @State private var draftDue = ""
+    @State private var editingTask: TodoTask?
+
+    private var visibleTasks: [TodoTask] {
+        let source = showCompleted ? todos.state.tasks : todos.state.tasks.filter { !$0.completed }
+        return TodoOrdering.sorted(source)
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,6 +28,13 @@ struct TodoListView: View {
                         description: Text("Aufgabe hinzufügen.")
                     )
                     .foregroundStyle(theme.ink)
+                } else if visibleTasks.isEmpty {
+                    ContentUnavailableView(
+                        "Abgeschlossene ausgeblendet.",
+                        systemImage: "eye.slash",
+                        description: Text("Abgeschlossen einblenden, um erledigte Aufgaben zu sehen.")
+                    )
+                    .foregroundStyle(theme.ink)
                 } else {
                     list
                 }
@@ -27,13 +42,30 @@ struct TodoListView: View {
             .background(theme.paper)
             .navigationTitle("To-Do")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar { toolbar }
             .safeAreaInset(edge: .bottom, spacing: 0) { addBar }
+            .sheet(item: $editingTask) { task in
+                TodoEditSheet(task: task) { text, person, prioA, prioB, dueDate in
+                    todos.update(task.uid, text: text, person: person, prioA: prioA, prioB: prioB, dueDate: dueDate)
+                }
+                .environment(\.einkaufTheme, theme)
+                .einkaufScreen(theme)
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Toggle("Abgeschlossen einblenden", isOn: $showCompleted)
+                .accessibilityLabel("Abgeschlossen einblenden")
+                .accessibilityValue(showCompleted ? "ein" : "aus")
         }
     }
 
     private var list: some View {
         List {
-            ForEach(todos.state.tasks) { task in
+            ForEach(visibleTasks) { task in
                 row(task)
             }
             .onDelete(perform: delete)
@@ -44,9 +76,8 @@ struct TodoListView: View {
     }
 
     private func row(_ task: TodoTask) -> some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Button {
-                commitRename()
                 todos.toggle(task.uid)
             } label: {
                 Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
@@ -56,44 +87,92 @@ struct TodoListView: View {
             .buttonStyle(.borderless)
             .accessibilityLabel(task.completed ? "Erledigt: \(task.text)" : "Offen: \(task.text)")
 
-            if renamingUID == task.uid {
-                TextField("Aufgabe", text: $renameDraft)
-                    .textFieldStyle(.plain)
-                    .focused($renameFocused)
-                    .submitLabel(.done)
-                    .onSubmit(commitRename)
-                    .onChange(of: renameFocused) { _, focused in
-                        if !focused { commitRename() }
-                    }
-                    .strikethrough(task.completed, color: theme.muted)
-            } else {
-                Button {
-                    beginRename(task)
-                } label: {
+            Button {
+                editingTask = task
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(task.text)
                         .foregroundStyle(theme.ink)
                         .strikethrough(task.completed, color: theme.muted)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .multilineTextAlignment(.leading)
+                    metaLine(task)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Umbenennen: \(task.text)")
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Bearbeiten: \(task.text)")
         }
         .padding(.vertical, 2)
         .einkaufRowChrome()
-        .accessibilityValue(task.completed ? "erledigt" : "offen")
+        .accessibilityValue(rowAccessibilityValue(task))
+    }
+
+    @ViewBuilder
+    private func metaLine(_ task: TodoTask) -> some View {
+        let person = task.person.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
+        let due = TodoJSON.isoDate(task.dueDate)
+        if !person.isEmpty || !prio.isEmpty || !due.isEmpty {
+            HStack(spacing: 6) {
+                if !person.isEmpty {
+                    Text(person)
+                        .foregroundStyle(theme.muted)
+                }
+                if !prio.isEmpty {
+                    Text(prio)
+                        .foregroundStyle(theme.muted)
+                }
+                if !due.isEmpty {
+                    Text(TodoTime.displayDay(due))
+                        .foregroundStyle(
+                            TodoOrdering.isOverdue(due, today: TodoTime.localDayIso())
+                                ? theme.oxide
+                                : theme.muted
+                        )
+                }
+            }
+            .font(.caption)
+        }
+    }
+
+    private func rowAccessibilityValue(_ task: TodoTask) -> String {
+        var parts = [task.completed ? "erledigt" : "offen"]
+        let person = task.person.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !person.isEmpty { parts.append(person) }
+        let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
+        if !prio.isEmpty { parts.append(prio) }
+        let due = TodoJSON.isoDate(task.dueDate)
+        if !due.isEmpty {
+            let label = TodoTime.displayDay(due)
+            if TodoOrdering.isOverdue(due, today: TodoTime.localDayIso()) {
+                parts.append("überfällig \(label)")
+            } else {
+                parts.append(label)
+            }
+        }
+        return parts.joined(separator: ", ")
     }
 
     private var addBar: some View {
-        HStack(spacing: 8) {
-            TextField("Neue Aufgabe …", text: $draft)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.done)
-                .onSubmit(submit)
-            Button("Hinzufügen", action: submit)
-                .buttonStyle(.borderedProminent)
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                TextField("Person", text: $draftPerson)
+                    .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.never)
+                    .disableAutocorrection(true)
+                    .accessibilityLabel("Person")
+                TodoPrioPickers(prioA: $draftPrioA, prioB: $draftPrioB)
+                TodoDuePicker(iso: $draftDue)
+            }
+            HStack(spacing: 8) {
+                TextField("Neue Aufgabe …", text: $draft)
+                    .textFieldStyle(.roundedBorder)
+                    .submitLabel(.done)
+                    .onSubmit(submit)
+                Button("Hinzufügen", action: submit)
+                    .buttonStyle(.borderedProminent)
+                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -106,33 +185,154 @@ struct TodoListView: View {
     }
 
     private func submit() {
-        commitRename()
-        todos.add(draft)
+        todos.add(draft, person: draftPerson, prioA: draftPrioA, prioB: draftPrioB, dueDate: draftDue)
         draft = ""
+        draftPerson = ""
+        draftPrioA = ""
+        draftPrioB = ""
+        draftDue = ""
     }
 
     private func delete(_ offsets: IndexSet) {
-        commitRename()
         let uids = offsets.compactMap { index -> Int64? in
-            todos.state.tasks.indices.contains(index) ? todos.state.tasks[index].uid : nil
+            visibleTasks.indices.contains(index) ? visibleTasks[index].uid : nil
         }
         for uid in uids {
             todos.delete(uid)
         }
     }
+}
 
-    private func beginRename(_ task: TodoTask) {
-        renamingUID = task.uid
-        renameDraft = task.text
-        renameFocused = true
+private struct TodoPrioPickers: View {
+    @Binding var prioA: String
+    @Binding var prioB: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Picker("Prio A", selection: $prioA) {
+                Text("– Prio").tag("")
+                ForEach(TodoJSON.prioAChoices, id: \.self) { Text($0).tag($0) }
+            }
+            .pickerStyle(.menu)
+            .accessibilityLabel("Prio A")
+            Picker("Prio B", selection: $prioB) {
+                Text("–").tag("")
+                ForEach(TodoJSON.prioBChoices, id: \.self) { Text($0).tag($0) }
+            }
+            .pickerStyle(.menu)
+            .accessibilityLabel("Prio B")
+        }
+        .fixedSize()
+    }
+}
+
+private struct TodoDuePicker: View {
+    @Binding var iso: String
+    @Environment(\.einkaufTheme) private var theme
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if iso.isEmpty {
+                Button("Datum") {
+                    iso = TodoTime.localDayIso()
+                }
+                .foregroundStyle(theme.muted)
+                .accessibilityLabel("Datum setzen")
+            } else {
+                DatePicker(
+                    "Enddatum",
+                    selection: Binding(
+                        get: { TodoTime.date(fromLocalDay: iso) ?? Date() },
+                        set: { iso = TodoTime.localDayIso($0) }
+                    ),
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .accessibilityLabel("Enddatum")
+                Button {
+                    iso = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(theme.muted)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Datum löschen")
+            }
+        }
+        .fixedSize()
+    }
+}
+
+private struct TodoEditSheet: View {
+    let task: TodoTask
+    var onSave: (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.einkaufTheme) private var theme
+    @State private var text: String
+    @State private var person: String
+    @State private var prioA: String
+    @State private var prioB: String
+    @State private var dueDate: String
+
+    init(
+        task: TodoTask,
+        onSave: @escaping (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String) -> Void
+    ) {
+        self.task = task
+        self.onSave = onSave
+        _text = State(initialValue: task.text)
+        _person = State(initialValue: task.person)
+        _prioA = State(initialValue: TodoJSON.prioA(task.prioA))
+        _prioB = State(initialValue: TodoJSON.prioB(task.prioB))
+        _dueDate = State(initialValue: TodoJSON.isoDate(task.dueDate))
     }
 
-    private func commitRename() {
-        guard let uid = renamingUID else { return }
-        todos.update(uid, text: renameDraft)
-        renamingUID = nil
-        renameFocused = false
-        renameDraft = ""
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField("Aufgabe", text: $text)
+                        .einkaufRowChrome()
+                    TextField("Person", text: $person)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                        .einkaufRowChrome()
+                    HStack {
+                        Text("Prio")
+                            .foregroundStyle(theme.muted)
+                        Spacer()
+                        TodoPrioPickers(prioA: $prioA, prioB: $prioB)
+                    }
+                    .einkaufRowChrome()
+                    HStack {
+                        Text("Datum")
+                            .foregroundStyle(theme.muted)
+                        Spacer()
+                        TodoDuePicker(iso: $dueDate)
+                    }
+                    .einkaufRowChrome()
+                }
+            }
+            .listStyle(.insetGrouped)
+            .einkaufListChrome()
+            .navigationTitle("Aufgabe")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Abbrechen") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fertig", action: save)
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func save() {
+        onSave(text, person, prioA, prioB, dueDate)
+        dismiss()
     }
 }
 
