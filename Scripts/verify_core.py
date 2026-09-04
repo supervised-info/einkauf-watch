@@ -358,7 +358,7 @@ def test_sources() -> None:
         fail("onOpenURL must live on EinkaufRoot, not ContentView")
     if "Einstellungen" not in content:
         fail("Einstellungen menu missing")
-    if "Geh-Modus" not in content or "Bearbeiten" not in content:
+    if "Geh-Modus" not in content or '"Edit"' not in content:
         fail("walk/edit toggle labels missing")
     if "moveItems(in:" in content:
         fail("Bearbeiten still uses per-section onMove")
@@ -419,8 +419,8 @@ def test_sources() -> None:
         fail("store Menu must stay topBarLeading")
     if "eye.slash" in leading or "hideCompleted.toggle" in leading:
         fail("eye toggle must not replace the store Menu")
-    if content.find("hideCompleted.toggle") < 0 or content.find("hideCompleted.toggle") > content.find('Button(store.walkMode ? "Bearbeiten"'):
-        fail("iPhone eye toggle must sit near the Geh-Modus / Bearbeiten control")
+    if content.find("hideCompleted.toggle") < 0 or content.find("hideCompleted.toggle") > content.find('Button(store.walkMode ? "Edit"'):
+        fail("iPhone eye toggle must sit near the Geh-Modus / Edit control")
     if "func setWalkMode" not in store:
         fail("walkMode not persisted via setWalkMode")
     editing = (ROOT / "Sources/Shared/ItemEditing.swift").read_text()
@@ -443,8 +443,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 53" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 53 / CURRENT_PROJECT_VERSION")
+    if "Build 54" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 54 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -919,10 +919,14 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 53" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 53")
+    if "CURRENT_PROJECT_VERSION = 54" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 54")
+    if "CURRENT_PROJECT_VERSION = 53" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 53 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 52" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 52 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 51" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 51 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 50" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 50 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 49" in pbx:
@@ -1010,10 +1014,14 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 53" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 53")
+    if "CURRENT_PROJECT_VERSION: 54" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 54")
+    if "CURRENT_PROJECT_VERSION: 53" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 53 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 52" in yml:
         fail("stale CURRENT_PROJECT_VERSION 52 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 51" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 51 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 50" in yml:
         fail("stale CURRENT_PROJECT_VERSION 50 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 49" in yml:
@@ -1309,8 +1317,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 53") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 53")
+    if pbx.count("CURRENT_PROJECT_VERSION = 54") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 54")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2035,15 +2043,15 @@ def test_todo_store() -> None:
         fail("To-Do eye must be eye when showing completed, eye.slash when hidden")
     if "Abgeschlossene ausblenden" not in todo_ui or "Abgeschlossene einblenden" not in todo_ui:
         fail("To-Do eye must use Abgeschlossene ausblenden / einblenden")
-    if 'Button(isEditing ? "Fertig" : "Bearbeiten")' not in todo_ui:
-        fail("To-Do toolbar must toggle Bearbeiten / Fertig")
+    if 'Button(isEditing ? "Fertig" : "Edit")' not in todo_ui:
+        fail("To-Do toolbar must toggle Edit / Fertig")
     eye_todo = todo_ui.find('showCompleted ? "eye" : "eye.slash"')
-    edit_todo = todo_ui.find('Button(isEditing ? "Fertig" : "Bearbeiten")')
+    edit_todo = todo_ui.find('Button(isEditing ? "Fertig" : "Edit")')
     more_todo = todo_ui.find("ellipsis.circle")
     if not (0 <= eye_todo < edit_todo < more_todo):
-        fail("To-Do toolbar must be eye, then Bearbeiten/Fertig, then …")
-    if "swipeActions" not in todo_ui or 'Label("Bearbeiten"' not in todo_ui:
-        fail("To-Do rows need swipe action Bearbeiten")
+        fail("To-Do toolbar must be eye, then Edit/Fertig, then …")
+    if "swipeActions" not in todo_ui or 'Label("Edit"' not in todo_ui:
+        fail("To-Do rows need swipe action Edit")
     if "chevron.right" not in todo_ui:
         fail("To-Do edit mode must show a chevron affordance")
     if ".sheet(item: $editingTask)" not in todo_ui:
