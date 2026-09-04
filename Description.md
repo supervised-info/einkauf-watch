@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 54, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 55, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) und zur To-Do-PWA [todo](https://supervised-info.github.io/todo/). HTML-Spec Einkauf: Pages `einkauf/Description_index.md`. Brücke Einkauf: Backup-JSON (`kind: "einkauf-backup"`); To-Do: `format: "todo-v3-json"`. Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -13,11 +13,11 @@ Zwei Domains in **einer** App **Einkauf** (`TabView` **Einkauf | To-Do**, SF-Sym
 
 Sprache nur über **Siri App Intents** für **beide** Domains (kein Watch-Mikro, kein `Speech.framework`): Einkauf **besorgen** + Nachfrage **„o“**; To-Do ein Phrase-Token **Todo**, iPhone **„o“**, Watch ohne `requestValueDialog`. Ein `AppShortcutsProvider` `EinkaufShortcuts`. Siehe **Sprach-Eingabe (Siri)**.
 
-TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. Changelog der To-Do-Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Phase 9 (optionale Spec-Politur) ist kein Blocker — diese Datei beschreibt den gelieferten Stand.
+TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. Changelog der To-Do-Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Phase 10 (benannte Listen) ist geliefert (Build 55). Diese Datei beschreibt den gelieferten Stand.
 
 ## To-Do
 
-Geliefert (Build 53). Begleit-Slice zur HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native scrapt die Website nicht. Brücke: JSON `format: "todo-v3-json"` (`todo-liste.json`) plus MD/CSV (`TodoMarkdown` / `TodoCSV`, Dateien `todo-liste.md` / `todo-liste.csv`, **volle Liste** unabhängig vom Auge). Kein Live-localStorage, kein Netz. **Kein** To-Do-Homescreen-Widget. Listen (Phase 10) nicht implementiert. **Kein** HTML-Parity für Site-Mast / Listen. Reopen, Sort, Suche und MD/CSV sind gelandet.
+Geliefert (Build 55). Begleit-Slice zur HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native scrapt die Website nicht. Brücke: JSON `format: "todo-v3-json"` (`todo-liste.json`) plus MD/CSV (`TodoMarkdown` / `TodoCSV`, Dateien `todo-liste.md` / `todo-liste.csv`, **volle Liste** unabhängig vom Auge und vom Listenfilter). Kein Live-localStorage, kein Netz. **Kein** To-Do-Homescreen-Widget. Benannte Listen (Phase 10) sind nativ gelandet; **Kein** HTML-Parity für Site-Mast — HTML-Listen sind ein separates Follow-up auf derselben JSON-Schema-Erweiterung. Reopen, Sort, Suche, MD/CSV und Listen sind gelandet.
 
 ### Isolation (nicht mit Einkauf mischen)
 
@@ -41,14 +41,16 @@ To-Do **darf nicht** in `ShoppingStore` / `AppState` / `Item` / `einkauf-local.j
 
 `NavigationStack`, Titel **To-Do** (inline). Theme wie Einkauf (`AppearanceSettings`). Eigenes Overflow **…** — Einkaufs-Toolbar bleibt im Einkaufs-Tab.
 
-Felder je Aufgabe: `text`, `person`, `prioA` (A–Z oder leer), `prioB` (1–9 oder leer), `dueDate` (`YYYY-MM-DD`). Zeile: Text; Person / Prio / Datum als Nebeninfo, wenn gesetzt. Overdue (`dueDate < heute`, lokal, nicht `9999*`) in `theme.oxide`. Add-Leiste: Person, Prio-Picker („– Prio“ / „–“), Datum, Text „Neue Aufgabe …“, **Hinzufügen**.
+Felder je Aufgabe: `text`, `person`, `prioA` (A–Z oder leer), `prioB` (1–9 oder leer), `dueDate` (`YYYY-MM-DD`), optionales `listId`. Zeile: Text; Person / Prio / Datum als Nebeninfo, wenn gesetzt. Overdue (`dueDate < heute`, lokal, nicht `9999*`) in `theme.oxide`. Add-Leiste: Person, Prio-Picker („– Prio“ / „–“), Datum, Text „Neue Aufgabe …“, **Hinzufügen**. Neue Aufgaben aus der Add-Leiste und Siri **Todo** landen in der **aktuellen** Liste; bei **Alle** bleibt `listId` leer.
 
-Toolbar (trailing nach leading-Lupe):
+**Aktuelle Liste:** `AppStorage` / UserDefaults `todo.iphone.currentListId` (leerer String = **Alle**, ungefiltert — inkl. Aufgaben ohne `listId`). Nicht im Backup-Envelope, nicht in `todo-local.json`. Toolbar-Menü (leading, nach der Lupe, Creme/native, deutsche Labels): **Alle**, benannte Listen, **Neue Liste…**, **Listen…** (anlegen / umbenennen / löschen mit Confirm). Löschen einer Liste leert `listId` ihrer Aufgaben — die Aufgaben selbst bleiben. Sichtbare Aufgaben = zuerst Listenfilter, dann Auge (`todo.iphone.showCompleted`), Suche, Sort, Personen-Gruppierung. Zähler `oo/xx/yy` der **gefilterten** Sicht (Liste, dann Auge). Edit-Sheet kann die Liste einer Aufgabe ändern.
+
+Toolbar (trailing nach leading-Lupe und Listenmenü):
 
 - Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`, Default an; Accessibility „Abgeschlossene ausblenden“ / „einblenden“). Aus = erledigte in der Liste und in **Liste teilen** (PDF) verstecken; bleiben in `todo-local.json`. **Nicht** im Backup, **nicht** Watch, **nicht** `einkauf.iphone.hideCompleted`. Alles ausgeblendet: „Abgeschlossene ausgeblendet.“
 - **Edit** / **Fertig** (`@State`, Default Listen-Modus). Toolbar-Label genau **Edit**, nicht „Bearbeiten“.
 - Sort-Menü (`arrow.up.arrow.down`, `todo.iphone.sortKey`, Default Person; nicht Backup, nicht Watch): Person, Prio, Text, Enddatum, Abgeschlossen, Geschlossen.
-- Overflow **…** (`ellipsis.circle`, „Mehr“): Backup importieren / exportieren / teilen, **MD exportieren…** / **MD teilen** / **CSV exportieren…** / **CSV teilen**, **Liste teilen**, Erledigte löschen. `fileImporter` `.json,.md,.markdown,.csv`. MD/CSV dump die **volle Liste** (`TodoMarkdown` / `TodoCSV`), nicht das Auge. PDF **Liste teilen** folgt weiter `todo.iphone.showCompleted`. Kein Geh-Modus.
+- Overflow **…** (`ellipsis.circle`, „Mehr“): Backup importieren / exportieren / teilen, **MD exportieren…** / **MD teilen** / **CSV exportieren…** / **CSV teilen**, **Liste teilen**, Erledigte löschen. `fileImporter` `.json,.md,.markdown,.csv`. MD/CSV dump die **volle Liste** aller Aufgaben (`TodoMarkdown` / `TodoCSV`), nicht Auge und nicht Listenfilter; Listenmitgliedschaft optional (MD-Comment `Liste Name | list:id`, CSV-Spalten `Liste` / `List-ID` nur wenn Listen existieren). Import ohne Listeninfo bleibt gültig. PDF **Liste teilen** folgt der **aktuellen Liste und** `todo.iphone.showCompleted`. Kein Geh-Modus.
 
 **Listen-Modus vs Edit (Swipe-Löschen nur im Edit-Modus):**
 
@@ -61,33 +63,33 @@ Toolbar (trailing nach leading-Lupe):
 
 **Suche:** Lupe leading; Drawer, Placeholder **Person oder Text …**; filtert Person oder Text (case-insensitive) über Auge + Sort. Escape/Clear schließt. Keine Treffer: „Keine Treffer.“
 
-Backup: Export `format: "todo-v3-json"` (`TodoCodec.encodeBackup`), Defaultname `todo-liste` / `yyyyMMdd_HHmm-todo-liste.json`. Import Array oder `{format, nextUid, tasks}` (Extra-Felder egal); leer → direkt setzen; sonst **Anhängen** / **Ersetzen**. Kollidierende UIDs über `normalizeTasks`. Einkauf-JSON abgelehnt.
+Backup: Export `format: "todo-v3-json"` (`TodoCodec.encodeBackup`), Defaultname `todo-liste` / `yyyyMMdd_HHmm-todo-liste.json`. Envelope: `{format, exportedAt, nextUid, tasks, lists}`. `lists` ist optional (fehlt → `[]`): `[{id, name}]` mit stabilen String-IDs. Je Task optionales `listId` (fehlt / null / leer = keiner Liste zugeordnet, sichtbar unter **Alle**). Unbekannte Felder ignorieren. Alte Backups ohne `lists`/`listId` laden unverändert. Import Array oder `{format, nextUid, tasks, lists?}`; leer → direkt setzen; sonst **Anhängen** / **Ersetzen**. Anhängen merget `lists` per `id` (lokaler Name gewinnt). Kollidierende UIDs über `normalizeTasks`. Einkauf-JSON abgelehnt.
 
-**MD/CSV** (Phase 8, Build 53): Export/Import `TodoMarkdown` / `TodoCSV`; Dateiname `todo-liste.md` / `todo-liste.csv` (gestempelt wie JSON). **Volle Liste**, unabhängig vom Auge. Roundtrip mit HTML. Import über denselben `fileImporter` (`.json,.md,.markdown,.csv`) und dieselben Anhängen/Ersetzen-Alerts. Einkauf-Dateien (JSON `einkauf-*`, MD `# Einkauf`, CSV-Kopf `Abteilung`) abgelehnt.
+**MD/CSV** (Phase 8, Build 53; Listen-Meta Phase 10): Export/Import `TodoMarkdown` / `TodoCSV`; Dateiname `todo-liste.md` / `todo-liste.csv` (gestempelt wie JSON). **Volle Liste**, unabhängig vom Auge und vom Listenfilter. Listenmitgliedschaft rückwärtskompatibel (optional). Dateien ohne Listeninfo importieren wie bisher. Roundtrip der Fixtures `todo-liste.md` / `todo-liste.csv` bleibt. Import über denselben `fileImporter` (`.json,.md,.markdown,.csv`) und dieselben Anhängen/Ersetzen-Alerts. Einkauf-Dateien (JSON `einkauf-*`, MD `# Einkauf`, CSV-Kopf `Abteilung`) abgelehnt.
 
-**Liste teilen** (PDF): A4-`TodoListPDF` (Einkauf-PDF unangetastet), Light-`ThemeRGB`, leere Quadrat-Kästchen, Durchstreichen für sichtbare Erledigte. Folgt `todo.iphone.showCompleted`. Gruppierung nach Person (leer → „Keine Person“), Sortierung wie die Liste (Person). Meta `oo/xx/yy` der **gedruckten** Aufgaben; Dateiname `yyyyMMdd_HHmm-todo-liste.pdf`. Leere gefilterte Liste: deutscher Hinweis, kein leeres PDF.
+**Liste teilen** (PDF): A4-`TodoListPDF` (Einkauf-PDF unangetastet), Light-`ThemeRGB`, leere Quadrat-Kästchen, Durchstreichen für sichtbare Erledigte. Folgt der aktuellen Liste **und** `todo.iphone.showCompleted`. Gruppierung nach Person (leer → „Keine Person“), Sortierung wie die Liste (Person). Meta `oo/xx/yy` der **gedruckten** (gefilterten) Aufgaben; Dateiname `yyyyMMdd_HHmm-todo-liste.pdf`. Leere gefilterte Liste: deutscher Hinweis („Die Liste ist leer.“ / „Keine Aufgaben in dieser Liste.“ / „Keine offenen Aufgaben. Abgeschlossene sind ausgeblendet.“), kein leeres PDF.
 
 ### Watch-To-Do (nur Geh-Modus)
 
-`WatchTodoListView`: Text (+ kompakte Person/Prio/Datum); Tippen toggelt `completed`; Auge `todo.watch.hideCompleted` (nicht `einkauf.watch.hideCompleted`, nicht Backup, nicht iPhone). Chrome wie Einkauf-Watch (Nav-Bar ausgeblendet, Auge über der Titelzeile **To-Do**). **Kein** Edit, kein Prio-Picker, kein Reopen, kein Import/Export, keine Suche, kein Sort, kein PDF/MD/CSV.
+`WatchTodoListView`: Text (+ kompakte Person/Prio/Datum); Tippen toggelt `completed`; Auge `todo.watch.hideCompleted` (nicht `einkauf.watch.hideCompleted`, nicht Backup, nicht iPhone). Geh-Modus filtert auf dieselbe aktuelle Liste wie das iPhone. Titel: Listenname (oder **Alle**) plus `oo/xx/yy` der gefilterten Sicht. **Kein** Edit, kein Prio-Picker, kein Reopen, kein Import/Export, keine Suche, kein Sort, kein PDF/MD/CSV, keine Listen-Verwaltung.
 
 ### Complication
 
-Eigene WidgetKit-Complication `TodoProgress` (Label genau **To Do**, Leerzeichen, nicht „To-Do“): offene Anzahl bzw. bei 0 **erledigt**. Daten `todo-local.json`. Tap `einkauf://todo`. Details unter **Watch-To-Do-Complication**.
+Eigene WidgetKit-Complication `TodoProgress` (Label genau **To Do**, Leerzeichen, nicht „To-Do“): offene Anzahl der **aktuellen Liste** bzw. bei 0 **erledigt**. Daten `todo-local.json` plus App-Group-Key `todo.currentListId`. Tap `einkauf://todo`. Details unter **Watch-To-Do-Complication**.
 
 ### WC-Context
 
 Ein `applicationContext`-Dictionary, gemergt (`WatchSyncEnvelope`):
 
 ```
-{ einkauf: { kind: "einkauf-sync", v, blob }, todo: { kind: "todo-sync", v, blob } }
+{ einkauf: { kind: "einkauf-sync", v, blob }, todo: { kind: "todo-sync", v, blob, currentListId } }
 ```
 
-Beim Senden einer Domain: Context lesen, nur den eigenen Key setzen, zurückschreiben. Legacy top-level `kind == "einkauf-sync"` bleibt Einkauf-only. Messages: `todo-sync` / `todo-toggle` (`uid` `Int64`/`NSNumber`) / `todo-pull`. Ein `WatchSessionActor`. To-Do-Blob = `kind: "todo-local"`. Siehe **WatchConnectivity**.
+Beim Senden einer Domain: Context lesen, nur den eigenen Key setzen, zurückschreiben. Legacy top-level `kind == "einkauf-sync"` bleibt Einkauf-only. Messages: `todo-sync` / `todo-toggle` (`uid` `Int64`/`NSNumber`) / `todo-pull`. Ein `WatchSessionActor`. To-Do-Blob = `kind: "todo-local"` (trägt `lists` + je Task `listId`; Revision steigt bei Listen-CRUD und `listId`-Wechsel). Die aktuelle Listenwahl liegt **nicht** im Blob, sondern als Geschwisterfeld `currentListId` im `todo-sync`-Payload (leer = Alle). Die Watch schreibt das nach App-Group `todo.currentListId` (Complication + Geh-Modus). iPhone bleibt Quelle; Einkauf-Keys unangetastet. Siehe **WatchConnectivity**.
 
 ### Sprache
 
-Siri `TodoAddItemsIntent` in **einem** `EinkaufShortcuts` (kein zweiter Provider, Phrase nicht „besorgen“). Ein Phrase-Token **Todo** (`shortTitle` **Todo**); iPhone-Nachfrage **„o“**; Watch **kein** `requestValueDialog`. Gesprochen **„Hey Siri, Einkauf Todo“**. Zwei-Wort-Cap und Watch-Diktat: Phrase-Tokens + Watch-`shortTitle`/Dialog — siehe **Sprach-Eingabe (Siri)** (Verlaufspunkte 8–9).
+Siri `TodoAddItemsIntent` in **einem** `EinkaufShortcuts` (kein zweiter Provider, Phrase nicht „besorgen“). Ein Phrase-Token **Todo** (`shortTitle` **Todo**); iPhone-Nachfrage **„o“**; Watch **kein** `requestValueDialog`. Gesprochen **„Hey Siri, Einkauf Todo“**. Neue Aufgaben landen in der **aktuellen** Liste (`todo.iphone.currentListId` auf dem iPhone, gesynctes `todo.currentListId` auf der Watch). Zwei-Wort-Cap und Watch-Diktat: Phrase-Tokens + Watch-`shortTitle`/Dialog — siehe **Sprach-Eingabe (Siri)** (Verlaufspunkte 8–9).
 
 ## Datei-Ort, Targets, Bundle
 
@@ -181,7 +183,7 @@ Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` 
 
 ## Watch
 
-`TabView` **Einkauf | To-Do** (`basket` / `checklist`). Einkaufs-Tab: nur Geh-Modus, wie bisher. To-Do-Tab: nur Geh-Modus — Text (+ kompakte Person/Prio/Datum); Tippen toggelt `completed`; Auge `todo.watch.hideCompleted` (nicht `einkauf.watch.hideCompleted`, nicht Backup, nicht iPhone). Kein Edit, kein Prio-Picker, kein Reopen, kein Import/Export, keine Suche, kein Sort auf der Watch. iPhone-To-Do: siehe **To-Do**.
+`TabView` **Einkauf | To-Do** (`basket` / `checklist`). Einkaufs-Tab: nur Geh-Modus, wie bisher. To-Do-Tab: nur Geh-Modus — Text (+ kompakte Person/Prio/Datum); Tippen toggelt `completed`; Auge `todo.watch.hideCompleted` (nicht `einkauf.watch.hideCompleted`, nicht Backup, nicht iPhone); Filter auf die vom iPhone gesyncte aktuelle Liste (`todo.currentListId`, leer = Alle). Kein Edit, kein Prio-Picker, kein Reopen, kein Import/Export, keine Suche, kein Sort, keine Listen-Verwaltung auf der Watch. iPhone-To-Do: siehe **To-Do**.
 
 Navigationsleiste **ausgeblendet** (`.toolbar(.hidden, for: .navigationBar)`): `.navigationTitle("")` reserviert die Bar weiter und lässt eine Lücke unter der Uhr. Die **Systemuhr** bleibt Status und sichtbar. Inhalt direkt darunter (`VStack(spacing: 0)`): zuerst die Augen-Leiste, darunter die Titelzeile **eine Zeile** (`Text(store.state.watchTitle)`): gekürzter Ladenname + zwei Leerzeichen + `Einkauf oo/xx/yy` (`AppState.watchTitle`). Limit 6 Zeichen vor „Einkauf oo/xx/yy“; länger: 5 Zeichen + `…`. Edeka/Aldi/Rewe/Lidl/dm ungekürzt; „Eigenes Layout“ → `Eigen…`. Zähler inkl. `vor`/`nach` (`openCount/doneCount/items.count`). **Nicht** `.navigationTitle(watchTitle)`.
 
@@ -214,7 +216,7 @@ Kein Store-Picker, kein Edit, kein Share, kein Wörterbuch in der Complication.
 
 Eigene Complication `TodoComplication` / kind `TodoProgress` im selben WatchWidgets-Bundle, **neben** `EinkaufComplication` — kein Mix mit `einkauf-local.json`. Tippen: `widgetURL` `einkauf://todo` (Watch-Tab To-Do).
 
-Label-Text genau **To Do** (Leerzeichen, nicht „To-Do“). Zähler nur offene Aufgaben (`TodoComplicationSnapshot.compactCountText`); bei 0 **erledigt**. Corner: offene Anzahl ~19pt, Label **To Do** ~11pt im `widgetLabel` (wie Einkauf-Ecke). Circular: Gauge, kleines Zentrum, kein `.title2`. Datenquelle `todo-local.json` (`TodoPersistence` / `TodoCodec`, `kind: "todo-local"`). Reload: `WatchComplicationReload.todoTimelines()` nach `TodoStore`-Persist. Kein To-Do-Homescreen-Widget.
+Label-Text genau **To Do** (Leerzeichen, nicht „To-Do“). Zähler nur offene Aufgaben der **aktuellen Liste** (`TodoComplicationSnapshot.make(from:currentListId:)`, `TodoCurrentList.syncedId`); bei 0 **erledigt** (auch wenn andere Listen noch offen sind). Corner: offene Anzahl ~19pt, Label **To Do** ~11pt im `widgetLabel` (wie Einkauf-Ecke). Circular: Gauge, kleines Zentrum, kein `.title2`. Datenquelle `todo-local.json` (`TodoPersistence` / `TodoCodec`, `kind: "todo-local"`) plus App-Group `todo.currentListId`. Reload: `WatchComplicationReload.todoTimelines()` nach `TodoStore`-Persist und nach WC-`currentListId`. Kein To-Do-Homescreen-Widget.
 
 ### iPhone-Widget (WidgetKit, iOS 17)
 
@@ -260,7 +262,7 @@ Trigger **Todo** (ein Wort, nicht **To Do** mit Leerzeichen, nicht **besorgen**)
 - „{App} zum Todo“
 - „{App} Aufgaben“ (alternativer Ein-Token-Trigger)
 
-`shortTitle` **„Todo“** (ein Token wie die Phrase — Watch-Siri keyed oft auf `shortTitle`; zwei Tokens `To Do` cappt Diktat auf zwei Wörter). Icon `checklist`. Shortcut in `EinkaufShortcuts` (kein zweiter Provider). iPhone-Nachfrage **„o“** (`requestValueDialog` „o“, wie Einkauf). watchOS: **kein** `requestValueDialog` — Siri nutzt die generische Freitext-Nachfrage (Custom-Dialog filtert/kürzt Free-Form auf der Watch). Parameter-Titel **Aufgaben**. Beispiel: **„Hey Siri, Einkauf Todo“** → iPhone fragt „o“, Watch den generischen Prompt → Aufgabe sprechen. Nach dem Update: Shortcut in Kurzbefehle löschen und neu anlegen, dann **„Auf Apple Watch anzeigen“** erneut aktivieren (sonst bleibt der gecachte Watch-Shortcut). `parameterSummary` ist **ein Token** `Todo \(.$items)` — analog Einkauf `Besorgen \(.$items)`. `openAppWhenRun = false`. Führendes `To Do` / `To-Do` / `todo` / `Todo` / `Aufgaben:` / `Aufgaben` wird abgestreift (`SpeechItemSplitter.strippingTodoTriggerPrefix`). Split wie Einkauf (`und` / Komma), **nicht** an Leerzeichen — „Rechnung bezahlen“ bleibt eine Aufgabe, „Katze füttern und Müll rausbringen“ zwei. iPhone: `TodoStore(enableSync: true)` + `addItems(fromSpeech:)`, Dialog „1 Aufgabe hinzugefügt.“ / „Keine Aufgaben erkannt.“ Person/Prio bleiben leer — auf dem iPhone danach **Edit** / `TodoEditSheet`. Watch: **kein** `TodoStore` im Intent; Queue `todo.siriPendingAdds` / Datei `todo-siri-pending.json` (nicht die Einkauf-Queue); Drain auf dem live Store beim Aktivwerden und `WatchTodoListView.onAppear`.
+`shortTitle` **„Todo“** (ein Token wie die Phrase — Watch-Siri keyed oft auf `shortTitle`; zwei Tokens `To Do` cappt Diktat auf zwei Wörter). Icon `checklist`. Shortcut in `EinkaufShortcuts` (kein zweiter Provider). iPhone-Nachfrage **„o“** (`requestValueDialog` „o“, wie Einkauf). watchOS: **kein** `requestValueDialog` — Siri nutzt die generische Freitext-Nachfrage (Custom-Dialog filtert/kürzt Free-Form auf der Watch). Parameter-Titel **Aufgaben**. Beispiel: **„Hey Siri, Einkauf Todo“** → iPhone fragt „o“, Watch den generischen Prompt → Aufgabe sprechen. Nach dem Update: Shortcut in Kurzbefehle löschen und neu anlegen, dann **„Auf Apple Watch anzeigen“** erneut aktivieren (sonst bleibt der gecachte Watch-Shortcut). `parameterSummary` ist **ein Token** `Todo \(.$items)` — analog Einkauf `Besorgen \(.$items)`. `openAppWhenRun = false`. Führendes `To Do` / `To-Do` / `todo` / `Todo` / `Aufgaben:` / `Aufgaben` wird abgestreift (`SpeechItemSplitter.strippingTodoTriggerPrefix`). Split wie Einkauf (`und` / Komma), **nicht** an Leerzeichen — „Rechnung bezahlen“ bleibt eine Aufgabe, „Katze füttern und Müll rausbringen“ zwei. iPhone: `TodoStore(enableSync: true)` + `addItems(fromSpeech:)`, Dialog „1 Aufgabe hinzugefügt.“ / „Keine Aufgaben erkannt.“ Person/Prio bleiben leer — auf dem iPhone danach **Edit** / `TodoEditSheet`. Watch: **kein** `TodoStore` im Intent; Queue `todo.siriPendingAdds` / Datei `todo-siri-pending.json` (nicht die Einkauf-Queue); Drain auf dem live Store beim Aktivwerden und `WatchTodoListView.onAppear`. Neue Aufgaben bekommen dasselbe `listId` wie die aktuelle Listenwahl (iPhone `todo.iphone.currentListId`, Watch gesynctes `todo.currentListId`; Alle → kein `listId`).
 
 `makeID` (Item / SavedList / StoreCatalog) kodiert Epoch-Millis als **`Int64`**. watchOS `arm64_32` hat 32-bit `Int`; `Int(Date().timeIntervalSince1970 * 1000)` crasht sonst fatal in `Item.makeID` beim Drain (`consumeSiriPendingAdds`) und bei jedem neuen Item.
 
@@ -406,7 +408,7 @@ Native stellt **Darstellung** (Hell/Dunkel/System, Creme/Blau) davor. HTML hat *
 
 **Nur native / nicht ins HTML:** Watch (Geh-Modus, Titel gekürzter Laden + Einkauf oo/xx/yy, Erledigte ausblendbar, WidgetKit-Complication nur offene Anzahl bzw. „erledigt“, kein Picker/Edit/Share, **kein** In-App-Mikro); iPhone-Geh-Modus mit eigenem Auge (Edit ungefiltert); **iPhone-Homescreen-Widget** (`systemSmall`/`systemMedium`, Tap öffnet Einkaufsliste); **Siri / App Intents** für Einkauf (**besorgen** + „o“) und To-Do (**Todo**, iPhone „o“, Watch ohne `requestValueDialog`); **PDF Liste teilen** folgt dem iPhone-Auge (`einkauf.iphone.hideCompleted` bzw. To-Do `todo.iphone.showCompleted`), leere quadratische Kästchen; Erscheinungsbild **System** (folgt iPhone-Appearance) plus Hell/Dunkel und Creme/Blau **nur in Einstellungen**, nicht in der Toolbar; **To-Do**-Tab, Watch-Geh-To-Do, Complication **To Do**. TestFlight nicht erforderlich. Native-`guess` wertet Nutzer-Mappings vor Sonderregeln/Keywords aus (HTML-Reihenfolge kann abweichen).
 
-Native To-Do liefert MD/CSV wie HTML (Phase 8, Build 53, **volle Liste**). **Kein** HTML-Parity für Site-Mast und Listen (Phase 10).
+Native To-Do liefert MD/CSV wie HTML (Phase 8, **volle Liste**) und benannte Listen (Phase 10, Build 55). **Kein** HTML-Parity für Site-Mast; HTML-Listen folgen dem hier definierten `todo-v3-json`-Schema in einem separaten Pages-PR.
 
 **Brücke:** Einkauf nur Backup-JSON (`kind: "einkauf-backup"`, inkl. `savedLists`); To-Do JSON `format: "todo-v3-json"` plus MD/CSV-Dateien (`todo-liste.md` / `todo-liste.csv`). Kein Live-localStorage-Sync. Unbekannte Felder jeweils ignorieren. App scrapt die Website nicht.
 
@@ -425,7 +427,7 @@ Native To-Do liefert MD/CSV wie HTML (Phase 8, Build 53, **volle Liste**). **Kei
 - PDF-Kästchen leer (kein Fill, kein Häkchen)
 - To-Do Isolation: eigener `TodoStore`, `todo-local.json` / `kind: "todo-local"`, Backup `todo-v3-json`; nie in `ShoppingStore` / `einkauf-local.json` / `kind: einkauf-backup`. WC merget `{einkauf, todo}`
 - Swipe-Löschen To-Do **nur** im Edit-Modus (Toolbar **Edit** / **Fertig**); Einkauf Toolbar **Edit** / **Geh-Modus**, Geh-Modus analog ohne Swipe-Löschen
-- Listen (Phase 10) nicht in v1; MD/CSV für To-Do ist geliefert (Phase 8)
+- Listen (Phase 10, Build 55) nativ: optionales `lists`/`listId`, Filter **Alle**, PDF+Siri+Watch folgen `currentListId`; HTML-Site nicht in diesem Repo
 - Bewusstes Rest-Delta zur HTML-PWA (Watch, PDF Liste teilen, System-Appearance in Einstellungen vs. Markdown/Bring/Erinnerungen/`einkauf-laeden`/Mast/SW) nicht angleichen
 - Gemeinsame Slice (savedLists, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only oder HTML-only führen
 
@@ -445,7 +447,7 @@ Native To-Do liefert MD/CSV wie HTML (Phase 8, Build 53, **volle Liste**). **Kei
 - [ ] iPhone-Widget (WidgetKit, iOS 17): `systemSmall` Laden + `oo/xx/yy`, `systemMedium` plus offene Artikel in Geh-Modus-Reihenfolge; Tap öffnet Einkaufsliste; App Group `group.net.tschelle.einkauf`; nicht auf der Watch.
 - [ ] Theme nur in Einstellungen; HTML-Delta bleibt: kein Markdown/Bring/Erinnerungen/`einkauf-laeden`/PWA-SW/Mast-Theme in der nativen App; kein Watch/PDF/System-Appearance im HTML. Gemeinsame Slice (Listen, Sonstiges-Slot, Wörterbuch, Settings-Gerüst) nicht als Native-only führen.
 - [ ] `TabView` **Einkauf | To-Do** auf iPhone und Watch; getrennte Stores/Dateien/Backups (`todo-local.json` / `kind: "todo-local"` / `format: "todo-v3-json"`); WC-Context `{einkauf, todo}`; nie To-Do in `ShoppingStore` / `einkauf-local.json`.
-- [ ] iPhone-To-Do: Text, Person, Prio A/B, Datum; Auge `todo.iphone.showCompleted`; **Edit** / **Fertig** (`TodoEditSheet`); Swipe-Löschen **nur** Edit (`todo-browse` / `todo-edit`); Wieder öffnen; Sort `todo.iphone.sortKey`; Suche **Person oder Text …**; Backup `todo-v3-json`; **Liste teilen** PDF `TodoListPDF` folgt dem Auge.
-- [ ] Watch-To-Do nur Geh-Modus (Toggle, Auge `todo.watch.hideCompleted`); kein Reopen/Suche/Sort/Edit. Complication `TodoProgress`: Label **To Do**, offene Anzahl / **erledigt**, `todo-local.json`, Tap `einkauf://todo`.
-- [ ] To-Do-Siri: ein Phrase-Token **Todo** (`shortTitle` **Todo**, `parameterSummary` `Todo \(.$items)`), gesprochen **„Hey Siri, Einkauf Todo“**; iPhone `requestValueDialog` **„o“**; Watch **kein** `requestValueDialog`; ein `AppShortcutsProvider` `EinkaufShortcuts` (nicht „besorgen“). Nach Update Shortcut löschen/neu und **„Auf Apple Watch anzeigen“** erneut. Zwei-Wort-Cap gelöst über Phrase-Tokens + Watch-`shortTitle`/Dialog (siehe Sprach-Eingabe).
-- [ ] To-Do-MD/CSV auf dem iPhone (Phase 8, Build 53): `TodoMarkdown` / `TodoCSV`, **volle Liste**, `fileImporter` `.json,.md,.markdown,.csv`. Watch ohne MD/CSV-UI. Kein To-Do-Homescreen-Widget. Listen (Phase 10) nicht.
+- [ ] iPhone-To-Do: Text, Person, Prio A/B, Datum, optionales `listId`; Auge `todo.iphone.showCompleted`; Listenfilter `todo.iphone.currentListId` (leer = **Alle**); **Edit** / **Fertig** (`TodoEditSheet`); Swipe-Löschen **nur** Edit (`todo-browse` / `todo-edit`); Wieder öffnen; Sort `todo.iphone.sortKey`; Suche **Person oder Text …**; Backup `todo-v3-json` inkl. `lists`; **Liste teilen** PDF `TodoListPDF` folgt Liste + Auge.
+- [ ] Watch-To-Do nur Geh-Modus (Toggle, Auge `todo.watch.hideCompleted`); Filter `todo.currentListId` (WC-Feld, leer = Alle); kein Reopen/Suche/Sort/Edit/Listen-UI. Complication `TodoProgress`: Label **To Do**, offene Anzahl der aktuellen Liste / **erledigt**, `todo-local.json` + `todo.currentListId`, Tap `einkauf://todo`.
+- [ ] To-Do-Siri: ein Phrase-Token **Todo** (`shortTitle` **Todo**, `parameterSummary` `Todo \(.$items)`), gesprochen **„Hey Siri, Einkauf Todo“**; iPhone `requestValueDialog` **„o“**; Watch **kein** `requestValueDialog`; ein `AppShortcutsProvider` `EinkaufShortcuts` (nicht „besorgen“); neue Aufgaben in die aktuelle Liste. Nach Update Shortcut löschen/neu und **„Auf Apple Watch anzeigen“** erneut. Zwei-Wort-Cap gelöst über Phrase-Tokens + Watch-`shortTitle`/Dialog (siehe Sprach-Eingabe).
+- [ ] To-Do-MD/CSV auf dem iPhone (Phase 8 + Listen-Meta Phase 10): `TodoMarkdown` / `TodoCSV`, **volle Liste**, `fileImporter` `.json,.md,.markdown,.csv`. Watch ohne MD/CSV-UI. Kein To-Do-Homescreen-Widget. Benannte Listen Build 55.

@@ -120,6 +120,12 @@ final class TodoConnectivitySync: NSObject {
             return
         }
         guard let kind = payload["kind"] as? String, kind == WatchSyncEnvelope.todoSyncKind else { return }
+        if let listId = WatchSyncEnvelope.currentListId(from: payload) {
+#if os(watchOS)
+            TodoCurrentList.applyRemote(listId)
+            WatchComplicationReload.todoTimelines()
+#endif
+        }
         guard let blob = WatchSyncEnvelope.extractBlob(payload) else { return }
         do {
             let incoming = try TodoCodec.decodeLocal(blob)
@@ -134,7 +140,8 @@ final class TodoConnectivitySync: NSObject {
         return [
             "kind": WatchSyncEnvelope.todoSyncKind,
             "v": 1,
-            "blob": blob
+            "blob": blob,
+            "currentListId": TodoCurrentList.payloadId
         ]
     }
 }

@@ -1,32 +1,54 @@
 import SwiftUI
 
 /// Geh-Modus: Text (+ kompakte Person/Prio/Datum), Tippen toggelt `completed`.
-/// Kein Edit, kein Prio-Picker, keine Ketten-UI, kein Import/Export, keine Suche.
+/// Filtert auf die vom iPhone gesyncte aktuelle Liste (`todo.currentListId`).
+/// Kein Edit, kein Prio-Picker, keine Ketten-UI, kein Import/Export, keine Suche, keine Listen-Verwaltung.
 struct WatchTodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @Environment(\.einkaufTheme) private var theme
     /// Nur Watch-UserDefaults — nicht im Backup, nicht zum iPhone, nicht das Einkaufs-Watch-Auge.
     @AppStorage("todo.watch.hideCompleted") private var hideCompleted = false
+    /// Vom iPhone per WC `currentListId` geschrieben (App-Group + Standard). Leer = Alle.
+    @AppStorage("todo.currentListId") private var currentListId = ""
+
+    private var listScopedTasks: [TodoTask] {
+        TodoListFilter.tasks(todos.state.tasks, currentListId: currentListId)
+    }
 
     private var visibleTasks: [TodoTask] {
-        let source = hideCompleted ? todos.state.tasks.filter { !$0.completed } : todos.state.tasks
+        let source = hideCompleted ? listScopedTasks.filter { !$0.completed } : listScopedTasks
         return TodoOrdering.sorted(source)
+    }
+
+    private var titleLine: String {
+        let name = TodoListFilter.title(lists: todos.state.lists, currentListId: currentListId)
+        let counts = hideCompleted
+            ? TodoListFilter.progressLabel(listScopedTasks.filter { !$0.completed })
+            : TodoListFilter.progressLabel(listScopedTasks)
+        return "\(name)  \(counts)"
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 hideCompletedBar
-                Text("To-Do")
+                Text(titleLine)
                     .font(.caption)
                     .foregroundStyle(theme.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 8)
+                    .accessibilityLabel(titleLine)
                 Group {
                     if todos.state.tasks.isEmpty {
                         Text("Noch nichts auf der Liste.")
+                            .font(.headline)
+                            .foregroundStyle(theme.ink)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    } else if !currentListId.isEmpty && listScopedTasks.isEmpty {
+                        Text("Keine Aufgaben in dieser Liste.")
                             .font(.headline)
                             .foregroundStyle(theme.ink)
                             .multilineTextAlignment(.center)

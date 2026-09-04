@@ -20,7 +20,7 @@ enum TodoMarkdown {
             md += "\n## \(person.isEmpty ? unlabeledPerson : person)\n\n"
             for task in group {
                 md += line(task, checkbox: " ")
-                md += metaComment(task)
+                md += metaComment(task, lists: normalized.lists)
             }
         }
 
@@ -30,7 +30,7 @@ enum TodoMarkdown {
                 md += "\n### \(person.isEmpty ? unlabeledPerson : person)\n\n"
                 for task in group {
                     md += line(task, checkbox: "x")
-                    md += metaComment(task)
+                    md += metaComment(task, lists: normalized.lists)
                 }
             }
         }
@@ -51,13 +51,14 @@ enum TodoMarkdown {
             throw TodoCodecError.einkaufFile
         }
         var result: [TodoTask] = []
+        var importedLists: [TodoNamedList] = []
         var person = ""
         var lastIndex: Int?
         for raw in text.split(separator: "\n", omittingEmptySubsequences: false) {
             let line = String(raw).trimmingCharacters(in: CharacterSet(charactersIn: "\r"))
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if let last = lastIndex, applyNewMeta(trimmed, to: &result[last]) { continue }
-            if let last = lastIndex, applyOldMeta(trimmed, to: &result[last]) { continue }
+            if let last = lastIndex, applyNewMeta(trimmed, to: &result[last], lists: &importedLists) { continue }
+            if let last = lastIndex, applyOldMeta(trimmed, to: &result[last], lists: &importedLists) { continue }
             if let sec2 = heading(trimmed, level: 2) {
                 person = sec2 == "Abgeschlossen" ? "" : (sec2 == unlabeledPerson ? "" : sec2)
                 continue
@@ -72,7 +73,7 @@ enum TodoMarkdown {
                 lastIndex = result.count - 1
             }
         }
-        return try TodoCodec.makeImportedState(tasks: result)
+        return try TodoCodec.makeImportedState(tasks: result, lists: importedLists)
     }
 
     private static func line(_ task: TodoTask, checkbox: String) -> String {
@@ -82,7 +83,7 @@ enum TodoMarkdown {
         return "- [\(checkbox)] \(prio)\(task.text)\(due)\(compl)\n"
     }
 
-    private static func metaComment(_ task: TodoTask) -> String {
+    private static func metaComment(_ task: TodoTask, lists: [TodoNamedList] = []) -> String {
         var parts = [
             "#\(task.uid)",
             task.changedBy.isEmpty ? "–" : task.changedBy,
@@ -95,6 +96,12 @@ enum TodoMarkdown {
         if let to = task.reopenedToUid {
             parts.append("→ #\(to) am \(TodoTime.displayDay(task.reopenedAt))")
         }
+        if let listId = TodoJSON.normalizedListId(task.listId) {
+            if let name = lists.first(where: { $0.id == listId })?.name, !name.isEmpty {
+                parts.append("Liste \(name)")
+            }
+            parts.append("list:\(listId)")
+        }
         return "  <!-- \(parts.joined(separator: " | ")) -->\n"
     }
 
@@ -105,7 +112,7 @@ enum TodoMarkdown {
     }
 
     /// HTML: `<!-- #4 | TS/NA | erstellt … | geändert … | von #x am … | → #y am … -->`
-    private static func applyNewMeta(_ line: String, to task: inout TodoTask) -> Bool {
+    private static func applyNewMeta(_ line: String, to task: inout TodoTask, lists: inout [TodoNamedList]) -> Bool {
         guard line.hasPrefix("<!--"), line.hasSuffix("-->") else { return false }
         let inner = String(line.dropFirst(4).dropLast(3)).trimmingCharacters(in: .whitespaces)
         guard inner.hasPrefix("#") else { return false }
@@ -127,6 +134,7 @@ enum TodoMarkdown {
             let value = String(parts[3].dropFirst("geändert ".count))
             task.updatedAt = value == "–" ? "" : TodoTime.parseDMYtoISO(value)
         }
+        var listName = ""
         for part in parts.dropFirst(4) {
             if let von = parseHashDate(part, prefix: "von #") {
                 task.reopenedFromUid = von.uid
@@ -134,7 +142,22 @@ enum TodoMarkdown {
             } else if let to = parseHashDate(part, prefix: "→ #") {
                 task.reopenedToUid = to.uid
                 if !to.day.isEmpty { task.reopenedAt = to.day }
+            } else if part.hasPrefix("list:") {
+                task.listId = TodoJSON.normalizedListId(String(part.dropFirst(5)))
+            } else if part.hasPrefix("Liste ") {
+                listName = String(part.dropFirst("Liste ".count)).trimmingCharacters(in: .whitespaces)
             }
+        }
+        if task.listId == nil, !listName.isEmpty {
+            if let existing = lists.first(where: { $0.name == listName }) {
+                task.listId = existing.id
+            } else {
+                let id = TodoJSON.newListId()
+                task.listId = id
+                lists.append(TodoNamedList(id: id, name: listName))
+            }
+        } else {
+            rememberList(id: task.listId, name: listName, lists: &lists)
         }
         return true
     }
@@ -155,7 +178,7 @@ enum TodoMarkdown {
     }
 
     /// Alt: `<!-- todo: uid=N reopenedFrom=… -->`
-    private static func applyOldMeta(_ line: String, to task: inout TodoTask) -> Bool {
+    private static func applyOldMeta(_ line: String, to task: inout TodoTask, lists: inout [TodoNamedList]) -> Bool {
         guard line.hasPrefix("<!--"), line.hasSuffix("-->") else { return false }
         let inner = String(line.dropFirst(4).dropLast(3)).trimmingCharacters(in: .whitespaces)
         let lower = inner.lowercased()
@@ -174,7 +197,16 @@ enum TodoMarkdown {
         task.createdAt = TodoJSON.isoTimestamp(obj["createdAt"])
         task.updatedAt = TodoJSON.isoTimestamp(obj["updatedAt"])
         task.changedBy = obj["changedBy"] ?? ""
+        task.listId = TodoJSON.normalizedListId(obj["listId"])
+        rememberList(id: task.listId, name: obj["listName"] ?? "", lists: &lists)
         return true
+    }
+
+    private static func rememberList(id: String?, name: String, lists: inout [TodoNamedList]) {
+        guard let id = TodoJSON.normalizedListId(id) else { return }
+        if lists.contains(where: { $0.id == id }) { return }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        lists.append(TodoNamedList(id: id, name: trimmed.isEmpty ? id : trimmed))
     }
 
     /// HTML: `- [x] [A1]? text (due)? {done}?`

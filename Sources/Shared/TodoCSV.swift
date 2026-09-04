@@ -8,22 +8,28 @@ enum TodoCSV {
         "Erstellt am", "Geändert am", "Geändert von"
     ]
 
+    static let listNameHeader = "Liste"
+    static let listIdHeader = "List-ID"
+
     static func encode(_ state: TodoState) throws -> Data {
         let normalized = TodoCodec.normalized(state)
         guard !normalized.tasks.isEmpty else { throw TodoCodecError.nothingToExport }
+        let includeLists = !normalized.lists.isEmpty
+            || normalized.tasks.contains { TodoJSON.normalizedListId($0.listId) != nil }
+        let cols = includeLists ? header + [listNameHeader, listIdHeader] : header
         let open = normalized.tasks.filter { !$0.completed }
         let done = normalized.tasks.filter(\.completed)
-        var rows: [[String]] = [header]
+        var rows: [[String]] = [cols]
         for (person, group) in TodoHTMLGrouping.groupByPerson(open) {
             for task in group {
-                rows.append(row(task, person: person, includeCompletedDate: false))
+                rows.append(row(task, person: person, includeCompletedDate: false, lists: normalized.lists, includeLists: includeLists))
             }
         }
         if !done.isEmpty {
-            rows.append(["## Abgeschlossen"] + Array(repeating: "", count: header.count - 1))
+            rows.append(["## Abgeschlossen"] + Array(repeating: "", count: cols.count - 1))
             for (person, group) in TodoHTMLGrouping.groupByPerson(done) {
                 for task in group {
-                    rows.append(row(task, person: person, includeCompletedDate: true))
+                    rows.append(row(task, person: person, includeCompletedDate: true, lists: normalized.lists, includeLists: includeLists))
                 }
             }
         }
@@ -54,7 +60,13 @@ enum TodoCSV {
             throw TodoCodecError.einkaufFile
         }
         let sep: Character = first.contains(";") ? ";" : ","
+        let headerCols = splitCSVLine(first, separator: sep).map {
+            $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "\"", with: "")
+        }
+        let listNameIdx = columnIndex(headerCols, names: [listNameHeader, "Liste"])
+        let listIdIdx = columnIndex(headerCols, names: [listIdHeader, "ListId", "listId"])
         var result: [TodoTask] = []
+        var importedLists: [TodoNamedList] = []
         for line in lines.dropFirst() {
             let cols = splitCSVLine(line, separator: sep).map { $0.trimmingCharacters(in: .whitespaces) }
             let person = col(cols, 0)
@@ -66,6 +78,20 @@ enum TodoCSV {
             let reopenedAtRaw = col(cols, 9)
             let createdRaw = col(cols, 10)
             let updatedRaw = col(cols, 11)
+            var listId = listIdIdx.map { TodoJSON.normalizedListId(col(cols, $0)) } ?? nil
+            let listName = listNameIdx.map { col(cols, $0).trimmingCharacters(in: .whitespaces) } ?? ""
+            if listId == nil, !listName.isEmpty {
+                if let existing = importedLists.first(where: { $0.name == listName }) {
+                    listId = existing.id
+                } else {
+                    listId = TodoJSON.newListId()
+                    importedLists.append(TodoNamedList(id: listId!, name: listName))
+                }
+            } else if let listId {
+                if !importedLists.contains(where: { $0.id == listId }) {
+                    importedLists.append(TodoNamedList(id: listId, name: listName.isEmpty ? listId : listName))
+                }
+            }
             result.append(
                 TodoTask(
                     uid: Int64(col(cols, 6)) ?? 0,
@@ -81,15 +107,22 @@ enum TodoCSV {
                     reopenedAt: isIsoDate(reopenedAtRaw) ? reopenedAtRaw : "",
                     createdAt: isoOrDMY(createdRaw),
                     updatedAt: isoOrDMY(updatedRaw),
-                    changedBy: col(cols, 12)
+                    changedBy: col(cols, 12),
+                    listId: listId
                 )
             )
         }
-        return try TodoCodec.makeImportedState(tasks: result)
+        return try TodoCodec.makeImportedState(tasks: result, lists: importedLists)
     }
 
-    private static func row(_ task: TodoTask, person: String, includeCompletedDate: Bool) -> [String] {
-        [
+    private static func row(
+        _ task: TodoTask,
+        person: String,
+        includeCompletedDate: Bool,
+        lists: [TodoNamedList] = [],
+        includeLists: Bool = false
+    ) -> [String] {
+        var cols = [
             person,
             task.prioA,
             task.prioB,
@@ -104,6 +137,20 @@ enum TodoCSV {
             TodoTime.formatDateTimeUTC(task.updatedAt),
             task.changedBy
         ]
+        if includeLists {
+            let id = TodoJSON.normalizedListId(task.listId)
+            cols.append(id.flatMap { lid in lists.first { $0.id == lid }?.name } ?? "")
+            cols.append(id ?? "")
+        }
+        return cols
+    }
+
+    private static func columnIndex(_ header: [String], names: [String]) -> Int? {
+        let lower = header.map { $0.lowercased() }
+        for name in names {
+            if let i = lower.firstIndex(of: name.lowercased()) { return i }
+        }
+        return nil
     }
 
     private static func quote(_ value: String) -> String {
