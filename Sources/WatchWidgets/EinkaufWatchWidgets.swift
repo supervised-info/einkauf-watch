@@ -16,7 +16,7 @@ struct EinkaufComplication: Widget {
                 .widgetURL(ComplicationSnapshot.openURL)
         }
         .configurationDisplayName("Einkauf")
-        .description("Fortschritt der Einkaufsliste, offen/erledigt/gesamt.")
+        .description("Offene Artikel der Einkaufsliste.")
         .supportedFamilies([
             .accessoryCircular,
             .accessoryRectangular,
@@ -76,35 +76,30 @@ struct EinkaufComplicationView: View {
         .accessibilityHint("Öffnet die Einkaufsliste")
     }
 
-    /// Runde Komplikation: Gauge 0…1 (erledigt/gesamt), kleines `oo`/`xx`/`yy` gestapelt.
+    /// Runde Komplikation: Gauge 0…1 (erledigt/gesamt), Zentrum nur offene Anzahl bzw. „erledigt“.
     /// Kein `.title2` — auf der physischen Watch zeichnet watchOS sonst „!“.
     private var circular: some View {
         Gauge(value: entry.snapshot.progress, in: 0...1) {
-            Text(entry.snapshot.progressLabel)
+            Text(entry.snapshot.compactCountText)
         } currentValueLabel: {
-            VStack(spacing: 0) {
-                Text(entry.snapshot.openText)
-                    .lineLimit(1)
-                Text(entry.snapshot.doneText)
-                    .lineLimit(1)
-                Text(entry.snapshot.totalText)
-                    .lineLimit(1)
-            }
-            .font(.system(size: 8, weight: .semibold, design: .rounded))
-            .monospacedDigit()
+            Text(entry.snapshot.compactCountText)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         }
         .gaugeStyle(.accessoryCircularCapacity)
         .widgetAccentable()
     }
 
-    /// Rechteck: kurzer Ladenname plus `oo/xx/yy`.
+    /// Rechteck: kurzer Ladenname plus offene Anzahl bzw. „erledigt“.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(entry.snapshot.storeName)
                 .font(.headline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(entry.snapshot.progressLabel)
+            Text(entry.snapshot.compactCountText)
                 .font(.system(.title2, design: .rounded).weight(.semibold))
                 .monospacedDigit()
                 .lineLimit(1)
@@ -114,21 +109,22 @@ struct EinkaufComplicationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Inline-Zeile: Laden + Zähler, sonst nur `oo/xx/yy`.
+    /// Inline-Zeile: Laden + Zähler, sonst nur offene Anzahl bzw. „erledigt“.
     private var inline: some View {
         ViewThatFits(in: .horizontal) {
             Text(entry.snapshot.inlineText)
-            Text(entry.snapshot.progressLabel)
+            Text(entry.snapshot.compactCountText)
         }
         .widgetAccentable()
     }
 
-    /// Ecke: kleines `oo/xx/yy` im Bogen, Ladenname am Label.
+    /// Ecke: offene Anzahl bzw. „erledigt“ im Bogen, Ladenname am Label.
     private var corner: some View {
-        Text(entry.snapshot.progressLabel)
+        Text(entry.snapshot.compactCountText)
             .font(.system(size: 12, weight: .semibold, design: .rounded))
             .monospacedDigit()
             .lineLimit(1)
+            .minimumScaleFactor(0.5)
             .widgetAccentable()
             .widgetLabel {
                 Text(entry.snapshot.storeName)
