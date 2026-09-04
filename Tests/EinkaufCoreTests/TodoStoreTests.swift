@@ -232,6 +232,76 @@ final class TodoStoreTests: XCTestCase {
         store.clearCompleted()
         XCTAssertEqual(store.state.tasks.map(\.text), ["Offen"])
     }
+
+    func testReopenKeepsOriginalCompletedAndCopiesOpen() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(state: .empty, enableSync: false)
+        let openUid = try XCTUnwrap(store.add("Offen bleiben"))
+        XCTAssertNil(store.reopen(openUid))
+        XCTAssertEqual(store.state.tasks.count, 1)
+
+        let uid = try XCTUnwrap(
+            store.add("Steuer", person: "TS", prioA: "A", prioB: "1", dueDate: "2026-09-20")
+        )
+        store.toggle(uid)
+        let originalCompletedDate = store.state.tasks[1].completedDate
+        XCTAssertTrue(store.state.tasks[1].completed)
+        XCTAssertFalse(originalCompletedDate.isEmpty)
+        XCTAssertEqual(store.state.nextUid, uid + 1)
+
+        let copyUid = try XCTUnwrap(store.reopen(uid))
+        XCTAssertEqual(copyUid, uid + 1)
+        XCTAssertEqual(store.state.nextUid, copyUid + 1)
+        XCTAssertEqual(store.state.tasks.count, 3)
+
+        let original = try XCTUnwrap(store.state.tasks.first { $0.uid == uid })
+        XCTAssertTrue(original.completed)
+        XCTAssertEqual(original.completedDate, originalCompletedDate)
+        XCTAssertEqual(original.reopenedToUid, copyUid)
+        XCTAssertEqual(original.reopenedAt, TodoTime.todayIso())
+        XCTAssertEqual(original.text, "Steuer")
+        XCTAssertEqual(original.person, "TS")
+        XCTAssertEqual(original.prioA, "A")
+        XCTAssertEqual(original.prioB, "1")
+        XCTAssertEqual(original.dueDate, "2026-09-20")
+        XCTAssertNil(original.reopenedFromUid)
+
+        let copy = try XCTUnwrap(store.state.tasks.first { $0.uid == copyUid })
+        XCTAssertFalse(copy.completed)
+        XCTAssertEqual(copy.completedDate, "")
+        XCTAssertEqual(copy.reopenedFromUid, uid)
+        XCTAssertNil(copy.reopenedToUid)
+        XCTAssertEqual(copy.reopenedAt, original.reopenedAt)
+        XCTAssertEqual(copy.text, "Steuer")
+        XCTAssertEqual(copy.person, "TS")
+        XCTAssertEqual(copy.prioA, "A")
+        XCTAssertEqual(copy.prioB, "1")
+        XCTAssertEqual(copy.dueDate, "2026-09-20")
+        XCTAssertEqual(copy.changedBy, "TS/NA")
+
+        XCTAssertNil(store.reopen(uid))
+        XCTAssertEqual(store.state.tasks.count, 3)
+
+        let loaded = try XCTUnwrap(TodoPersistence.load())
+        XCTAssertEqual(loaded.tasks.count, 3)
+        XCTAssertEqual(loaded.nextUid, copyUid + 1)
+        let loadedOriginal = try XCTUnwrap(loaded.tasks.first { $0.uid == uid })
+        let loadedCopy = try XCTUnwrap(loaded.tasks.first { $0.uid == copyUid })
+        XCTAssertTrue(loadedOriginal.completed)
+        XCTAssertEqual(loadedOriginal.reopenedToUid, copyUid)
+        XCTAssertFalse(loadedCopy.completed)
+        XCTAssertEqual(loadedCopy.reopenedFromUid, uid)
+    }
 }
 
 final class TodoOrderingTests: XCTestCase {
@@ -270,6 +340,38 @@ final class TodoOrderingTests: XCTestCase {
             TodoTask(uid: 6, text: "open TS", person: "TS"),
         ]
         XCTAssertEqual(TodoOrdering.sorted(tasks).map(\.uid), [5, 4, 3, 2, 6, 1] as [Int64])
+        XCTAssertEqual(TodoOrdering.sorted(tasks, by: .person).map(\.uid), [5, 4, 3, 2, 6, 1] as [Int64])
+    }
+
+    func testSortKeysPrioTextDueCompletedAndCompletedDate() {
+        let tasks = [
+            TodoTask(uid: 1, text: "zeta", completed: true, prioA: "B", dueDate: "2026-09-10", completedDate: "2026-09-02", person: "TS"),
+            TodoTask(uid: 2, text: "alpha", prioA: "A", prioB: "2", dueDate: "2026-09-20", person: "NA"),
+            TodoTask(uid: 3, text: "beta", prioA: "A", prioB: "1", dueDate: "2026-09-05", person: "ZZ"),
+            TodoTask(uid: 4, text: "gamma", completed: true, completedDate: "2026-09-01"),
+            TodoTask(uid: 5, text: "delta", prioA: "C", dueDate: ""),
+        ]
+        XCTAssertEqual(TodoOrdering.sorted(tasks, by: .prioA).map(\.uid), [3, 2, 1, 5, 4] as [Int64])
+        XCTAssertEqual(TodoOrdering.sorted(tasks, by: .text).map(\.uid), [2, 3, 5, 4, 1] as [Int64])
+        XCTAssertEqual(TodoOrdering.sorted(tasks, by: .dueDate).map(\.uid), [3, 1, 2, 5, 4] as [Int64])
+        XCTAssertEqual(TodoOrdering.sorted(tasks, by: .completed).map(\.uid), [3, 2, 5, 1, 4] as [Int64])
+        XCTAssertEqual(TodoOrdering.sorted(tasks, by: .completedDate).map(\.uid), [4, 1, 3, 2, 5] as [Int64])
+        XCTAssertEqual(TodoSortKey.allCases.map(\.rawValue), ["person", "prioA", "text", "dueDate", "completed", "completedDate"])
+        XCTAssertEqual(TodoSortKey.iphoneDefaultsKey, "todo.iphone.sortKey")
+    }
+
+    func testMatchesFilterPersonOrTextCaseInsensitive() {
+        let task = TodoTask(uid: 1, text: "Milch holen", person: "TS")
+        XCTAssertTrue(TodoOrdering.matches(task, query: "milch"))
+        XCTAssertTrue(TodoOrdering.matches(task, query: "TS"))
+        XCTAssertTrue(TodoOrdering.matches(task, query: "  holen  "))
+        XCTAssertTrue(TodoOrdering.matches(task, query: ""))
+        XCTAssertTrue(TodoOrdering.matches(task, query: "   "))
+        XCTAssertFalse(TodoOrdering.matches(task, query: "NA"))
+        XCTAssertFalse(TodoOrdering.matches(task, query: "Steuer"))
+        XCTAssertTrue(TodoOrdering.canReopen(TodoTask(uid: 2, text: "x", completed: true)))
+        XCTAssertFalse(TodoOrdering.canReopen(TodoTask(uid: 3, text: "x")))
+        XCTAssertFalse(TodoOrdering.canReopen(TodoTask(uid: 4, text: "x", completed: true, reopenedToUid: 9)))
     }
 }
 

@@ -215,6 +215,33 @@ final class TodoStore: ObservableObject {
         persistAndSync()
     }
 
+    /// HTML Wieder öffnen: Original bleibt `completed` + `reopenedToUid`; offene Kopie mit neuem `uid`.
+    @discardableResult
+    func reopen(_ uid: Int64) -> Int64? {
+        guard let idx = state.tasks.firstIndex(where: { $0.uid == uid }) else { return nil }
+        let original = state.tasks[idx]
+        guard TodoOrdering.canReopen(original) else { return nil }
+        let now = TodoTime.nowIso()
+        let reopenedAt = TodoTime.todayIso()
+        let newUid = takeUid()
+        var copy = original
+        copy.uid = newUid
+        copy.completed = false
+        copy.completedDate = ""
+        copy.reopenedFromUid = original.uid
+        copy.reopenedToUid = nil
+        copy.reopenedAt = reopenedAt
+        copy.createdAt = now
+        copy.updatedAt = now
+        copy.changedBy = TodoAuthor.app
+        state.tasks[idx].reopenedToUid = newUid
+        state.tasks[idx].reopenedAt = reopenedAt
+        state.tasks.append(copy)
+        state.revision += 1
+        persistAndSync()
+        return newUid
+    }
+
     func exportBackup() throws -> Data {
         try TodoCodec.encodeBackup(state)
     }

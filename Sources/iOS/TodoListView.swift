@@ -1,13 +1,14 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// iPhone-To-Do: Person / Prio / Datum, Backup `todo-v3-json`, Liste teilen (PDF).
-/// Watch: Phase 6.
+/// iPhone-To-Do: Person / Prio / Datum, Wieder öffnen, Sort, Suche, Backup `todo-v3-json`, Liste teilen (PDF).
+/// Watch: nur Liste + Toggle, ohne Reopen/Suche/Sort-UI.
 struct TodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @EnvironmentObject private var appearance: AppearanceSettings
     @Environment(\.einkaufTheme) private var theme
     @AppStorage("todo.iphone.showCompleted") private var showCompleted = true
+    @AppStorage("todo.iphone.sortKey") private var sortKeyRaw = TodoSortKey.person.rawValue
     @State private var draft = ""
     @State private var draftPerson = ""
     @State private var draftPrioA = ""
@@ -23,10 +24,27 @@ struct TodoListView: View {
     @State private var pendingImport: Data?
     @State private var showImportChoice = false
     @State private var importSummary = ""
+    @State private var isSearching = false
+    @State private var searchText = ""
+    @FocusState private var searchFocused: Bool
+    @State private var pendingReopen: TodoTask?
+    @State private var highlightUid: Int64?
+    @State private var scrollToUid: Int64?
+
+    private var sortKey: TodoSortKey {
+        TodoSortKey(rawValue: sortKeyRaw) ?? .person
+    }
+
+    private var searchQuery: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     private var visibleTasks: [TodoTask] {
-        let source = showCompleted ? todos.state.tasks : todos.state.tasks.filter { !$0.completed }
-        return TodoOrdering.sorted(source)
+        var source = showCompleted ? todos.state.tasks : todos.state.tasks.filter { !$0.completed }
+        if !searchQuery.isEmpty {
+            source = source.filter { TodoOrdering.matches($0, query: searchQuery) }
+        }
+        return TodoOrdering.sorted(source, by: sortKey)
     }
 
     var body: some View {
@@ -40,12 +58,21 @@ struct TodoListView: View {
                     )
                     .foregroundStyle(theme.ink)
                 } else if visibleTasks.isEmpty {
-                    ContentUnavailableView(
-                        "Abgeschlossene ausgeblendet.",
-                        systemImage: "eye.slash",
-                        description: Text("Abgeschlossen einblenden, um erledigte Aufgaben zu sehen.")
-                    )
-                    .foregroundStyle(theme.ink)
+                    if !searchQuery.isEmpty {
+                        ContentUnavailableView(
+                            "Keine Treffer.",
+                            systemImage: "magnifyingglass",
+                            description: Text("Person oder Text ändern.")
+                        )
+                        .foregroundStyle(theme.ink)
+                    } else {
+                        ContentUnavailableView(
+                            "Abgeschlossene ausgeblendet.",
+                            systemImage: "eye.slash",
+                            description: Text("Abgeschlossen einblenden, um erledigte Aufgaben zu sehen.")
+                        )
+                        .foregroundStyle(theme.ink)
+                    }
                 } else {
                     list
                 }
@@ -54,6 +81,7 @@ struct TodoListView: View {
             .navigationTitle("To-Do")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
+            .safeAreaInset(edge: .top, spacing: 0) { searchBar }
             .safeAreaInset(edge: .bottom, spacing: 0) { addBar }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
                 handleImport(result)
@@ -75,13 +103,47 @@ struct TodoListView: View {
             } message: {
                 Text(importSummary)
             }
+            .background {
+                Color.clear
+                    .confirmationDialog(
+                        "Wieder öffnen",
+                        isPresented: Binding(
+                            get: { pendingReopen != nil },
+                            set: { if !$0 { pendingReopen = nil } }
+                        ),
+                        titleVisibility: .visible
+                    ) {
+                        Button("Fortfahren") { confirmReopen() }
+                        Button("Abbrechen", role: .cancel) { pendingReopen = nil }
+                    } message: {
+                        if let task = pendingReopen {
+                            Text("Aufgabe #\(task.uid) bleibt abgeschlossen. Eine neue offene Kopie wird erstellt. Fortfahren?")
+                        }
+                    }
+            }
             .onChange(of: todos.lastError) { _, new in
                 if let new { alertMessage = new }
             }
-            .sheet(item: $editingTask) { task in
-                TodoEditSheet(task: task) { text, person, prioA, prioB, dueDate in
-                    todos.update(task.uid, text: text, person: person, prioA: prioA, prioB: prioB, dueDate: dueDate)
+            .onChange(of: isSearching) { _, open in
+                if open { searchFocused = true }
+            }
+            .onKeyPress(.escape) {
+                if isSearching {
+                    closeSearch()
+                    return .handled
                 }
+                return .ignored
+            }
+            .sheet(item: $editingTask) { task in
+                TodoEditSheet(
+                    task: task,
+                    onSave: { text, person, prioA, prioB, dueDate in
+                        todos.update(task.uid, text: text, person: person, prioA: prioA, prioB: prioB, dueDate: dueDate)
+                    },
+                    onReopen: {
+                        pendingReopen = task
+                    }
+                )
                 .environment(\.einkaufTheme, theme)
                 .einkaufScreen(theme)
             }
@@ -94,6 +156,19 @@ struct TodoListView: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                if isSearching {
+                    closeSearch()
+                } else {
+                    isSearching = true
+                }
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .symbolVariant(isSearching || !searchQuery.isEmpty ? .fill : .none)
+            }
+            .accessibilityLabel(isSearching ? "Suche schließen" : "Suche")
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Button {
                 showCompleted.toggle()
@@ -107,6 +182,18 @@ struct TodoListView: View {
                 isEditing.toggle()
             }
             .accessibilityLabel(isEditing ? "Fertig" : "Bearbeiten")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Picker("Sortierung", selection: $sortKeyRaw) {
+                    ForEach(TodoSortKey.allCases, id: \.rawValue) { key in
+                        Text(key.menuTitle).tag(key.rawValue)
+                    }
+                }
+            } label: {
+                Image(systemName: "arrow.up.arrow.down")
+            }
+            .accessibilityLabel("Sortierung")
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
@@ -132,15 +219,60 @@ struct TodoListView: View {
         }
     }
 
-    private var list: some View {
-        Group {
-            if isEditing {
-                editingList
-            } else {
-                browsingList
+    @ViewBuilder
+    private var searchBar: some View {
+        if isSearching {
+            HStack(spacing: 8) {
+                TextField("Person oder Text …", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.never)
+                    .disableAutocorrection(true)
+                    .focused($searchFocused)
+                    .submitLabel(.search)
+                    .accessibilityLabel("Person oder Text")
+                    .onSubmit {
+                        if searchQuery.isEmpty { closeSearch() }
+                    }
+                    .onChange(of: searchFocused) { _, focused in
+                        if !focused && searchQuery.isEmpty {
+                            isSearching = false
+                        }
+                    }
+                Button(action: closeSearch) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(theme.muted)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Suche schließen")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(theme.paper2)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(theme.rule)
+                    .frame(height: 1)
             }
         }
-        .id(isEditing ? "todo-edit" : "todo-browse")
+    }
+
+    private var list: some View {
+        ScrollViewReader { proxy in
+            Group {
+                if isEditing {
+                    editingList
+                } else {
+                    browsingList
+                }
+            }
+            .id(isEditing ? "todo-edit" : "todo-browse")
+            .onChange(of: scrollToUid) { _, uid in
+                guard let uid else { return }
+                DispatchQueue.main.async {
+                    withAnimation { proxy.scrollTo(uid, anchor: .center) }
+                }
+            }
+        }
     }
 
     /// Listen-Modus: kein Swipe-Löschen. Trailing-`EmptyView` ersetzt das System-Delete,
@@ -150,6 +282,8 @@ struct TodoListView: View {
         List {
             ForEach(visibleTasks) { task in
                 row(task)
+                    .id(task.uid)
+                    .listRowBackground(highlightUid == task.uid ? theme.oxide.opacity(0.22) : nil)
                     .deleteDisabled(true)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         EmptyView()
@@ -167,6 +301,8 @@ struct TodoListView: View {
         List {
             ForEach(visibleTasks) { task in
                 row(task)
+                    .id(task.uid)
+                    .listRowBackground(highlightUid == task.uid ? theme.oxide.opacity(0.22) : nil)
                     .deleteDisabled(false)
             }
             .onDelete(perform: delete)
@@ -189,29 +325,32 @@ struct TodoListView: View {
             .buttonStyle(.borderless)
             .accessibilityLabel(task.completed ? "Erledigt: \(task.text)" : "Offen: \(task.text)")
 
-            Button {
-                editingTask = task
-            } label: {
-                HStack(alignment: .top, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(task.text)
-                            .foregroundStyle(theme.ink)
-                            .strikethrough(task.completed, color: theme.muted)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .multilineTextAlignment(.leading)
-                        metaLine(task)
-                    }
-                    if isEditing {
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(theme.muted)
-                            .padding(.top, 4)
-                            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Button {
+                    editingTask = task
+                } label: {
+                    HStack(alignment: .top, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(task.text)
+                                .foregroundStyle(theme.ink)
+                                .strikethrough(task.completed, color: theme.muted)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .multilineTextAlignment(.leading)
+                            metaLine(task)
+                        }
+                        if isEditing {
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(theme.muted)
+                                .padding(.top, 4)
+                                .accessibilityHidden(true)
+                        }
                     }
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Bearbeiten: \(task.text)")
+                chainHint(task)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Bearbeiten: \(task.text)")
         }
         .padding(.vertical, 2)
         .einkaufRowChrome()
@@ -222,6 +361,63 @@ struct TodoListView: View {
             } label: {
                 Label("Bearbeiten", systemImage: "pencil")
             }
+            if TodoOrdering.canReopen(task) {
+                Button {
+                    pendingReopen = task
+                } label: {
+                    Label("Wieder öffnen", systemImage: "arrow.uturn.backward")
+                }
+                .tint(theme.oxide)
+            }
+        }
+        .contextMenu {
+            Button {
+                editingTask = task
+            } label: {
+                Label("Bearbeiten", systemImage: "pencil")
+            }
+            if TodoOrdering.canReopen(task) {
+                Button {
+                    pendingReopen = task
+                } label: {
+                    Label("Wieder öffnen", systemImage: "arrow.uturn.backward")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func chainHint(_ task: TodoTask) -> some View {
+        let from = task.reopenedFromUid
+        let to = task.reopenedToUid
+        if from != nil || to != nil {
+            HStack(spacing: 8) {
+                if let from {
+                    Button {
+                        revealAndScroll(to: from)
+                    } label: {
+                        HStack(spacing: 2) {
+                            Image(systemName: "arrow.uturn.backward")
+                            Text("von #\(from)")
+                        }
+                    }
+                    .accessibilityLabel("Wiederaufnahme von Aufgabe \(from)")
+                }
+                if let to {
+                    Button {
+                        revealAndScroll(to: to)
+                    } label: {
+                        HStack(spacing: 2) {
+                            Text("→ #\(to)")
+                            Image(systemName: "chevron.right")
+                        }
+                    }
+                    .accessibilityLabel("Wieder geöffnet als Aufgabe \(to)")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(theme.muted)
+            .buttonStyle(.borderless)
         }
     }
 
@@ -268,6 +464,12 @@ struct TodoListView: View {
                 parts.append(label)
             }
         }
+        if let from = task.reopenedFromUid {
+            parts.append("von \(from)")
+        }
+        if let to = task.reopenedToUid {
+            parts.append("wieder geöffnet als \(to)")
+        }
         return parts.joined(separator: ", ")
     }
 
@@ -309,6 +511,36 @@ struct TodoListView: View {
         draftPrioA = ""
         draftPrioB = ""
         draftDue = ""
+    }
+
+    private func closeSearch() {
+        searchText = ""
+        isSearching = false
+        searchFocused = false
+    }
+
+    private func confirmReopen() {
+        guard let task = pendingReopen else { return }
+        pendingReopen = nil
+        guard let newUid = todos.reopen(task.uid) else { return }
+        flash(newUid)
+    }
+
+    private func revealAndScroll(to uid: Int64) {
+        if let related = todos.state.tasks.first(where: { $0.uid == uid }), related.completed {
+            showCompleted = true
+        }
+        flash(uid)
+    }
+
+    private func flash(_ uid: Int64) {
+        highlightUid = uid
+        scrollToUid = uid
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_600_000_000)
+            if highlightUid == uid { highlightUid = nil }
+            if scrollToUid == uid { scrollToUid = nil }
+        }
     }
 
     private func delete(_ offsets: IndexSet) {
@@ -484,6 +716,7 @@ private struct TodoDuePicker: View {
 private struct TodoEditSheet: View {
     let task: TodoTask
     var onSave: (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String) -> Void
+    var onReopen: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.einkaufTheme) private var theme
     @State private var text: String
@@ -494,10 +727,12 @@ private struct TodoEditSheet: View {
 
     init(
         task: TodoTask,
-        onSave: @escaping (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String) -> Void
+        onSave: @escaping (_ text: String, _ person: String, _ prioA: String, _ prioB: String, _ dueDate: String) -> Void,
+        onReopen: (() -> Void)? = nil
     ) {
         self.task = task
         self.onSave = onSave
+        self.onReopen = onReopen
         _text = State(initialValue: task.text)
         _person = State(initialValue: task.person)
         _prioA = State(initialValue: TodoJSON.prioA(task.prioA))
@@ -529,6 +764,14 @@ private struct TodoEditSheet: View {
                         TodoDuePicker(iso: $dueDate)
                     }
                     .einkaufRowChrome()
+                }
+                if onReopen != nil, TodoOrdering.canReopen(task) {
+                    Section {
+                        Button("Wieder öffnen") {
+                            onReopen?()
+                            dismiss()
+                        }
+                    }
                 }
             }
             .listStyle(.insetGrouped)
