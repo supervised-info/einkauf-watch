@@ -3,17 +3,21 @@ import Foundation
 enum TodoCodecError: Error, LocalizedError, Equatable {
     case notTodoLocal
     case invalidJSON
+    case invalidText
     case notATodoBackup
     case einkaufFile
     case empty
+    case nothingToExport
 
     var errorDescription: String? {
         switch self {
         case .notTodoLocal: return "Keine gültige To-Do-Datei."
         case .invalidJSON: return "Die Datei ist kein gültiges JSON."
+        case .invalidText: return "Die Datei konnte nicht gelesen werden."
         case .notATodoBackup: return "Keine gültige To-Do-Backup-Datei."
         case .einkaufFile: return "Das ist eine Einkauf-Datei, kein To-Do-Backup."
         case .empty: return "Keine Aufgaben gefunden."
+        case .nothingToExport: return "Keine Aufgaben vorhanden."
         }
     }
 }
@@ -104,13 +108,12 @@ enum TodoCodec {
         throw TodoCodecError.notATodoBackup
     }
 
-    private static func isEinkaufPayload(_ dict: [String: Any]) -> Bool {
-        let kind = dict["kind"] as? String
-        if kind == "einkauf-backup" || kind == "einkauf-local" { return true }
+    static func isEinkaufPayload(_ dict: [String: Any]) -> Bool {
+        if let kind = dict["kind"] as? String, kind.hasPrefix("einkauf-") { return true }
         return BackupCodec.looksLikeBackup(dict)
     }
 
-    private static func makeImportedState(tasks: [TodoTask], nextUid: Int64) throws -> TodoState {
+    static func makeImportedState(tasks: [TodoTask], nextUid: Int64 = 1) throws -> TodoState {
         let kept = tasks.filter { !$0.text.isEmpty }
         guard !kept.isEmpty else { throw TodoCodecError.empty }
         return normalized(TodoState(tasks: kept, nextUid: max(nextUid, 1), revision: 0))

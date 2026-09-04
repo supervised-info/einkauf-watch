@@ -1,0 +1,4 @@
+﻿"Person";"Prio A";"Prio B";"Aufgabe";"Enddatum";"Abgeschlossen am";"UID";"Reopened From UID";"Reopened To UID";"Reopened At";"Erstellt am";"Geändert am";"Geändert von"
+"TS";"A";"1";"Steuererklärung";"2026-09-30";"";"1";"";"";"";"01.08.2026 10:00";"01.08.2026 10:00";"TS/NA"
+"## Abgeschlossen";"";"";"";"";"";"";"";"";"";"";"";""
+"NA";"";"";"Milch holen";"";"2026-09-01";"2";"";"";"";"01.09.2026 08:00";"01.09.2026 09:00";"TS/NA"

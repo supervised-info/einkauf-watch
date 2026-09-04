@@ -582,6 +582,206 @@ final class TodoStoreBackupTests: XCTestCase {
     }
 }
 
+final class TodoMarkdownCSVTests: XCTestCase {
+    func sampleState() throws -> TodoState {
+        try TodoCodec.decodeBackup(loadTodoFixture("todo-v3-json.json"))
+    }
+
+    func testMarkdownFixtureRoundTrip() throws {
+        let data = try loadTodoFixture("todo-liste.md")
+        let state = try TodoMarkdown.decode(data)
+        XCTAssertEqual(state.tasks.map(\.uid), [1, 2] as [Int64])
+        XCTAssertEqual(state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+        XCTAssertEqual(state.tasks.map(\.completed), [false, true])
+        XCTAssertEqual(state.tasks[0].prioA, "A")
+        XCTAssertEqual(state.tasks[0].prioB, "1")
+        XCTAssertEqual(state.tasks[0].dueDate, "2026-09-30")
+        XCTAssertEqual(state.tasks[0].person, "TS")
+        XCTAssertEqual(state.tasks[0].createdAt, "2026-08-01T10:00:00.000Z")
+        XCTAssertEqual(state.tasks[0].updatedAt, "2026-08-01T10:00:00.000Z")
+        XCTAssertEqual(state.tasks[0].changedBy, "TS/NA")
+        XCTAssertEqual(state.tasks[1].person, "NA")
+        XCTAssertEqual(state.tasks[1].completedDate, "2026-09-01")
+        XCTAssertEqual(state.tasks[1].createdAt, "2026-09-01T08:00:00.000Z")
+        XCTAssertEqual(state.tasks[1].updatedAt, "2026-09-01T09:00:00.000Z")
+        XCTAssertEqual(state.nextUid, 3)
+
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(secondsFromGMT: 0)!
+        let exportedAt = cal.date(from: DateComponents(year: 2026, month: 9, day: 4, hour: 15, minute: 0, second: 0))!
+        let encoded = try TodoMarkdown.encode(state, exportedAt: exportedAt, timeZone: TimeZone(secondsFromGMT: 0)!)
+        XCTAssertEqual(String(data: encoded, encoding: .utf8), String(data: data, encoding: .utf8))
+
+        let again = try TodoMarkdown.decode(encoded)
+        XCTAssertEqual(again.tasks.map(\.uid), state.tasks.map(\.uid))
+        XCTAssertEqual(again.tasks.map(\.text), state.tasks.map(\.text))
+        XCTAssertEqual(again.tasks.map(\.completed), state.tasks.map(\.completed))
+        XCTAssertEqual(again.tasks.map(\.createdAt), state.tasks.map(\.createdAt))
+        XCTAssertEqual(again.nextUid, state.nextUid)
+    }
+
+    func testCSVFixtureRoundTrip() throws {
+        let data = try loadTodoFixture("todo-liste.csv")
+        XCTAssertEqual(Array(data.prefix(3)), [0xEF, 0xBB, 0xBF])
+        let state = try TodoCSV.decode(data)
+        XCTAssertEqual(state.tasks.map(\.uid), [1, 2] as [Int64])
+        XCTAssertEqual(state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+        XCTAssertEqual(state.tasks.map(\.completed), [false, true])
+        XCTAssertEqual(state.tasks[0].prioA, "A")
+        XCTAssertEqual(state.tasks[0].dueDate, "2026-09-30")
+        XCTAssertEqual(state.tasks[1].completedDate, "2026-09-01")
+        XCTAssertEqual(state.tasks[0].createdAt, "2026-08-01T10:00:00.000Z")
+        XCTAssertEqual(state.tasks[1].updatedAt, "2026-09-01T09:00:00.000Z")
+
+        let encoded = try TodoCSV.encode(state)
+        XCTAssertEqual(encoded, data)
+        let again = try TodoCSV.decode(encoded)
+        XCTAssertEqual(again.tasks.map(\.uid), state.tasks.map(\.uid))
+        XCTAssertEqual(again.tasks.map(\.text), state.tasks.map(\.text))
+        XCTAssertEqual(again.tasks.map(\.completed), state.tasks.map(\.completed))
+        XCTAssertEqual(again.nextUid, state.nextUid)
+    }
+
+    func testCSVCommaSeparatedAndCompletedFromDate() throws {
+        let csv = """
+        Person,Prio A,Prio B,Aufgabe,Enddatum,Abgeschlossen am,UID,Reopened From UID,Reopened To UID,Reopened At,Erstellt am,Geändert am,Geändert von
+        NA,B,2,Anrufen,2026-09-10,,4,,,,04.09.2026 08:00,04.09.2026 08:00,TS/NA
+        """
+        let state = try TodoCSV.decode(csv)
+        XCTAssertEqual(state.tasks.map(\.text), ["Anrufen"])
+        XCTAssertEqual(state.tasks[0].uid, 4)
+        XCTAssertFalse(state.tasks[0].completed)
+        XCTAssertEqual(state.tasks[0].prioA, "B")
+        XCTAssertEqual(state.tasks[0].prioB, "2")
+        XCTAssertEqual(state.tasks[0].createdAt, "2026-09-04T08:00:00.000Z")
+    }
+
+    func testMarkdownOldCommentMetaAndReopenChain() throws {
+        let md = """
+        # To-Do Liste
+        ## TS
+        - [x] [A] Alt (2026-09-01) {2026-09-02}
+          <!-- todo: uid=9 reopenedFrom=3 reopenedTo=12 reopenedAt=2026-09-03 createdAt=2026-08-01T10:00:00.000Z updatedAt=2026-09-02T11:00:00.000Z changedBy=TS/NA -->
+        """
+        let state = try TodoMarkdown.decode(md)
+        XCTAssertEqual(state.tasks[0].uid, 9)
+        XCTAssertEqual(state.tasks[0].reopenedFromUid, 3)
+        XCTAssertEqual(state.tasks[0].reopenedToUid, 12)
+        XCTAssertEqual(state.tasks[0].reopenedAt, "2026-09-03")
+        XCTAssertEqual(state.tasks[0].createdAt, "2026-08-01T10:00:00.000Z")
+        XCTAssertTrue(state.tasks[0].completed)
+
+        var copy = state.tasks[0]
+        copy.completed = false
+        copy.completedDate = ""
+        copy.reopenedToUid = nil
+        copy.reopenedFromUid = 8
+        copy.reopenedAt = "2026-09-04"
+        let open = TodoState(tasks: [copy], nextUid: 10)
+        let encoded = try TodoMarkdown.encode(open, exportedAt: Date(timeIntervalSince1970: 0), timeZone: TimeZone(secondsFromGMT: 0)!)
+        let text = String(data: encoded, encoding: .utf8)!
+        XCTAssertTrue(text.contains("von #8 am 04.09.2026"))
+        XCTAssertFalse(text.contains("## Abgeschlossen"))
+        let again = try TodoMarkdown.decode(encoded)
+        XCTAssertEqual(again.tasks[0].reopenedFromUid, 8)
+        XCTAssertEqual(again.tasks[0].reopenedAt, "2026-09-04")
+    }
+
+    func testRejectsEinkaufMarkdownAndJSON() throws {
+        let einkaufMD = """
+        # Einkauf — Edeka
+        ## Obst & Gemüse
+        - [ ] Milch
+        """
+        XCTAssertThrowsError(try TodoMarkdown.decode(einkaufMD)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+        XCTAssertThrowsError(try TodoImport.decode(Data(einkaufMD.utf8))) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+        XCTAssertThrowsError(try TodoImport.decode(try BackupCodec.encodeExport(.seed))) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+        XCTAssertThrowsError(try TodoCSV.decode("Name;Abteilung;Menge\n\"Milch\";\"obst\";\"1\"")) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+    }
+
+    func testEmptyExportAndImport() throws {
+        XCTAssertThrowsError(try TodoMarkdown.encode(.empty)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .nothingToExport)
+        }
+        XCTAssertThrowsError(try TodoCSV.encode(.empty)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .nothingToExport)
+        }
+        XCTAssertThrowsError(try TodoMarkdown.decode("# To-Do Liste\n")) { error in
+            XCTAssertEqual(error as? TodoCodecError, .empty)
+        }
+    }
+
+    func testImportAnyRoutesJSONMDCSV() throws {
+        let json = try sampleState()
+        XCTAssertEqual(try TodoImport.decode(try TodoCodec.encodeBackup(json)).tasks.map(\.text), json.tasks.map(\.text))
+        XCTAssertEqual(try TodoImport.decode(try loadTodoFixture("todo-liste.md")).tasks.map(\.uid), [1, 2] as [Int64])
+        XCTAssertEqual(try TodoImport.decode(try loadTodoFixture("todo-liste.csv")).tasks.map(\.uid), [1, 2] as [Int64])
+    }
+
+    func testDateHelpersMatchHTML() {
+        XCTAssertEqual(TodoTime.formatDateTimeUTC("2026-08-01T10:00:00.000Z"), "01.08.2026 10:00")
+        XCTAssertEqual(TodoTime.formatDateTimeUTC(""), "")
+        XCTAssertEqual(TodoTime.parseDMYtoISO("01.08.2026 10:00"), "2026-08-01T10:00:00.000Z")
+        XCTAssertEqual(TodoTime.parseDMYDate("04.09.2026"), "2026-09-04")
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(secondsFromGMT: 0)!
+        let exported = cal.date(from: DateComponents(year: 2026, month: 9, day: 4, hour: 15, minute: 0, second: 0))!
+        XCTAssertEqual(
+            TodoTime.exportedAtLabel(exported, timeZone: TimeZone(secondsFromGMT: 0)!),
+            "04.09.2026, 15:00:00"
+        )
+    }
+
+    func testHTMLGroupingPutsEmptyPersonLast() {
+        let tasks = [
+            TodoTask(uid: 1, text: "a", person: "TS"),
+            TodoTask(uid: 2, text: "b"),
+            TodoTask(uid: 3, text: "c", person: "NA"),
+        ]
+        let groups = TodoHTMLGrouping.groupByPerson(tasks)
+        XCTAssertEqual(groups.map(\.person), ["NA", "TS", ""])
+        XCTAssertEqual(TodoMarkdown.unlabeledPerson, "(Keine Person)")
+    }
+}
+
+@MainActor
+final class TodoStoreMarkdownCSVTests: XCTestCase {
+    func testStoreExportImportAnyAppend() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(state: .empty, enableSync: false)
+        XCTAssertNotNil(store.add("Lokal"))
+        try store.importAny(try loadTodoFixture("todo-liste.md"), append: true)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Lokal", "Steuererklärung", "Milch holen"])
+        try store.importAny(try loadTodoFixture("todo-liste.csv"), append: false)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+        let md = try store.exportMarkdown()
+        XCTAssertTrue(String(data: md, encoding: .utf8)!.contains("# To-Do Liste"))
+        let csv = try store.exportCSV()
+        XCTAssertEqual(Array(csv.prefix(3)), [0xEF, 0xBB, 0xBF])
+        XCTAssertThrowsError(try store.importAny(try BackupCodec.encodeExport(.seed), append: false)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+    }
+}
+
 final class WatchSyncEnvelopeTests: XCTestCase {
     func testMergingTodoIntoLegacyEinkaufContextKeepsEinkaufBlob() {
         let einkaufBlob = Data("einkauf-blob".utf8)

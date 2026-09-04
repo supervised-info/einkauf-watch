@@ -37,7 +37,10 @@
 		5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
 		AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
 		270C5025C833CEAC3FBC86C8 /* TodoAddItemsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */; };
+		3964543684C05EB0C95B3B34 /* TodoCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED1A63E1DE4A65D03E9E3AC4 /* TodoCSV.swift */; };
 		742F79F1BBDE805C90A4CC1D /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
+		AC288B3ECF4E863E7968D57E /* TodoImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F284524EA050831C5F78F83 /* TodoImport.swift */; };
+		07E1CD77C009ED443A1DCE28 /* TodoMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58384EF4D4155EC34755A0F1 /* TodoMarkdown.swift */; };
 		39975D35AD8DD10272B34BC1 /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
 		705AA7BC3BBDFC4BE12927CA /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
 		DCA21D4CAF4F256ECB96BE12 /* TodoSiriPendingAdds.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */; };
@@ -67,7 +70,10 @@
 		54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
 		E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
 		F1F372AE5EE59FA0C0FDD280 /* TodoAddItemsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */; };
+		3D934C601561B4EF1B4A2754 /* TodoCSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED1A63E1DE4A65D03E9E3AC4 /* TodoCSV.swift */; };
 		4C4F0FB308F4D24538902950 /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
+		080FF1720A9DEA8AE0FF1710 /* TodoImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F284524EA050831C5F78F83 /* TodoImport.swift */; };
+		CC5E850416CC55A952A37161 /* TodoMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58384EF4D4155EC34755A0F1 /* TodoMarkdown.swift */; };
 		93EF02CDF09906D3554E33D9 /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
 		9E4949263D8E3FF743694CDE /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
 		62C4A10BA20273C078BA5958 /* TodoSiriPendingAdds.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */; };
@@ -219,7 +225,10 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreLayout.swift; sourceTree = "<group>"; };
 		A32268097AE4939ECE075B98 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoAddItemsIntent.swift; sourceTree = "<group>"; };
+		ED1A63E1DE4A65D03E9E3AC4 /* TodoCSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoCSV.swift; sourceTree = "<group>"; };
 		D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoCodec.swift; sourceTree = "<group>"; };
+		2F284524EA050831C5F78F83 /* TodoImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoImport.swift; sourceTree = "<group>"; };
+		58384EF4D4155EC34755A0F1 /* TodoMarkdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoMarkdown.swift; sourceTree = "<group>"; };
 		861F958ACA5618757971F25B /* TodoModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoModels.swift; sourceTree = "<group>"; };
 		283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoPersistence.swift; sourceTree = "<group>"; };
 		D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoSiriPendingAdds.swift; sourceTree = "<group>"; };
@@ -399,7 +408,10 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 				A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */,
 				A32268097AE4939ECE075B98 /* Theme.swift */,
 				D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */,
+				ED1A63E1DE4A65D03E9E3AC4 /* TodoCSV.swift */,
 				D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */,
+				2F284524EA050831C5F78F83 /* TodoImport.swift */,
+				58384EF4D4155EC34755A0F1 /* TodoMarkdown.swift */,
 				861F958ACA5618757971F25B /* TodoModels.swift */,
 				283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */,
 				D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */,
@@ -626,7 +638,10 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */,
 				AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */,
 				270C5025C833CEAC3FBC86C8 /* TodoAddItemsIntent.swift in Sources */,
+				3964543684C05EB0C95B3B34 /* TodoCSV.swift in Sources */,
 				742F79F1BBDE805C90A4CC1D /* TodoCodec.swift in Sources */,
+				AC288B3ECF4E863E7968D57E /* TodoImport.swift in Sources */,
+				07E1CD77C009ED443A1DCE28 /* TodoMarkdown.swift in Sources */,
 				39975D35AD8DD10272B34BC1 /* TodoModels.swift in Sources */,
 				705AA7BC3BBDFC4BE12927CA /* TodoPersistence.swift in Sources */,
 				DCA21D4CAF4F256ECB96BE12 /* TodoSiriPendingAdds.swift in Sources */,
@@ -663,7 +678,10 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */,
 				E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */,
 				F1F372AE5EE59FA0C0FDD280 /* TodoAddItemsIntent.swift in Sources */,
+				3D934C601561B4EF1B4A2754 /* TodoCSV.swift in Sources */,
 				4C4F0FB308F4D24538902950 /* TodoCodec.swift in Sources */,
+				080FF1720A9DEA8AE0FF1710 /* TodoImport.swift in Sources */,
+				CC5E850416CC55A952A37161 /* TodoMarkdown.swift in Sources */,
 				93EF02CDF09906D3554E33D9 /* TodoModels.swift in Sources */,
 				9E4949263D8E3FF743694CDE /* TodoPersistence.swift in Sources */,
 				62C4A10BA20273C078BA5958 /* TodoSiriPendingAdds.swift in Sources */,
@@ -852,7 +870,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -887,7 +905,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -922,7 +940,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -954,7 +972,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -987,7 +1005,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1017,7 +1035,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1048,7 +1066,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1079,7 +1097,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 52;
+				CURRENT_PROJECT_VERSION = 53;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
