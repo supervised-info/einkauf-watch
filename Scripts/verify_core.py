@@ -79,6 +79,28 @@ def assert_no_large_progress_text(view_src: str, name: str) -> None:
             fail(f"{name} system size {size}pt is too large for accessory (use ~11–13pt)")
 
 
+def assert_corner_count_larger_than_label(corner: str) -> None:
+    """Corner: open-count ~18–20pt, store widgetLabel caption/~11–12pt."""
+    count_m = re.search(r"compactCountText[\s\S]*?\.system\(size:\s*(\d+)", corner)
+    if not count_m:
+        fail("corner compactCountText must use explicit system size (18–20pt)")
+    count_pt = int(count_m.group(1))
+    if count_pt < 18 or count_pt > 20:
+        fail(f"corner compactCountText is {count_pt}pt; expected ~18–20pt, larger than the store label")
+    if "minimumScaleFactor" not in corner:
+        fail("corner must keep minimumScaleFactor so erledigt can shrink")
+    label_start = corner.find("widgetLabel")
+    if label_start < 0:
+        fail("corner must keep store name in widgetLabel")
+    label = corner[label_start:]
+    caption_style = ".caption" in label or re.search(r"\.system\(size:\s*1[12]\b", label)
+    if not caption_style:
+        fail("corner widgetLabel must use caption / ~11–12pt so the count reads larger")
+    label_sizes = [int(n) for n in re.findall(r"\.system\(size:\s*(\d+)", label)]
+    if label_sizes and label_sizes[0] >= count_pt:
+        fail("corner widgetLabel must be smaller than compactCountText")
+
+
 def sanitized_layout(layout: list[str]) -> list[str]:
     seen: set[str] = set()
     middle: list[str] = []
@@ -362,8 +384,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 39" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 39 / CURRENT_PROJECT_VERSION")
+    if "Build 40" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 40 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -837,8 +859,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 39" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 39")
+    if "CURRENT_PROJECT_VERSION = 40" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 40")
+    if "CURRENT_PROJECT_VERSION = 39" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 39 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 38" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 38 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 37" in pbx:
@@ -902,8 +926,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 39" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 39")
+    if "CURRENT_PROJECT_VERSION: 40" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 40")
+    if "CURRENT_PROJECT_VERSION: 39" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 39 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 38" in yml:
         fail("stale CURRENT_PROJECT_VERSION 38 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 37" in yml:
@@ -1147,6 +1173,8 @@ def test_watch_complication() -> None:
         fail("Description.md complication must name compactCountText")
     if "erledigt" not in comp_sec:
         fail("Description.md complication must document erledigt when open is 0")
+    if "19pt" not in comp_sec and "18–20pt" not in comp_sec and "18-20pt" not in comp_sec:
+        fail("Description.md must document accessoryCorner count larger than the store widgetLabel")
     if '"erledigt"' not in tests:
         fail("tests must cover complication compactCountText erledigt")
     if "nicht auf dem iPhone" not in desc.lower() and "Nicht auf dem iPhone" not in desc:
@@ -1173,14 +1201,14 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 39") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 39")
+    if pbx.count("CURRENT_PROJECT_VERSION = 40") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 40")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
     corner = extract_some_view(widget, "corner")
     assert_no_large_progress_text(circular, "circular")
-    assert_no_large_progress_text(corner, "corner")
+    assert_corner_count_larger_than_label(corner)
     if "Gauge" not in circular:
         fail("circular must use Gauge (0…1) so compact circular families fit")
     if "entry.snapshot.progress" not in circular:

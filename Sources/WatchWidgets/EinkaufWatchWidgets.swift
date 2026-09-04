@@ -118,16 +118,18 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Ecke: offene Anzahl bzw. „erledigt“ im Bogen, Ladenname am Label.
+    /// Ecke: Zähler größer als der gebogene Ladenname (explizite pt-Größen, kein `.title2` → sonst „!“).
+    /// `minimumScaleFactor` hält „erledigt“ in der Ecke lesbar.
     private var corner: some View {
         Text(entry.snapshot.compactCountText)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .font(.system(size: 19, weight: .semibold, design: .rounded))
             .monospacedDigit()
             .lineLimit(1)
             .minimumScaleFactor(0.5)
             .widgetAccentable()
             .widgetLabel {
                 Text(entry.snapshot.storeName)
+                    .font(.system(size: 11, weight: .regular, design: .rounded))
                     .lineLimit(1)
             }
     }

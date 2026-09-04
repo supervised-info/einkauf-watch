@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 39, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 40, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -116,7 +116,7 @@ Nur auf der **Apple Watch**, nicht auf dem iPhone-Sperrbildschirm. Kein ClockKit
 
 Zähler **nur** die offenen Artikel (`ComplicationSnapshot.compactCountText`): `"\(openCount)"`. Bei 0 offenen (leere Liste oder alles abgehakt): das Wort **erledigt**, nicht `0` und nicht `oo/xx/yy`. `progressLabel` (`oo/xx/yy` / `0/0/0`) bleibt für Watch-Titel, iPhone-Widget, PDF, HTML. Kurzer Ladenname (`clippedWatchStoreName`) nur, wenn die Family Platz hat (Rechteck-Zeile, Ecken-`widgetLabel`). Weiter antippbar. VoiceOver: „Edeka, 5 offen“ bzw. bei 0 „Edeka, Liste erledigt“.
 
-`accessoryCircular` darf **kein** großes System-`Text` (`.title2` / `.title3` / `.title`) für den Zähler nutzen: auf der physischen Watch passt das in Infograph/Modular compact nicht, `minimumScaleFactor` rettet accessory-Families oft nicht, und watchOS zeichnet dann ein alleinstehendes **!** statt zu kürzen. Stattdessen Gauge 0…1 (`done/total`, leer = 0) mit kleinem Zentrum (`caption`/`caption2`/ca. 11–13pt, **eine** Zeile offene Anzahl bzw. „erledigt“ — kein dreizeiliges `oo`/`xx`/`yy`). `accessoryCorner` ebenso kleine Schrift; Ladenname bleibt im `widgetLabel`. Alle Families: `.containerBackground` (watchOS 10).
+`accessoryCircular` darf **kein** großes System-`Text` (`.title2` / `.title3` / `.title`) für den Zähler nutzen: auf der physischen Watch passt das in Infograph/Modular compact nicht, `minimumScaleFactor` rettet accessory-Families oft nicht, und watchOS zeichnet dann ein alleinstehendes **!** statt zu kürzen. Stattdessen Gauge 0…1 (`done/total`, leer = 0) mit kleinem Zentrum (`caption`/`caption2`/ca. 11–13pt, **eine** Zeile offene Anzahl bzw. „erledigt“ — kein dreizeiliges `oo`/`xx`/`yy`). `accessoryCorner`: `compactCountText` **größer** als der Ladenname (~19pt semibold rounded vs. Caption/~11pt im `widgetLabel`), damit die offene Anzahl unter dem gebogenen Namen lesbar bleibt; `minimumScaleFactor` für „erledigt“. Rectangular schon großer Zähler (`.title2`). Alle Families: `.containerBackground` (watchOS 10).
 
 Familien, die auf gängigen watchOS-10-Zifferblättern und im Smart Stack vorkommen:
 
@@ -125,7 +125,7 @@ Familien, die auf gängigen watchOS-10-Zifferblättern und im Smart Stack vorkom
 | `accessoryCircular` | Gauge 0…1 (`done/total`), kleines Zentrum nur offene Anzahl bzw. „erledigt“ (kein großes Text → sonst „!“) |
 | `accessoryRectangular` | Ladenname + offene Anzahl bzw. „erledigt“ |
 | `accessoryInline` | Laden + Zähler, sonst nur Zähler (`ViewThatFits`; 0 → „erledigt“) |
-| `accessoryCorner` | kleiner Zähler (0 → „erledigt“), Ladenname im `widgetLabel` |
+| `accessoryCorner` | großer Zähler (~19pt, 0 → „erledigt“), kleiner Ladenname im `widgetLabel` (~11pt) |
 
 Datenquelle: dieselbe lokale Datei `einkauf-local.json` (`Persistence`, Envelope `kind: "einkauf-local"`). Watch-App und Complication teilen sie über App Group `group.net.tschelle.einkauf` (kein iCloud). Die Watch-App schreibt bei jeder `AppState`-Änderung (Artikel, Häkchen, Laden) und ruft `WidgetCenter.reloadTimelines` auf. iPhone-Änderungen kommen wie bisher per WatchConnectivity in die Watch-App und von dort in Datei + Complication. Fallback-Timeline alle 30 Minuten, falls ein Reload ausbleibt.
 
