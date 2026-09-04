@@ -39,6 +39,8 @@ struct EinkaufAddItemsIntent: AppIntent {
 #endif
 }
 
+/// Apple erlaubt nur **einen** `AppShortcutsProvider` pro App.
+/// Besorgen → `EinkaufAddItemsIntent`; To Do → `TodoAddItemsIntent`.
 struct EinkaufShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -50,6 +52,16 @@ struct EinkaufShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Besorgen",
             systemImageName: "cart.badge.plus"
+        )
+        AppShortcut(
+            intent: TodoAddItemsIntent(),
+            phrases: [
+                "\(.applicationName) To Do",
+                "To Do mit \(.applicationName)",
+                "\(.applicationName) zum To Do",
+            ],
+            shortTitle: "To Do",
+            systemImageName: "checklist"
         )
     }
 }

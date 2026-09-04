@@ -1455,6 +1455,10 @@ def test_siri_app_intents() -> None:
         fail("Intent parameter title must be Artikel")
     if "AppShortcutsProvider" not in intent:
         fail("AppShortcutsProvider missing")
+    if "struct EinkaufShortcuts: AppShortcutsProvider" not in intent:
+        fail("EinkaufShortcuts must be the AppShortcutsProvider")
+    if intent.count(": AppShortcutsProvider") != 1:
+        fail("exactly one AppShortcutsProvider conformance is allowed")
     if "requestValueDialog" not in intent:
         fail("Intent must request Artikel via requestValueDialog")
     phrases_block = intent.split("phrases:", 1)[-1].split("shortTitle", 1)[0]
@@ -1609,23 +1613,30 @@ def test_siri_app_intents() -> None:
     todo_pending = (ROOT / "Sources/Shared/TodoSiriPendingAdds.swift").read_text()
     if "besorgen" in todo_intent:
         fail("To-Do Siri phrases must not use besorgen")
-    if r'"\(.applicationName) To Do"' not in todo_intent:
+    if "struct TodoShortcuts" in todo_intent or "struct TodoShortcuts" in intent:
+        fail("TodoShortcuts must be deleted; only one AppShortcutsProvider is allowed")
+    if ": AppShortcutsProvider" in todo_intent:
+        fail("TodoAddItemsIntent.swift must not declare AppShortcutsProvider")
+    if "intent: TodoAddItemsIntent()" not in intent:
+        fail("EinkaufShortcuts must include TodoAddItemsIntent")
+    if r'"\(.applicationName) To Do"' not in intent:
         fail("To-Do App Shortcut phrase applicationName To Do missing")
-    if r'"To Do mit \(.applicationName)"' not in todo_intent:
+    if r'"To Do mit \(.applicationName)"' not in intent:
         fail("To-Do App Shortcut phrase To Do mit applicationName missing")
-    if r'"\(.applicationName) zum To Do"' not in todo_intent:
+    if r'"\(.applicationName) zum To Do"' not in intent:
         fail("To-Do App Shortcut phrase applicationName zum To Do missing")
-    todo_phrases = todo_intent.split("phrases:", 1)[-1].split("shortTitle", 1)[0]
+    todo_shortcut = intent.split("intent: TodoAddItemsIntent()", 1)[-1]
+    todo_phrases = todo_shortcut.split("phrases:", 1)[-1].split("shortTitle", 1)[0]
     if todo_phrases.count("applicationName") < 3:
         fail("each To-Do App Shortcut phrase must include applicationName")
     if ".$items" in todo_phrases:
         fail("To-Do App Shortcut phrases must not interpolate String $items")
+    if "besorgen" in todo_phrases:
+        fail("To-Do App Shortcut phrases must not use besorgen")
     if 'requestValueDialog: "T"' not in todo_intent:
         fail("To-Do requestValueDialog must be T")
-    if 'shortTitle: "To Do"' not in todo_intent:
+    if 'shortTitle: "To Do"' not in intent:
         fail("To-Do App Shortcut shortTitle must be To Do")
-    if "struct TodoShortcuts: AppShortcutsProvider" not in todo_intent:
-        fail("To-Do must use a separate AppShortcutsProvider so Einkauf besorgen stays intact")
     if "openAppWhenRun = false" not in todo_intent:
         fail("To-Do Intent must set openAppWhenRun = false")
     if "TodoSiriPendingAdds.enqueue" not in todo_intent:
