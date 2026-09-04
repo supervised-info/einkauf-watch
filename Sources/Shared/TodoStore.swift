@@ -6,17 +6,28 @@ final class TodoStore: ObservableObject {
     @Published private(set) var state: TodoState
     @Published var lastError: String?
 
+#if os(iOS) || os(watchOS)
+    private var sync: TodoConnectivitySync?
+#endif
     private var saveTask: Task<Void, Never>?
     private var diskObserver: NSObjectProtocol?
 
-    /// `enableSync` ist Phase-2 ungenutzt (kein WatchConnectivity für To-Do).
     init(state: TodoState? = nil, enableSync: Bool = true) {
-        _ = enableSync
         if let state {
             self.state = TodoCodec.normalized(state)
         } else {
             self.state = TodoPersistence.load() ?? .empty
         }
+#if os(iOS) || os(watchOS)
+        if enableSync {
+            let bridge = TodoConnectivitySync()
+            bridge.store = self
+            self.sync = bridge
+            bridge.start()
+        }
+#else
+        _ = enableSync
+#endif
         diskObserver = NotificationCenter.default.addObserver(
             forName: .todoStateDidChangeOnDisk,
             object: nil,
@@ -38,6 +49,41 @@ final class TodoStore: ObservableObject {
         guard let loaded = TodoPersistence.load() else { return }
         guard loaded.revision > state.revision else { return }
         state = TodoCodec.normalized(loaded)
+#if os(iOS) || os(watchOS)
+        sync?.broadcast(state)
+#endif
+    }
+
+    /// Watch-Siri: Pending-Queue drainen, dann persist+sync auf dem live Store.
+    func consumeSiriPendingAdds() {
+        let pending = TodoSiriPendingAdds.drain()
+        for speech in pending {
+            addItems(fromSpeech: speech)
+        }
+    }
+
+    /// Siri / gesprochene Listen: Splitter, dann derselbe Pfad wie getipptes Hinzufügen, ein Persist.
+    @discardableResult
+    func addItems(fromSpeech text: String) -> Int {
+        let names = SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix(text))
+        guard !names.isEmpty else { return 0 }
+        let now = TodoTime.nowIso()
+        for name in names {
+            let uid = takeUid()
+            state.tasks.append(
+                TodoTask(
+                    uid: uid,
+                    text: name,
+                    completed: false,
+                    createdAt: now,
+                    updatedAt: now,
+                    changedBy: TodoAuthor.app
+                )
+            )
+        }
+        state.revision += 1
+        persistAndSync()
+        return names.count
     }
 
     @discardableResult
@@ -68,7 +114,7 @@ final class TodoStore: ObservableObject {
             )
         )
         state.revision += 1
-        persist()
+        persistAndSync()
         return uid
     }
 
@@ -77,16 +123,61 @@ final class TodoStore: ObservableObject {
         state.tasks[idx].completed.toggle()
         state.tasks[idx].completedDate = state.tasks[idx].completed ? TodoTime.todayIso() : ""
         state.tasks[idx].updatedAt = TodoTime.nowIso()
-        state.revision += 1
-        persist()
+        persistQuietly()
+#if os(iOS) || os(watchOS)
+        let task = state.tasks[idx]
+        sync?.broadcastToggle(uid: task.uid, completed: task.completed, at: task.updatedAt, state: state)
+#endif
     }
+
+    func applyRemoteToggle(uid: Int64, completed: Bool, at: String) {
+        guard let idx = state.tasks.firstIndex(where: { $0.uid == uid }) else { return }
+        let currentAt = TodoMerge.timestamp(state.tasks[idx].updatedAt)
+        let incomingAt = TodoMerge.timestamp(at)
+        if incomingAt < currentAt { return }
+        if incomingAt == currentAt {
+            if incomingAt == 0 {
+                if !completed && state.tasks[idx].completed { return }
+                if completed == state.tasks[idx].completed { return }
+            } else if completed == state.tasks[idx].completed {
+                return
+            }
+        }
+        state.tasks[idx].completed = completed
+        if completed {
+            if state.tasks[idx].completedDate.isEmpty {
+                state.tasks[idx].completedDate = TodoTime.todayIso()
+            }
+        } else {
+            state.tasks[idx].completedDate = ""
+        }
+        if !at.isEmpty {
+            state.tasks[idx].updatedAt = at
+        }
+        persistQuietly()
+        objectWillChange.send()
+    }
+
+    func applyRemoteSnapshot(_ incoming: TodoState) {
+        let merged = TodoMerge.merge(local: state, remote: incoming)
+        guard merged != state else { return }
+        state = merged
+        persistQuietly()
+#if os(iOS) || os(watchOS)
+        if merged.revision > incoming.revision || hasNewerCompletions(local: merged, remote: incoming) {
+            sync?.broadcast(merged)
+        }
+#endif
+    }
+
+    func snapshotForPeer() -> TodoState { state }
 
     func delete(_ uid: Int64) {
         let before = state.tasks.count
         state.tasks.removeAll { $0.uid == uid }
         guard state.tasks.count != before else { return }
         state.revision += 1
-        persist()
+        persistAndSync()
     }
 
     func clearCompleted() {
@@ -94,7 +185,7 @@ final class TodoStore: ObservableObject {
         state.tasks.removeAll { $0.completed }
         guard state.tasks.count != before else { return }
         state.revision += 1
-        persist()
+        persistAndSync()
     }
 
     func update(
@@ -121,7 +212,7 @@ final class TodoStore: ObservableObject {
         state.tasks[idx].updatedAt = TodoTime.nowIso()
         state.tasks[idx].changedBy = TodoAuthor.app
         state.revision += 1
-        persist()
+        persistAndSync()
     }
 
     func exportBackup() throws -> Data {
@@ -149,7 +240,7 @@ final class TodoStore: ObservableObject {
             state = TodoCodec.normalized(incoming)
         }
         state.revision += 1
-        persist()
+        persistAndSync()
     }
 
     private func takeUid() -> Int64 {
@@ -161,15 +252,40 @@ final class TodoStore: ObservableObject {
         return uid
     }
 
-    private func persist() {
+#if os(iOS) || os(watchOS)
+    private func hasNewerCompletions(local: TodoState, remote: TodoState) -> Bool {
+        let remoteByUid = Dictionary(uniqueKeysWithValues: remote.tasks.map { ($0.uid, $0) })
+        for task in local.tasks {
+            let localAt = TodoMerge.timestamp(task.updatedAt)
+            let remoteAt = TodoMerge.timestamp(remoteByUid[task.uid]?.updatedAt ?? "")
+            if localAt > remoteAt { return true }
+        }
+        return false
+    }
+#endif
+
+    private func persistAndSync() {
+        persistQuietly()
+        NotificationCenter.default.post(name: .todoStateDidChangeOnDisk, object: nil)
+#if os(iOS) || os(watchOS)
+        sync?.broadcast(state)
+#endif
+    }
+
+    private func persistQuietly() {
         saveTask?.cancel()
         let snapshot = state
         saveTask = Task {
             try? await Task.sleep(nanoseconds: 80_000_000)
             guard !Task.isCancelled else { return }
             TodoPersistence.save(snapshot)
+#if os(watchOS)
+            WatchComplicationReload.todoTimelines()
+#endif
         }
         TodoPersistence.save(state)
-        NotificationCenter.default.post(name: .todoStateDidChangeOnDisk, object: nil)
+#if os(watchOS)
+        WatchComplicationReload.todoTimelines()
+#endif
     }
 }

@@ -1,23 +1,15 @@
 import SwiftUI
 import WidgetKit
 
-@main
-struct EinkaufWatchWidgets: WidgetBundle {
-    var body: some Widget {
-        EinkaufComplication()
-        TodoComplication()
-    }
-}
-
-/// WidgetKit-Complication (watchOS 10, kein ClockKit). Tippen öffnet die Watch-App im Geh-Modus.
-struct EinkaufComplication: Widget {
+/// Eigene WidgetKit-Complication für To-Do (`TodoProgress`), neben `EinkaufComplication`.
+struct TodoComplication: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: ComplicationSnapshot.widgetKind, provider: EinkaufTimelineProvider()) { entry in
-            EinkaufComplicationView(entry: entry)
-                .widgetURL(ComplicationSnapshot.openURL)
+        StaticConfiguration(kind: TodoComplicationSnapshot.widgetKind, provider: TodoTimelineProvider()) { entry in
+            TodoComplicationView(entry: entry)
+                .widgetURL(TodoComplicationSnapshot.openURL)
         }
-        .configurationDisplayName("Einkauf")
-        .description("Offene Artikel der Einkaufsliste.")
+        .configurationDisplayName("To Do")
+        .description("Offene Aufgaben der To-Do-Liste.")
         .supportedFamilies([
             .accessoryCircular,
             .accessoryRectangular,
@@ -27,34 +19,34 @@ struct EinkaufComplication: Widget {
     }
 }
 
-struct EinkaufTimelineEntry: TimelineEntry {
+struct TodoTimelineEntry: TimelineEntry {
     let date: Date
-    let snapshot: ComplicationSnapshot
+    let snapshot: TodoComplicationSnapshot
 }
 
-struct EinkaufTimelineProvider: TimelineProvider {
-    func placeholder(in context: Context) -> EinkaufTimelineEntry {
-        EinkaufTimelineEntry(date: Date(), snapshot: .placeholder)
+struct TodoTimelineProvider: TimelineProvider {
+    func placeholder(in context: Context) -> TodoTimelineEntry {
+        TodoTimelineEntry(date: Date(), snapshot: .placeholder)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (EinkaufTimelineEntry) -> Void) {
+    func getSnapshot(in context: Context, completion: @escaping (TodoTimelineEntry) -> Void) {
         completion(makeEntry())
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<EinkaufTimelineEntry>) -> Void) {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<TodoTimelineEntry>) -> Void) {
         let entry = makeEntry()
         let next = Date().addingTimeInterval(30 * 60)
         completion(Timeline(entries: [entry], policy: .after(next)))
     }
 
-    private func makeEntry() -> EinkaufTimelineEntry {
-        let state = Persistence.load() ?? .seed
-        return EinkaufTimelineEntry(date: Date(), snapshot: .make(from: state))
+    private func makeEntry() -> TodoTimelineEntry {
+        let state = TodoPersistence.load() ?? .empty
+        return TodoTimelineEntry(date: Date(), snapshot: .make(from: state))
     }
 }
 
-struct EinkaufComplicationView: View {
-    var entry: EinkaufTimelineEntry
+struct TodoComplicationView: View {
+    var entry: TodoTimelineEntry
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
@@ -74,11 +66,9 @@ struct EinkaufComplicationView: View {
         }
         .containerBackground(.clear, for: .widget)
         .accessibilityLabel(entry.snapshot.accessibilityLabel)
-        .accessibilityHint("Öffnet die Einkaufsliste")
+        .accessibilityHint("Öffnet To-Do")
     }
 
-    /// Runde Komplikation: Gauge 0…1 (erledigt/gesamt), Zentrum nur offene Anzahl bzw. „erledigt“.
-    /// Kein `.title2` — auf der physischen Watch zeichnet watchOS sonst „!“.
     private var circular: some View {
         Gauge(value: entry.snapshot.progress, in: 0...1) {
             Text(entry.snapshot.compactCountText)
@@ -93,10 +83,9 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Rechteck: kurzer Ladenname plus offene Anzahl bzw. „erledigt“.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(entry.snapshot.storeName)
+            Text(TodoComplicationSnapshot.labelText)
                 .font(.headline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -110,7 +99,6 @@ struct EinkaufComplicationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Inline-Zeile: Laden + Zähler, sonst nur offene Anzahl bzw. „erledigt“.
     private var inline: some View {
         ViewThatFits(in: .horizontal) {
             Text(entry.snapshot.inlineText)
@@ -119,8 +107,7 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Ecke: Zähler größer als der gebogene Ladenname (explizite pt-Größen, kein `.title2` → sonst „!“).
-    /// `minimumScaleFactor` hält „erledigt“ in der Ecke lesbar.
+    /// Ecke: offene Anzahl größer als das Label **To Do** (~19pt / ~11pt).
     private var corner: some View {
         Text(entry.snapshot.compactCountText)
             .font(.system(size: 19, weight: .semibold, design: .rounded))
@@ -129,7 +116,7 @@ struct EinkaufComplicationView: View {
             .minimumScaleFactor(0.5)
             .widgetAccentable()
             .widgetLabel {
-                Text(entry.snapshot.storeName)
+                Text(TodoComplicationSnapshot.labelText)
                     .font(.system(size: 11, weight: .regular, design: .rounded))
                     .lineLimit(1)
             }
@@ -137,26 +124,14 @@ struct EinkaufComplicationView: View {
 }
 
 #Preview(as: .accessoryCircular) {
-    EinkaufComplication()
+    TodoComplication()
 } timeline: {
-    EinkaufTimelineEntry(date: .now, snapshot: .placeholder)
-    EinkaufTimelineEntry(date: .now, snapshot: ComplicationSnapshot(progressLabel: "0/0/0", storeName: "Edeka", isEmpty: true))
-}
-
-#Preview(as: .accessoryRectangular) {
-    EinkaufComplication()
-} timeline: {
-    EinkaufTimelineEntry(date: .now, snapshot: .placeholder)
-}
-
-#Preview(as: .accessoryInline) {
-    EinkaufComplication()
-} timeline: {
-    EinkaufTimelineEntry(date: .now, snapshot: .placeholder)
+    TodoTimelineEntry(date: .now, snapshot: .placeholder)
+    TodoTimelineEntry(date: .now, snapshot: TodoComplicationSnapshot(openCount: 0, doneCount: 0, total: 0, isEmpty: true, progress: 0))
 }
 
 #Preview(as: .accessoryCorner) {
-    EinkaufComplication()
+    TodoComplication()
 } timeline: {
-    EinkaufTimelineEntry(date: .now, snapshot: .placeholder)
+    TodoTimelineEntry(date: .now, snapshot: .placeholder)
 }

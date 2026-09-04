@@ -36,13 +36,17 @@
 		15447CEC2167C0109789092D /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
 		5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
 		AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
+		270C5025C833CEAC3FBC86C8 /* TodoAddItemsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */; };
 		742F79F1BBDE805C90A4CC1D /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
 		39975D35AD8DD10272B34BC1 /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
 		705AA7BC3BBDFC4BE12927CA /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
+		DCA21D4CAF4F256ECB96BE12 /* TodoSiriPendingAdds.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */; };
 		8266DACD0CE3E59230B441F3 /* TodoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */; };
+		F1C996479611FA9C6CC317AF /* WatchSyncEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E5E892BB96FB5BE42D8802A /* WatchSyncEnvelope.swift */; };
 		E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */; };
 		9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499EF012DA49B4720127F282 /* WatchComplicationReload.swift */; };
 		98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5324308E5A34153EAF3F1962 /* WatchListView.swift */; };
+		EE414C6DCC8A58566F52EAC1 /* WatchTodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F20A945F8D1BC1867267A7 /* WatchTodoListView.swift */; };
 		0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
 		CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
@@ -62,26 +66,38 @@
 		B8ECFA4CCB0833C604C51F51 /* StapleApply.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */; };
 		54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
 		E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32268097AE4939ECE075B98 /* Theme.swift */; };
+		F1F372AE5EE59FA0C0FDD280 /* TodoAddItemsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */; };
 		4C4F0FB308F4D24538902950 /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
 		93EF02CDF09906D3554E33D9 /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
 		9E4949263D8E3FF743694CDE /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
+		62C4A10BA20273C078BA5958 /* TodoSiriPendingAdds.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */; };
 		C6D0033EFA54ADA6566FE4FE /* TodoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */; };
+		EF6EAF42091964E6FE48E4DD /* WatchSyncEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E5E892BB96FB5BE42D8802A /* WatchSyncEnvelope.swift */; };
 		16FEB03CD391A62FFC2AC325 /* EinkaufWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */; };
+		EC1F1E7CFD5D19AC0946A9B2 /* TodoWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EEA63B43B7CA1DB7A804CDD /* TodoWatchWidgets.swift */; };
 		D669A4242B85D5564C2A226E /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		5F0866CD8C5BC4A7DDB8E11F /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		A506F3A9EB373EB70E906808 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
+		3D51DAB9AB7014E04C6CA7A0 /* IncomingJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43EEC326F6EF91C3C7664855 /* IncomingJSON.swift */; };
 		D5606851163E4B9DB451AF8C /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
 		9F76831DDF78F62C90EE477E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
 		6D029B115536EFE5DFE9E35C /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
 		A7AA2AEAA6B0EE99A69E5309 /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
+		8144DB3C2B4B40CFB2148398 /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
+		F35606E91A872F1641F04FF1 /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
+		230DF4A5B2B870E7DDDFF7FE /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
 		9673D70A198C7FED1CD863A8 /* EinkaufWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FFA995AB3FFD9B93F5501A0 /* EinkaufWidgets.swift */; };
 		0E0C4A8C62D79A891B310EEA /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		6F96F5B10BC949677697A59F /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		3B4B7EF637B7E620C4AC57A6 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
+		6EC684BEC54209263EA944CC /* IncomingJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43EEC326F6EF91C3C7664855 /* IncomingJSON.swift */; };
 		D41E63CE52074719DCC315BD /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
 		645B4B16D170F8FEA01D1401 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
 		365728F6463FA68E69DEBBA1 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
 		59BBE19A7BC0D15351E3D1CA /* StoreLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */; };
+		7C0B6B063388F32FA2D667F0 /* TodoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */; };
+		70E4073B52BC7E0F94D61F6C /* TodoModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 861F958ACA5618757971F25B /* TodoModels.swift */; };
+		FE639E66314E612C053CE708 /* TodoPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */; };
 		96ED049D930DD9AF4AD2ABCA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 03AF5479195A1C1DAE505808 /* Assets.xcassets */; };
 		5C8C681F8ABF91896A0F746C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ECC3FAE11911BD587AF7020C /* Assets.xcassets */; };
 		1DF6F4ADB90A0943E6BF1B47 /* einkauf-backup.json in Resources */ = {isa = PBXBuildFile; fileRef = 7578566B217205F916373346 /* einkauf-backup.json */; };
@@ -179,7 +195,9 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchApp.swift; sourceTree = "<group>"; };
 		499EF012DA49B4720127F282 /* WatchComplicationReload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchComplicationReload.swift; sourceTree = "<group>"; };
 		5324308E5A34153EAF3F1962 /* WatchListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchListView.swift; sourceTree = "<group>"; };
+		76F20A945F8D1BC1867267A7 /* WatchTodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTodoListView.swift; sourceTree = "<group>"; };
 		63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWatchWidgets.swift; sourceTree = "<group>"; };
+		6EEA63B43B7CA1DB7A804CDD /* TodoWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoWatchWidgets.swift; sourceTree = "<group>"; };
 		3FFA995AB3FFD9B93F5501A0 /* EinkaufWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWidgets.swift; sourceTree = "<group>"; };
 		142154A18A1BACA0878EF95B /* BackupCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCodec.swift; sourceTree = "<group>"; };
 		E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupShare.swift; sourceTree = "<group>"; };
@@ -200,10 +218,13 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StapleApply.swift; sourceTree = "<group>"; };
 		A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreLayout.swift; sourceTree = "<group>"; };
 		A32268097AE4939ECE075B98 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoAddItemsIntent.swift; sourceTree = "<group>"; };
 		D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoCodec.swift; sourceTree = "<group>"; };
 		861F958ACA5618757971F25B /* TodoModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoModels.swift; sourceTree = "<group>"; };
 		283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoPersistence.swift; sourceTree = "<group>"; };
+		D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoSiriPendingAdds.swift; sourceTree = "<group>"; };
 		75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoStore.swift; sourceTree = "<group>"; };
+		4E5E892BB96FB5BE42D8802A /* WatchSyncEnvelope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncEnvelope.swift; sourceTree = "<group>"; };
 		7578566B217205F916373346 /* einkauf-backup.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = einkauf-backup.json; sourceTree = "<group>"; };
 		03AF5479195A1C1DAE505808 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ECC3FAE11911BD587AF7020C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -323,6 +344,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
             				CFAA6824121A3A1D73BE8B03 /* EinkaufWatchApp.swift */,
 				499EF012DA49B4720127F282 /* WatchComplicationReload.swift */,
 				5324308E5A34153EAF3F1962 /* WatchListView.swift */,
+				76F20A945F8D1BC1867267A7 /* WatchTodoListView.swift */,
 				ECC3FAE11911BD587AF7020C /* Assets.xcassets */,
 				0ABD7868EA98DD31F19ECB30 /* Info.plist */,
 				BA1BE9FFCB8A414E7AFCC4A1 /* EinkaufWatch.entitlements */,
@@ -335,6 +357,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
             			isa = PBXGroup;
             			children = (
             				63C0C25D7F81F15EA56C4944 /* EinkaufWatchWidgets.swift */,
+				6EEA63B43B7CA1DB7A804CDD /* TodoWatchWidgets.swift */,
 				51C08FD20EC1C96E701AA9DE /* Info.plist */,
 				0EF1DA8ED0F225A1E67BBB2D /* EinkaufWatchWidgets.entitlements */,
             			);
@@ -375,10 +398,13 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 				5D19270BCE6DDC6FBDA58878 /* StapleApply.swift */,
 				A29FDF7A723C1A11B14D7221 /* StoreLayout.swift */,
 				A32268097AE4939ECE075B98 /* Theme.swift */,
+				D286F97BAECA452EA74EE411 /* TodoAddItemsIntent.swift */,
 				D0AC22A03B9F4F668F8EC1D8 /* TodoCodec.swift */,
 				861F958ACA5618757971F25B /* TodoModels.swift */,
 				283A4D09CCD1AC4A783AFA9A /* TodoPersistence.swift */,
+				D7F3DA5BC9F624240638DE92 /* TodoSiriPendingAdds.swift */,
 				75D5B8FC9D1EFFBAAC3C0861 /* TodoStore.swift */,
+				4E5E892BB96FB5BE42D8802A /* WatchSyncEnvelope.swift */,
             			);
             			path = Sources/Shared;
             			name = Shared;
@@ -599,10 +625,13 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				15447CEC2167C0109789092D /* StapleApply.swift in Sources */,
 				5B5C2370DE9C7E1CDEEC494E /* StoreLayout.swift in Sources */,
 				AE6F1CA79EE0E94DE630A854 /* Theme.swift in Sources */,
+				270C5025C833CEAC3FBC86C8 /* TodoAddItemsIntent.swift in Sources */,
 				742F79F1BBDE805C90A4CC1D /* TodoCodec.swift in Sources */,
 				39975D35AD8DD10272B34BC1 /* TodoModels.swift in Sources */,
 				705AA7BC3BBDFC4BE12927CA /* TodoPersistence.swift in Sources */,
+				DCA21D4CAF4F256ECB96BE12 /* TodoSiriPendingAdds.swift in Sources */,
 				8266DACD0CE3E59230B441F3 /* TodoStore.swift in Sources */,
+				F1C996479611FA9C6CC317AF /* WatchSyncEnvelope.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -613,6 +642,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				E92EC46C62005979C26ED769 /* EinkaufWatchApp.swift in Sources */,
 				9B25EAC860DE1921764CDDC9 /* WatchComplicationReload.swift in Sources */,
 				98518F6029CE9EC900A88F6D /* WatchListView.swift in Sources */,
+				EE414C6DCC8A58566F52EAC1 /* WatchTodoListView.swift in Sources */,
 				0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */,
 				619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */,
 				CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */,
@@ -632,10 +662,13 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				B8ECFA4CCB0833C604C51F51 /* StapleApply.swift in Sources */,
 				54713E098DBF141367B5DD52 /* StoreLayout.swift in Sources */,
 				E1FE6AF72F90CA057D6B090A /* Theme.swift in Sources */,
+				F1F372AE5EE59FA0C0FDD280 /* TodoAddItemsIntent.swift in Sources */,
 				4C4F0FB308F4D24538902950 /* TodoCodec.swift in Sources */,
 				93EF02CDF09906D3554E33D9 /* TodoModels.swift in Sources */,
 				9E4949263D8E3FF743694CDE /* TodoPersistence.swift in Sources */,
+				62C4A10BA20273C078BA5958 /* TodoSiriPendingAdds.swift in Sources */,
 				C6D0033EFA54ADA6566FE4FE /* TodoStore.swift in Sources */,
+				EF6EAF42091964E6FE48E4DD /* WatchSyncEnvelope.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -644,13 +677,18 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 			buildActionMask = 2147483647;
 			files = (
 				16FEB03CD391A62FFC2AC325 /* EinkaufWatchWidgets.swift in Sources */,
+				EC1F1E7CFD5D19AC0946A9B2 /* TodoWatchWidgets.swift in Sources */,
 				D669A4242B85D5564C2A226E /* BackupCodec.swift in Sources */,
 				5F0866CD8C5BC4A7DDB8E11F /* Department.swift in Sources */,
 				A506F3A9EB373EB70E906808 /* DepartmentGuesser.swift in Sources */,
+				3D51DAB9AB7014E04C6CA7A0 /* IncomingJSON.swift in Sources */,
 				D5606851163E4B9DB451AF8C /* KeywordDictionary.swift in Sources */,
 				9F76831DDF78F62C90EE477E /* Models.swift in Sources */,
 				6D029B115536EFE5DFE9E35C /* Persistence.swift in Sources */,
 				A7AA2AEAA6B0EE99A69E5309 /* StoreLayout.swift in Sources */,
+				8144DB3C2B4B40CFB2148398 /* TodoCodec.swift in Sources */,
+				F35606E91A872F1641F04FF1 /* TodoModels.swift in Sources */,
+				230DF4A5B2B870E7DDDFF7FE /* TodoPersistence.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -662,10 +700,14 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				0E0C4A8C62D79A891B310EEA /* BackupCodec.swift in Sources */,
 				6F96F5B10BC949677697A59F /* Department.swift in Sources */,
 				3B4B7EF637B7E620C4AC57A6 /* DepartmentGuesser.swift in Sources */,
+				6EC684BEC54209263EA944CC /* IncomingJSON.swift in Sources */,
 				D41E63CE52074719DCC315BD /* KeywordDictionary.swift in Sources */,
 				645B4B16D170F8FEA01D1401 /* Models.swift in Sources */,
 				365728F6463FA68E69DEBBA1 /* Persistence.swift in Sources */,
 				59BBE19A7BC0D15351E3D1CA /* StoreLayout.swift in Sources */,
+				7C0B6B063388F32FA2D667F0 /* TodoCodec.swift in Sources */,
+				70E4073B52BC7E0F94D61F6C /* TodoModels.swift in Sources */,
+				FE639E66314E612C053CE708 /* TodoPersistence.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -810,7 +852,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -845,7 +887,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -880,7 +922,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -912,7 +954,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -945,7 +987,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -975,7 +1017,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1006,7 +1048,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1037,7 +1079,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;

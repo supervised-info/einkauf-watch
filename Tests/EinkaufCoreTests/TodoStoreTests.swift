@@ -480,6 +480,237 @@ final class TodoStoreBackupTests: XCTestCase {
     }
 }
 
+final class WatchSyncEnvelopeTests: XCTestCase {
+    func testMergingTodoIntoLegacyEinkaufContextKeepsEinkaufBlob() {
+        let einkaufBlob = Data("einkauf-blob".utf8)
+        let todoBlob = Data("todo-blob".utf8)
+        let legacy: [String: Any] = [
+            "kind": "einkauf-sync",
+            "v": 1,
+            "blob": einkaufBlob
+        ]
+        let todoPayload: [String: Any] = [
+            "kind": "todo-sync",
+            "v": 1,
+            "blob": todoBlob
+        ]
+        let merged = WatchSyncEnvelope.merging(legacy, domain: WatchSyncEnvelope.todoKey, payload: todoPayload)
+        XCTAssertNil(merged["kind"] as? String)
+        let einkauf = WatchSyncEnvelope.dictionary(merged[WatchSyncEnvelope.einkaufKey])
+        XCTAssertEqual(einkauf?["kind"] as? String, "einkauf-sync")
+        XCTAssertEqual(einkauf?["blob"] as? Data, einkaufBlob)
+        let todo = WatchSyncEnvelope.dictionary(merged[WatchSyncEnvelope.todoKey])
+        XCTAssertEqual(todo?["kind"] as? String, "todo-sync")
+        XCTAssertEqual(todo?["blob"] as? Data, todoBlob)
+    }
+
+    func testMergingEinkaufDoesNotWipeTodo() {
+        let current: [String: Any] = [
+            WatchSyncEnvelope.todoKey: [
+                "kind": "todo-sync",
+                "v": 1,
+                "blob": Data("todo".utf8)
+            ]
+        ]
+        let einkaufPayload: [String: Any] = [
+            "kind": "einkauf-sync",
+            "v": 1,
+            "blob": Data("einkauf".utf8)
+        ]
+        let merged = WatchSyncEnvelope.merging(current, domain: WatchSyncEnvelope.einkaufKey, payload: einkaufPayload)
+        XCTAssertEqual(WatchSyncEnvelope.dictionary(merged[WatchSyncEnvelope.todoKey])?["kind"] as? String, "todo-sync")
+        XCTAssertEqual(WatchSyncEnvelope.dictionary(merged[WatchSyncEnvelope.einkaufKey])?["kind"] as? String, "einkauf-sync")
+    }
+
+    func testSplitIncomingLegacyEinkaufAndNestedBoth() {
+        let legacy: [String: Any] = ["kind": "einkauf-sync", "v": 1, "blob": Data("e".utf8)]
+        let splitLegacy = WatchSyncEnvelope.splitIncoming(legacy)
+        XCTAssertEqual(splitLegacy.einkauf?["kind"] as? String, "einkauf-sync")
+        XCTAssertNil(splitLegacy.todo)
+
+        let nested: [String: Any] = [
+            "einkauf": ["kind": "einkauf-sync", "blob": Data("e".utf8)],
+            "todo": ["kind": "todo-sync", "blob": Data("t".utf8)]
+        ]
+        let splitNested = WatchSyncEnvelope.splitIncoming(nested)
+        XCTAssertEqual(splitNested.einkauf?["kind"] as? String, "einkauf-sync")
+        XCTAssertEqual(splitNested.todo?["kind"] as? String, "todo-sync")
+
+        let todoMsg: [String: Any] = ["kind": "todo-toggle", "uid": 7, "completed": true]
+        let splitToggle = WatchSyncEnvelope.splitIncoming(todoMsg)
+        XCTAssertNil(splitToggle.einkauf)
+        XCTAssertEqual(splitToggle.todo?["kind"] as? String, "todo-toggle")
+    }
+
+    func testExtractTodoBlobAndUidFromNSNumber() throws {
+        let state = TodoCodec.normalized(
+            TodoState(tasks: [TodoTask(uid: 4, text: "Anruf")], nextUid: 5, revision: 1)
+        )
+        let blob = try TodoCodec.encodeLocal(state)
+        let payload: [String: Any] = ["kind": "todo-sync", "v": 1, "blob": blob]
+        let extracted = try XCTUnwrap(WatchSyncEnvelope.extractBlob(payload))
+        let decoded = try TodoCodec.decodeLocal(extracted)
+        XCTAssertEqual(decoded.tasks.map(\.text), ["Anruf"])
+        XCTAssertEqual(decoded.tasks.map(\.uid), [4] as [Int64])
+
+        XCTAssertEqual(WatchSyncEnvelope.uid(from: ["uid": NSNumber(value: Int64(9))]), 9)
+        XCTAssertEqual(WatchSyncEnvelope.uid(from: ["uid": Int64(3)]), 3)
+        XCTAssertNil(WatchSyncEnvelope.uid(from: ["uid": 0]))
+        XCTAssertNil(WatchSyncEnvelope.extractBlob(["kind": "todo-sync"]))
+    }
+
+    func testLegacyTopLevelEinkaufSyncIsEinkaufOnly() {
+        XCTAssertTrue(WatchSyncEnvelope.isEinkaufKind("einkauf-sync"))
+        XCTAssertTrue(WatchSyncEnvelope.isEinkaufKind("einkauf-toggle"))
+        XCTAssertTrue(WatchSyncEnvelope.isEinkaufKind("einkauf-pull"))
+        XCTAssertFalse(WatchSyncEnvelope.isEinkaufKind("todo-sync"))
+        XCTAssertTrue(WatchSyncEnvelope.isTodoKind("todo-sync"))
+        XCTAssertTrue(WatchSyncEnvelope.isTodoKind("todo-toggle"))
+        XCTAssertTrue(WatchSyncEnvelope.isTodoKind("todo-pull"))
+        XCTAssertFalse(WatchSyncEnvelope.isTodoKind("einkauf-sync"))
+    }
+}
+
+final class TodoMergeTests: XCTestCase {
+    func testHigherRevisionWinsStructureCompletedFollowsUpdatedAt() {
+        let older = TodoTask(
+            uid: 1,
+            text: " milch",
+            completed: false,
+            updatedAt: "2026-09-01T10:00:00.000Z"
+        )
+        let newerDone = TodoTask(
+            uid: 1,
+            text: "milch",
+            completed: true,
+            completedDate: "2026-09-04",
+            updatedAt: "2026-09-04T12:00:00.000Z"
+        )
+        let local = TodoState(tasks: [older, TodoTask(uid: 2, text: "nur lokal")], nextUid: 3, revision: 5)
+        let remote = TodoState(tasks: [newerDone], nextUid: 2, revision: 4)
+        let merged = TodoMerge.merge(local: local, remote: remote)
+        XCTAssertEqual(merged.revision, 5)
+        XCTAssertEqual(merged.tasks.map(\.text), [" milch", "nur lokal"])
+        XCTAssertEqual(merged.tasks[0].completed, true)
+        XCTAssertEqual(merged.tasks[0].updatedAt, "2026-09-04T12:00:00.000Z")
+        XCTAssertEqual(merged.nextUid, 3)
+    }
+
+    func testWithoutTimestampCompletedWins() {
+        let a = TodoTask(uid: 1, text: "x", completed: false, updatedAt: "")
+        let b = TodoTask(uid: 1, text: "x", completed: true, updatedAt: "")
+        let picked = TodoMerge.pickCompleted(base: a, other: b)
+        XCTAssertTrue(picked.completed)
+    }
+}
+
+final class TodoComplicationSnapshotTests: XCTestCase {
+    func testOpenCountAndErledigtNeverReadsEinkauf() {
+        XCTAssertEqual(TodoComplicationSnapshot.widgetKind, "TodoProgress")
+        XCTAssertEqual(TodoComplicationSnapshot.labelText, "To Do")
+        XCTAssertEqual(TodoComplicationSnapshot.openURL.absoluteString, "einkauf://todo")
+        XCTAssertNotEqual(TodoComplicationSnapshot.widgetKind, ComplicationSnapshot.widgetKind)
+
+        let empty = TodoComplicationSnapshot.make(from: .empty)
+        XCTAssertEqual(empty.compactCountText, "erledigt")
+        XCTAssertEqual(empty.openCount, 0)
+        XCTAssertEqual(empty.progress, 0, accuracy: 0.0001)
+        XCTAssertEqual(empty.inlineText, "To Do  erledigt")
+        XCTAssertEqual(empty.accessibilityLabel, "To Do, Liste erledigt")
+
+        var state = TodoState(
+            tasks: [
+                TodoTask(uid: 1, text: "A", completed: false),
+                TodoTask(uid: 2, text: "B", completed: true),
+                TodoTask(uid: 3, text: "C", completed: false)
+            ],
+            nextUid: 4,
+            revision: 1
+        )
+        var snap = TodoComplicationSnapshot.make(from: state)
+        XCTAssertEqual(snap.compactCountText, "2")
+        XCTAssertEqual(snap.openCount, 2)
+        XCTAssertEqual(snap.doneCount, 1)
+        XCTAssertEqual(snap.progress, 1.0 / 3.0, accuracy: 0.0001)
+        XCTAssertEqual(snap.inlineText, "To Do  2")
+        XCTAssertEqual(snap.accessibilityLabel, "To Do, 2 offen")
+
+        state.tasks[0].completed = true
+        state.tasks[2].completed = true
+        snap = TodoComplicationSnapshot.make(from: state)
+        XCTAssertEqual(snap.compactCountText, "erledigt")
+        XCTAssertEqual(snap.openCount, 0)
+        XCTAssertEqual(snap.progress, 1, accuracy: 0.0001)
+    }
+}
+
+@MainActor
+final class TodoStoreSyncAndSiriTests: XCTestCase {
+    func testApplyRemoteToggleAndSnapshot() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(state: .empty, enableSync: false)
+        let uid = try XCTUnwrap(store.add("Anruf"))
+        let beforeRevision = store.state.revision
+        store.toggle(uid)
+        XCTAssertTrue(store.state.tasks[0].completed)
+        XCTAssertEqual(store.state.revision, beforeRevision)
+
+        store.applyRemoteToggle(uid: uid, completed: false, at: "2026-12-01T18:00:00.000Z")
+        XCTAssertFalse(store.state.tasks[0].completed)
+
+        let remote = TodoState(
+            tasks: [
+                TodoTask(uid: uid, text: "Anruf", completed: true, updatedAt: "2026-12-01T19:00:00.000Z"),
+                TodoTask(uid: 99, text: "Neu remote", updatedAt: "2026-12-01T19:00:00.000Z")
+            ],
+            nextUid: 100,
+            revision: store.state.revision + 1
+        )
+        store.applyRemoteSnapshot(remote)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Anruf", "Neu remote"])
+        XCTAssertEqual(store.state.tasks[0].completed, true)
+    }
+
+    func testAddItemsFromSpeechAndPendingQueue() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(state: .empty, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "To Do: Steuer und Anruf"), 2)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Steuer", "Anruf"])
+
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("todo-siri-pending-test.json")
+        try? FileManager.default.removeItem(at: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        TodoSiriPendingAdds.enqueue("To Do: Milch, Butter", at: url)
+        TodoSiriPendingAdds.enqueue("  ", at: url)
+        TodoSiriPendingAdds.enqueue("todo", at: url)
+        XCTAssertEqual(TodoSiriPendingAdds.drain(at: url), ["Milch, Butter"])
+        XCTAssertEqual(TodoSiriPendingAdds.drain(at: url), [])
+        XCTAssertEqual(TodoSiriPendingAdds.defaultsKey, "todo.siriPendingAdds")
+        XCTAssertEqual(TodoSiriPendingAdds.fileName, "todo-siri-pending.json")
+        XCTAssertNotEqual(TodoSiriPendingAdds.defaultsKey, SiriPendingAdds.defaultsKey)
+    }
+}
+
 private func loadTodoFixture(_ name: String) throws -> Data {
     let url = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()

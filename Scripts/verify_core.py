@@ -266,6 +266,17 @@ def test_sources() -> None:
             fail(f"sync missing {needle}")
     if "TODO" in sync and "stub" in sync.lower():
         fail("sync looks stubbed")
+    envelope = (ROOT / "Sources/Shared/WatchSyncEnvelope.swift").read_text()
+    if "WatchSyncEnvelope.merging" not in sync:
+        fail("WatchSessionActor must merge applicationContext via WatchSyncEnvelope")
+    if 'einkaufKey = "einkauf"' not in envelope or 'todoKey = "todo"' not in envelope:
+        fail("merged application context must keep einkauf and todo keys")
+    if "todo-sync" not in envelope or "todo-toggle" not in envelope or "todo-pull" not in envelope:
+        fail("WatchSyncEnvelope must name todo-sync / todo-toggle / todo-pull")
+    if "einkauf-sync" not in envelope or "einkauf-toggle" not in envelope or "einkauf-pull" not in envelope:
+        fail("WatchSyncEnvelope must keep einkauf-sync / einkauf-toggle / einkauf-pull")
+    if "attachTodo" not in sync:
+        fail("WatchSessionActor must attach TodoConnectivitySync without a second WCSession.delegate")
     store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
     if "func toggle" not in store:
         fail("no toggle")
@@ -304,12 +315,17 @@ def test_sources() -> None:
         "Sources/Shared/KeywordDictionaryBrowse.swift",
         "Sources/Shared/SpeechItemSplitter.swift",
         "Sources/Shared/EinkaufAddItemsIntent.swift",
+        "Sources/Shared/TodoAddItemsIntent.swift",
+        "Sources/Shared/TodoSiriPendingAdds.swift",
         "Sources/Shared/TodoModels.swift",
         "Sources/Shared/TodoCodec.swift",
         "Sources/Shared/TodoPersistence.swift",
         "Sources/Shared/TodoStore.swift",
         "Sources/Shared/IncomingJSON.swift",
+        "Sources/Shared/WatchSyncEnvelope.swift",
         "Sources/iOS/TodoListView.swift",
+        "Sources/Watch/WatchTodoListView.swift",
+        "Sources/WatchWidgets/TodoWatchWidgets.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/iOS/HomeWidgetReload.swift",
@@ -330,6 +346,8 @@ def test_sources() -> None:
     einkauf_app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
     if "url.scheme == \"einkauf\"" not in einkauf_app:
         fail("EinkaufRoot onOpenURL must ignore widget tap einkauf:// URLs")
+    if "url.host == \"todo\"" not in einkauf_app:
+        fail("einkauf://todo must select the To-Do tab")
     if ".onOpenURL" in content:
         fail("onOpenURL must live on EinkaufRoot, not ContentView")
     if "Einstellungen" not in content:
@@ -404,8 +422,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 45" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 45 / CURRENT_PROJECT_VERSION")
+    if "Build 46" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 46 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -879,8 +897,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 45" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 45")
+    if "CURRENT_PROJECT_VERSION = 46" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 46")
+    if "CURRENT_PROJECT_VERSION = 45" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 45 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 44" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 44 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 43" in pbx:
@@ -956,8 +976,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 45" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 45")
+    if "CURRENT_PROJECT_VERSION: 46" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 46")
+    if "CURRENT_PROJECT_VERSION: 45" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 45 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 44" in yml:
         fail("stale CURRENT_PROJECT_VERSION 44 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 43" in yml:
@@ -1241,8 +1263,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 45") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 45")
+    if pbx.count("CURRENT_PROJECT_VERSION = 46") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 46")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1271,6 +1293,42 @@ def test_watch_complication() -> None:
     ios_info = (ROOT / "Sources/iOS/Info.plist").read_text()
     if "widgetkit-extension" in ios_info:
         fail("iPhone Info.plist must not declare a WidgetKit extension")
+
+    todo_widget = (ROOT / "Sources/WatchWidgets/TodoWatchWidgets.swift").read_text()
+    todo_models = (ROOT / "Sources/Shared/TodoModels.swift").read_text()
+    todo_store = (ROOT / "Sources/Shared/TodoStore.swift").read_text()
+    if "TodoComplication()" not in widget:
+        fail("Watch WidgetBundle must include TodoComplication alongside EinkaufComplication")
+    if "struct TodoComplication" not in todo_widget:
+        fail("TodoComplication must live in WatchWidgets, separate from EinkaufComplication")
+    if "TodoProgress" not in todo_models:
+        fail("TodoComplicationSnapshot widgetKind must be TodoProgress")
+    if 'labelText = "To Do"' not in todo_models:
+        fail("To-Do complication label must be exactly To Do")
+    if "einkauf://todo" not in todo_models:
+        fail("To-Do complication openURL must be einkauf://todo")
+    if "TodoPersistence.load" not in todo_widget:
+        fail("To-Do complication must read TodoPersistence / todo-local.json")
+    if "einkauf-local.json" in todo_widget or re.search(r"(?<![A-Za-z])Persistence\.load", todo_widget):
+        fail("To-Do complication must never read einkauf-local.json")
+    if "ShoppingStore" in todo_widget or "AppState" in todo_widget:
+        fail("To-Do complication must not mix ShoppingStore / AppState")
+    if '"erledigt"' not in todo_models:
+        fail("TodoComplicationSnapshot compactCountText must use erledigt when open is 0")
+    if "todoTimelines" not in reload:
+        fail("WatchComplicationReload must reload TodoProgress separately")
+    if "WatchComplicationReload.todoTimelines" not in todo_store:
+        fail("TodoStore persist must reload the To-Do complication")
+    if "WatchComplicationReload.timelines()" in todo_store.replace("WatchComplicationReload.todoTimelines()", ""):
+        fail("TodoStore must not reload the Einkauf complication")
+    todo_circular = extract_some_view(todo_widget, "circular")
+    todo_corner = extract_some_view(todo_widget, "corner")
+    assert_no_large_progress_text(todo_circular, "todo circular")
+    assert_corner_count_larger_than_label(todo_corner)
+    if "Gauge" not in todo_circular:
+        fail("To-Do circular must use Gauge")
+    if "TodoComplicationSnapshot.labelText" not in todo_corner and '"To Do"' not in todo_corner:
+        fail("To-Do corner widgetLabel must be To Do")
     print("watch complication: ok")
 
 
@@ -1536,9 +1594,76 @@ def test_siri_app_intents() -> None:
         fail("project.yml widgets must exclude TodoStore.swift")
     if "EinkaufAddItemsIntent.swift" not in pkg:
         fail("Package.swift must exclude EinkaufAddItemsIntent.swift from SPM")
+    if "TodoAddItemsIntent.swift" not in pkg:
+        fail("Package.swift must exclude TodoAddItemsIntent.swift from SPM")
+    if "TodoAddItemsIntent.swift" not in pbx:
+        fail("pbxproj must compile TodoAddItemsIntent.swift")
+    if "TodoSiriPendingAdds.swift" not in pbx:
+        fail("pbxproj must compile TodoSiriPendingAdds.swift")
+    if "TodoAddItemsIntent.swift" not in yml:
+        fail("project.yml widgets must exclude TodoAddItemsIntent.swift")
+    if "TodoSiriPendingAdds.swift" not in yml:
+        fail("project.yml widgets must exclude TodoSiriPendingAdds.swift")
+
+    todo_intent = (ROOT / "Sources/Shared/TodoAddItemsIntent.swift").read_text()
+    todo_pending = (ROOT / "Sources/Shared/TodoSiriPendingAdds.swift").read_text()
+    if "besorgen" in todo_intent:
+        fail("To-Do Siri phrases must not use besorgen")
+    if r'"\(.applicationName) To Do"' not in todo_intent:
+        fail("To-Do App Shortcut phrase applicationName To Do missing")
+    if r'"To Do mit \(.applicationName)"' not in todo_intent:
+        fail("To-Do App Shortcut phrase To Do mit applicationName missing")
+    if r'"\(.applicationName) zum To Do"' not in todo_intent:
+        fail("To-Do App Shortcut phrase applicationName zum To Do missing")
+    todo_phrases = todo_intent.split("phrases:", 1)[-1].split("shortTitle", 1)[0]
+    if todo_phrases.count("applicationName") < 3:
+        fail("each To-Do App Shortcut phrase must include applicationName")
+    if ".$items" in todo_phrases:
+        fail("To-Do App Shortcut phrases must not interpolate String $items")
+    if 'requestValueDialog: "T"' not in todo_intent:
+        fail("To-Do requestValueDialog must be T")
+    if 'shortTitle: "To Do"' not in todo_intent:
+        fail("To-Do App Shortcut shortTitle must be To Do")
+    if "struct TodoShortcuts: AppShortcutsProvider" not in todo_intent:
+        fail("To-Do must use a separate AppShortcutsProvider so Einkauf besorgen stays intact")
+    if "openAppWhenRun = false" not in todo_intent:
+        fail("To-Do Intent must set openAppWhenRun = false")
+    if "TodoSiriPendingAdds.enqueue" not in todo_intent:
+        fail("watchOS To-Do Intent must enqueue TodoSiriPendingAdds")
+    if "TodoStore" in todo_intent.split("#if os(watchOS)", 1)[-1].split("#else", 1)[0]:
+        fail("watchOS To-Do Intent must not construct TodoStore")
+    if "TodoStore(enableSync: true)" not in todo_intent:
+        fail("iOS To-Do Intent must use TodoStore(enableSync: true)")
+    if "addItems(fromSpeech:" not in todo_intent:
+        fail("iOS To-Do Intent must call addItems(fromSpeech:)")
+    if "strippingTodoTriggerPrefix" not in todo_intent:
+        fail("To-Do Intent must strip To Do / todo prefix")
+    todo_watch_perform = todo_intent.split("#if os(watchOS)", 1)[-1].split("#else", 1)[0]
+    if "ProvidesDialog" in todo_watch_perform or "throws" in todo_watch_perform:
+        fail("watchOS To-Do perform must be plain .result() without dialog/throws")
+    if "return .result()" not in todo_watch_perform:
+        fail("watchOS To-Do perform must return .result()")
+    if "todo.siriPendingAdds" not in todo_pending:
+        fail("TodoSiriPendingAdds must use defaults key todo.siriPendingAdds")
+    if "todo-siri-pending.json" not in todo_pending:
+        fail("TodoSiriPendingAdds must use todo-siri-pending.json")
+    if "einkauf.siriPendingAdds" in todo_pending or "einkauf-siri-pending.json" in todo_pending:
+        fail("TodoSiriPendingAdds must not reuse einkauf Siri queue keys")
+    if "ShoppingStore" in todo_pending or "AppState" in todo_pending:
+        fail("TodoSiriPendingAdds must stay a string queue")
+    if "func addItems(fromSpeech" not in (ROOT / "Sources/Shared/TodoStore.swift").read_text():
+        fail("TodoStore.addItems(fromSpeech:) missing")
+    if "func consumeSiriPendingAdds" not in (ROOT / "Sources/Shared/TodoStore.swift").read_text():
+        fail("TodoStore.consumeSiriPendingAdds missing")
+    if "strippingTodoTriggerPrefix" not in splitter:
+        fail("SpeechItemSplitter must strip a leading To Do trigger")
+    if "testStripsLeadingTodoTriggerNotBesorgen" not in tests:
+        fail("tests must cover stripping To Do without touching besorgen")
 
     if "consumeSiriPendingAdds" not in watch_app:
         fail("Watch app must drain Siri pending queue when becoming active")
+    if "todos.consumeSiriPendingAdds" not in watch_app:
+        fail("Watch app must drain To-Do Siri pending as well as Einkauf")
     if ".task" not in watch_app:
         fail("Watch app root must drain Siri pending queue in .task")
     if "onAppear" not in watch or "consumeSiriPendingAdds" not in watch:
@@ -1690,8 +1815,10 @@ def test_todo_store() -> None:
         fail("Todo persist/store must not route through BackupCodec")
     if 'kind: "todo-local"' not in codec and 'localKind = "todo-local"' not in codec:
         fail("TodoCodec must use kind todo-local")
-    if "ConnectivitySync" in store or "WCSession" in store:
-        fail("TodoStore must not wire WatchConnectivity yet")
+    if "ConnectivitySync" not in store or "TodoConnectivitySync" not in store:
+        fail("TodoStore must wire TodoConnectivitySync when enableSync")
+    if "WCSession" in store:
+        fail("TodoStore must not talk to WCSession directly")
     if "TabView" not in einkauf_app:
         fail("iPhone root must use TabView for Einkauf | To-Do")
     if 'Label("Einkauf", systemImage: "basket")' not in einkauf_app:
@@ -1710,8 +1837,20 @@ def test_todo_store() -> None:
         fail("ContentView must not host Todo UI")
     if "fileImporter" not in content or "Geh-Modus" not in content:
         fail("Einkauf ContentView must keep backup import and Geh-Modus")
-    if "TabView" in watch or "TabView" in watch_app or "TodoStore" in watch or "TodoListView" in watch:
-        fail("Watch must not get a To-Do tab yet")
+    if "TabView" in watch:
+        fail("WatchListView must stay the Einkauf tab, not wrap TabView")
+    if "TabView" not in watch_app:
+        fail("Watch app must use TabView for Einkauf | To-Do")
+    if "WatchTodoListView" not in watch_app:
+        fail("Watch TabView must host WatchTodoListView")
+    if "TodoStore()" not in watch_app or "environmentObject(todos)" not in watch_app:
+        fail("EinkaufWatchApp must own TodoStore and inject environmentObject")
+    if 'Label("Einkauf", systemImage: "basket")' not in watch_app:
+        fail("Watch Einkauf tab must use basket SF Symbol")
+    if 'Label("To-Do", systemImage: "checklist")' not in watch_app:
+        fail("Watch To-Do tab must use checklist SF Symbol")
+    if "TodoListView" in watch or "TodoStore" in watch:
+        fail("WatchListView must not host Todo UI")
     if "fileImporter" not in todo_ui or "fileExporter" not in todo_ui:
         fail("TodoListView must offer backup import/export")
     if "Backup importieren" not in todo_ui or "Backup exportieren" not in todo_ui:
@@ -1879,6 +2018,35 @@ def test_todo_store() -> None:
         fail("Description.md WIP must not claim full To-Do HTML parity")
     if "TabView" not in desc and "To-Do" not in desc:
         fail("Description.md WIP must mention the To-Do tab")
+    watch_todo = (ROOT / "Sources/Watch/WatchTodoListView.swift").read_text()
+    if "todo.watch.hideCompleted" not in watch_todo:
+        fail("Watch To-Do eye must use AppStorage todo.watch.hideCompleted")
+    if "einkauf.watch.hideCompleted" in watch_todo or "todo.iphone.showCompleted" in watch_todo:
+        fail("Watch To-Do must not reuse einkauf.watch.hideCompleted or todo.iphone.showCompleted")
+    if "todos.toggle" not in watch_todo:
+        fail("Watch To-Do rows must toggle completed")
+    if "fileImporter" in watch_todo or "TextField" in watch_todo or re.search(r"\bPicker\s*\(", watch_todo):
+        fail("Watch To-Do must not offer edit/import/search")
+    if "reopenedFromUid" in watch_todo or "Wieder öffnen" in watch_todo:
+        fail("Watch To-Do must not offer reopen")
+    if "todo-liste.md" in watch_todo or "todo-liste.csv" in watch_todo:
+        fail("Watch To-Do must not offer MD/CSV")
+    if "toolbar(.hidden, for: .navigationBar)" not in watch_todo:
+        fail("Watch To-Do must hide the navigation bar like Einkauf")
+    if '"eye"' not in watch_todo or "eye.slash" not in watch_todo:
+        fail("Watch To-Do must use eye / eye.slash")
+    if "consumeSiriPendingAdds" not in watch_todo:
+        fail("WatchTodoListView must drain To-Do Siri pending onAppear")
+    if "testMergingTodoIntoLegacyEinkaufContextKeepsEinkaufBlob" not in tests:
+        fail("tests must cover merged application context")
+    if "testExtractTodoBlobAndUidFromNSNumber" not in tests:
+        fail("tests must cover todo payload extract / uid NSNumber")
+    if "testOpenCountAndErledigtNeverReadsEinkauf" not in tests:
+        fail("tests must cover TodoComplicationSnapshot compactCountText")
+    if "testAddItemsFromSpeechAndPendingQueue" not in tests:
+        fail("tests must cover To-Do Siri pending queue")
+    if "enableSync" not in store or "TodoConnectivitySync" not in store:
+        fail("TodoStore.enableSync must start TodoConnectivitySync")
     print("todo store + iphone tab: ok")
 
 
