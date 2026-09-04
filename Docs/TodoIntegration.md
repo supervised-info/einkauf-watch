@@ -1,6 +1,6 @@
 # Plan: To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04. Phasen 1–4: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum und Abgeschlossen-Toggle. Watch-To-Do, Backup-UI und volle HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
+Stand: 2026-09-04. Phasen 1–5: Plan, `TodoStore`/`todo-local.json`, iPhone-`TabView` mit CRUD plus Person/Prio/Datum, Abgeschlossen-Toggle und To-Do-Backup `todo-v3-json`. Watch-To-Do und volle HTML-Parity fehlen. Volle Spec in `Description.md` erst Phase 9.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen der **Einkaufs**-App bleiben die Wahrheit für Einkauf. Für To-Do-Produktverhalten gilt die HTML-PWA, nicht diese Datei.
 
@@ -268,15 +268,21 @@ Gelandet:
 - Tests: Overdue / Prio-Key / Sort
 - Build 43 (iPhone-UI)
 
-Noch nicht: Backup-UI (Phase 5), Watch (Phase 6), Reopen/Suche/volle Sort-Header (Phase 7).
+Noch nicht: Watch (Phase 6), Reopen/Suche/volle Sort-Header (Phase 7).
 
-### 5. Backup Import/Export JSON (eigenes Menü im To-Do-Tab)
+### 5. Backup Import/Export JSON (eigenes Menü im To-Do-Tab) — erledigt (Build 44)
 
-- Export `format: "todo-v3-json"`
-- Import Array oder `{tasks, nextUid}`; Anhängen vs. Ersetzen wenn Liste nicht leer (HTML-Modal)
-- Share-Sheet / `onOpenURL`: Router `einkauf-backup` vs `todo-v3-json`
-- **Kein** MD/CSV in dieser Phase (Phase 8)
-- Fixtures unter z. B. `Fixtures/todo-v3-json.json` — nicht in `BackupCodec`-Einkaufstests hängen
+Gelandet:
+
+- Export `format: "todo-v3-json"` (`TodoCodec.encodeBackup`), Defaultname `todo-liste` / gestempelt `yyyyMMdd_HHmm-todo-liste.json`. Nicht `kind: einkauf-backup`, nicht `BackupCodec`
+- Import Array oder `{format, nextUid, tasks}` (Extra-Felder egal); leer → direkt setzen; sonst Bestätigung **Anhängen** / **Ersetzen**. Kollidierende UIDs über `normalizeTasks`
+- Eigenes Overflow **…** nur im To-Do-Tab (`ellipsis.circle`, „Mehr“): Backup importieren / exportieren / teilen, Erledigte löschen (`TodoStore.clearCompleted`). Einkaufs-Overflow unverändert, kein MD/CSV, kein Geh-Modus
+- Toolbar trailing wie Einkauf-Chrome: Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`, Accessibility „Abgeschlossene ausblenden“ / „einblenden“) plus **…** — kein Text-Toggle
+- `onOpenURL` an `EinkaufRoot`: Peek JSON — `todo-v3-json` / To-Do-Shape → `TodoStore` + To-Do-Tab; `einkauf-backup` / `looksLikeBackup` → Einkauf; sonst klarer Fehler, nie still ins falsche Store
+- Fixture `Fixtures/todo-v3-json.json`; Tests Roundtrip, Einkauf-JSON an To-Do abgelehnt, To-Do-JSON an `looksLikeBackup` abgelehnt
+- Build 44
+
+Noch nicht: Watch (Phase 6), Reopen/Suche (Phase 7), MD/CSV (Phase 8).
 
 ### 6. Watch Geh-Modus + Sync nur für To-Do
 
@@ -332,7 +338,7 @@ Noch nicht: Backup-UI (Phase 5), Watch (Phase 6), Reopen/Suche/volle Sort-Header
 
 1. **`Persistence.fileName`** ist `"einkauf-local.json"` — To-Do braucht eine zweite Datei, keine Parameter-Verwechslung.
 2. **`BackupCodec.looksLikeBackup`**: heuristisch `v==1` + `items`+`stores`. To-Do-JSON darf dort nie landen; Router zuerst.
-3. **`ContentView.onOpenURL`**: alles außer `einkauf://` → `store.importBackup`. Muss später branchen.
+3. **`ContentView.onOpenURL`**: erledigt in Phase 5 — Router sitzt auf `EinkaufRoot` (`IncomingJSON`).
 4. **`Info.plist` `public.json`**: eine geöffnete `todo-liste.json` trifft die Einkaufs-App. Router oder eigener UTType `net.tschelle.einkauf.todo-backup`.
 5. **`WatchSessionActor.shared` + ein `ConnectivitySync.store: ShoppingStore?`**: Multiplex, nicht zweites `WCSession.delegate`.
 6. **Application Context last-write-wins**: To-Do darf den Einkaufs-Snapshot nicht verdrängen.
@@ -366,4 +372,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 2: Models, `todo-local.json`, `TodoStore` ohne WC.
 - [x] Phase 3: iPhone-Tab Einkauf | To-Do, Text-CRUD, Einkaufs-`ContentView` unverändert.
 - [x] Phase 4: Person/Prio/Datum, Overdue, Abgeschlossen-Toggle (`todo.iphone.showCompleted`), Build 43.
-- [ ] Folge-PRs halten die Reihenfolge 5→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Phase 5: To-Do-Backup `todo-v3-json`, eigenes Overflow, `onOpenURL`-Router, Build 44.
+- [ ] Folge-PRs halten die Reihenfolge 6→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).

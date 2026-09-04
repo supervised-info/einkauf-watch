@@ -89,6 +89,14 @@ final class TodoStore: ObservableObject {
         persist()
     }
 
+    func clearCompleted() {
+        let before = state.tasks.count
+        state.tasks.removeAll { $0.completed }
+        guard state.tasks.count != before else { return }
+        state.revision += 1
+        persist()
+    }
+
     func update(
         _ uid: Int64,
         text: String? = nil,
@@ -112,6 +120,34 @@ final class TodoStore: ObservableObject {
         if let dueDate { state.tasks[idx].dueDate = TodoJSON.isoDate(dueDate) }
         state.tasks[idx].updatedAt = TodoTime.nowIso()
         state.tasks[idx].changedBy = TodoAuthor.app
+        state.revision += 1
+        persist()
+    }
+
+    func exportBackup() throws -> Data {
+        try TodoCodec.encodeBackup(state)
+    }
+
+    func importBackup(_ data: Data, append: Bool) throws {
+        let incoming = try TodoCodec.decodeBackup(data)
+        applyImported(incoming, append: append)
+        lastError = nil
+    }
+
+    func importBackup(from url: URL, append: Bool) throws {
+        let data = try IncomingJSON.data(from: url)
+        try importBackup(data, append: append)
+    }
+
+    private func applyImported(_ incoming: TodoState, append: Bool) {
+        if append {
+            var merged = state
+            merged.tasks.append(contentsOf: incoming.tasks)
+            merged.nextUid = max(merged.nextUid, incoming.nextUid)
+            state = TodoCodec.normalized(merged)
+        } else {
+            state = TodoCodec.normalized(incoming)
+        }
         state.revision += 1
         persist()
     }

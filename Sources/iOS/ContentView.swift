@@ -70,14 +70,6 @@ struct ContentView: View {
                     saveListName = String(value.prefix(SavedList.nameMax))
                 }
             }
-            .onOpenURL { url in
-                if url.scheme == "einkauf" { return }
-                do {
-                    try store.importBackup(from: url)
-                } catch {
-                    alertMessage = error.localizedDescription
-                }
-            }
             .sheet(isPresented: $showSettings) {
                 SettingsSheet()
                     .environmentObject(store)

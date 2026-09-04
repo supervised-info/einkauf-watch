@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-04 (Build 43, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-04 (Build 44, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/). HTML-Spec: Pages `einkauf/Description_index.md`. Brücke ist **nur** die Backup-JSON-Datei (`kind: "einkauf-backup"`). Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -12,7 +12,7 @@ TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedac
 
 ## Geplant / WIP
 
-Zweiter Reiter **To-Do** auf dem **iPhone** (`TabView` Einkauf | To-Do): Text, Person, Prio A/B, Datum; „Abgeschlossen einblenden“ (`todo.iphone.showCompleted`, nur Gerät). **Kein** HTML-Parity — Backup, Reopen, Suche und Watch-To-Do fehlen (Phasen 5–7). Plan: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Volle Spec erst in Phase 9.
+Zweiter Reiter **To-Do** auf dem **iPhone** (`TabView` Einkauf | To-Do): Text, Person, Prio A/B, Datum; Auge `eye` / `eye.slash` (`todo.iphone.showCompleted`, nur Gerät); Backup JSON (`todo-v3-json`) und Erledigte löschen im To-Do-Overflow **…**. **Kein** HTML-Parity — Reopen, Suche, MD/CSV und Watch-To-Do fehlen (Phasen 6–8). Plan: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Volle Spec erst in Phase 9.
 
 ## Datei-Ort, Targets, Bundle
 
@@ -31,7 +31,7 @@ Zweiter Reiter **To-Do** auf dem **iPhone** (`TabView` Einkauf | To-Do): Text, P
 | Backup-Dokumenttyp | JSON, UTType `net.tschelle.einkauf.backup` |
 | Xcode | 15+, iOS 17, watchOS 10, Sprache de, Marketing 1.0 |
 | Projekt | `Einkauf.xcodeproj` / `project.yml`; optional `Scripts/generate-xcodeproj.sh` |
-| Fixtures | `Fixtures/einkauf-backup.json`, `Fixtures/einkauf-backup-ohne-staples.json` |
+| Fixtures | `Fixtures/einkauf-backup.json`, `Fixtures/einkauf-backup-ohne-staples.json`, `Fixtures/todo-v3-json.json` (To-Do, nicht Einkauf-BackupCodec) |
 | Linux-Check | `python3 Scripts/verify_core.py`; Swift-Tests `swift test` (Mac) |
 
 Watch-UI-Änderung: Build-Nummer hochzählen, sonst bleibt die alte Companion-App. Zeigt die Watch weiter die alte UI: Einkauf auf der Watch löschen und unter Verfügbare Apps neu installieren. Complication folgt derselben Build-Nummer; nach Install die Komplikation auf dem Zifferblatt neu wählen, falls sie fehlt.
@@ -78,7 +78,7 @@ Je Artikel: Checkbox, Name (Tipp → Rename; leer/Abbrechen = keine Änderung), 
 9. Divider
 10. Einstellungen
 
-Import: `fileImporter` JSON, ersetzt den Stand (kein Confirm). `onOpenURL` dasselbe. Unbekannte Felder ignorieren. Fehlende `staples` / `savedLists` → `[]`.
+Import: `fileImporter` JSON, ersetzt den Stand (kein Confirm). `onOpenURL` sitzt auf `EinkaufRoot` (nicht `ContentView`): Peek JSON — `todo-v3-json` / To-Do-Shape → `TodoStore` und To-Do-Tab; `kind: "einkauf-backup"` / `looksLikeBackup` → Einkauf wie bisher; sonst Fehler, nie still ins falsche Store. Widget-URL `einkauf://` bleibt Einkaufs-Tab. Unbekannte Felder ignorieren. Fehlende `staples` / `savedLists` → `[]`.
 
 Export: `fileExporter`, Defaultname `einkauf-backup`.
 

@@ -1,7 +1,8 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// iPhone-To-Do Phase 4: Person / Prio / Datum, Abgeschlossen-Toggle.
-/// Backup: Phase 5. Watch: Phase 6.
+/// iPhone-To-Do Phase 5: Person / Prio / Datum plus Backup `todo-v3-json`.
+/// Watch: Phase 6.
 struct TodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @Environment(\.einkaufTheme) private var theme
@@ -12,6 +13,14 @@ struct TodoListView: View {
     @State private var draftPrioB = ""
     @State private var draftDue = ""
     @State private var editingTask: TodoTask?
+    @State private var showImporter = false
+    @State private var showExporter = false
+    @State private var exportDocument = BackupFileDocument(data: Data())
+    @State private var shareItem: BackupShareItem?
+    @State private var alertMessage: String?
+    @State private var pendingImport: Data?
+    @State private var showImportChoice = false
+    @State private var importSummary = ""
 
     private var visibleTasks: [TodoTask] {
         let source = showCompleted ? todos.state.tasks : todos.state.tasks.filter { !$0.completed }
@@ -25,7 +34,7 @@ struct TodoListView: View {
                     ContentUnavailableView(
                         "Noch nichts auf der Liste.",
                         systemImage: "checklist",
-                        description: Text("Aufgabe hinzufügen.")
+                        description: Text("Aufgabe hinzufügen oder ein Backup importieren.")
                     )
                     .foregroundStyle(theme.ink)
                 } else if visibleTasks.isEmpty {
@@ -44,6 +53,29 @@ struct TodoListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .safeAreaInset(edge: .bottom, spacing: 0) { addBar }
+            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+                handleImport(result)
+            }
+            .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .json, defaultFilename: "todo-liste") { result in
+                if case .failure(let error) = result {
+                    alertMessage = error.localizedDescription
+                }
+            }
+            .alert("Hinweis", isPresented: Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })) {
+                Button("OK", role: .cancel) { alertMessage = nil }
+            } message: {
+                Text(alertMessage ?? "")
+            }
+            .confirmationDialog("To-Do importieren", isPresented: $showImportChoice, titleVisibility: .visible) {
+                Button("Anhängen") { commitPending(append: true) }
+                Button("Ersetzen") { commitPending(append: false) }
+                Button("Abbrechen", role: .cancel) { pendingImport = nil }
+            } message: {
+                Text(importSummary)
+            }
+            .onChange(of: todos.lastError) { _, new in
+                if let new { alertMessage = new }
+            }
             .sheet(item: $editingTask) { task in
                 TodoEditSheet(task: task) { text, person, prioA, prioB, dueDate in
                     todos.update(task.uid, text: text, person: person, prioA: prioA, prioB: prioB, dueDate: dueDate)
@@ -51,15 +83,41 @@ struct TodoListView: View {
                 .environment(\.einkaufTheme, theme)
                 .einkaufScreen(theme)
             }
+            .sheet(item: $shareItem) { item in
+                ShareSheet(url: item.url)
+                    .ignoresSafeArea()
+            }
         }
     }
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Toggle("Abgeschlossen einblenden", isOn: $showCompleted)
-                .accessibilityLabel("Abgeschlossen einblenden")
-                .accessibilityValue(showCompleted ? "ein" : "aus")
+            Button {
+                showCompleted.toggle()
+            } label: {
+                Image(systemName: showCompleted ? "eye" : "eye.slash")
+            }
+            .accessibilityLabel(showCompleted ? "Abgeschlossene ausblenden" : "Abgeschlossene einblenden")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button("Backup importieren…", systemImage: "square.and.arrow.down") {
+                    showImporter = true
+                }
+                Button("Backup exportieren…", systemImage: "square.and.arrow.up") {
+                    exportBackup()
+                }
+                Button("Backup teilen", systemImage: "square.and.arrow.up.on.square") {
+                    shareBackup()
+                }
+                Button("Erledigte löschen", systemImage: "trash") {
+                    todos.clearCompleted()
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+            .accessibilityLabel("Mehr")
         }
     }
 
@@ -199,6 +257,78 @@ struct TodoListView: View {
         }
         for uid in uids {
             todos.delete(uid)
+        }
+    }
+
+    private func exportBackup() {
+        do {
+            exportDocument = BackupFileDocument(data: try todos.exportBackup())
+            showExporter = true
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func shareBackup() {
+        do {
+            let data = try todos.exportBackup()
+            let url = try BackupShare.writeTempFile(data: data, stem: BackupShare.todoStem)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                alertMessage = "Backup-Datei konnte nicht erzeugt werden."
+                return
+            }
+            shareItem = BackupShareItem(url: url)
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            alertMessage = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            do {
+                let data = try IncomingJSON.data(from: url)
+                try offerOrApply(data)
+            } catch {
+                alertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func offerOrApply(_ data: Data) throws {
+        switch IncomingJSON.classify(data) {
+        case .todoBackup:
+            break
+        case .einkaufBackup:
+            throw TodoCodecError.einkaufFile
+        case .invalidJSON:
+            throw IncomingJSONError.invalidJSON
+        case .unknown:
+            throw IncomingJSONError.unknownFormat
+        }
+        let incoming = try TodoCodec.decodeBackup(data)
+        if todos.state.tasks.isEmpty {
+            try todos.importBackup(data, append: false)
+            return
+        }
+        pendingImport = data
+        importSummary = TodoImportPrompt.message(
+            currentCount: todos.state.tasks.count,
+            incomingCount: incoming.tasks.count
+        )
+        showImportChoice = true
+    }
+
+    private func commitPending(append: Bool) {
+        guard let data = pendingImport else { return }
+        pendingImport = nil
+        do {
+            try todos.importBackup(data, append: append)
+        } catch {
+            alertMessage = error.localizedDescription
         }
     }
 }

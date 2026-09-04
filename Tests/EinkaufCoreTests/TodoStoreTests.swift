@@ -206,6 +206,32 @@ final class TodoStoreTests: XCTestCase {
         store.delete(uid)
         XCTAssertTrue(store.state.tasks.isEmpty)
     }
+
+    func testClearCompletedRemovesOnlyDone() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(state: .empty, enableSync: false)
+        XCTAssertNotNil(store.add("Offen"))
+        let done = try XCTUnwrap(store.add("Fertig"))
+        store.toggle(done)
+        XCTAssertEqual(store.state.tasks.map(\.completed), [false, true])
+
+        store.clearCompleted()
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Offen"])
+        XCTAssertFalse(store.state.tasks[0].completed)
+
+        store.clearCompleted()
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Offen"])
+    }
 }
 
 final class TodoOrderingTests: XCTestCase {
@@ -245,4 +271,151 @@ final class TodoOrderingTests: XCTestCase {
         ]
         XCTAssertEqual(TodoOrdering.sorted(tasks).map(\.uid), [5, 4, 3, 2, 6, 1] as [Int64])
     }
+}
+
+final class TodoBackupCodecTests: XCTestCase {
+    func testV3JsonFixtureRoundTripAndIgnoresExtraFields() throws {
+        let data = try loadTodoFixture("todo-v3-json.json")
+        let state = try TodoCodec.decodeBackup(data)
+        XCTAssertEqual(state.tasks.map(\.uid), [1, 2] as [Int64])
+        XCTAssertEqual(state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+        XCTAssertEqual(state.tasks.map(\.completed), [false, true])
+        XCTAssertEqual(state.tasks[0].prioA, "A")
+        XCTAssertEqual(state.tasks[0].person, "TS")
+        XCTAssertEqual(state.tasks[1].completedDate, "2026-09-01")
+        XCTAssertEqual(state.nextUid, 3)
+
+        let exported = try TodoCodec.encodeBackup(state)
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        XCTAssertEqual(obj["format"] as? String, "todo-v3-json")
+        XCTAssertNotNil(obj["exportedAt"] as? String)
+        XCTAssertEqual(obj["nextUid"] as? Int, 3)
+        XCTAssertNil(obj["kind"])
+        XCTAssertNil(obj["stores"])
+        XCTAssertNil(obj["revision"])
+        XCTAssertFalse((obj["kind"] as? String) == "einkauf-backup")
+
+        let again = try TodoCodec.decodeBackup(exported)
+        XCTAssertEqual(again.tasks.map(\.uid), state.tasks.map(\.uid))
+        XCTAssertEqual(again.tasks.map(\.text), state.tasks.map(\.text))
+        XCTAssertEqual(again.tasks.map(\.completed), state.tasks.map(\.completed))
+        XCTAssertEqual(again.nextUid, state.nextUid)
+    }
+
+    func testBareTasksArrayAndLooseObject() throws {
+        let arrayJSON = """
+        [{"uid":4,"text":"Anrufen","completed":false,"person":"NA"}]
+        """
+        let fromArray = try TodoCodec.decodeBackup(Data(arrayJSON.utf8))
+        XCTAssertEqual(fromArray.tasks.map(\.text), ["Anrufen"])
+        XCTAssertEqual(fromArray.tasks[0].uid, 4)
+
+        let loose = """
+        {"nextUid":9,"tasks":[{"text":"Ohne Format","uid":8}],"future":{"x":1}}
+        """
+        let fromLoose = try TodoCodec.decodeBackup(Data(loose.utf8))
+        XCTAssertEqual(fromLoose.tasks.map(\.text), ["Ohne Format"])
+        XCTAssertEqual(fromLoose.tasks[0].uid, 8)
+        XCTAssertEqual(fromLoose.nextUid, 9)
+    }
+
+    func testRejectsEinkaufBackupAndLocal() throws {
+        let backup = try BackupCodec.encodeExport(.seed)
+        XCTAssertThrowsError(try TodoCodec.decodeBackup(backup)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+        let local = try BackupCodec.encodeLocal(.seed)
+        XCTAssertThrowsError(try TodoCodec.decodeBackup(local)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+    }
+
+    func testEinkaufLooksLikeBackupRejectsTodoJSON() throws {
+        let data = try loadTodoFixture("todo-v3-json.json")
+        let obj = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        XCTAssertFalse(BackupCodec.looksLikeBackup(obj))
+        XCTAssertThrowsError(try BackupCodec.decode(data)) { error in
+            XCTAssertEqual(error as? BackupError, .notABackup)
+        }
+    }
+
+    func testIncomingJSONRoutesTodoAndEinkaufApart() throws {
+        let todo = try loadTodoFixture("todo-v3-json.json")
+        XCTAssertEqual(IncomingJSON.classify(todo), .todoBackup)
+        XCTAssertTrue(IncomingJSON.looksLikeTodo(try JSONSerialization.jsonObject(with: todo)))
+
+        let einkauf = try loadTodoFixture("einkauf-backup.json")
+        XCTAssertEqual(IncomingJSON.classify(einkauf), .einkaufBackup)
+        XCTAssertFalse(IncomingJSON.looksLikeTodo(try JSONSerialization.jsonObject(with: einkauf)))
+
+        XCTAssertEqual(IncomingJSON.classify(Data("[{".utf8)), .invalidJSON)
+        XCTAssertEqual(IncomingJSON.classify(Data(#"{"foo":1}"#.utf8)), .unknown)
+        XCTAssertEqual(IncomingJSON.classify(Data(#"[{"text":"X"}]"#.utf8)), .todoBackup)
+    }
+
+    func testImportChoiceMessage() {
+        XCTAssertEqual(
+            TodoImportPrompt.message(currentCount: 2, incomingCount: 3),
+            "Aktuelle Liste (2 Aufgaben) und 3 importierte Aufgaben – ersetzen oder anhängen?"
+        )
+        XCTAssertEqual(
+            TodoImportPrompt.message(currentCount: 1, incomingCount: 1),
+            "Aktuelle Liste (1 Aufgabe) und 1 importierte Aufgabe – ersetzen oder anhängen?"
+        )
+    }
+}
+
+@MainActor
+final class TodoStoreBackupTests: XCTestCase {
+    func testExportImportReplaceAndAppendRenumbersCollidingUids() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        try? FileManager.default.removeItem(at: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+
+        let store = TodoStore(state: .empty, enableSync: false)
+        XCTAssertNotNil(store.add("Lokal", person: "TS"))
+        XCTAssertEqual(store.state.tasks[0].uid, 1)
+
+        let incoming = try loadTodoFixture("todo-v3-json.json")
+        try store.importBackup(incoming, append: true)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Lokal", "Steuererklärung", "Milch holen"])
+        XCTAssertEqual(store.state.tasks.map(\.uid), [1, 3, 2] as [Int64])
+        XCTAssertEqual(store.state.nextUid, 4)
+
+        try store.importBackup(incoming, append: false)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+        XCTAssertEqual(store.state.tasks.map(\.uid), [1, 2] as [Int64])
+        XCTAssertEqual(store.state.nextUid, 3)
+
+        let exported = try store.exportBackup()
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        XCTAssertEqual(obj["format"] as? String, "todo-v3-json")
+        XCTAssertNil(obj["kind"])
+
+        let empty = TodoStore(state: .empty, enableSync: false)
+        try empty.importBackup(exported, append: false)
+        XCTAssertEqual(empty.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+
+        XCTAssertThrowsError(try store.importBackup(try BackupCodec.encodeExport(.seed), append: false)) { error in
+            XCTAssertEqual(error as? TodoCodecError, .einkaufFile)
+        }
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Steuererklärung", "Milch holen"])
+    }
+}
+
+private func loadTodoFixture(_ name: String) throws -> Data {
+    let url = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent("Fixtures")
+        .appendingPathComponent(name)
+    return try Data(contentsOf: url)
 }

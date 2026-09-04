@@ -238,6 +238,16 @@ def test_fixtures() -> None:
     ids = groups(minimal["items"], store["layout"])
     if ids[0] != "vor" or ids[-1] != "nach":
         fail(f"minimal vor/nach: {ids}")
+
+    todo_fix = json.loads((ROOT / "Fixtures/todo-v3-json.json").read_text())
+    if todo_fix.get("format") != "todo-v3-json":
+        fail("todo fixture must use format todo-v3-json")
+    if todo_fix.get("kind") in ("einkauf-backup", "einkauf-local"):
+        fail("todo fixture must not use einkauf kind")
+    if "stores" in todo_fix or "items" in todo_fix:
+        fail("todo fixture must not look like einkauf-backup")
+    if not isinstance(todo_fix.get("tasks"), list) or not todo_fix["tasks"]:
+        fail("todo fixture needs a tasks array")
     print("fixtures: ok", expected if False else ids, "and full", groups(full["items"], next(s for s in full["stores"] if s["id"] == "edeka")["layout"]))
 
 
@@ -297,6 +307,7 @@ def test_sources() -> None:
         "Sources/Shared/TodoCodec.swift",
         "Sources/Shared/TodoPersistence.swift",
         "Sources/Shared/TodoStore.swift",
+        "Sources/Shared/IncomingJSON.swift",
         "Sources/iOS/TodoListView.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
@@ -315,8 +326,11 @@ def test_sources() -> None:
     content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
     if "Beispiel-Liste" in content or "loadSampleFromBundle" in content:
         fail("sample list still offered in UI")
-    if "url.scheme == \"einkauf\"" not in content:
-        fail("ContentView onOpenURL must ignore widget tap einkauf:// URLs")
+    einkauf_app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
+    if "url.scheme == \"einkauf\"" not in einkauf_app:
+        fail("EinkaufRoot onOpenURL must ignore widget tap einkauf:// URLs")
+    if ".onOpenURL" in content:
+        fail("onOpenURL must live on EinkaufRoot, not ContentView")
     if "Einstellungen" not in content:
         fail("Einstellungen menu missing")
     if "Geh-Modus" not in content or "Bearbeiten" not in content:
@@ -389,8 +403,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 43" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 43 / CURRENT_PROJECT_VERSION")
+    if "Build 44" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 44 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -864,8 +878,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 43" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 43")
+    if "CURRENT_PROJECT_VERSION = 44" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 44")
+    if "CURRENT_PROJECT_VERSION = 43" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 43 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 42" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 42 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 41" in pbx:
@@ -937,8 +953,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 43" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 43")
+    if "CURRENT_PROJECT_VERSION: 44" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 44")
+    if "CURRENT_PROJECT_VERSION: 43" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 43 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 42" in yml:
         fail("stale CURRENT_PROJECT_VERSION 42 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 41" in yml:
@@ -1218,8 +1236,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 43") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 43")
+    if pbx.count("CURRENT_PROJECT_VERSION = 44") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 44")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1588,7 +1606,7 @@ def test_todo_store() -> None:
     watch_app = (ROOT / "Sources/Watch/EinkaufWatchApp.swift").read_text()
     einkauf_app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
 
-    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoPersistence.swift", "TodoStore.swift", "TodoListView.swift"):
+    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoPersistence.swift", "TodoStore.swift", "TodoListView.swift", "IncomingJSON.swift"):
         if name not in pbx:
             fail(f"pbxproj must compile {name}")
     if "todo-local.json" not in persist:
@@ -1621,8 +1639,26 @@ def test_todo_store() -> None:
         fail("Einkauf ContentView must keep backup import and Geh-Modus")
     if "TabView" in watch or "TabView" in watch_app or "TodoStore" in watch or "TodoListView" in watch:
         fail("Watch must not get a To-Do tab yet")
-    if "fileImporter" in todo_ui or "fileExporter" in todo_ui:
-        fail("To-Do v1 must not add backup import/export UI")
+    if "fileImporter" not in todo_ui or "fileExporter" not in todo_ui:
+        fail("TodoListView must offer backup import/export")
+    if "Backup importieren" not in todo_ui or "Backup exportieren" not in todo_ui:
+        fail("To-Do overflow must list Backup importieren/exportieren")
+    if "todo-liste" not in todo_ui:
+        fail("To-Do export default filename must be todo-liste")
+    if "Anhängen" not in todo_ui or "Ersetzen" not in todo_ui:
+        fail("To-Do import must offer Anhängen vs Ersetzen")
+    if "todo-liste" in content or "todo-v3-json" in content:
+        fail("Einkauf ContentView must not grow To-Do backup actions")
+    if "markdown" in todo_ui.lower() or "todo-liste.csv" in todo_ui or "todo-liste.md" in todo_ui:
+        fail("Phase 5 must not add MD/CSV export")
+    if "BackupCodec" in todo_ui or "einkauf-backup" in todo_ui:
+        fail("To-Do UI must not call BackupCodec or write einkauf-backup")
+    if "IncomingJSON.classify" not in einkauf_app or "onOpenURL" not in einkauf_app:
+        fail("EinkaufRoot must classify incoming JSON before choosing a store")
+    if "encodeBackup" not in codec or "decodeBackup" not in codec or 'backupFormat = "todo-v3-json"' not in codec:
+        fail("TodoCodec must encode/decode todo-v3-json")
+    if "func importBackup" not in store or "func exportBackup" not in store:
+        fail("TodoStore missing importBackup/exportBackup")
     if "NavigationStack" not in todo_ui:
         fail("TodoListView needs its own NavigationStack")
     if "Hinzufügen" not in todo_ui or "Neue Aufgabe" not in todo_ui:
@@ -1637,8 +1673,22 @@ def test_todo_store() -> None:
         fail("To-Do show-completed must use AppStorage todo.iphone.showCompleted")
     if "einkauf.iphone.hideCompleted" in todo_ui:
         fail("To-Do must not reuse einkauf.iphone.hideCompleted")
-    if "Abgeschlossen einblenden" not in todo_ui:
-        fail("To-Do must offer Abgeschlossen einblenden")
+    if 'Toggle("Abgeschlossen einblenden"' in todo_ui:
+        fail("To-Do toolbar must use an eye button, not a text Toggle")
+    if 'showCompleted ? "eye" : "eye.slash"' not in todo_ui:
+        fail("To-Do eye must be eye when showing completed, eye.slash when hidden")
+    if "Abgeschlossene ausblenden" not in todo_ui or "Abgeschlossene einblenden" not in todo_ui:
+        fail("To-Do eye must use Abgeschlossene ausblenden / einblenden")
+    if "ellipsis.circle" not in todo_ui or 'accessibilityLabel("Mehr")' not in todo_ui:
+        fail("To-Do overflow must be ellipsis.circle labeled Mehr")
+    if "Erledigte löschen" not in todo_ui:
+        fail("To-Do overflow must offer Erledigte löschen")
+    if "func clearCompleted" not in store:
+        fail("TodoStore missing clearCompleted")
+    if "Geh-Modus" in todo_ui or "Stamm" in todo_ui or "Liste teilen" in todo_ui:
+        fail("To-Do toolbar must not copy Einkauf Geh-Modus / Stamm / PDF")
+    if "testClearCompletedRemovesOnlyDone" not in tests:
+        fail("tests must cover clearCompleted")
     if "– Prio" not in todo_ui:
         fail("To-Do add form needs – Prio empty option")
     if 'TextField("Person"' not in todo_ui:
@@ -1653,8 +1703,19 @@ def test_todo_store() -> None:
         fail("tests must cover prio sort key")
     if "testSortPersonThenOpenFirstThenPrio" not in tests:
         fail("tests must cover person/open/prio sort")
-    if "todo-v3-json" in todo_ui or "fileImporter" in todo_ui:
-        fail("Phase 4 must not add To-Do JSON backup UI")
+    if "testV3JsonFixtureRoundTripAndIgnoresExtraFields" not in tests:
+        fail("tests must cover todo-v3-json roundtrip")
+    if "testRejectsEinkaufBackupAndLocal" not in tests:
+        fail("tests must reject einkauf JSON in todo import")
+    if "testEinkaufLooksLikeBackupRejectsTodoJSON" not in tests:
+        fail("tests must reject todo JSON on einkauf looksLikeBackup")
+    if "testIncomingJSONRoutesTodoAndEinkaufApart" not in tests:
+        fail("tests must cover IncomingJSON routing")
+    if "testExportImportReplaceAndAppendRenumbersCollidingUids" not in tests:
+        fail("tests must cover append uid renumber")
+    einkauf_tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    if 'loadFixture("todo-v3-json.json")' in einkauf_tests:
+        fail("todo fixture must not be fed into Einkauf BackupCodec tests")
     if "Int64" not in models:
         fail("Todo uid must be Int64")
     if "func add(" not in store or "func toggle(" not in store or "func delete(" not in store:

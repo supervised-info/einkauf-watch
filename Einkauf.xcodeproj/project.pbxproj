@@ -22,6 +22,7 @@
 		E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
 		95053C174A50103C6E7179B3 /* EinkaufAddItemsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98521D92A16CC08FFAB4B10 /* EinkaufAddItemsIntent.swift */; };
+		4339D92768A88AF50FC8078D /* IncomingJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43EEC326F6EF91C3C7664855 /* IncomingJSON.swift */; };
 		3D291F41DFB800EAE9D7064C /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
 		69B46A2068B1D9DDC1A8BAB3 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
 		84257E36E8710DAF0EA4DD6B /* KeywordDictionaryBrowse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */; };
@@ -47,6 +48,7 @@
 		E410C3E9DA23BDDB00054634 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
 		B924EF81257E1A53BE6EEFFC /* EinkaufAddItemsIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98521D92A16CC08FFAB4B10 /* EinkaufAddItemsIntent.swift */; };
+		D164105B4622DFADBF09EFFE /* IncomingJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43EEC326F6EF91C3C7664855 /* IncomingJSON.swift */; };
 		A67DE1B4CDD2B7D8E9747F37 /* ItemEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D4629D736BF231C646237E /* ItemEditing.swift */; };
 		676BB7C0E6CFB910DC8147A8 /* KeywordDictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */; };
 		908FB88E65210D9332AFF961 /* KeywordDictionaryBrowse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */; };
@@ -183,6 +185,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		E0C1C34BBFDDF520649DD2D1 /* Department.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Department.swift; sourceTree = "<group>"; };
 		12DB007C89450C8042516356 /* DepartmentGuesser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartmentGuesser.swift; sourceTree = "<group>"; };
 		F98521D92A16CC08FFAB4B10 /* EinkaufAddItemsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufAddItemsIntent.swift; sourceTree = "<group>"; };
+		43EEC326F6EF91C3C7664855 /* IncomingJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncomingJSON.swift; sourceTree = "<group>"; };
 		60D4629D736BF231C646237E /* ItemEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemEditing.swift; sourceTree = "<group>"; };
 		FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionary.swift; sourceTree = "<group>"; };
 		7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDictionaryBrowse.swift; sourceTree = "<group>"; };
@@ -211,6 +214,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		7D58F47D94E096917164D1C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F12AB7D3D2C30D9224F48283 /* EinkaufWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EinkaufWidgets.entitlements; sourceTree = "<group>"; };
 		DCAB104B4D8FC1F886C47CB4 /* einkauf-backup-ohne-staples.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = einkauf-backup-ohne-staples.json; sourceTree = "<group>"; };
+		361CA8CC549E6306DACFF684 /* todo-v3-json.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = todo-v3-json.json; sourceTree = "<group>"; };
 		EEC8D9AE5EAF557803AC2453 /* EinkaufCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufCoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -355,6 +359,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 				E0C1C34BBFDDF520649DD2D1 /* Department.swift */,
 				12DB007C89450C8042516356 /* DepartmentGuesser.swift */,
 				F98521D92A16CC08FFAB4B10 /* EinkaufAddItemsIntent.swift */,
+				43EEC326F6EF91C3C7664855 /* IncomingJSON.swift */,
 				60D4629D736BF231C646237E /* ItemEditing.swift */,
 				FEF02F63444FED0E0A9C3D0E /* KeywordDictionary.swift */,
 				7771E790C05F64C280CFB78A /* KeywordDictionaryBrowse.swift */,
@@ -381,6 +386,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
             			children = (
             				7578566B217205F916373346 /* einkauf-backup.json */,
 				DCAB104B4D8FC1F886C47CB4 /* einkauf-backup-ohne-staples.json */,
+				361CA8CC549E6306DACFF684 /* todo-v3-json.json */,
             			);
             			path = Fixtures;
             			name = Fixtures;
@@ -576,6 +582,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */,
 				12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */,
 				95053C174A50103C6E7179B3 /* EinkaufAddItemsIntent.swift in Sources */,
+				4339D92768A88AF50FC8078D /* IncomingJSON.swift in Sources */,
 				3D291F41DFB800EAE9D7064C /* ItemEditing.swift in Sources */,
 				69B46A2068B1D9DDC1A8BAB3 /* KeywordDictionary.swift in Sources */,
 				84257E36E8710DAF0EA4DD6B /* KeywordDictionaryBrowse.swift in Sources */,
@@ -608,6 +615,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				E410C3E9DA23BDDB00054634 /* Department.swift in Sources */,
 				55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */,
 				B924EF81257E1A53BE6EEFFC /* EinkaufAddItemsIntent.swift in Sources */,
+				D164105B4622DFADBF09EFFE /* IncomingJSON.swift in Sources */,
 				A67DE1B4CDD2B7D8E9747F37 /* ItemEditing.swift in Sources */,
 				676BB7C0E6CFB910DC8147A8 /* KeywordDictionary.swift in Sources */,
 				908FB88E65210D9332AFF961 /* KeywordDictionaryBrowse.swift in Sources */,
@@ -798,7 +806,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -833,7 +841,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -868,7 +876,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -900,7 +908,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -933,7 +941,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -963,7 +971,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -994,7 +1002,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1025,7 +1033,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
