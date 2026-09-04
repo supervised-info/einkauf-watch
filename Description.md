@@ -10,6 +10,10 @@ Einkaufsliste nach Ladenweg auf **iPhone** (Geh-Modus + Bearbeiten inkl. abteilu
 
 TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht.
 
+## Geplant / WIP
+
+Zweiter Reiter **To-Do** (iPhone + Watch Geh-Modus) ist **nicht** Teil dieses Stands und ändert an der Einkaufs-Spec oben nichts. Plan und Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Produktverhalten der HTML-PWA [todo](https://supervised-info.github.io/todo/) (Pages `todo/Description_index.md`). Native To-Do teilt **nicht** `ShoppingStore`, `einkauf-local.json` oder `kind: einkauf-backup`. Diese Spec erst in Phase 9 nachziehen, wenn Verhalten landet.
+
 ## Datei-Ort, Targets, Bundle
 
 | | |
