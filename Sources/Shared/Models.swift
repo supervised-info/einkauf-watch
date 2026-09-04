@@ -204,7 +204,8 @@ struct AppState: Equatable, Codable, Sendable {
     }
 }
 
-/// Anzeige für die Watch-Complication: gleicher Zähler wie `watchTitle` (`openCount/doneCount/items.count`).
+/// Anzeige für die Watch-Complication. `progressLabel` bleibt `oo/xx/yy` (wie `watchTitle`);
+/// der sichtbare Zähler ist `compactCountText` (nur offene Anzahl, bei 0 „erledigt“).
 struct ComplicationSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufProgress"
     static let openURL = URL(string: "einkauf://list")!
@@ -232,7 +233,7 @@ struct ComplicationSnapshot: Equatable, Sendable {
         )
     }
 
-    /// Zähler-Teile für das gestapelte Circular-Label (`oo` / `xx` / `yy`).
+    /// Rohteile von `progressLabel` (`oo` / `xx` / `yy`) — nicht auf Complications anzeigen.
     private var progressParts: [String] {
         progressLabel.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
     }
@@ -240,20 +241,26 @@ struct ComplicationSnapshot: Equatable, Sendable {
     var openText: String { progressParts.indices.contains(0) ? progressParts[0] : progressLabel }
     var doneText: String { progressParts.indices.contains(1) ? progressParts[1] : "" }
     var totalText: String { progressParts.indices.contains(2) ? progressParts[2] : "" }
+    var openCount: Int { Int(openText) ?? 0 }
 
-    /// Inline: kurzer Ladenname und `oo/xx/yy` (leere Liste bleibt `0/0/0`).
+    /// Sichtbarer Complication-Zähler: `"\(openCount)"`, bei 0 das Wort „erledigt“.
+    var compactCountText: String {
+        openCount == 0 ? "erledigt" : openText
+    }
+
+    /// Inline: kurzer Ladenname und kompakter Zähler (0 → „erledigt“).
     var inlineText: String {
         let name = storeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if name.isEmpty { return progressLabel }
-        return "\(name)  \(progressLabel)"
+        if name.isEmpty { return compactCountText }
+        return "\(name)  \(compactCountText)"
     }
 
     var accessibilityLabel: String {
         let store = storeName.isEmpty ? "Einkauf" : storeName
-        if isEmpty {
-            return "\(store), Liste leer"
+        if openCount == 0 {
+            return "\(store), Liste erledigt"
         }
-        return "\(store), \(progressLabel)"
+        return "\(store), \(openCount) offen"
     }
 }
 
