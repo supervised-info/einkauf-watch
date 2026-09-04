@@ -610,14 +610,24 @@ enum TodoListGrouping {
         return "\(tasks.count - done)/\(done)/\(tasks.count)"
     }
 
-    /// Kompakte Nebenzeile: Prio und Datum, ohne Person (steht in der Gruppenüberschrift).
+    /// Kompakte Nebenzeile: Prio, Enddatum, Abgeschlossen-Datum; ohne Person (steht in der Gruppenüberschrift).
     static func metaLine(_ task: TodoTask) -> String {
         var parts: [String] = []
         let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
         if !prio.isEmpty { parts.append(prio) }
         let due = TodoJSON.isoDate(task.dueDate)
         if !due.isEmpty { parts.append(TodoTime.displayDay(due)) }
+        let closed = closedDateLabel(task)
+        if !closed.isEmpty { parts.append(closed) }
         return parts.joined(separator: " · ")
+    }
+
+    /// Nur erledigt + gesetztes `completedDate`: Prefix, damit Enddatum und Abschluss nicht verwechselt werden.
+    static func closedDateLabel(_ task: TodoTask) -> String {
+        guard task.completed else { return "" }
+        let closed = TodoJSON.isoDate(task.completedDate)
+        guard !closed.isEmpty else { return "" }
+        return "geschlossen \(TodoTime.displayDay(closed))"
     }
 }
 

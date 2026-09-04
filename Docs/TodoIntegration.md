@@ -1,6 +1,6 @@
 # To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04, Build 56. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). **Einstellungen** hat To-Do-JSON-Backup (Import/Export/Teilen). `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
+Stand: 2026-09-04, Build 57. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). **Einstellungen** hat To-Do-JSON-Backup (Import/Export/Teilen). Import hebt `revision` analog Einkauf. `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen bleiben die Wahrheit. HTML-PWA [todo](https://supervised-info.github.io/todo/) ist die Produktreferenz für Task-Shape und JSON-Brücke; natives To-Do-Verhalten steht in `Description.md`.
 
@@ -24,7 +24,7 @@ Nicht das Ziel: eine zweite App, ein zweites Bundle, ein zweites App Group, oder
 |---|---|
 | HTML-PWA | [todo](https://supervised-info.github.io/todo/) |
 | Spec | Pages-Repo `supervised-info/supervised-info.github.io`, Datei [`todo/Description_index.md`](https://github.com/supervised-info/supervised-info.github.io/blob/main/todo/Description_index.md) |
-| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 56) |
+| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 57) |
 
 Native scrapt die Website nicht. Brücke ist eine **eigene** JSON-Datei (siehe Backup), analog zur Einkauf-Brücke `kind: "einkauf-backup"`.
 
@@ -119,7 +119,7 @@ Tab-Labels **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`. Einkaufs-Tool
 
 Zwei Reiter **Einkauf | To-Do**. To-Do auf der Watch **nur Geh-Modus**:
 
-- offene und (per Auge) erledigte Aufgaben: Text; Person/Prio/Datum als kompakte Nebeninfo
+- offene und (per Auge) erledigte Aufgaben: Text; Person/Prio/Datum als kompakte Nebeninfo; bei erledigt `completedDate` als „geschlossen TT.MM.JJJJ“
 - Tippen toggelt `completed` (wie Einkauf-Checkbox)
 - **kein** volles Edit, kein Prio-Picker, keine Reopen-Ketten, kein Import/Export, keine Suche, kein Sort
 
@@ -192,7 +192,7 @@ To-Do-Blob = `TodoCodec.encodeLocal` / `decodeLocal` (`kind: "todo-local"`). `Ba
 
 `WatchSessionActor` bleibt Singleton am `WCSession.default`. `attach` (`ConnectivitySync`) und `attachTodo` (`TodoConnectivitySync`) — kein zweites Delegate. Einkaufs-Pfad unverändert, außer dass `updateApplicationContext` merget.
 
-Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gewinnt. Listenstruktur: `revision` / `nextUid`, nicht `listRevision` von Einkauf.
+Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gewinnt. Listenstruktur: `revision` / `nextUid`, nicht `listRevision` von Einkauf. Import (Ersetzen/Anhängen) setzt `revision = max(lokal, import, nach Normalize) + 1` und `persistAndSync` — sonst überschreibt der Peer eine leere/ältere Liste mit höherer `revision` (HTML-Brücke hat keine `revision`).
 
 ### Siri
 
@@ -394,6 +394,14 @@ To-Do-JSON (`format: "todo-v3-json"`) ist unter **Einstellungen** erreichbar, de
 - To-Do-**…** Backup importieren bleibt; MD/CSV bleiben dort
 - Build 56
 
+### Import-`revision`-Floor — erledigt (Build 57)
+
+HTML-`todo-v3-json` hat keine `revision` (`TodoCodec.decodeBackup` → 0). `applyImported` darf die lokale Revision nicht auf 1 zurücksetzen: `revision = max(lokal, import, nach Normalize) + 1` (Ersetzen und Anhängen), analog `ShoppingStore.importBackup`. Danach `persistAndSync` / Broadcast, damit die Watch den hohen Snapshot bekommt.
+
+Nebeninfo (iPhone/Watch/PDF-`metaLine`): erledigt + gesetztes `completedDate` → „geschlossen TT.MM.JJJJ“ nach dem Enddatum (`theme.muted`). Edit-Sheet: **Abgeschlossen am** nur lesen.
+
+- Build 57
+
 ---
 
 ## Historisch: Non-Goals für Phase 3
@@ -480,3 +488,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 9: `Description.md` auf den gelieferten Stand inkl. **Edit**-Labels; optionale weitere Politur kein Blocker.
 - [x] Phase 10: benannte Listen `lists`/`listId`, Filter Alle, PDF+Siri+Watch, Build 55. Isolation bleibt (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
 - [x] Einstellungen: To-Do Backup import/export/teilen (JSON), Build 56. Einkauf-JSON abgelehnt. To-Do-**…** Import bleibt.
+- [x] To-Do-Import: `revision`-Floor `max(lokal, import) + 1` (Watch-Sync überschreibt nicht), Build 57.
+- [x] Zeile zeigt `completedDate` als „geschlossen …“ (iPhone, Watch, PDF-Meta), Build 57.

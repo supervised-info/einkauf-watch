@@ -321,6 +321,7 @@ final class TodoStore: ObservableObject {
     }
 
     private func applyImported(_ incoming: TodoState, append: Bool) {
+        let previousLocalRevision = state.revision
         if append {
             var merged = state
             merged.tasks.append(contentsOf: incoming.tasks)
@@ -330,7 +331,9 @@ final class TodoStore: ObservableObject {
         } else {
             state = TodoCodec.normalized(incoming)
         }
-        state.revision += 1
+        // HTML-Brücke hat keine revision (Decode → 0). Wie Einkauf-Import:
+        // Floor über lokal + Incoming, sonst gewinnt der Peer mit alter, höherer revision.
+        state.revision = max(previousLocalRevision, incoming.revision, state.revision) + 1
         persistAndSync()
     }
 
