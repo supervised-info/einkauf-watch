@@ -362,10 +362,15 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 38" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 38 / CURRENT_PROJECT_VERSION")
+    if "Build 39" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 39 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
+    list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
+    if "einkauf.iphone.hideCompleted" not in list_share_sec or "visibleGroups" not in list_share_sec:
+        fail("Description.md Liste teilen must document the eye filter via visibleGroups")
+    if "n/0/n" not in list_share_sec:
+        fail("Description.md Liste teilen must document n/0/n when only open items print")
     if "Erledigte ausgeblendet" not in desc:
         fail("Description.md must document Erledigte ausgeblendet empty line")
     if "eye.slash" not in desc:
@@ -442,6 +447,18 @@ def test_sources() -> None:
         fail("Backup teilen still uses isPresented + optional URL")
     if "shareList" not in content or "ListPDF.render" not in content:
         fail("Liste teilen must render a PDF via ListPDF")
+    share_m = re.search(r"private func shareList\(\)\s*\{", content)
+    if not share_m:
+        fail("missing shareList")
+    share_fn = extract_braced(content, share_m.start(), "shareList")
+    if "visibleGroups" not in share_fn or "hidingCompleted" not in share_fn:
+        fail("Liste teilen must build PDF groups via visibleGroups(hidingCompleted:)")
+    if "store.state.progressLabel" in share_fn:
+        fail("Liste teilen must recompute progressLabel from printed groups, not the full list")
+    if "ListGrouping.progressLabel" not in share_fn:
+        fail("Liste teilen must pass progressLabel for the printed groups")
+    if "hideCompleted" not in share_fn:
+        fail("Liste teilen must follow the iPhone eye hideCompleted flag")
     if "list.bullet.rectangle" not in content:
         fail("Liste teilen should use a distinct SF Symbol")
     if "Text(\"Hell\")" in content or "Text(\"Creme\")" in content:
@@ -776,6 +793,10 @@ def test_sources() -> None:
         fail("ListGrouping missing walkListRows (store + position ids)")
     if "hidingCompleted" not in models:
         fail("ListGrouping.walkListRows must accept hidingCompleted")
+    if "func visibleGroups" not in models:
+        fail("ListGrouping missing visibleGroups for Geh-Modus and Liste teilen")
+    if "func progressLabel(groups:" not in models:
+        fail("ListGrouping missing progressLabel(groups:) for printed PDF rows")
     if "ForEach(store.editRows)" not in content:
         fail("iPhone Bearbeiten must still ForEach the full editRows")
     if "einkauf.iphone.hideCompleted" not in content:
@@ -794,6 +815,12 @@ def test_sources() -> None:
         fail("tests must cover walkListRows hidingCompleted dropping done items and empty headers")
     if "testWalkListRowsHidingCompletedEmptyWhenAllDone" not in tests:
         fail("tests must cover walkListRows hidingCompleted empty when all done")
+    if "testVisibleGroupsHidingCompletedDropsDoneItemsAndEmptyDepartments" not in tests:
+        fail("tests must cover visibleGroups dropping done items and empty departments")
+    if "testVisibleGroupsHidingCompletedEmptyWhenAllDone" not in tests:
+        fail("tests must cover visibleGroups empty when all done")
+    if 'progressLabel(groups: hidden), "2/0/2"' not in tests:
+        fail("tests must cover PDF progress n/0/n for open-only groups")
     if "testWalkLinesEdekaSuessThenDrogerieDmReversed" not in tests:
         fail("tests must cover walkLines header order edeka suess then drogerie vs dm reversed")
     if 'headerDept), ["suess", "drogerie"' not in tests and '["suess", "drogerie", "sonstiges"]' not in tests:
@@ -810,8 +837,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 38" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 38")
+    if "CURRENT_PROJECT_VERSION = 39" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 39")
+    if "CURRENT_PROJECT_VERSION = 38" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 38 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 37" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 37 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 36" in pbx:
@@ -873,8 +902,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 38" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 38")
+    if "CURRENT_PROJECT_VERSION: 39" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 39")
+    if "CURRENT_PROJECT_VERSION: 38" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 38 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 37" in yml:
         fail("stale CURRENT_PROJECT_VERSION 37 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 36" in yml:
@@ -1142,8 +1173,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 38") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 38")
+    if pbx.count("CURRENT_PROJECT_VERSION = 39") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 39")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")

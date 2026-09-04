@@ -231,6 +231,40 @@ final class GroupingTests: XCTestCase {
         XCTAssertEqual(ListGrouping.walkListRows(groups: groups, storeId: "edeka").filter(\.line.isItem).count, 2)
     }
 
+    func testVisibleGroupsHidingCompletedDropsDoneItemsAndEmptyDepartments() {
+        let items = [
+            Item(id: "k", name: "Kinderschokolade", dept: "suess", done: true, added: 1, ord: 1),
+            Item(id: "t", name: "Toilettenpapier", dept: "drogerie", done: false, added: 2, ord: 1),
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: false, added: 3, ord: 1),
+            Item(id: "a", name: "AXE", dept: "sonstiges", done: true, added: 4, ord: 1)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+        XCTAssertEqual(groups.map(\.dept), ["kuehlung", "suess", "drogerie", "sonstiges"])
+        XCTAssertEqual(ListGrouping.visibleGroups(groups, hidingCompleted: false), groups)
+        XCTAssertEqual(ListGrouping.progressLabel(groups: groups), "2/2/4")
+
+        let hidden = ListGrouping.visibleGroups(groups, hidingCompleted: true)
+        XCTAssertEqual(hidden.map(\.dept), ["kuehlung", "drogerie"])
+        XCTAssertEqual(hidden.flatMap(\.items).map(\.id), ["m", "t"])
+        XCTAssertTrue(hidden.flatMap(\.items).allSatisfy { !$0.done })
+        XCTAssertEqual(ListGrouping.progressLabel(groups: hidden), "2/0/2")
+    }
+
+    func testVisibleGroupsHidingCompletedEmptyWhenAllDone() {
+        let items = [
+            Item(id: "k", name: "Kinderschokolade", dept: "suess", done: true, added: 1, ord: 1),
+            Item(id: "t", name: "Toilettenpapier", dept: "drogerie", done: true, added: 2, ord: 1)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+        XCTAssertFalse(groups.isEmpty)
+        let hidden = ListGrouping.visibleGroups(groups, hidingCompleted: true)
+        XCTAssertTrue(hidden.isEmpty)
+        XCTAssertEqual(ListGrouping.progressLabel(groups: hidden), "0/0/0")
+        XCTAssertEqual(ListGrouping.progressLabel(groups: groups), "0/2/2")
+    }
+
     private func loadFixture(_ name: String) throws -> Data {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

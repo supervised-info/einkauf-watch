@@ -8,8 +8,9 @@ enum ListPDFError: LocalizedError {
     }
 }
 
-/// Druckbare Einkaufsliste (iOS). Gleiche Abteilungsreihenfolge wie `store.groups`.
-/// Meta-Zeile: `progressLabel` als `oo/xx/yy` (offen/erledigt/gesamt).
+/// Druckbare Einkaufsliste (iOS). Gleiche Abteilungsreihenfolge wie die übergebenen Gruppen
+/// (Aufrufer filtert ggf. mit `ListGrouping.visibleGroups`).
+/// Meta-Zeile: `progressLabel` als `oo/xx/yy` (offen/erledigt/gesamt der gedruckten Zeilen).
 enum ListPDF {
     private static let pageRect = CGRect(x: 0, y: 0, width: 595.28, height: 841.89) // A4
     private static let margin: CGFloat = 48

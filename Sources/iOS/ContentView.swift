@@ -411,10 +411,11 @@ struct ContentView: View {
 
     private func shareList() {
         do {
+            let groups = ListGrouping.visibleGroups(store.groups, hidingCompleted: hideCompleted)
             let data = try ListPDF.render(
-                groups: store.groups,
+                groups: groups,
                 storeName: store.state.currentStore.name,
-                progressLabel: store.state.progressLabel,
+                progressLabel: ListGrouping.progressLabel(groups: groups),
                 colors: ThemeRGB.tokens(palette: appearance.palette, dark: false)
             )
             let url = try ListShare.writeTempFile(data: data, storeName: store.state.currentStore.name)
