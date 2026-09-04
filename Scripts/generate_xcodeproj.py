@@ -281,7 +281,9 @@ def main() -> None:
     objects.append(f"\t\t{ref_for(ios_widget_plist)} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = \"<group>\"; }};")
     objects.append(f"\t\t{ref_for(ios_widget_entitlements)} /* EinkaufWidgets.entitlements */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EinkaufWidgets.entitlements; sourceTree = \"<group>\"; }};")
     extra_fixture = ROOT / "Fixtures/einkauf-backup-ohne-staples.json"
+    todo_fixture = ROOT / "Fixtures/todo-v3-json.json"
     objects.append(f"\t\t{ref_for(extra_fixture)} /* einkauf-backup-ohne-staples.json */ = {{isa = PBXFileReference; lastKnownFileType = text.json; path = einkauf-backup-ohne-staples.json; sourceTree = \"<group>\"; }};")
+    objects.append(f"\t\t{ref_for(todo_fixture)} /* todo-v3-json.json */ = {{isa = PBXFileReference; lastKnownFileType = text.json; path = todo-v3-json.json; sourceTree = \"<group>\"; }};")
     tests_swift = ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift"
     objects.append(f"\t\t{ref_for(tests_swift)} /* EinkaufCoreTests.swift */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufCoreTests.swift; sourceTree = \"<group>\"; }};")
     objects.append("/* End PBXFileReference section */\n")
@@ -427,7 +429,7 @@ def main() -> None:
             \t\t{group_fixtures} /* Fixtures */ = {{
             \t\t\tisa = PBXGroup;
             \t\t\tchildren = (
-            {children([fixture, extra_fixture])}
+            {children([fixture, extra_fixture, todo_fixture])}
             \t\t\t);
             \t\t\tpath = Fixtures;
             \t\t\tname = Fixtures;
@@ -792,7 +794,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -827,7 +829,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -862,7 +864,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -894,7 +896,7 @@ def main() -> None:
 \t\t\t\tASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tENABLE_PREVIEWS = YES;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
@@ -927,7 +929,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -957,7 +959,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -988,7 +990,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1019,7 +1021,7 @@ def main() -> None:
 \t\t\t\tAPPLICATION_EXTENSION_API_ONLY = YES;
 \t\t\t\tCODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 \t\t\t\tCODE_SIGN_STYLE = Automatic;
-\t\t\t\tCURRENT_PROJECT_VERSION = 43;
+\t\t\t\tCURRENT_PROJECT_VERSION = 44;
 \t\t\t\tDEVELOPMENT_TEAM = WV26CSTDDR;
 \t\t\t\tGENERATE_INFOPLIST_FILE = YES;
 \t\t\t\tINFOPLIST_FILE = Sources/iOSWidgets/Info.plist;

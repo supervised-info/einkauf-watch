@@ -3,18 +3,26 @@ import Foundation
 enum TodoCodecError: Error, LocalizedError, Equatable {
     case notTodoLocal
     case invalidJSON
+    case notATodoBackup
+    case einkaufFile
+    case empty
 
     var errorDescription: String? {
         switch self {
         case .notTodoLocal: return "Keine gültige To-Do-Datei."
         case .invalidJSON: return "Die Datei ist kein gültiges JSON."
+        case .notATodoBackup: return "Keine gültige To-Do-Backup-Datei."
+        case .einkaufFile: return "Das ist eine Einkauf-Datei, kein To-Do-Backup."
+        case .empty: return "Keine Aufgaben gefunden."
         }
     }
 }
 
-/// Lokales Envelope `kind: "todo-local"` — nie durch `BackupCodec` / Einkauf-Decode.
+/// Lokales Envelope `kind: "todo-local"` und HTML-Brücke `format: "todo-v3-json"`.
+/// Nie durch `BackupCodec` / Einkauf-Decode.
 enum TodoCodec {
     static let localKind = "todo-local"
+    static let backupFormat = "todo-v3-json"
     static let version = 1
 
     static func encodeLocal(_ state: TodoState) throws -> Data {
@@ -41,6 +49,71 @@ enum TodoCodec {
         } catch {
             throw TodoCodecError.invalidJSON
         }
+    }
+
+    /// HTML-Brücke: `{ format: "todo-v3-json", exportedAt, nextUid, tasks }` ohne `kind` / `revision`.
+    static func encodeBackup(_ state: TodoState, exportedAt: Date = Date()) throws -> Data {
+        let normalized = normalized(state)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(
+            TodoV3Envelope(
+                format: backupFormat,
+                exportedAt: TodoTime.nowIso(exportedAt),
+                nextUid: normalized.nextUid,
+                tasks: normalized.tasks
+            )
+        )
+    }
+
+    /// HTML-Import: Objekt `{tasks, nextUid}` (Format optional) **oder** nacktes Tasks-Array.
+    /// Extra-Felder werden ignoriert. `einkauf-backup` / `einkauf-local` werden abgelehnt.
+    static func decodeBackup(_ data: Data) throws -> TodoState {
+        let obj: Any
+        do {
+            obj = try JSONSerialization.jsonObject(with: IncomingJSON.stripBOM(data))
+        } catch {
+            throw TodoCodecError.invalidJSON
+        }
+        if let dict = obj as? [String: Any] {
+            let hasFormat = (dict["format"] as? String) == backupFormat
+            let hasTasks = dict["tasks"] is [Any]
+            if !hasFormat {
+                if isEinkaufPayload(dict) {
+                    throw TodoCodecError.einkaufFile
+                }
+                guard hasTasks else { throw TodoCodecError.notATodoBackup }
+            }
+            do {
+                let envelope = try JSONDecoder().decode(TodoV3Envelope.self, from: IncomingJSON.stripBOM(data))
+                return makeImportedState(tasks: envelope.tasks, nextUid: envelope.nextUid)
+            } catch let error as TodoCodecError {
+                throw error
+            } catch {
+                throw TodoCodecError.invalidJSON
+            }
+        }
+        if let _ = obj as? [Any] {
+            do {
+                let tasks = try JSONDecoder().decode([TodoTask].self, from: IncomingJSON.stripBOM(data))
+                return makeImportedState(tasks: tasks, nextUid: 1)
+            } catch {
+                throw TodoCodecError.invalidJSON
+            }
+        }
+        throw TodoCodecError.notATodoBackup
+    }
+
+    private static func isEinkaufPayload(_ dict: [String: Any]) -> Bool {
+        let kind = dict["kind"] as? String
+        if kind == "einkauf-backup" || kind == "einkauf-local" { return true }
+        return BackupCodec.looksLikeBackup(dict)
+    }
+
+    private static func makeImportedState(tasks: [TodoTask], nextUid: Int64) throws -> TodoState {
+        let kept = tasks.filter { !$0.text.isEmpty }
+        guard !kept.isEmpty else { throw TodoCodecError.empty }
+        return normalized(TodoState(tasks: kept, nextUid: max(nextUid, 1), revision: 0))
     }
 
     /// Wie HTML `normalizeTasks`: fehlende/doppelte UIDs aus `nextUid`; `nextUid = max+1`.
@@ -83,4 +156,36 @@ private struct TodoLocalEnvelope: Codable {
     var kind: String
     var v: Int
     var state: TodoState
+}
+
+private struct TodoV3Envelope: Codable {
+    var format: String
+    var exportedAt: String
+    var nextUid: Int64
+    var tasks: [TodoTask]
+
+    enum CodingKeys: String, CodingKey {
+        case format, exportedAt, nextUid, tasks
+    }
+
+    init(format: String, exportedAt: String, nextUid: Int64, tasks: [TodoTask]) {
+        self.format = format
+        self.exportedAt = exportedAt
+        self.nextUid = nextUid
+        self.tasks = tasks
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        format = try c.decodeIfPresent(String.self, forKey: .format) ?? ""
+        exportedAt = try c.decodeIfPresent(String.self, forKey: .exportedAt) ?? ""
+        if let n = try c.decodeIfPresent(Int64.self, forKey: .nextUid) {
+            nextUid = max(1, n)
+        } else if let n = try c.decodeIfPresent(Int.self, forKey: .nextUid) {
+            nextUid = Int64(max(1, n))
+        } else {
+            nextUid = 1
+        }
+        tasks = try c.decodeIfPresent([TodoTask].self, forKey: .tasks) ?? []
+    }
 }

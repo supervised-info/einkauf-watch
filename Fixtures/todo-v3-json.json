@@ -1,0 +1,38 @@
+{
+  "format": "todo-v3-json",
+  "exportedAt": "2026-09-04T15:00:00.000Z",
+  "nextUid": 3,
+  "extraIgnoredField": "unbekannte Felder werden ignoriert",
+  "tasks": [
+    {
+      "uid": 1,
+      "text": "Steuererklärung",
+      "completed": false,
+      "prioA": "A",
+      "prioB": "1",
+      "dueDate": "2026-09-30",
+      "completedDate": "",
+      "person": "TS",
+      "reopenedFromUid": "",
+      "reopenedToUid": "",
+      "reopenedAt": "",
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z",
+      "changedBy": "TS/NA",
+      "id": 1725451200000
+    },
+    {
+      "uid": 2,
+      "text": "Milch holen",
+      "completed": true,
+      "prioA": "",
+      "prioB": "",
+      "dueDate": "",
+      "completedDate": "2026-09-01",
+      "person": "NA",
+      "createdAt": "2026-09-01T08:00:00.000Z",
+      "updatedAt": "2026-09-01T09:00:00.000Z",
+      "changedBy": "TS/NA"
+    }
+  ]
+}

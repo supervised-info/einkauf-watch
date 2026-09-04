@@ -1,6 +1,6 @@
 import Foundation
 
-enum BackupError: Error, LocalizedError {
+enum BackupError: Error, LocalizedError, Equatable {
     case notABackup
     case invalidJSON
 
