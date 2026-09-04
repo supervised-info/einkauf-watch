@@ -73,83 +73,145 @@ struct TodoListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if todos.state.tasks.isEmpty {
-                    ContentUnavailableView(
-                        "Noch nichts auf der Liste.",
-                        systemImage: "checklist",
-                        description: Text("Aufgabe hinzufügen oder ein Backup importieren.")
-                    )
-                    .foregroundStyle(theme.ink)
-                } else if visibleTasks.isEmpty {
-                    if !searchQuery.isEmpty {
-                        ContentUnavailableView(
-                            "Keine Treffer.",
-                            systemImage: "magnifyingglass",
-                            description: Text("Person oder Text ändern.")
-                        )
-                        .foregroundStyle(theme.ink)
-                    } else if !currentListId.isEmpty && listScopedTasks.isEmpty {
-                        ContentUnavailableView(
-                            "Keine Aufgaben in dieser Liste.",
-                            systemImage: "checklist",
-                            description: Text("Aufgabe hinzufügen oder eine andere Liste wählen.")
-                        )
-                        .foregroundStyle(theme.ink)
-                    } else {
-                        ContentUnavailableView(
-                            "Abgeschlossene ausgeblendet.",
-                            systemImage: "eye.slash",
-                            description: Text("Abgeschlossen einblenden, um erledigte Aufgaben zu sehen.")
-                        )
-                        .foregroundStyle(theme.ink)
-                    }
-                } else {
-                    list
-                }
-            }
+            withSheets(withDialogs(withTransfers(chrome)))
+        }
+    }
+
+    /// Chrome ohne Importer/Sheets — eigener Typ, damit `body` type-checkt.
+    private var chrome: some View {
+        mainContent
             .background(theme.paper)
             .navigationTitle("To-Do")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .safeAreaInset(edge: .top, spacing: 0) { searchBar }
             .safeAreaInset(edge: .bottom, spacing: 0) { addBar }
-            .fileImporter(
-                isPresented: $showImporter,
-                allowedContentTypes: TodoImportUTTypes.all,
-                allowsMultipleSelection: false
-            ) { result in
-                handleImport(result)
-            }
-            .fileExporter(
-                isPresented: $showJSONExporter,
-                document: exportDocument,
-                contentType: .json,
-                defaultFilename: "todo-liste"
-            ) { result in
-                handleExportResult(result)
-            }
-            .fileExporter(
-                isPresented: $showMDExporter,
-                document: exportDocument,
-                contentType: TodoFileDocument.markdownType,
-                defaultFilename: "todo-liste"
-            ) { result in
-                handleExportResult(result)
-            }
-            .fileExporter(
-                isPresented: $showCSVExporter,
-                document: exportDocument,
-                contentType: .commaSeparatedText,
-                defaultFilename: "todo-liste"
-            ) { result in
-                handleExportResult(result)
-            }
-            .alert("Hinweis", isPresented: Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })) {
-                Button("OK", role: .cancel) { alertMessage = nil }
-            } message: {
-                Text(alertMessage ?? "")
-            }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
+        if todos.state.tasks.isEmpty {
+            emptyNoTasks
+        } else if visibleTasks.isEmpty {
+            emptyFiltered
+        } else {
+            list
+        }
+    }
+
+    private var emptyNoTasks: some View {
+        emptyState(
+            "Noch nichts auf der Liste.",
+            systemImage: "checklist",
+            description: "Aufgabe hinzufügen oder ein Backup importieren."
+        )
+    }
+
+    @ViewBuilder
+    private var emptyFiltered: some View {
+        if !searchQuery.isEmpty {
+            emptySearch
+        } else if !currentListId.isEmpty && listScopedTasks.isEmpty {
+            emptyNamedList
+        } else {
+            emptyHiddenCompleted
+        }
+    }
+
+    private var emptySearch: some View {
+        emptyState(
+            "Keine Treffer.",
+            systemImage: "magnifyingglass",
+            description: "Person oder Text ändern."
+        )
+    }
+
+    private var emptyNamedList: some View {
+        emptyState(
+            "Keine Aufgaben in dieser Liste.",
+            systemImage: "checklist",
+            description: "Aufgabe hinzufügen oder eine andere Liste wählen."
+        )
+    }
+
+    private var emptyHiddenCompleted: some View {
+        emptyState(
+            "Abgeschlossene ausgeblendet.",
+            systemImage: "eye.slash",
+            description: "Abgeschlossen einblenden, um erledigte Aufgaben zu sehen."
+        )
+    }
+
+    private func emptyState(_ title: String, systemImage: String, description: String) -> some View {
+        ContentUnavailableView(
+            title,
+            systemImage: systemImage,
+            description: Text(description)
+        )
+        .foregroundStyle(theme.ink)
+    }
+
+    private func withTransfers<Content: View>(_ content: Content) -> some View {
+        withCSVExport(withMDExport(withJSONExport(withImport(content))))
+    }
+
+    private func withImport<Content: View>(_ content: Content) -> some View {
+        content.fileImporter(
+            isPresented: $showImporter,
+            allowedContentTypes: TodoImportUTTypes.all,
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result)
+        }
+    }
+
+    private func withJSONExport<Content: View>(_ content: Content) -> some View {
+        content.fileExporter(
+            isPresented: $showJSONExporter,
+            document: exportDocument,
+            contentType: .json,
+            defaultFilename: "todo-liste"
+        ) { result in
+            handleExportResult(result)
+        }
+    }
+
+    private func withMDExport<Content: View>(_ content: Content) -> some View {
+        content.fileExporter(
+            isPresented: $showMDExporter,
+            document: exportDocument,
+            contentType: TodoFileDocument.markdownType,
+            defaultFilename: "todo-liste"
+        ) { result in
+            handleExportResult(result)
+        }
+    }
+
+    private func withCSVExport<Content: View>(_ content: Content) -> some View {
+        content.fileExporter(
+            isPresented: $showCSVExporter,
+            document: exportDocument,
+            contentType: .commaSeparatedText,
+            defaultFilename: "todo-liste"
+        ) { result in
+            handleExportResult(result)
+        }
+    }
+
+    private func withDialogs<Content: View>(_ content: Content) -> some View {
+        withListObservers(withImportChoice(withHintAlert(content)))
+    }
+
+    private func withHintAlert<Content: View>(_ content: Content) -> some View {
+        content.alert("Hinweis", isPresented: Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })) {
+            Button("OK", role: .cancel) { alertMessage = nil }
+        } message: {
+            Text(alertMessage ?? "")
+        }
+    }
+
+    private func withImportChoice<Content: View>(_ content: Content) -> some View {
+        content
             .confirmationDialog("To-Do importieren", isPresented: $showImportChoice, titleVisibility: .visible) {
                 Button("Anhängen") { commitPending(append: true) }
                 Button("Ersetzen") { commitPending(append: false) }
@@ -157,24 +219,11 @@ struct TodoListView: View {
             } message: {
                 Text(importSummary)
             }
-            .background {
-                Color.clear
-                    .confirmationDialog(
-                        "Wieder öffnen",
-                        isPresented: Binding(
-                            get: { pendingReopen != nil },
-                            set: { if !$0 { pendingReopen = nil } }
-                        ),
-                        titleVisibility: .visible
-                    ) {
-                        Button("Fortfahren") { confirmReopen() }
-                        Button("Abbrechen", role: .cancel) { pendingReopen = nil }
-                    } message: {
-                        if let task = pendingReopen {
-                            Text("Aufgabe #\(task.uid) bleibt abgeschlossen. Eine neue offene Kopie wird erstellt. Fortfahren?")
-                        }
-                    }
-            }
+            .background { reopenDialog }
+    }
+
+    private func withListObservers<Content: View>(_ content: Content) -> some View {
+        content
             .onChange(of: todos.lastError) { _, new in
                 if let new { alertMessage = new }
             }
@@ -194,6 +243,33 @@ struct TodoListView: View {
                 }
                 todos.broadcastCurrentList()
             }
+    }
+
+    private var reopenDialog: some View {
+        Color.clear
+            .confirmationDialog(
+                "Wieder öffnen",
+                isPresented: Binding(
+                    get: { pendingReopen != nil },
+                    set: { if !$0 { pendingReopen = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Fortfahren") { confirmReopen() }
+                Button("Abbrechen", role: .cancel) { pendingReopen = nil }
+            } message: {
+                if let task = pendingReopen {
+                    Text("Aufgabe #\(task.uid) bleibt abgeschlossen. Eine neue offene Kopie wird erstellt. Fortfahren?")
+                }
+            }
+    }
+
+    private func withSheets<Content: View>(_ content: Content) -> some View {
+        withShareSheet(withEditSheet(withListSheets(content)))
+    }
+
+    private func withListSheets<Content: View>(_ content: Content) -> some View {
+        content
             .alert("Neue Liste", isPresented: $showCreateList) {
                 TextField("Name", text: $newListName)
                 Button("Anlegen") { createList() }
@@ -202,46 +278,59 @@ struct TodoListView: View {
                 Text("Aufgaben dieser Liste erscheinen, wenn sie ausgewählt ist.")
             }
             .sheet(isPresented: $showManageLists) {
-                TodoListsSheet(
-                    lists: todos.state.lists,
-                    onRename: { id, name in todos.renameList(id: id, name: name) },
-                    onDelete: { list in
-                        todos.deleteList(id: list.id)
-                        if currentListId == list.id {
-                            currentListId = ""
-                        }
-                    }
-                )
-                .environment(\.einkaufTheme, theme)
-                .einkaufScreen(theme)
+                manageListsSheet
             }
-            .sheet(item: $editingTask) { task in
-                TodoEditSheet(
-                    task: task,
-                    lists: todos.state.lists,
-                    onSave: { text, person, prioA, prioB, dueDate, listId in
-                        todos.update(
-                            task.uid,
-                            text: text,
-                            person: person,
-                            prioA: prioA,
-                            prioB: prioB,
-                            dueDate: dueDate,
-                            listId: .some(listId)
-                        )
-                    },
-                    onReopen: {
-                        pendingReopen = task
-                    }
-                )
-                .environment(\.einkaufTheme, theme)
-                .einkaufScreen(theme)
-            }
-            .sheet(item: $shareItem) { item in
-                ShareSheet(url: item.url)
-                    .ignoresSafeArea()
-            }
+    }
+
+    private func withEditSheet<Content: View>(_ content: Content) -> some View {
+        content.sheet(item: $editingTask) { task in
+            editTaskSheet(task)
         }
+    }
+
+    private func withShareSheet<Content: View>(_ content: Content) -> some View {
+        content.sheet(item: $shareItem) { item in
+            ShareSheet(url: item.url)
+                .ignoresSafeArea()
+        }
+    }
+
+    private var manageListsSheet: some View {
+        TodoListsSheet(
+            lists: todos.state.lists,
+            onRename: { id, name in todos.renameList(id: id, name: name) },
+            onDelete: { list in
+                todos.deleteList(id: list.id)
+                if currentListId == list.id {
+                    currentListId = ""
+                }
+            }
+        )
+        .environment(\.einkaufTheme, theme)
+        .einkaufScreen(theme)
+    }
+
+    private func editTaskSheet(_ task: TodoTask) -> some View {
+        TodoEditSheet(
+            task: task,
+            lists: todos.state.lists,
+            onSave: { text, person, prioA, prioB, dueDate, listId in
+                todos.update(
+                    task.uid,
+                    text: text,
+                    person: person,
+                    prioA: prioA,
+                    prioB: prioB,
+                    dueDate: dueDate,
+                    listId: .some(listId)
+                )
+            },
+            onReopen: {
+                pendingReopen = task
+            }
+        )
+        .environment(\.einkaufTheme, theme)
+        .einkaufScreen(theme)
     }
 
     @ToolbarContentBuilder
@@ -260,43 +349,7 @@ struct TodoListView: View {
             .accessibilityLabel(isSearching ? "Suche schließen" : "Suche")
         }
         ToolbarItem(placement: .topBarLeading) {
-            Menu {
-                Button {
-                    currentListId = ""
-                } label: {
-                    if currentListId.isEmpty {
-                        Label(TodoListFilter.allTitle, systemImage: "checkmark")
-                    } else {
-                        Text(TodoListFilter.allTitle)
-                    }
-                }
-                ForEach(todos.state.lists) { list in
-                    Button {
-                        currentListId = list.id
-                    } label: {
-                        if currentListId == list.id {
-                            Label(list.name, systemImage: "checkmark")
-                        } else {
-                            Text(list.name)
-                        }
-                    }
-                }
-                Divider()
-                Button("Neue Liste…", systemImage: "plus") {
-                    newListName = ""
-                    showCreateList = true
-                }
-                Button("Listen…", systemImage: "pencil") {
-                    showManageLists = true
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "list.bullet")
-                    Text(currentListTitle)
-                }
-            }
-            .accessibilityLabel("Liste")
-            .accessibilityValue("\(currentListTitle), \(progressLabel)")
+            listFilterMenu
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button {
@@ -313,51 +366,99 @@ struct TodoListView: View {
             .accessibilityLabel(isEditing ? "Fertig" : "Edit")
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Picker("Sortierung", selection: $sortKeyRaw) {
-                    ForEach(TodoSortKey.allCases, id: \.rawValue) { key in
-                        Text(key.menuTitle).tag(key.rawValue)
-                    }
-                }
-            } label: {
-                Image(systemName: "arrow.up.arrow.down")
-            }
-            .accessibilityLabel("Sortierung")
+            sortMenu
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Button("Backup importieren…", systemImage: "square.and.arrow.down") {
-                    showImporter = true
-                }
-                Button("Backup exportieren…", systemImage: "square.and.arrow.up") {
-                    exportJSON()
-                }
-                Button("Backup teilen", systemImage: "square.and.arrow.up.on.square") {
-                    shareJSON()
-                }
-                Button("MD exportieren…", systemImage: "doc.richtext") {
-                    exportMarkdown()
-                }
-                Button("MD teilen", systemImage: "square.and.arrow.up.on.square") {
-                    shareMarkdown()
-                }
-                Button("CSV exportieren…", systemImage: "tablecells") {
-                    exportCSV()
-                }
-                Button("CSV teilen", systemImage: "square.and.arrow.up.on.square") {
-                    shareCSV()
-                }
-                Button("Liste teilen", systemImage: "list.bullet.rectangle") {
-                    shareList()
-                }
-                Button("Erledigte löschen", systemImage: "trash") {
-                    todos.clearCompleted()
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-            }
-            .accessibilityLabel("Mehr")
+            overflowMenu
         }
+    }
+
+    private var listFilterMenu: some View {
+        Menu {
+            Button {
+                currentListId = ""
+            } label: {
+                if currentListId.isEmpty {
+                    Label(TodoListFilter.allTitle, systemImage: "checkmark")
+                } else {
+                    Text(TodoListFilter.allTitle)
+                }
+            }
+            ForEach(todos.state.lists) { list in
+                Button {
+                    currentListId = list.id
+                } label: {
+                    if currentListId == list.id {
+                        Label(list.name, systemImage: "checkmark")
+                    } else {
+                        Text(list.name)
+                    }
+                }
+            }
+            Divider()
+            Button("Neue Liste…", systemImage: "plus") {
+                newListName = ""
+                showCreateList = true
+            }
+            Button("Listen…", systemImage: "pencil") {
+                showManageLists = true
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "list.bullet")
+                Text(currentListTitle)
+            }
+        }
+        .accessibilityLabel("Liste")
+        .accessibilityValue("\(currentListTitle), \(progressLabel)")
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            Picker("Sortierung", selection: $sortKeyRaw) {
+                ForEach(TodoSortKey.allCases, id: \.rawValue) { key in
+                    Text(key.menuTitle).tag(key.rawValue)
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+        }
+        .accessibilityLabel("Sortierung")
+    }
+
+    private var overflowMenu: some View {
+        Menu {
+            Button("Backup importieren…", systemImage: "square.and.arrow.down") {
+                showImporter = true
+            }
+            Button("Backup exportieren…", systemImage: "square.and.arrow.up") {
+                exportJSON()
+            }
+            Button("Backup teilen", systemImage: "square.and.arrow.up.on.square") {
+                shareJSON()
+            }
+            Button("MD exportieren…", systemImage: "doc.richtext") {
+                exportMarkdown()
+            }
+            Button("MD teilen", systemImage: "square.and.arrow.up.on.square") {
+                shareMarkdown()
+            }
+            Button("CSV exportieren…", systemImage: "tablecells") {
+                exportCSV()
+            }
+            Button("CSV teilen", systemImage: "square.and.arrow.up.on.square") {
+                shareCSV()
+            }
+            Button("Liste teilen", systemImage: "list.bullet.rectangle") {
+                shareList()
+            }
+            Button("Erledigte löschen", systemImage: "trash") {
+                todos.clearCompleted()
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .accessibilityLabel("Mehr")
     }
 
     @ViewBuilder

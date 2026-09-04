@@ -30,15 +30,12 @@ struct EinkaufAddItemsIntent: AppIntent {
 #else
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        do {
-            let speech = SpeechItemSplitter.strippingTriggerPrefix(items)
-            let store = ShoppingStore(enableSync: true)
-            let count = store.addItems(fromSpeech: speech)
-            let message = SpeechItemSplitter.confirmation(addedCount: count)
-            return .result(dialog: IntentDialog("\(message)"))
-        } catch {
-            return .result(dialog: IntentDialog("Speichern fehlgeschlagen."))
-        }
+        // Persistenz-Fehler werden im Store geschluckt (Dialog wäre „Speichern fehlgeschlagen.“).
+        let speech = SpeechItemSplitter.strippingTriggerPrefix(items)
+        let store = ShoppingStore(enableSync: true)
+        let count = store.addItems(fromSpeech: speech)
+        let message = SpeechItemSplitter.confirmation(addedCount: count)
+        return .result(dialog: IntentDialog("\(message)"))
     }
 #endif
 }
