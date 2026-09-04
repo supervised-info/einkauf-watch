@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Geh-Modus: Text (+ kompakte Person/Prio/Datum), Tippen toggelt `completed`.
+/// Geh-Modus: Text (+ kompakte Person/Prio/Datum/Abgeschlossen), Tippen toggelt `completed`.
 /// Filtert auf die vom iPhone gesyncte aktuelle Liste (`todo.currentListId`).
 /// Kein Edit, kein Prio-Picker, keine Ketten-UI, kein Import/Export, keine Suche, keine Listen-Verwaltung.
 struct WatchTodoListView: View {
@@ -130,7 +130,8 @@ struct WatchTodoListView: View {
         let person = task.person.trimmingCharacters(in: .whitespacesAndNewlines)
         let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
         let due = TodoJSON.isoDate(task.dueDate)
-        if !person.isEmpty || !prio.isEmpty || !due.isEmpty {
+        let closed = TodoListGrouping.closedDateLabel(task)
+        if !person.isEmpty || !prio.isEmpty || !due.isEmpty || !closed.isEmpty {
             HStack(spacing: 4) {
                 if !person.isEmpty {
                     Text(person)
@@ -149,6 +150,11 @@ struct WatchTodoListView: View {
                                 ? theme.oxide
                                 : theme.muted
                         )
+                        .lineLimit(1)
+                }
+                if !closed.isEmpty {
+                    Text(closed)
+                        .foregroundStyle(theme.muted)
                         .lineLimit(1)
                 }
             }
@@ -171,6 +177,8 @@ struct WatchTodoListView: View {
                 parts.append(label)
             }
         }
+        let closed = TodoListGrouping.closedDateLabel(task)
+        if !closed.isEmpty { parts.append(closed) }
         return parts.joined(separator: ", ")
     }
 }

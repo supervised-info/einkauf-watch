@@ -2263,6 +2263,18 @@ def test_todo_store() -> None:
         fail("tests must cover To-Do import revision floor vs Watch peer")
     if "revision = max(lokal, import" not in desc:
         fail("Description.md must document To-Do import revision floor")
+    if "Abgeschlossen-Datum" not in desc or "geschlossen" not in desc:
+        fail("Description.md must document completedDate in the To-Do row Nebeninfo")
+    if "func closedDateLabel" not in models:
+        fail("TodoListGrouping must expose closedDateLabel for completedDate")
+    if "TodoListGrouping.closedDateLabel" not in todo_ui:
+        fail("TodoListView metaLine must show closedDateLabel")
+    if "TodoListGrouping.closedDateLabel" not in (ROOT / "Sources/Watch/WatchTodoListView.swift").read_text():
+        fail("WatchTodoListView metaLine must show closedDateLabel")
+    if "Abgeschlossen am" not in todo_ui:
+        fail("TodoEditSheet must show completedDate read-only as Abgeschlossen am")
+    if "testMetaLineShowsClosedDateAfterDueWhenCompleted" not in tests:
+        fail("tests must cover completedDate in TodoListGrouping.metaLine")
     if "testOfferAppliesWhenEmptyOtherwiseAsksAndRejectsEinkauf" not in tests:
         fail("tests must cover TodoImport.offer empty/append-choice/einkauf reject")
     if "var listId: String?" not in models:

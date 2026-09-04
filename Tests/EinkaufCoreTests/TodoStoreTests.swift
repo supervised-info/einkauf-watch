@@ -582,6 +582,40 @@ final class TodoListGroupingTests: XCTestCase {
             "A · 10.09.2026"
         )
     }
+
+    func testMetaLineShowsClosedDateAfterDueWhenCompleted() {
+        XCTAssertEqual(
+            TodoListGrouping.closedDateLabel(
+                TodoTask(uid: 1, text: "x", completed: false, completedDate: "2026-09-01")
+            ),
+            ""
+        )
+        XCTAssertEqual(
+            TodoListGrouping.closedDateLabel(
+                TodoTask(uid: 1, text: "x", completed: true, completedDate: "")
+            ),
+            ""
+        )
+        XCTAssertEqual(
+            TodoListGrouping.closedDateLabel(
+                TodoTask(uid: 1, text: "x", completed: true, completedDate: "2026-09-01")
+            ),
+            "geschlossen 01.09.2026"
+        )
+        XCTAssertEqual(
+            TodoListGrouping.metaLine(
+                TodoTask(
+                    uid: 1,
+                    text: "x",
+                    completed: true,
+                    prioA: "A",
+                    dueDate: "2026-09-10",
+                    completedDate: "2026-09-01"
+                )
+            ),
+            "A · 10.09.2026 · geschlossen 01.09.2026"
+        )
+    }
 }
 
 final class TodoBackupCodecTests: XCTestCase {

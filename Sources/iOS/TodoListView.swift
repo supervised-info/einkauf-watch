@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// iPhone-To-Do: Person / Prio / Datum, Wieder öffnen, Sort, Suche, benannte Listen,
+/// iPhone-To-Do: Person / Prio / Datum / Abgeschlossen, Wieder öffnen, Sort, Suche, benannte Listen,
 /// Backup `todo-v3-json`, MD/CSV (volle Liste), Liste teilen (PDF folgt Liste + Auge).
 /// Watch: nur Liste + Toggle, ohne Reopen/Suche/Sort/MD/CSV/Listen-UI.
 struct TodoListView: View {
@@ -668,7 +668,8 @@ struct TodoListView: View {
         let person = task.person.trimmingCharacters(in: .whitespacesAndNewlines)
         let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
         let due = TodoJSON.isoDate(task.dueDate)
-        if !person.isEmpty || !prio.isEmpty || !due.isEmpty {
+        let closed = TodoListGrouping.closedDateLabel(task)
+        if !person.isEmpty || !prio.isEmpty || !due.isEmpty || !closed.isEmpty {
             HStack(spacing: 6) {
                 if !person.isEmpty {
                     Text(person)
@@ -685,6 +686,10 @@ struct TodoListView: View {
                                 ? theme.oxide
                                 : theme.muted
                         )
+                }
+                if !closed.isEmpty {
+                    Text(closed)
+                        .foregroundStyle(theme.muted)
                 }
             }
             .font(.caption)
@@ -706,6 +711,8 @@ struct TodoListView: View {
                 parts.append(label)
             }
         }
+        let closed = TodoListGrouping.closedDateLabel(task)
+        if !closed.isEmpty { parts.append(closed) }
         if let from = task.reopenedFromUid {
             parts.append("von \(from)")
         }
@@ -1065,6 +1072,17 @@ private struct TodoEditSheet: View {
                         TodoDuePicker(iso: $dueDate)
                     }
                     .einkaufRowChrome()
+                    if task.completed && !TodoJSON.isoDate(task.completedDate).isEmpty {
+                        HStack {
+                            Text("Abgeschlossen am")
+                                .foregroundStyle(theme.muted)
+                            Spacer()
+                            Text(TodoTime.displayDay(task.completedDate))
+                                .foregroundStyle(theme.muted)
+                        }
+                        .einkaufRowChrome()
+                        .accessibilityLabel("Abgeschlossen am \(TodoTime.displayDay(task.completedDate))")
+                    }
                     HStack {
                         Text("Liste")
                             .foregroundStyle(theme.muted)

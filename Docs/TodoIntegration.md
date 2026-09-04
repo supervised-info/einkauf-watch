@@ -119,7 +119,7 @@ Tab-Labels **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`. Einkaufs-Tool
 
 Zwei Reiter **Einkauf | To-Do**. To-Do auf der Watch **nur Geh-Modus**:
 
-- offene und (per Auge) erledigte Aufgaben: Text; Person/Prio/Datum als kompakte Nebeninfo
+- offene und (per Auge) erledigte Aufgaben: Text; Person/Prio/Datum als kompakte Nebeninfo; bei erledigt `completedDate` als „geschlossen TT.MM.JJJJ“
 - Tippen toggelt `completed` (wie Einkauf-Checkbox)
 - **kein** volles Edit, kein Prio-Picker, keine Reopen-Ketten, kein Import/Export, keine Suche, kein Sort
 
@@ -398,6 +398,8 @@ To-Do-JSON (`format: "todo-v3-json"`) ist unter **Einstellungen** erreichbar, de
 
 HTML-`todo-v3-json` hat keine `revision` (`TodoCodec.decodeBackup` → 0). `applyImported` darf die lokale Revision nicht auf 1 zurücksetzen: `revision = max(lokal, import, nach Normalize) + 1` (Ersetzen und Anhängen), analog `ShoppingStore.importBackup`. Danach `persistAndSync` / Broadcast, damit die Watch den hohen Snapshot bekommt.
 
+Nebeninfo (iPhone/Watch/PDF-`metaLine`): erledigt + gesetztes `completedDate` → „geschlossen TT.MM.JJJJ“ nach dem Enddatum (`theme.muted`). Edit-Sheet: **Abgeschlossen am** nur lesen.
+
 - Build 57
 
 ---
@@ -487,3 +489,4 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Phase 10: benannte Listen `lists`/`listId`, Filter Alle, PDF+Siri+Watch, Build 55. Isolation bleibt (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
 - [x] Einstellungen: To-Do Backup import/export/teilen (JSON), Build 56. Einkauf-JSON abgelehnt. To-Do-**…** Import bleibt.
 - [x] To-Do-Import: `revision`-Floor `max(lokal, import) + 1` (Watch-Sync überschreibt nicht), Build 57.
+- [x] Zeile zeigt `completedDate` als „geschlossen …“ (iPhone, Watch, PDF-Meta), Build 57.
