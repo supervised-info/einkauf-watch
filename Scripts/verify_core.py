@@ -293,6 +293,11 @@ def test_sources() -> None:
         "Sources/Shared/KeywordDictionaryBrowse.swift",
         "Sources/Shared/SpeechItemSplitter.swift",
         "Sources/Shared/EinkaufAddItemsIntent.swift",
+        "Sources/Shared/TodoModels.swift",
+        "Sources/Shared/TodoCodec.swift",
+        "Sources/Shared/TodoPersistence.swift",
+        "Sources/Shared/TodoStore.swift",
+        "Sources/iOS/TodoListView.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/iOS/HomeWidgetReload.swift",
@@ -384,8 +389,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 41" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 41 / CURRENT_PROJECT_VERSION")
+    if "Build 42" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 42 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -859,8 +864,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 41" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 41")
+    if "CURRENT_PROJECT_VERSION = 42" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 42")
+    if "CURRENT_PROJECT_VERSION = 41" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 41 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 40" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 40 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 39" in pbx:
@@ -928,8 +935,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 41" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 41")
+    if "CURRENT_PROJECT_VERSION: 42" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 42")
+    if "CURRENT_PROJECT_VERSION: 41" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 41 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 40" in yml:
         fail("stale CURRENT_PROJECT_VERSION 40 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 39" in yml:
@@ -1205,8 +1214,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 41") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 41")
+    if pbx.count("CURRENT_PROJECT_VERSION = 42") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 42")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1496,6 +1505,8 @@ def test_siri_app_intents() -> None:
         fail("project.yml widgets must exclude EinkaufAddItemsIntent.swift")
     if "SiriPendingAdds.swift" not in yml:
         fail("project.yml widgets must exclude SiriPendingAdds.swift")
+    if "TodoStore.swift" not in yml:
+        fail("project.yml widgets must exclude TodoStore.swift")
     if "EinkaufAddItemsIntent.swift" not in pkg:
         fail("Package.swift must exclude EinkaufAddItemsIntent.swift from SPM")
 
@@ -1559,6 +1570,82 @@ def test_siri_app_intents() -> None:
     print("siri app intents: ok")
 
 
+def test_todo_store() -> None:
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+    persist = (ROOT / "Sources/Shared/TodoPersistence.swift").read_text()
+    codec = (ROOT / "Sources/Shared/TodoCodec.swift").read_text()
+    store = (ROOT / "Sources/Shared/TodoStore.swift").read_text()
+    models = (ROOT / "Sources/Shared/TodoModels.swift").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/TodoStoreTests.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    todo_ui = (ROOT / "Sources/iOS/TodoListView.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    watch_app = (ROOT / "Sources/Watch/EinkaufWatchApp.swift").read_text()
+    einkauf_app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
+
+    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoPersistence.swift", "TodoStore.swift", "TodoListView.swift"):
+        if name not in pbx:
+            fail(f"pbxproj must compile {name}")
+    if "todo-local.json" not in persist:
+        fail("TodoPersistence must write todo-local.json")
+    if "einkauf-local.json" in persist:
+        fail("TodoPersistence must never mention einkauf-local.json")
+    if "BackupCodec." in persist or "BackupCodec." in store:
+        fail("Todo persist/store must not route through BackupCodec")
+    if 'kind: "todo-local"' not in codec and 'localKind = "todo-local"' not in codec:
+        fail("TodoCodec must use kind todo-local")
+    if "ConnectivitySync" in store or "WCSession" in store:
+        fail("TodoStore must not wire WatchConnectivity yet")
+    if "TabView" not in einkauf_app:
+        fail("iPhone root must use TabView for Einkauf | To-Do")
+    if 'Label("Einkauf", systemImage: "basket")' not in einkauf_app:
+        fail("Einkauf tab must use basket SF Symbol")
+    if 'Label("To-Do", systemImage: "checklist")' not in einkauf_app:
+        fail("To-Do tab must use checklist SF Symbol")
+    if "TodoStore()" not in einkauf_app or "environmentObject(todos)" not in einkauf_app:
+        fail("EinkaufApp must own TodoStore and inject environmentObject")
+    if "ShoppingStore()" not in einkauf_app:
+        fail("EinkaufApp must keep ShoppingStore")
+    if "TodoListView" not in einkauf_app:
+        fail("EinkaufApp TabView must host TodoListView")
+    if "TabView" in content:
+        fail("ContentView must stay the Einkauf tab, not wrap TabView")
+    if "TodoListView" in content or "TodoStore" in content:
+        fail("ContentView must not host Todo UI")
+    if "fileImporter" not in content or "Geh-Modus" not in content:
+        fail("Einkauf ContentView must keep backup import and Geh-Modus")
+    if "TabView" in watch or "TabView" in watch_app or "TodoStore" in watch or "TodoListView" in watch:
+        fail("Watch must not get a To-Do tab yet")
+    if "fileImporter" in todo_ui or "fileExporter" in todo_ui:
+        fail("To-Do v1 must not add backup import/export UI")
+    if "NavigationStack" not in todo_ui:
+        fail("TodoListView needs its own NavigationStack")
+    if "Hinzufügen" not in todo_ui or "Neue Aufgabe" not in todo_ui:
+        fail("TodoListView must add tasks via Hinzufügen")
+    if "onDelete" not in todo_ui:
+        fail("TodoListView must swipe-delete")
+    if "todos.toggle" not in todo_ui:
+        fail("TodoListView must toggle completed")
+    if "todos.update" not in todo_ui:
+        fail("TodoListView must rename via todos.update")
+    if "Int64" not in models:
+        fail("Todo uid must be Int64")
+    if "func add(" not in store or "func toggle(" not in store or "func delete(" not in store:
+        fail("TodoStore missing add/toggle/delete")
+    if "testLocalRoundTripPreservesTasksAndNextUid" not in tests:
+        fail("tests must cover todo-local roundtrip")
+    if "testSaveDoesNotWriteEinkaufLocal" not in tests:
+        fail("tests must cover todo persist isolation")
+    if "testNormalizeAssignsMissingUidsFromNextUid" not in tests:
+        fail("tests must cover normalize missing uids")
+    if "kein HTML-Parity" not in desc.lower() and "Kein** HTML-Parity" not in desc and "**Kein** HTML-Parity" not in desc:
+        fail("Description.md WIP must not claim full To-Do HTML parity")
+    if "TabView" not in desc and "To-Do" not in desc:
+        fail("Description.md WIP must mention the To-Do tab")
+    print("todo store + iphone tab: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -1569,6 +1656,7 @@ def main() -> None:
     test_watch_complication()
     test_iphone_widget()
     test_siri_app_intents()
+    test_todo_store()
     print("ALL OK")
 
 
