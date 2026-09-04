@@ -384,8 +384,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 40" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 40 / CURRENT_PROJECT_VERSION")
+    if "Build 41" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 41 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -859,8 +859,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 40" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 40")
+    if "CURRENT_PROJECT_VERSION = 41" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 41")
+    if "CURRENT_PROJECT_VERSION = 40" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 40 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 39" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 39 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 38" in pbx:
@@ -926,8 +928,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 40" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 40")
+    if "CURRENT_PROJECT_VERSION: 41" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 41")
+    if "CURRENT_PROJECT_VERSION: 40" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 40 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 39" in yml:
         fail("stale CURRENT_PROJECT_VERSION 39 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 38" in yml:
@@ -1201,8 +1205,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 40") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 40")
+    if pbx.count("CURRENT_PROJECT_VERSION = 41") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 41")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1376,8 +1380,10 @@ def test_siri_app_intents() -> None:
         fail("App Shortcut phrases must not use generic Einkauf as the only cue")
     if 'shortTitle: "Besorgen"' not in intent:
         fail("App Shortcut shortTitle must be Besorgen")
-    if 'requestValueDialog: "ok"' not in intent:
-        fail("requestValueDialog should ask ok")
+    if 'requestValueDialog: "o")' not in intent:
+        fail("requestValueDialog should ask o")
+    if 'requestValueDialog: "ok"' in intent:
+        fail("stale requestValueDialog ok")
     if "Was soll ich besorgen?" in intent:
         fail("stale requestValueDialog Was soll ich besorgen?")
     if "strippingTriggerPrefix" not in intent:
@@ -1528,8 +1534,10 @@ def test_siri_app_intents() -> None:
         fail("Description.md must document Siri asking for Artikel after the utterance")
     if "Was soll ich besorgen?" in desc:
         fail("Description.md still quotes old Siri follow-up Was soll ich besorgen?")
-    if "fragt „ok“" not in desc:
-        fail("Description.md must say Siri asks ok")
+    if "fragt „ok“" in desc:
+        fail("Description.md still quotes old Siri follow-up ok")
+    if "fragt „o“" not in desc:
+        fail("Description.md must say Siri asks o")
     if "Pending-Queue" not in desc:
         fail("Description.md must document the Watch-Siri pending queue")
     if "UserDefaults" not in desc or "einkauf.siriPendingAdds" not in desc:
