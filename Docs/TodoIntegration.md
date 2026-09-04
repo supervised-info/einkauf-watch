@@ -241,7 +241,7 @@ Gelandet:
 
 - iPhone `TabView`: Tab **Einkauf** = unveränderte `ContentView`; Tab **To-Do** = `TodoListView` in eigener `NavigationStack`
 - `EinkaufApp` hält `ShoppingStore` und `TodoStore` (`environmentObject`)
-- To-Do v1: Text anlegen, Toggle `completed`, Swipe-Löschen, Tippen benennt um
+- To-Do v1: Text anlegen, Toggle `completed`, Tippen benennt um; Swipe-Löschen erst im Bearbeiten-Modus (Build 50)
 - SF-Symbols `basket` / `checklist`
 - Person / Prio / Datum leer (Phase 4)
 - **Kein** Watch-Tab, **kein** Backup-Menü, **kein** To-Do-WatchConnectivity
@@ -305,8 +305,8 @@ Gelandet:
 
 - `TodoAddItemsIntent.requestValueDialog` **„o“** (wie `EinkaufAddItemsIntent`); Phrasen bleiben **To Do**
 - iPhone-Toolbar zwischen Auge und **…**: **Bearbeiten** / **Fertig** (`@State`, Default Liste)
-- Liste: Checkbox toggelt `completed`, Swipe-Löschen; Text-Tipp und Swipe **Bearbeiten** öffnen `TodoEditSheet`
-- Bearbeiten-Modus: Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance; Add-Leiste Person/Prio bleibt
+- Listen-Modus: Checkbox toggelt `completed`; **kein** Swipe-Löschen (`.deleteDisabled`, trailing `EmptyView()`, `.id("todo-browse")`). Text-Tipp und Swipe **Bearbeiten** öffnen `TodoEditSheet`
+- Bearbeiten-Modus: Swipe-Löschen nur via `.onDelete` (`.id("todo-edit")`); Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance; Add-Leiste Person/Prio bleibt
 - `TodoTask` ist `Identifiable`/`Hashable` über `uid` für `.sheet(item:)`
 - Build 47 (iPhone-UI + Siri-Dialog)
 
@@ -326,6 +326,14 @@ Gelandet:
 - `parameterSummary` weiter `Todo \(.$items)`, Nachfrage **„o“**
 - Spoken **„Hey Siri, Einkauf Todo“**
 - Build 49
+
+### Swipe-Löschen nur im Bearbeiten-Modus — erledigt (Build 50)
+
+- iPhone-To-Do Listen-Modus: kein `.onDelete`, Zeilen `.deleteDisabled(true)`, trailing `EmptyView()`, List-`.id` `todo-browse`
+- Bearbeiten: `.onDelete`, List-`.id` `todo-edit` — Umschalten tauscht die List-Identität, damit SwiftUI keine löschbaren Zeilen wiederverwendet
+- Leading-Swipe **Bearbeiten** bleibt in beiden Modi
+- Einkauf Geh-Modus analog: `.deleteDisabled`, kein trailing Delete, List-`.id` `walk|…` vs `edit|…`
+- Build 50
 
 Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
@@ -420,4 +428,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] iPhone Bearbeiten / Fertig + Siri-Nachfrage **„o“**, Build 47.
 - [x] To-Do-Siri Mehrwort-Aufgaben: ein-tokeniges `parameterSummary`, Build 48.
 - [x] To-Do-Siri Phrase ein Token (`Todo`), gesprochen „Hey Siri, Einkauf Todo“, Build 49.
+- [x] Swipe-Löschen nur im Bearbeiten-Modus (To-Do Listen-Modus + Einkauf Geh-Modus), Build 50.
 - [ ] Folge-PRs halten die Reihenfolge 7→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
