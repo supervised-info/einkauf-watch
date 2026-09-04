@@ -133,9 +133,34 @@ struct TodoListView: View {
     }
 
     private var list: some View {
+        Group {
+            if isEditing {
+                editingList
+            } else {
+                browsingList
+            }
+        }
+    }
+
+    /// Listen-Modus: kein Swipe-Löschen (`.onDelete` fehlt, Zeilen `deleteDisabled`).
+    private var browsingList: some View {
         List {
             ForEach(visibleTasks) { task in
                 row(task)
+                    .deleteDisabled(true)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .einkaufListChrome()
+        .environment(\.editMode, .constant(.inactive))
+    }
+
+    /// Bearbeiten: Swipe-Löschen bleibt.
+    private var editingList: some View {
+        List {
+            ForEach(visibleTasks) { task in
+                row(task)
+                    .deleteDisabled(false)
             }
             .onDelete(perform: delete)
         }

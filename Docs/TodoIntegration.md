@@ -305,8 +305,8 @@ Gelandet:
 
 - `TodoAddItemsIntent.requestValueDialog` **„o“** (wie `EinkaufAddItemsIntent`); Phrasen bleiben **To Do**
 - iPhone-Toolbar zwischen Auge und **…**: **Bearbeiten** / **Fertig** (`@State`, Default Liste)
-- Liste: Checkbox toggelt `completed`, Swipe-Löschen; Text-Tipp und Swipe **Bearbeiten** öffnen `TodoEditSheet`
-- Bearbeiten-Modus: Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance; Add-Leiste Person/Prio bleibt
+- Listen-Modus: Checkbox toggelt `completed`; **kein** Swipe-Löschen. Text-Tipp und Swipe **Bearbeiten** öffnen `TodoEditSheet`
+- Bearbeiten-Modus: Swipe-Löschen; Zeile öffnet dasselbe Sheet (Text, Person, Prio A/B, Datum) über `todos.update`; Chevron-Affordance; Add-Leiste Person/Prio bleibt
 - `TodoTask` ist `Identifiable`/`Hashable` über `uid` für `.sheet(item:)`
 - Build 47 (iPhone-UI + Siri-Dialog)
 

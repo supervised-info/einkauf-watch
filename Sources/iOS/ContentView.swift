@@ -101,15 +101,17 @@ struct ContentView: View {
                 switch row.line {
                 case .header(_, let dept):
                     walkHeader(dept)
+                        .deleteDisabled(true)
                 case .item(_, let item):
                     walkRow(item)
+                        .deleteDisabled(true)
                 }
             }
         }
         .listStyle(.insetGrouped)
         .einkaufListChrome()
         .environment(\.editMode, .constant(.inactive))
-        .id("\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
+        .id("walk|\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
     }
 
     /// Flache Liste: Überschriften sind nicht verschiebbar, Artikel können in jede sichtbare
@@ -141,7 +143,7 @@ struct ContentView: View {
         .listStyle(.insetGrouped)
         .einkaufListChrome()
         .environment(\.editMode, .constant(.active))
-        .id("\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
+        .id("edit|\(store.state.currentStoreId)|\(store.state.currentStore.layout.joined())")
     }
 
     private func walkHeader(_ dept: String) -> some View {
@@ -153,6 +155,7 @@ struct ContentView: View {
             .listRowInsets(EdgeInsets(top: 18, leading: 16, bottom: 6, trailing: 16))
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+            .deleteDisabled(true)
             .accessibilityAddTraits(.isHeader)
             .accessibilityLabel(Department.title(for: dept))
     }
@@ -175,6 +178,7 @@ struct ContentView: View {
         }
         .buttonStyle(.plain)
         .einkaufRowChrome()
+        .deleteDisabled(true)
         .accessibilityLabel(item.name)
         .accessibilityValue(item.done ? "erledigt" : "offen")
     }

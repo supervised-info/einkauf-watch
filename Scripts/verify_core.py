@@ -381,8 +381,20 @@ def test_sources() -> None:
     if "store.walkLines" in content and "ForEach(store.walkLines)" in content:
         fail("walk ForEach must use walkListRows so ids include position")
     list_id = '.id("\\(store.state.currentStoreId)|\\(store.state.currentStore.layout.joined())")'
-    if content.count(list_id) < 2:
-        fail("ContentView walkList and editList must .id(currentStoreId|layout) so store switch rebuilds")
+    walk_list_id = '.id("walk|\\(store.state.currentStoreId)|\\(store.state.currentStore.layout.joined())")'
+    edit_list_id = '.id("edit|\\(store.state.currentStoreId)|\\(store.state.currentStore.layout.joined())")'
+    if walk_list_id not in content or edit_list_id not in content:
+        fail("ContentView walkList/editList must .id(walk|… / edit|…) plus currentStoreId|layout so Geh-Modus does not reuse swipe-delete")
+    walk_list = extract_some_view(content, "walkList")
+    if ".onDelete" in walk_list:
+        fail("ContentView walkList must not attach onDelete (swipe-delete only in Bearbeiten)")
+    if "swipeActions" in walk_list:
+        fail("ContentView walkList must not attach swipeActions")
+    if walk_list.count("deleteDisabled(true)") < 2:
+        fail("ContentView walk header and item rows must deleteDisabled(true)")
+    edit_list = extract_some_view(content, "editList")
+    if ".onDelete" not in edit_list or "onMove" not in edit_list:
+        fail("ContentView editList must keep onDelete swipe and onMove reorder")
     if re.search(r'Picker\(\s*"Laden"', content):
         fail("toolbar must not use Picker for store selection")
     if "store.setStore(s.id)" not in content:
@@ -422,8 +434,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 48" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 48 / CURRENT_PROJECT_VERSION")
+    if "Build 49" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 49 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -897,8 +909,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 48" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 48")
+    if "CURRENT_PROJECT_VERSION = 49" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 49")
+    if "CURRENT_PROJECT_VERSION = 48" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 48 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 47" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 47 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 46" in pbx:
@@ -980,8 +994,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 48" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 48")
+    if "CURRENT_PROJECT_VERSION: 49" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 49")
+    if "CURRENT_PROJECT_VERSION: 48" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 48 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 47" in yml:
         fail("stale CURRENT_PROJECT_VERSION 47 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 46" in yml:
@@ -1271,8 +1287,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 48") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 48")
+    if pbx.count("CURRENT_PROJECT_VERSION = 49") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 49")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1920,6 +1936,14 @@ def test_todo_store() -> None:
         fail("TodoListView must add tasks via Hinzufügen")
     if "onDelete" not in todo_ui:
         fail("TodoListView must swipe-delete")
+    todo_browse = extract_some_view(todo_ui, "browsingList")
+    todo_edit = extract_some_view(todo_ui, "editingList")
+    if ".onDelete" in todo_browse:
+        fail("TodoListView browsingList must not attach onDelete (swipe-delete only in Bearbeiten)")
+    if "deleteDisabled(true)" not in todo_browse:
+        fail("TodoListView browsingList rows must deleteDisabled(true)")
+    if ".onDelete(perform: delete)" not in todo_edit:
+        fail("TodoListView editingList must keep onDelete swipe-delete")
     if "todos.toggle" not in todo_ui:
         fail("TodoListView must toggle completed")
     if "todos.update" not in todo_ui:
