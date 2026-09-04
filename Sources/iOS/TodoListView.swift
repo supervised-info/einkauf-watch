@@ -2,8 +2,9 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// iPhone-To-Do: Person / Prio / Datum / Abgeschlossen, Wieder öffnen, Sort, Suche, benannte Listen,
-/// Backup `todo-v3-json`, MD/CSV (volle Liste), Liste teilen (PDF folgt Liste + Auge).
-/// Watch: nur Liste + Toggle, ohne Reopen/Suche/Sort/MD/CSV/Listen-UI.
+/// Zeile `#uid` Badge + reopen-Pills wie HTML, Backup `todo-v3-json`, MD/CSV (volle Liste),
+/// Liste teilen (PDF folgt Liste + Auge).
+/// Watch: nur Liste + Toggle + kompaktes `#uid`, ohne Reopen-Pills/Suche/Sort/MD/CSV/Listen-UI.
 struct TodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @EnvironmentObject private var appearance: AppearanceSettings
@@ -565,33 +566,36 @@ struct TodoListView: View {
                     .foregroundStyle(task.completed ? theme.good : theme.muted)
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(task.completed ? "Erledigt: \(task.text)" : "Offen: \(task.text)")
+            .accessibilityLabel(
+                task.completed
+                    ? "Erledigt: Aufgabe \(task.uid), \(task.text)"
+                    : "Offen: Aufgabe \(task.uid), \(task.text)"
+            )
 
             VStack(alignment: .leading, spacing: 4) {
-                Button {
-                    editingTask = task
-                } label: {
-                    HStack(alignment: .top, spacing: 8) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(task.text)
-                                .foregroundStyle(theme.ink)
-                                .strikethrough(task.completed, color: theme.muted)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .multilineTextAlignment(.leading)
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        TodoTaskTitleChrome(
+                            task: task,
+                            onEdit: { editingTask = task },
+                            onReveal: revealAndScroll
+                        )
+                        Button {
+                            editingTask = task
+                        } label: {
                             metaLine(task)
                         }
-                        if isEditing {
-                            Image(systemName: "chevron.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(theme.muted)
-                                .padding(.top, 4)
-                                .accessibilityHidden(true)
-                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Edit: Aufgabe \(task.uid), \(task.text)")
+                    }
+                    if isEditing {
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(theme.muted)
+                            .padding(.top, 4)
+                            .accessibilityHidden(true)
                     }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Edit: \(task.text)")
-                chainHint(task)
             }
         }
         .padding(.vertical, 2)
@@ -629,41 +633,6 @@ struct TodoListView: View {
     }
 
     @ViewBuilder
-    private func chainHint(_ task: TodoTask) -> some View {
-        let from = task.reopenedFromUid
-        let to = task.reopenedToUid
-        if from != nil || to != nil {
-            HStack(spacing: 8) {
-                if let from {
-                    Button {
-                        revealAndScroll(to: from)
-                    } label: {
-                        HStack(spacing: 2) {
-                            Image(systemName: "arrow.uturn.backward")
-                            Text("von #\(from)")
-                        }
-                    }
-                    .accessibilityLabel("Wiederaufnahme von Aufgabe \(from)")
-                }
-                if let to {
-                    Button {
-                        revealAndScroll(to: to)
-                    } label: {
-                        HStack(spacing: 2) {
-                            Text("→ #\(to)")
-                            Image(systemName: "chevron.right")
-                        }
-                    }
-                    .accessibilityLabel("Wieder geöffnet als Aufgabe \(to)")
-                }
-            }
-            .font(.caption)
-            .foregroundStyle(theme.muted)
-            .buttonStyle(.borderless)
-        }
-    }
-
-    @ViewBuilder
     private func metaLine(_ task: TodoTask) -> some View {
         let person = task.person.trimmingCharacters(in: .whitespacesAndNewlines)
         let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
@@ -697,7 +666,7 @@ struct TodoListView: View {
     }
 
     private func rowAccessibilityValue(_ task: TodoTask) -> String {
-        var parts = [task.completed ? "erledigt" : "offen"]
+        var parts = ["#\(task.uid)", task.completed ? "erledigt" : "offen"]
         let person = task.person.trimmingCharacters(in: .whitespacesAndNewlines)
         if !person.isEmpty { parts.append(person) }
         let prio = TodoJSON.prioA(task.prioA) + TodoJSON.prioB(task.prioB)
@@ -714,10 +683,10 @@ struct TodoListView: View {
         let closed = TodoListGrouping.closedDateLabel(task)
         if !closed.isEmpty { parts.append(closed) }
         if let from = task.reopenedFromUid {
-            parts.append("von \(from)")
+            parts.append("von #\(from)")
         }
         if let to = task.reopenedToUid {
-            parts.append("wieder geöffnet als \(to)")
+            parts.append("reopen #\(to)")
         }
         return parts.joined(separator: ", ")
     }
@@ -952,6 +921,143 @@ struct TodoListView: View {
         } catch {
             alertMessage = error.localizedDescription
         }
+    }
+}
+
+/// Fließt `#uid`, Titel und reopen-Pills in einer Zeile, umbruch wie HTML.
+private struct TodoWrapHStack: Layout {
+    var spacing: CGFloat = 6
+    var lineSpacing: CGFloat = 4
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(proposal: proposal, subviews: subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let origin = CGPoint(x: bounds.minX, y: bounds.minY)
+        for item in arrange(proposal: proposal, subviews: subviews).items {
+            subviews[item.index].place(
+                at: CGPoint(x: origin.x + item.origin.x, y: origin.y + item.origin.y),
+                proposal: ProposedViewSize(item.size)
+            )
+        }
+    }
+
+    private struct Placed {
+        var index: Int
+        var origin: CGPoint
+        var size: CGSize
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, items: [Placed]) {
+        let limit = proposal.width ?? .infinity
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var maxX: CGFloat = 0
+        var items: [Placed] = []
+        for (index, sub) in subviews.enumerated() {
+            let remaining = limit.isFinite ? max(0, limit - x) : .infinity
+            var size = measure(sub, width: remaining.isFinite && remaining > 0 ? remaining : limit)
+            if x > 0 && limit.isFinite && x + size.width > limit {
+                y += rowHeight + lineSpacing
+                x = 0
+                rowHeight = 0
+                size = measure(sub, width: limit)
+            }
+            items.append(Placed(index: index, origin: CGPoint(x: x, y: y), size: size))
+            x += size.width
+            maxX = max(maxX, x)
+            rowHeight = max(rowHeight, size.height)
+            x += spacing
+        }
+        let width = limit.isFinite ? limit : maxX
+        return (CGSize(width: width, height: y + rowHeight), items)
+    }
+
+    private func measure(_ sub: LayoutSubview, width: CGFloat) -> CGSize {
+        if width.isFinite && width > 0 {
+            let fitted = sub.sizeThatFits(ProposedViewSize(width: width, height: nil))
+            let ideal = sub.sizeThatFits(.unspecified)
+            if ideal.width <= width { return ideal }
+            return fitted
+        }
+        return sub.sizeThatFits(.unspecified)
+    }
+}
+
+private struct TodoUidBadge: View {
+    let uid: Int64
+    @Environment(\.einkaufTheme) private var theme
+
+    var body: some View {
+        Text("#\(uid)")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(theme.muted)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(theme.paper3, in: Capsule())
+            .accessibilityHidden(true)
+    }
+}
+
+private struct TodoChainLinkBadge: View {
+    let title: String
+    let accessibility: String
+    var action: () -> Void
+    @Environment(\.einkaufTheme) private var theme
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(theme.slate)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(theme.slate.opacity(0.18), in: Capsule())
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(accessibility)
+    }
+}
+
+/// Titelblock wie HTML: `#uid` + Text + `von #` / `reopen #` inline.
+private struct TodoTaskTitleChrome: View {
+    let task: TodoTask
+    var onEdit: () -> Void
+    var onReveal: (Int64) -> Void
+    @Environment(\.einkaufTheme) private var theme
+
+    var body: some View {
+        TodoWrapHStack(spacing: 6, lineSpacing: 4) {
+            TodoUidBadge(uid: task.uid)
+            Button(action: onEdit) {
+                Text(task.text)
+                    .foregroundStyle(theme.ink)
+                    .strikethrough(task.completed, color: theme.muted)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Edit: Aufgabe \(task.uid), \(task.text)")
+            if let from = task.reopenedFromUid {
+                TodoChainLinkBadge(
+                    title: "von #\(from)",
+                    accessibility: "Wiederaufnahme von Aufgabe \(from)",
+                    action: { onReveal(from) }
+                )
+            }
+            if let to = task.reopenedToUid {
+                TodoChainLinkBadge(
+                    title: "reopen #\(to)",
+                    accessibility: "Wieder geöffnet als Aufgabe \(to)",
+                    action: { onReveal(to) }
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

@@ -443,8 +443,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 57" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 57 / CURRENT_PROJECT_VERSION")
+    if "Build 58" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 58 / CURRENT_PROJECT_VERSION")
     if "To-Do Backup" not in desc:
         fail("Description.md must document Einstellungen To-Do Backup")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
@@ -944,8 +944,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 57" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 57")
+    if "CURRENT_PROJECT_VERSION = 58" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 58")
+    if "CURRENT_PROJECT_VERSION = 57" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 57 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 56" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 56 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 55" in pbx:
@@ -1045,8 +1047,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 57" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 57")
+    if "CURRENT_PROJECT_VERSION: 58" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 58")
+    if "CURRENT_PROJECT_VERSION: 57" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 57 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 56" in yml:
         fail("stale CURRENT_PROJECT_VERSION 56 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 55" in yml:
@@ -1172,7 +1176,7 @@ def test_sources() -> None:
     if "preferredColorScheme" not in (ROOT / "Sources/iOS/EinkaufApp.swift").read_text():
         fail("preferredColorScheme not applied from setting")
     theme = (ROOT / "Sources/Shared/Theme.swift").read_text()
-    for token in ("0xF3EEE4", "0x1C1814", "0x9C3424", "0xD2C8B8", "0x14110E", "0xE07060", "0xF0F4FF", "0x2060DF"):
+    for token in ("0xF3EEE4", "0x1C1814", "0x9C3424", "0x2A5564", "0xD2C8B8", "0x14110E", "0xE07060", "0xF0F4FF", "0x2060DF"):
         if token not in theme:
             fail(f"theme missing {token}")
     share = (ROOT / "Sources/Shared/BackupShare.swift").read_text()
@@ -1354,8 +1358,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 57") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 57")
+    if pbx.count("CURRENT_PROJECT_VERSION = 58") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 58")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2252,6 +2256,8 @@ def test_todo_store() -> None:
         fail("TodoIntegration.md must mark Einstellungen To-Do Backup done at Build 56")
     if "erledigt (Build 57)" not in plan or "revision = max" not in plan:
         fail("TodoIntegration.md must mark To-Do import revision floor at Build 57")
+    if "erledigt (Build 58)" not in plan or "reopen #" not in plan:
+        fail("TodoIntegration.md must mark #uid / reopen pills at Build 58")
     if "previousLocalRevision" not in store:
         fail("TodoStore.applyImported must capture previousLocalRevision before mutating")
     if "max(previousLocalRevision, incoming.revision, state.revision) + 1" not in store:
@@ -2347,6 +2353,26 @@ def test_todo_store() -> None:
         fail("TodoStore missing reopen")
     if "Wieder öffnen" not in todo_ui:
         fail("To-Do UI must offer Wieder öffnen")
+    if 'Text("#\\(uid)")' not in todo_ui:
+        fail("TodoListView must prefix the title with a #uid badge")
+    if '"von #\\(from)"' not in todo_ui:
+        fail("TodoListView must show von #N link badge")
+    if '"reopen #\\(to)"' not in todo_ui:
+        fail("TodoListView must show reopen #N link badge like HTML")
+    if "→ #\\(to)" in todo_ui:
+        fail("TodoListView must not use → #N; HTML label is reopen #N")
+    if "theme.paper3" not in todo_ui:
+        fail("uid badge must use theme.paper3 (muted paper-3 capsule)")
+    if "theme.slate" not in todo_ui:
+        fail("reopen pills must use theme.slate")
+    if "TodoTaskTitleChrome" not in todo_ui:
+        fail("uid + reopen pills must sit in the title chrome, not a caption chainHint")
+    if "chainHint" in todo_ui:
+        fail("TodoListView must not keep the old chainHint caption under the title")
+    if "#uid" not in desc or "reopen-Pills" not in desc:
+        fail("Description.md must document #uid Badge + reopen-Pills")
+    if "Aufgabe #\\(task.uid) bleibt abgeschlossen" not in todo_ui:
+        fail("Wieder öffnen confirm copy must stay")
     if "todo.iphone.sortKey" not in todo_ui:
         fail("To-Do sort must persist AppStorage todo.iphone.sortKey")
     if "Person oder Text" not in todo_ui:
@@ -2382,6 +2408,10 @@ def test_todo_store() -> None:
         fail("Watch To-Do must not offer edit/import/search")
     if "reopenedFromUid" in watch_todo or "Wieder öffnen" in watch_todo:
         fail("Watch To-Do must not offer reopen")
+    if 'Text("#\\(task.uid)")' not in watch_todo:
+        fail("Watch To-Do Geh rows must show compact #uid")
+    if "von #" in watch_todo or "reopen #" in watch_todo:
+        fail("Watch To-Do must not show reopen pills")
     if "todo.iphone.sortKey" in watch_todo or "arrow.up.arrow.down" in watch_todo:
         fail("Watch To-Do must not offer sort UI")
     if "magnifyingglass" in watch_todo or "Person oder Text" in watch_todo:
