@@ -1,8 +1,9 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// iPhone-To-Do: Person / Prio / Datum, Wieder öffnen, Sort, Suche, Backup `todo-v3-json`, Liste teilen (PDF).
-/// Watch: nur Liste + Toggle, ohne Reopen/Suche/Sort-UI.
+/// iPhone-To-Do: Person / Prio / Datum, Wieder öffnen, Sort, Suche, Backup `todo-v3-json`,
+/// MD/CSV (volle Liste), Liste teilen (PDF folgt dem Auge).
+/// Watch: nur Liste + Toggle, ohne Reopen/Suche/Sort/MD/CSV-UI.
 struct TodoListView: View {
     @EnvironmentObject private var todos: TodoStore
     @EnvironmentObject private var appearance: AppearanceSettings
@@ -17,8 +18,10 @@ struct TodoListView: View {
     @State private var isEditing = false
     @State private var editingTask: TodoTask?
     @State private var showImporter = false
-    @State private var showExporter = false
-    @State private var exportDocument = BackupFileDocument(data: Data())
+    @State private var showJSONExporter = false
+    @State private var showMDExporter = false
+    @State private var showCSVExporter = false
+    @State private var exportDocument = TodoFileDocument(data: Data())
     @State private var shareItem: BackupShareItem?
     @State private var alertMessage: String?
     @State private var pendingImport: Data?
@@ -83,13 +86,36 @@ struct TodoListView: View {
             .toolbar { toolbar }
             .safeAreaInset(edge: .top, spacing: 0) { searchBar }
             .safeAreaInset(edge: .bottom, spacing: 0) { addBar }
-            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
+            .fileImporter(
+                isPresented: $showImporter,
+                allowedContentTypes: TodoImportUTTypes.all,
+                allowsMultipleSelection: false
+            ) { result in
                 handleImport(result)
             }
-            .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .json, defaultFilename: "todo-liste") { result in
-                if case .failure(let error) = result {
-                    alertMessage = error.localizedDescription
-                }
+            .fileExporter(
+                isPresented: $showJSONExporter,
+                document: exportDocument,
+                contentType: .json,
+                defaultFilename: "todo-liste"
+            ) { result in
+                handleExportResult(result)
+            }
+            .fileExporter(
+                isPresented: $showMDExporter,
+                document: exportDocument,
+                contentType: TodoFileDocument.markdownType,
+                defaultFilename: "todo-liste"
+            ) { result in
+                handleExportResult(result)
+            }
+            .fileExporter(
+                isPresented: $showCSVExporter,
+                document: exportDocument,
+                contentType: .commaSeparatedText,
+                defaultFilename: "todo-liste"
+            ) { result in
+                handleExportResult(result)
             }
             .alert("Hinweis", isPresented: Binding(get: { alertMessage != nil }, set: { if !$0 { alertMessage = nil } })) {
                 Button("OK", role: .cancel) { alertMessage = nil }
@@ -201,10 +227,22 @@ struct TodoListView: View {
                     showImporter = true
                 }
                 Button("Backup exportieren…", systemImage: "square.and.arrow.up") {
-                    exportBackup()
+                    exportJSON()
                 }
                 Button("Backup teilen", systemImage: "square.and.arrow.up.on.square") {
-                    shareBackup()
+                    shareJSON()
+                }
+                Button("MD exportieren…", systemImage: "doc.richtext") {
+                    exportMarkdown()
+                }
+                Button("MD teilen", systemImage: "square.and.arrow.up.on.square") {
+                    shareMarkdown()
+                }
+                Button("CSV exportieren…", systemImage: "tablecells") {
+                    exportCSV()
+                }
+                Button("CSV teilen", systemImage: "square.and.arrow.up.on.square") {
+                    shareCSV()
                 }
                 Button("Liste teilen", systemImage: "list.bullet.rectangle") {
                     shareList()
@@ -552,21 +590,71 @@ struct TodoListView: View {
         }
     }
 
-    private func exportBackup() {
+    private func handleExportResult(_ result: Result<URL, Error>) {
+        if case .failure(let error) = result {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func exportJSON() {
         do {
-            exportDocument = BackupFileDocument(data: try todos.exportBackup())
-            showExporter = true
+            exportDocument = TodoFileDocument(data: try todos.exportBackup())
+            showJSONExporter = true
         } catch {
             alertMessage = error.localizedDescription
         }
     }
 
-    private func shareBackup() {
+    private func shareJSON() {
+        shareData(
+            { try todos.exportBackup() },
+            ext: "json",
+            missing: "Backup-Datei konnte nicht erzeugt werden."
+        )
+    }
+
+    /// Volle Liste, unabhängig vom Auge (`todo.iphone.showCompleted`) — Roundtrip mit HTML.
+    private func exportMarkdown() {
         do {
-            let data = try todos.exportBackup()
-            let url = try BackupShare.writeTempFile(data: data, stem: BackupShare.todoStem)
+            exportDocument = TodoFileDocument(data: try todos.exportMarkdown())
+            showMDExporter = true
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func shareMarkdown() {
+        shareData(
+            { try todos.exportMarkdown() },
+            ext: "md",
+            missing: "Markdown-Datei konnte nicht erzeugt werden."
+        )
+    }
+
+    /// Volle Liste, unabhängig vom Auge — Roundtrip mit HTML.
+    private func exportCSV() {
+        do {
+            exportDocument = TodoFileDocument(data: try todos.exportCSV())
+            showCSVExporter = true
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func shareCSV() {
+        shareData(
+            { try todos.exportCSV() },
+            ext: "csv",
+            missing: "CSV-Datei konnte nicht erzeugt werden."
+        )
+    }
+
+    private func shareData(_ make: () throws -> Data, ext: String, missing: String) {
+        do {
+            let data = try make()
+            let url = try BackupShare.writeTempFile(data: data, stem: BackupShare.todoStem, ext: ext)
             guard FileManager.default.fileExists(atPath: url.path) else {
-                alertMessage = "Backup-Datei konnte nicht erzeugt werden."
+                alertMessage = missing
                 return
             }
             shareItem = BackupShareItem(url: url)
@@ -618,19 +706,9 @@ struct TodoListView: View {
     }
 
     private func offerOrApply(_ data: Data) throws {
-        switch IncomingJSON.classify(data) {
-        case .todoBackup:
-            break
-        case .einkaufBackup:
-            throw TodoCodecError.einkaufFile
-        case .invalidJSON:
-            throw IncomingJSONError.invalidJSON
-        case .unknown:
-            throw IncomingJSONError.unknownFormat
-        }
-        let incoming = try TodoCodec.decodeBackup(data)
+        let incoming = try TodoImport.decode(data)
         if todos.state.tasks.isEmpty {
-            try todos.importBackup(data, append: false)
+            try todos.importAny(data, append: false)
             return
         }
         pendingImport = data
@@ -645,7 +723,7 @@ struct TodoListView: View {
         guard let data = pendingImport else { return }
         pendingImport = nil
         do {
-            try todos.importBackup(data, append: append)
+            try todos.importAny(data, append: append)
         } catch {
             alertMessage = error.localizedDescription
         }
@@ -793,6 +871,40 @@ private struct TodoEditSheet: View {
     private func save() {
         onSave(text, person, prioA, prioB, dueDate)
         dismiss()
+    }
+}
+
+private enum TodoImportUTTypes {
+    static var all: [UTType] {
+        var types: [UTType] = [.json, .commaSeparatedText]
+        types.append(TodoFileDocument.markdownType)
+        if let markdown = UTType(filenameExtension: "markdown") {
+            types.append(markdown)
+        }
+        return types
+    }
+}
+
+private struct TodoFileDocument: FileDocument {
+    static var markdownType: UTType {
+        UTType(filenameExtension: "md") ?? .plainText
+    }
+
+    static var readableContentTypes: [UTType] { [.json, .plainText, .commaSeparatedText, markdownType] }
+    static var writableContentTypes: [UTType] { [.json, .plainText, .commaSeparatedText, markdownType] }
+
+    var data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
     }
 }
 

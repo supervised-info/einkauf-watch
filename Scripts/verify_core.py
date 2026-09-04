@@ -319,6 +319,9 @@ def test_sources() -> None:
         "Sources/Shared/TodoSiriPendingAdds.swift",
         "Sources/Shared/TodoModels.swift",
         "Sources/Shared/TodoCodec.swift",
+        "Sources/Shared/TodoMarkdown.swift",
+        "Sources/Shared/TodoCSV.swift",
+        "Sources/Shared/TodoImport.swift",
         "Sources/Shared/TodoPersistence.swift",
         "Sources/Shared/TodoStore.swift",
         "Sources/Shared/IncomingJSON.swift",
@@ -336,6 +339,9 @@ def test_sources() -> None:
         "Sources/WatchWidgets/EinkaufWatchWidgets.entitlements",
         "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
         "Sources/Watch/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+        "Fixtures/todo-v3-json.json",
+        "Fixtures/todo-liste.md",
+        "Fixtures/todo-liste.csv",
     ]
     for rel in needed:
         if not (ROOT / rel).exists():
@@ -437,8 +443,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 52" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 52 / CURRENT_PROJECT_VERSION")
+    if "Build 53" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 53 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -913,10 +919,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 52" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 52")
-    if "CURRENT_PROJECT_VERSION = 51" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 51 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 53" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 53")
+    if "CURRENT_PROJECT_VERSION = 52" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 52 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 50" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 50 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 49" in pbx:
@@ -1004,10 +1010,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 52" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 52")
-    if "CURRENT_PROJECT_VERSION: 51" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 51 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 53" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 53")
+    if "CURRENT_PROJECT_VERSION: 52" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 52 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 50" in yml:
         fail("stale CURRENT_PROJECT_VERSION 50 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 49" in yml:
@@ -1303,8 +1309,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 52") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 52")
+    if pbx.count("CURRENT_PROJECT_VERSION = 53") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 53")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1918,7 +1924,7 @@ def test_todo_store() -> None:
     watch_app = (ROOT / "Sources/Watch/EinkaufWatchApp.swift").read_text()
     einkauf_app = (ROOT / "Sources/iOS/EinkaufApp.swift").read_text()
 
-    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoPersistence.swift", "TodoStore.swift", "TodoListView.swift", "IncomingJSON.swift", "TodoListPDF.swift"):
+    for name in ("TodoModels.swift", "TodoCodec.swift", "TodoMarkdown.swift", "TodoCSV.swift", "TodoImport.swift", "TodoPersistence.swift", "TodoStore.swift", "TodoListView.swift", "IncomingJSON.swift", "TodoListPDF.swift"):
         if name not in pbx:
             fail(f"pbxproj must compile {name}")
     if "todo-local.json" not in persist:
@@ -1967,6 +1973,10 @@ def test_todo_store() -> None:
         fail("WatchListView must not host Todo UI")
     if "fileImporter" not in todo_ui or "fileExporter" not in todo_ui:
         fail("TodoListView must offer backup import/export")
+    if "commaSeparatedText" not in todo_ui or 'filenameExtension: "md"' not in todo_ui:
+        fail("To-Do fileImporter must accept JSON, Markdown and CSV")
+    if "TodoImport.decode" not in todo_ui or "todos.importAny" not in todo_ui:
+        fail("To-Do import must route JSON/MD/CSV through TodoImport/importAny")
     if "Backup importieren" not in todo_ui or "Backup exportieren" not in todo_ui:
         fail("To-Do overflow must list Backup importieren/exportieren")
     if "todo-liste" not in todo_ui:
@@ -1975,8 +1985,10 @@ def test_todo_store() -> None:
         fail("To-Do import must offer Anhängen vs Ersetzen")
     if "todo-liste" in content or "todo-v3-json" in content:
         fail("Einkauf ContentView must not grow To-Do backup actions")
-    if "markdown" in todo_ui.lower() or "todo-liste.csv" in todo_ui or "todo-liste.md" in todo_ui:
-        fail("Phase 5 must not add MD/CSV export")
+    if "MD exportieren" not in todo_ui or "CSV exportieren" not in todo_ui:
+        fail("To-Do overflow must offer MD exportieren and CSV exportieren")
+    if "MD teilen" not in todo_ui or "CSV teilen" not in todo_ui:
+        fail("To-Do overflow must offer MD teilen and CSV teilen")
     if "BackupCodec" in todo_ui or "einkauf-backup" in todo_ui:
         fail("To-Do UI must not call BackupCodec or write einkauf-backup")
     if "IncomingJSON.classify" not in einkauf_app or "onOpenURL" not in einkauf_app:
@@ -1985,6 +1997,8 @@ def test_todo_store() -> None:
         fail("TodoCodec must encode/decode todo-v3-json")
     if "func importBackup" not in store or "func exportBackup" not in store:
         fail("TodoStore missing importBackup/exportBackup")
+    if "func exportMarkdown" not in store or "func exportCSV" not in store or "func importAny" not in store:
+        fail("TodoStore missing exportMarkdown/exportCSV/importAny")
     if "NavigationStack" not in todo_ui:
         fail("TodoListView needs its own NavigationStack")
     if "Hinzufügen" not in todo_ui or "Neue Aufgabe" not in todo_ui:
@@ -2047,12 +2061,14 @@ def test_todo_store() -> None:
     if 'Button("Liste teilen", systemImage: "list.bullet.rectangle")' not in todo_ui:
         fail("To-Do overflow must offer Liste teilen")
     backup_todo = todo_ui.find('Button("Backup teilen"')
+    md_todo = todo_ui.find('Button("MD exportieren')
+    csv_todo = todo_ui.find('Button("CSV exportieren')
     liste_todo = todo_ui.find('Button("Liste teilen"')
     clear_todo = todo_ui.find('Button("Erledigte löschen"')
-    if backup_todo < 0 or liste_todo < 0 or clear_todo < 0 or not (backup_todo < liste_todo < clear_todo):
-        fail("To-Do Liste teilen must sit after Backup teilen and before Erledigte löschen")
-    if todo_ui[backup_todo:liste_todo].count("Button(") != 1:
-        fail("To-Do Liste teilen must come immediately after Backup teilen")
+    if backup_todo < 0 or md_todo < 0 or csv_todo < 0 or liste_todo < 0 or clear_todo < 0:
+        fail("To-Do overflow missing Backup/MD/CSV/Liste teilen/Erledigte löschen")
+    if not (backup_todo < md_todo < csv_todo < liste_todo < clear_todo):
+        fail("To-Do MD/CSV must sit after Backup teilen and before Liste teilen")
     share_todo_m = re.search(r"private func shareList\(\)\s*\{", todo_ui)
     if not share_todo_m:
         fail("TodoListView missing shareList")
@@ -2079,8 +2095,18 @@ def test_todo_store() -> None:
         fail("hidden-completed empty To-Do PDF must show a German empty-filter error")
     if "BackupShareItem" not in share_todo:
         fail("To-Do Liste teilen must open ShareSheet via BackupShareItem")
-    if "markdown" in todo_ui.lower() or "todo-liste.csv" in todo_ui or "todo-liste.md" in todo_ui:
-        fail("To-Do Liste teilen must not add MD/CSV export")
+    if "showCompleted" in share_todo and "TodoListGrouping.groups" in share_todo:
+        pass
+    md_fn = re.search(r"private func exportMarkdown\(\)\s*\{", todo_ui)
+    csv_fn = re.search(r"private func exportCSV\(\)\s*\{", todo_ui)
+    if not md_fn or not csv_fn:
+        fail("TodoListView missing exportMarkdown/exportCSV")
+    md_export = extract_braced(todo_ui, md_fn.start(), "todo exportMarkdown")
+    csv_export = extract_braced(todo_ui, csv_fn.start(), "todo exportCSV")
+    if "todos.exportMarkdown" not in md_export or "todos.exportCSV" not in csv_export:
+        fail("MD/CSV export must call TodoStore exportMarkdown/exportCSV")
+    if "showCompleted" in md_export or "showCompleted" in csv_export:
+        fail("MD/CSV export must dump the full list, not follow the eye")
     todo_pdf = (ROOT / "Sources/iOS/TodoListPDF.swift").read_text()
     if "UIGraphicsPDFRenderer" not in todo_pdf:
         fail("TodoListPDF must use UIGraphicsPDFRenderer")
@@ -2115,6 +2141,8 @@ def test_todo_store() -> None:
         fail("tests must cover todo-liste.pdf filename")
     if "TodoListPDF" not in desc or "todo.iphone.showCompleted" not in desc:
         fail("Description.md must mention To-Do Liste teilen PDF and the eye key")
+    if "MD/CSV" not in desc or "TodoMarkdown" not in desc or "volle Liste" not in desc:
+        fail("Description.md must document To-Do MD/CSV full-list export")
     if "TodoListView" in watch or "TodoListPDF" in watch:
         fail("Watch must not get To-Do PDF / Liste teilen")
     if "testClearCompletedRemovesOnlyDone" not in tests:
@@ -2152,6 +2180,29 @@ def test_todo_store() -> None:
         fail("tests must cover IncomingJSON routing")
     if "testExportImportReplaceAndAppendRenumbersCollidingUids" not in tests:
         fail("tests must cover append uid renumber")
+    if "testMarkdownFixtureRoundTrip" not in tests or "testCSVFixtureRoundTrip" not in tests:
+        fail("tests must cover MD/CSV encode/decode roundtrip")
+    if "testRejectsEinkaufMarkdownAndJSON" not in tests:
+        fail("tests must reject einkauf MD/JSON on To-Do import")
+    if "enum TodoMarkdown" not in (ROOT / "Sources/Shared/TodoMarkdown.swift").read_text():
+        fail("TodoMarkdown codec missing")
+    if "enum TodoCSV" not in (ROOT / "Sources/Shared/TodoCSV.swift").read_text():
+        fail("TodoCSV codec missing")
+    md_fix = (ROOT / "Fixtures/todo-liste.md").read_text()
+    if "# To-Do Liste" not in md_fix or "## Abgeschlossen" not in md_fix or "<!-- #" not in md_fix:
+        fail("todo-liste.md fixture must match HTML MD shape")
+    csv_fix = (ROOT / "Fixtures/todo-liste.csv").read_bytes()
+    if csv_fix[:3] != b"\xef\xbb\xbf":
+        fail("todo-liste.csv fixture must start with UTF-8 BOM")
+    if b"Prio A" not in csv_fix or b"## Abgeschlossen" not in csv_fix:
+        fail("todo-liste.csv fixture must have HTML CSV header and Abgeschlossen row")
+    plan = (ROOT / "Docs/TodoIntegration.md").read_text()
+    if "Phase 8" not in plan or "erledigt (Build 53)" not in plan:
+        fail("TodoIntegration.md must mark Phase 8 done at Build 53")
+    if "### 10. Listen (geplant)" not in plan or "listId" not in plan:
+        fail("TodoIntegration.md must stub Phase 10 Listen without implementing it")
+    if "listId" in (ROOT / "Sources/Shared/TodoModels.swift").read_text():
+        fail("Phase 8 must not add listId (Phase 10)")
     einkauf_tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
     if 'loadFixture("todo-v3-json.json")' in einkauf_tests:
         fail("todo fixture must not be fed into Einkauf BackupCodec tests")
@@ -2227,7 +2278,262 @@ def test_todo_store() -> None:
         fail("tests must cover To-Do Siri pending queue")
     if "enableSync" not in store or "TodoConnectivitySync" not in store:
         fail("TodoStore.enableSync must start TodoConnectivitySync")
+    if pbx.count("TodoMarkdown.swift in Sources") != 4:
+        fail("TodoMarkdown must compile in iOS+Watch only (not widgets)")
+    if pbx.count("TodoImport.swift in Sources") != 4:
+        fail("TodoImport must compile in iOS+Watch only (not widgets)")
+    test_todo_md_csv_python()
     print("todo store + iphone tab: ok")
+
+
+def _fmt_utc(iso: str) -> str:
+    if not iso:
+        return ""
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})", iso)
+    if not m:
+        return iso
+    return f"{m.group(3)}.{m.group(2)}.{m.group(1)} {m.group(4)}:{m.group(5)}"
+
+
+def _parse_dmy_iso(s: str) -> str:
+    m = re.match(r"^(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})$", (s or "").strip())
+    if not m:
+        return ""
+    return f"{m.group(3)}-{m.group(2)}-{m.group(1)}T{m.group(4)}:{m.group(5)}:00.000Z"
+
+
+def test_todo_md_csv_python() -> None:
+    md = (ROOT / "Fixtures/todo-liste.md").read_text()
+    if not md.startswith("# To-Do Liste\nExportiert am:"):
+        fail("MD fixture must start with HTML title + Exportiert am")
+    if "- [ ] [A1] Steuererklärung (2026-09-30)" not in md:
+        fail("MD fixture missing open A1 task line")
+    if "- [x] Milch holen {2026-09-01}" not in md:
+        fail("MD fixture missing completed line")
+    if "<!-- #1 | TS/NA | erstellt 01.08.2026 10:00 | geändert 01.08.2026 10:00 -->" not in md:
+        fail("MD fixture missing HTML comment meta")
+    csv = (ROOT / "Fixtures/todo-liste.csv").read_bytes()
+    if csv[:3] != b"\xef\xbb\xbf":
+        fail("CSV fixture missing BOM")
+    body = csv[3:].decode("utf-8")
+    if "\r\n" not in body:
+        fail("CSV fixture must use CRLF")
+    if ';"Aufgabe";' not in body and '"Aufgabe"' not in body:
+        fail("CSV fixture missing Aufgabe header")
+    if '"## Abgeschlossen"' not in body:
+        fail("CSV fixture missing Abgeschlossen marker row")
+    json_tasks = json.loads((ROOT / "Fixtures/todo-v3-json.json").read_text())["tasks"]
+    rebuilt = _encode_todo_md(json_tasks, "04.09.2026, 15:00:00")
+    if rebuilt != md if md.endswith("\n") else rebuilt != md + "\n":
+        # Write tool may keep a single trailing newline; encode also ends with \n.
+        if rebuilt.strip() != md.strip():
+            fail("MD fixture must match HTML encode of todo-v3-json tasks")
+    rebuilt_csv = _encode_todo_csv(json_tasks)
+    if rebuilt_csv != csv:
+        fail("CSV fixture must match HTML encode of todo-v3-json tasks")
+    decoded_md = _decode_todo_md(md)
+    if [t["text"] for t in decoded_md] != ["Steuererklärung", "Milch holen"]:
+        fail("MD decode must recover fixture tasks")
+    if decoded_md[0]["createdAt"] != "2026-08-01T10:00:00.000Z":
+        fail("MD decode must parse erstellt UTC datetime")
+    decoded_csv = _decode_todo_csv(body)
+    if [t["uid"] for t in decoded_csv] != [1, 2]:
+        fail("CSV decode must recover fixture UIDs")
+    if decoded_csv[1]["completed"] is not True:
+        fail("CSV completed must follow ISO completedDate")
+    einkauf_md = "# Einkauf — Edeka\n## Obst & Gemüse\n- [ ] Milch\n"
+    if not einkauf_md.startswith("# Einkauf"):
+        fail("einkauf MD probe")
+    if "Einkauf" not in einkauf_md.splitlines()[0]:
+        fail("einkauf MD probe")
+
+
+def _encode_todo_md(tasks: list, exported_at: str) -> str:
+    open_t = [t for t in tasks if not t.get("completed")]
+    done_t = [t for t in tasks if t.get("completed")]
+    md = f"# To-Do Liste\nExportiert am: {exported_at}\n"
+    for person, group in _group_by_person(open_t):
+        md += f"\n## {person or '(Keine Person)'}\n\n"
+        for t in group:
+            prio = f"[{t.get('prioA', '')}{t.get('prioB') or ''}] " if t.get("prioA") else ""
+            due = f" ({t['dueDate']})" if t.get("dueDate") else ""
+            md += f"- [ ] {prio}{t['text']}{due}\n"
+            md += _md_meta(t)
+    if done_t:
+        md += "\n---\n\n## Abgeschlossen\n"
+        for person, group in _group_by_person(done_t):
+            md += f"\n### {person or '(Keine Person)'}\n\n"
+            for t in group:
+                prio = f"[{t.get('prioA', '')}{t.get('prioB') or ''}] " if t.get("prioA") else ""
+                due = f" ({t['dueDate']})" if t.get("dueDate") else ""
+                compl = f" {{{t['completedDate']}}}" if t.get("completedDate") else ""
+                md += f"- [x] {prio}{t['text']}{due}{compl}\n"
+                md += _md_meta(t)
+    return md
+
+
+def _md_meta(t: dict) -> str:
+    parts = [
+        f"#{t['uid']}",
+        t.get("changedBy") or "–",
+        f"erstellt {_fmt_utc(t.get('createdAt') or '') or '–'}",
+        f"geändert {_fmt_utc(t.get('updatedAt') or '') or '–'}",
+    ]
+    return "  <!-- " + " | ".join(parts) + " -->\n"
+
+
+def _encode_todo_csv(tasks: list) -> bytes:
+    header = [
+        "Person", "Prio A", "Prio B", "Aufgabe", "Enddatum", "Abgeschlossen am",
+        "UID", "Reopened From UID", "Reopened To UID", "Reopened At",
+        "Erstellt am", "Geändert am", "Geändert von",
+    ]
+    open_t = [t for t in tasks if not t.get("completed")]
+    done_t = [t for t in tasks if t.get("completed")]
+    rows = [header]
+    for person, group in _group_by_person(open_t):
+        for t in group:
+            rows.append(_csv_row(t, person, False))
+    if done_t:
+        rows.append(["## Abgeschlossen"] + [""] * 12)
+        for person, group in _group_by_person(done_t):
+            for t in group:
+                rows.append(_csv_row(t, person, True))
+
+    def q(v: str) -> str:
+        return '"' + str(v).replace('"', '""') + '"'
+
+    body = "\r\n".join(";".join(q(c) for c in row) for row in rows)
+    return b"\xef\xbb\xbf" + body.encode("utf-8")
+
+
+def _csv_row(t: dict, person: str, include_done: bool) -> list:
+    return [
+        person,
+        t.get("prioA") or "",
+        t.get("prioB") or "",
+        t.get("text") or "",
+        t.get("dueDate") or "",
+        (t.get("completedDate") or "") if include_done else "",
+        str(t.get("uid") or ""),
+        "",
+        "",
+        "",
+        _fmt_utc(t.get("createdAt") or ""),
+        _fmt_utc(t.get("updatedAt") or ""),
+        t.get("changedBy") or "",
+    ]
+
+
+def _group_by_person(tasks: list):
+    def key(t):
+        person = t.get("person") or ""
+        pk = "\uffff" if not person else person.lower()
+        prio = (t.get("prioA") or "\uffff") + (t.get("prioB") or "9")
+        return (pk, prio, t.get("uid") or 0)
+
+    ordered = sorted(tasks, key=key)
+    groups = []
+    for t in ordered:
+        person = t.get("person") or ""
+        if groups and groups[-1][0] == person:
+            groups[-1][1].append(t)
+        else:
+            groups.append((person, [t]))
+    return groups
+
+
+def _decode_todo_md(text: str) -> list:
+    tasks = []
+    person = ""
+    last = None
+    line_re = re.compile(
+        r"^- \[([ xX])\] (?:\[([A-Z])([1-9])?\] )?(.+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?(?:\s+\{(\d{4}-\d{2}-\d{2})\})?$"
+    )
+    meta_re = re.compile(r"^<!--\s+#(\d+)\s+\|(.+?)-->$")
+    for raw in text.split("\n"):
+        line = raw.rstrip("\r").strip()
+        new_meta = meta_re.match(line)
+        if new_meta and last is not None:
+            parts = [p.strip() for p in new_meta.group(2).split("|")]
+            last["uid"] = int(new_meta.group(1))
+            last["changedBy"] = "" if parts[0] in ("–", "-") else parts[0]
+            if len(parts) > 1 and parts[1].startswith("erstellt "):
+                val = parts[1][len("erstellt "):]
+                last["createdAt"] = "" if val == "–" else _parse_dmy_iso(val)
+            if len(parts) > 2 and parts[2].startswith("geändert "):
+                val = parts[2][len("geändert "):]
+                last["updatedAt"] = "" if val == "–" else _parse_dmy_iso(val)
+            continue
+        sec2 = re.match(r"^##\s+(.*)", line)
+        if sec2:
+            label = sec2.group(1).strip()
+            person = "" if label in ("Abgeschlossen", "(Keine Person)") else label
+            continue
+        sec3 = re.match(r"^###\s+(.*)", line)
+        if sec3:
+            label = sec3.group(1).strip()
+            person = "" if label == "(Keine Person)" else label
+            continue
+        m = line_re.match(line)
+        if m:
+            last = {
+                "text": m.group(4).strip(),
+                "completed": m.group(1) != " ",
+                "prioA": m.group(2) or "",
+                "prioB": m.group(3) or "",
+                "dueDate": m.group(5) or "",
+                "completedDate": m.group(6) or "",
+                "person": person,
+            }
+            tasks.append(last)
+    return tasks
+
+
+def _decode_todo_csv(text: str) -> list:
+    lines = [ln for ln in re.split(r"\r?\n", text) if ln.strip()]
+    sep = ";" if ";" in lines[0] else ","
+    out = []
+    for line in lines[1:]:
+        cols = []
+        cur = ""
+        in_q = False
+        i = 0
+        while i < len(line):
+            ch = line[i]
+            if in_q:
+                if ch == '"' and i + 1 < len(line) and line[i + 1] == '"':
+                    cur += '"'
+                    i += 1
+                elif ch == '"':
+                    in_q = False
+                else:
+                    cur += ch
+            elif ch == '"':
+                in_q = True
+            elif ch == sep:
+                cols.append(cur)
+                cur = ""
+            else:
+                cur += ch
+            i += 1
+        cols.append(cur)
+        cols = [c.strip() for c in cols]
+        person = cols[0] if cols else ""
+        task_text = cols[3] if len(cols) > 3 else ""
+        if not task_text or person.startswith("##"):
+            continue
+        completed_date = cols[5] if len(cols) > 5 else ""
+        is_date = bool(re.match(r"^\d{4}-\d{2}-\d{2}$", completed_date))
+        created = cols[10] if len(cols) > 10 else ""
+        out.append({
+            "person": person,
+            "text": task_text,
+            "uid": int(cols[6]) if len(cols) > 6 and cols[6].isdigit() else 0,
+            "completed": is_date,
+            "createdAt": created if created.startswith("20") and "T" in created else _parse_dmy_iso(created),
+        })
+    return out
 
 
 def main() -> None:

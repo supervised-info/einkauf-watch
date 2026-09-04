@@ -212,6 +212,61 @@ enum TodoTime {
         guard s.count == 10 else { return iso }
         return "\(s.suffix(2)).\(s.dropFirst(5).prefix(2)).\(s.prefix(4))"
     }
+
+    /// HTML `toLocaleString('de-DE')` für MD-Kopf `Exportiert am:`.
+    static func exportedAtLabel(_ date: Date, timeZone: TimeZone = .current) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "de_DE")
+        f.timeZone = timeZone
+        f.dateFormat = "dd.MM.yyyy, HH:mm:ss"
+        return f.string(from: date)
+    }
+
+    /// HTML `formatDateTimeUTC`: UTC `DD.MM.YYYY HH:MM`. Leer → leer; unparsbar → Original.
+    static func formatDateTimeUTC(_ iso: String) -> String {
+        let raw = iso.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return "" }
+        guard let date = parseIsoTimestamp(raw) else { return raw }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(secondsFromGMT: 0)!
+        let c = cal.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        return String(
+            format: "%02d.%02d.%04d %02d:%02d",
+            c.day ?? 0, c.month ?? 0, c.year ?? 0, c.hour ?? 0, c.minute ?? 0
+        )
+    }
+
+    /// HTML `parseDMYtoISO`: `DD.MM.YYYY HH:MM` → `YYYY-MM-DDTHH:MM:00.000Z`.
+    static func parseDMYtoISO(_ raw: String?) -> String {
+        let s = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = s.split(separator: " ", omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return "" }
+        let day = parseDMYDate(String(parts[0]))
+        guard !day.isEmpty else { return "" }
+        let hm = parts[1].split(separator: ":", omittingEmptySubsequences: false)
+        guard hm.count == 2, hm[0].count == 2, hm[1].count == 2,
+              hm[0].allSatisfy(\.isNumber), hm[1].allSatisfy(\.isNumber) else { return "" }
+        return "\(day)T\(hm[0]):\(hm[1]):00.000Z"
+    }
+
+    /// HTML `parseDMYDate`: `DD.MM.YYYY` → `YYYY-MM-DD`.
+    static func parseDMYDate(_ raw: String?) -> String {
+        let s = (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = s.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts[0].count == 2, parts[1].count == 2, parts[2].count == 4,
+              parts.allSatisfy({ $0.allSatisfy(\.isNumber) }) else { return "" }
+        return "\(parts[2])-\(parts[1])-\(parts[0])"
+    }
+
+    static func parseIsoTimestamp(_ raw: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        f.timeZone = TimeZone(secondsFromGMT: 0)
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = f.date(from: raw) { return date }
+        f.formatOptions = [.withInternetDateTime]
+        return f.date(from: raw)
+    }
 }
 
 /// iPhone-Anzeige-Sortierung (HTML-Spalten). Watch und PDF bleiben bei Person.
@@ -344,6 +399,33 @@ enum TodoOrdering {
 
 enum TodoAuthor {
     static let app = "TS/NA"
+}
+
+/// MD/CSV-Export wie HTML `groupByPerson`: leere Person zuletzt (`U+FFFF`), dann Prio.
+/// PDF (`TodoListGrouping`) bleibt bei leerer Person zuerst / „Keine Person“ ohne Klammern.
+enum TodoHTMLGrouping {
+    static func groupByPerson(_ tasks: [TodoTask]) -> [(person: String, tasks: [TodoTask])] {
+        let sorted = tasks.sorted { a, b in
+            let pa = a.person.isEmpty ? "\u{FFFF}" : a.person
+            let pb = b.person.isEmpty ? "\u{FFFF}" : b.person
+            let person = pa.localizedStandardCompare(pb)
+            if person != .orderedSame { return person == .orderedAscending }
+            let ka = (a.prioA.isEmpty ? "\u{FFFF}" : a.prioA) + (a.prioB.isEmpty ? "9" : a.prioB)
+            let kb = (b.prioA.isEmpty ? "\u{FFFF}" : b.prioA) + (b.prioB.isEmpty ? "9" : b.prioB)
+            if ka != kb { return ka < kb }
+            return a.uid < b.uid
+        }
+        var groups: [(person: String, tasks: [TodoTask])] = []
+        for task in sorted {
+            if var last = groups.last, last.person == task.person {
+                last.tasks.append(task)
+                groups[groups.count - 1] = last
+            } else {
+                groups.append((person: task.person, tasks: [task]))
+            }
+        }
+        return groups
+    }
 }
 
 /// PDF-/Share-Gruppen: Person wie in der Liste, Auge filtert erledigte.

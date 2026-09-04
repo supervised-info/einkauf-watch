@@ -8,6 +8,7 @@ enum BackupShare {
     /// Einkauf-Default `einkauf-backup`; To-Do `todo-liste`.
     static func stampedFilename(
         stem: String = einkaufStem,
+        ext: String = "json",
         date: Date = Date(),
         timeZone: TimeZone = .current
     ) -> String {
@@ -15,18 +16,19 @@ enum BackupShare {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = timeZone
         formatter.dateFormat = "yyyyMMdd_HHmm"
-        return "\(formatter.string(from: date))-\(stem).json"
+        return "\(formatter.string(from: date))-\(stem).\(ext)"
     }
 
     static func writeTempFile(
         data: Data,
         stem: String = einkaufStem,
+        ext: String = "json",
         date: Date = Date(),
         timeZone: TimeZone = .current,
         fileManager: FileManager = .default
     ) throws -> URL {
         let url = fileManager.temporaryDirectory.appendingPathComponent(
-            stampedFilename(stem: stem, date: date, timeZone: timeZone)
+            stampedFilename(stem: stem, ext: ext, date: date, timeZone: timeZone)
         )
         try data.write(to: url, options: .atomic)
         return url

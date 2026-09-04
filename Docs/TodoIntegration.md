@@ -1,6 +1,6 @@
 # To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04, Build 52. Phasen 1–7 plus Liste-teilen-PDF **geliefert**. Phase 8 (MD/CSV) bleibt offen. `Description.md` beschreibt den ausgelieferten Stand (Phase 9 = optionale Spec-Politur, kein Blocker).
+Stand: 2026-09-04, Build 53. Phasen 1–8 plus Liste-teilen-PDF **geliefert** (MD/CSV volle Liste). `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels (Phase 9 = optionale Spec-Politur, kein Blocker). Listen (Phase 10) geplant, nicht implementiert.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen bleiben die Wahrheit. HTML-PWA [todo](https://supervised-info.github.io/todo/) ist die Produktreferenz für Task-Shape und JSON-Brücke; natives To-Do-Verhalten steht in `Description.md`.
 
@@ -24,7 +24,7 @@ Nicht das Ziel: eine zweite App, ein zweites Bundle, ein zweites App Group, oder
 |---|---|
 | HTML-PWA | [todo](https://supervised-info.github.io/todo/) |
 | Spec | Pages-Repo `supervised-info/supervised-info.github.io`, Datei [`todo/Description_index.md`](https://github.com/supervised-info/supervised-info.github.io/blob/main/todo/Description_index.md) |
-| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 52) |
+| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 53) |
 
 Native scrapt die Website nicht. Brücke ist eine **eigene** JSON-Datei (siehe Backup), analog zur Einkauf-Brücke `kind: "einkauf-backup"`.
 
@@ -204,9 +204,9 @@ To-Do-Tab in der nativen App: **dieselbe** native Darstellung wie Einkauf (`Appe
 
 ---
 
-## Phasierter Ablaufplan (Reihenfolge, gelandet 1–7)
+## Phasierter Ablaufplan (Reihenfolge, gelandet 1–8)
 
-Jeder Schritt war ein eigener PR gegen `main`. #65 war Phase 1 (Plan). Phasen 1–7 plus Liste-teilen-PDF und Siri-Fixes sind auf `main` (Build 52). Phase 8 (MD/CSV) bleibt optional.
+Jeder Schritt war ein eigener PR gegen `main`. #65 war Phase 1 (Plan). Phasen 1–7 plus Liste-teilen-PDF und Siri-Fixes sind auf `main` (Build 52). Phase 8 (MD/CSV) ist in diesem Branch (Build 53). Phase 10 (Listen) bleibt geplant.
 
 ### 1. Branch + dieser Plan — erledigt
 
@@ -336,7 +336,7 @@ Gelandet:
 - Spoken weiter **„Hey Siri, Einkauf Todo“**
 - Build 51 (Watch-UI / Siri)
 
-Noch nicht nach Build 51: MD/CSV (Phase 8), To-Do-Homescreen-Widget
+Noch nicht: To-Do-Homescreen-Widget
 
 ### 7. Reopen-Ketten, Sort, Suche — erledigt (Build 52)
 
@@ -346,17 +346,33 @@ Noch nicht nach Build 51: MD/CSV (Phase 8), To-Do-Homescreen-Widget
 - Watch bleibt Geh-Modus — kein Reopen/Suche/Sort-UI
 - Build 52 (iPhone-UI)
 
-### 8. MD/CSV-Export — offen (optional)
+### 8. MD/CSV-Export/Import — erledigt (Build 53)
 
-- HTML-Formate aus `todo/Description_index.md` (MD-Comment-Meta, CSV BOM+Semikolon)
-- Native muss sie **nicht** anbieten, um v1 To-Do zu schließen
-- Wenn doch: Import-Parität testen, nicht raten
+Gelandet (iPhone-only, HTML-Parity `todo/Description_index.md`):
+
+- Shared `TodoMarkdown` / `TodoCSV`; Router `TodoImport` (JSON unverändert `todo-v3-json`)
+- MD `todo-liste.md`: `# To-Do Liste`, `Exportiert am:` de-DE, offene `## Person` / `(Keine Person)`, dann `---`, `## Abgeschlossen` mit `### Person`; Comment-Meta `#uid | TS/NA | erstellt … | geändert … | von #x am … | → #y am …`; Alt-Meta `<!-- todo: uid=N … -->`
+- CSV BOM+Semikolon, quoted; Kopf Person, Prio A/B, Aufgabe, Enddatum, Abgeschlossen am, UID, Reopened From/To UID, Reopened At, Erstellt/Geändert am, Geändert von. Offen zuerst, Zeile `## Abgeschlossen`, dann erledigt. Datetimes UTC `DD.MM.YYYY HH:MM`
+- **Volle Liste** unabhängig vom Auge (Backup-artig). PDF folgt weiter `todo.iphone.showCompleted`
+- Overflow nach JSON-Backup: **MD exportieren…** / **MD teilen** / **CSV exportieren…** / **CSV teilen**. `fileImporter` `.json,.md,.markdown,.csv`; nicht leer → Anhängen/Ersetzen. Einkauf-Dateien abgelehnt, deutsche Fehler
+- **Kein** Watch-MD/CSV, kein JSON-Backup-Bruch
+- Fixtures `Fixtures/todo-liste.md` / `todo-liste.csv`; Tests Roundtrip
+- Build 53 (iPhone-UI)
 
 ### 9. `Description.md` — geliefert, optionale Politur
 
-`Description.md` beschreibt To-Do als **geliefertes** Produkt (Build 52): TabView, getrennte Dateien/`kind`s, iPhone-Felder/Auge/**Edit** vs Listen (Swipe-Löschen nur Edit-Modus), Reopen/Sort/Suche, Watch-Geh-To-Do, Complication **To Do**, WC `{einkauf, todo}`, Siri (besorgen+o / Todo ein Token, iPhone o, Watch ohne `requestValueDialog`, ein Provider, Zwei-Wort-Cap). Akzeptanzkriterien um To-Do ergänzt, Einkaufs-Häkchen unverändert. MD/CSV bleibt „nicht“ / Phase 8.
+`Description.md` beschreibt To-Do als **geliefertes** Produkt (Build 53): TabView, getrennte Dateien/`kind`s, iPhone-Felder/Auge/**Edit** vs Listen (Swipe-Löschen nur Edit-Modus), Reopen/Sort/Suche, **MD/CSV** (`TodoMarkdown` / `TodoCSV`, volle Liste), Watch-Geh-To-Do, Complication **To Do**, WC `{einkauf, todo}`, Siri (besorgen+o / Todo ein Token, iPhone o, Watch ohne `requestValueDialog`, ein Provider, Zwei-Wort-Cap). Akzeptanzkriterien um To-Do ergänzt, Einkaufs-Häkchen unverändert. Listen (Phase 10) geplant, nicht implementiert.
 
 Weitere Spec-Politur ist optional, kein Blocker.
+
+### 10. Listen (geplant)
+
+Nicht in Phase 8. Backward-compatible optionales `listId` / `lists`:
+
+- Aufgaben benannten Listen zuordnen, aktuelle Liste filtern
+- iPhone + Watch + HTML
+- PDF folgt dem Listenfilter
+- Siri → aktuelle Liste
 
 ---
 
@@ -379,7 +395,7 @@ Weitere Spec-Politur ist optional, kein Blocker.
 - Edit / Prio / Reopen auf der Watch
 - iCloud, CloudKit, gemeinsames JSON mit Einkauf
 - HTML Theme-Mast / Service Worker / Shared-Keys in der nativen App
-- MD/CSV Pflicht (Phase 8 optional)
+- Listen (Phase 10)
 - App-Store-Submit, Display-Name-Änderung (App bleibt **Einkauf**)
 
 ---
@@ -405,6 +421,9 @@ Sources/Shared/TodoModels.swift
 Sources/Shared/TodoPersistence.swift
 Sources/Shared/TodoStore.swift
 Sources/Shared/TodoCodec.swift
+Sources/Shared/TodoMarkdown.swift
+Sources/Shared/TodoCSV.swift
+Sources/Shared/TodoImport.swift
 Sources/iOS/TodoListView.swift
 Sources/Watch/WatchTodoListView.swift
 Sources/Shared/WatchSyncEnvelope.swift
@@ -412,6 +431,8 @@ Sources/WatchWidgets/TodoWatchWidgets.swift
 Sources/Shared/TodoAddItemsIntent.swift
 Sources/Shared/TodoSiriPendingAdds.swift
 Fixtures/todo-v3-json.json              // Phase 5
+Fixtures/todo-liste.md                  // Phase 8
+Fixtures/todo-liste.csv                 // Phase 8
 Tests/EinkaufCoreTests/TodoStoreTests.swift
 ```
 
@@ -422,7 +443,7 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 ## Akzeptanz
 
 - [x] Plan liegt unter `Docs/TodoIntegration.md` (Deutsch).
-- [x] `Description.md` beschreibt To-Do als geliefertes Produkt (Build 52), nicht als WIP.
+- [x] `Description.md` beschreibt To-Do als geliefertes Produkt (Build 53), nicht als WIP.
 - [x] Phase 2: Models, `todo-local.json`, `TodoStore` ohne WC.
 - [x] Phase 3: iPhone-Tab Einkauf | To-Do, Text-CRUD, Einkaufs-`ContentView` unverändert.
 - [x] Phase 4: Person/Prio/Datum, Overdue, Abgeschlossen-Toggle (`todo.iphone.showCompleted`), Build 43.
@@ -435,5 +456,6 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Swipe-Löschen nur im Edit-Modus (To-Do Listen-Modus + Einkauf Geh-Modus), Build 50.
 - [x] Watch-Siri Todo Mehrwort: `shortTitle` Todo, watchOS ohne `requestValueDialog`, Build 51.
 - [x] Phase 7: iPhone Wieder öffnen, Sort, Suche; Watch ohne Reopen/Suche/Sort-UI, Build 52.
-- [x] Phase 9: `Description.md` auf den gelieferten Stand; optionale weitere Politur kein Blocker.
-- [ ] Phase 8: MD/CSV bleibt **nicht** / optional. Isolation halten (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
+- [x] Phase 8: iPhone MD/CSV Export/Import (volle Liste), Watch ohne MD/CSV-UI, Build 53.
+- [x] Phase 9: `Description.md` auf den gelieferten Stand inkl. **Edit**-Labels; optionale weitere Politur kein Blocker.
+- [ ] Phase 10 Listen nicht in diesem PR; Folge-PRs halten Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).

@@ -246,8 +246,22 @@ final class TodoStore: ObservableObject {
         try TodoCodec.encodeBackup(state)
     }
 
+    func exportMarkdown(exportedAt: Date = Date(), timeZone: TimeZone = .current) throws -> Data {
+        try TodoMarkdown.encode(state, exportedAt: exportedAt, timeZone: timeZone)
+    }
+
+    func exportCSV() throws -> Data {
+        try TodoCSV.encode(state)
+    }
+
     func importBackup(_ data: Data, append: Bool) throws {
         let incoming = try TodoCodec.decodeBackup(data)
+        applyImported(incoming, append: append)
+        lastError = nil
+    }
+
+    func importAny(_ data: Data, append: Bool) throws {
+        let incoming = try TodoImport.decode(data)
         applyImported(incoming, append: append)
         lastError = nil
     }

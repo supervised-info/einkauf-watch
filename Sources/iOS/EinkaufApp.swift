@@ -93,7 +93,7 @@ struct EinkaufRoot: View {
                 try store.importBackup(data)
                 selectedTab = .einkauf
             case .invalidJSON:
-                urlAlert = IncomingJSONError.invalidJSON.localizedDescription
+                try offerOrApplyTodo(data)
             case .unknown:
                 urlAlert = IncomingJSONError.unknownFormat.localizedDescription
             }
@@ -103,10 +103,10 @@ struct EinkaufRoot: View {
     }
 
     private func offerOrApplyTodo(_ data: Data) throws {
-        let incoming = try TodoCodec.decodeBackup(data)
+        let incoming = try TodoImport.decode(data)
         selectedTab = .todo
         if todos.state.tasks.isEmpty {
-            try todos.importBackup(data, append: false)
+            try todos.importAny(data, append: false)
             return
         }
         pendingTodoData = data
@@ -121,7 +121,7 @@ struct EinkaufRoot: View {
         guard let data = pendingTodoData else { return }
         pendingTodoData = nil
         do {
-            try todos.importBackup(data, append: append)
+            try todos.importAny(data, append: append)
             selectedTab = .todo
         } catch {
             urlAlert = error.localizedDescription
