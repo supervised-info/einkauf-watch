@@ -422,8 +422,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 47" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 47 / CURRENT_PROJECT_VERSION")
+    if "Build 48" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 48 / CURRENT_PROJECT_VERSION")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
         fail("Description.md must document separate Watch and iPhone hide-completed AppStorage keys")
     list_share_sec = desc[desc.find("Liste teilen:"):desc.find("Einkaufsliste speichern:")]
@@ -897,8 +897,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 47" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 47")
+    if "CURRENT_PROJECT_VERSION = 48" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 48")
+    if "CURRENT_PROJECT_VERSION = 47" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 47 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 46" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 46 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 45" in pbx:
@@ -978,8 +980,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 47" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 47")
+    if "CURRENT_PROJECT_VERSION: 48" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 48")
+    if "CURRENT_PROJECT_VERSION: 47" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 47 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 46" in yml:
         fail("stale CURRENT_PROJECT_VERSION 46 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 45" in yml:
@@ -1267,8 +1271,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 47") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 47")
+    if pbx.count("CURRENT_PROJECT_VERSION = 48") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 48")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1637,6 +1641,10 @@ def test_siri_app_intents() -> None:
         fail("To-Do App Shortcut phrases must not interpolate String $items")
     if "besorgen" in todo_phrases:
         fail("To-Do App Shortcut phrases must not use besorgen")
+    if r'Summary("To Do \(\.$items)")' in todo_intent:
+        fail("To-Do parameterSummary must not use multi-word To Do prefix (Siri truncates to first word)")
+    if r'Summary("Todo \(\.$items)")' not in todo_intent:
+        fail("To-Do parameterSummary must be single-token Todo like Besorgen")
     if 'requestValueDialog: "o"' not in todo_intent:
         fail("To-Do requestValueDialog must be o")
     if 'requestValueDialog: "T"' in todo_intent:
@@ -1683,8 +1691,17 @@ def test_siri_app_intents() -> None:
         fail("TodoStore.consumeSiriPendingAdds missing")
     if "strippingTodoTriggerPrefix" not in splitter:
         fail("SpeechItemSplitter must strip a leading To Do trigger")
+    splitter_todo = splitter.split("func strippingTodoTriggerPrefix", 1)[-1].split("static func ", 1)[0]
+    if "aufgaben" not in splitter_todo.lower():
+        fail("strippingTodoTriggerPrefix must also strip leading Aufgaben")
     if "testStripsLeadingTodoTriggerNotBesorgen" not in tests:
         fail("tests must cover stripping To Do without touching besorgen")
+    if "Rechnung bezahlen" not in tests:
+        fail("tests must keep multi-word To-Do phrases as one item")
+    if "Katze füttern" not in tests:
+        fail("tests must keep multi-word To-Do phrases around und")
+    if "ein Token" not in desc and "ein-tokenig" not in desc:
+        fail("Description.md must document single-token To-Do parameterSummary")
 
     if "consumeSiriPendingAdds" not in watch_app:
         fail("Watch app must drain Siri pending queue when becoming active")

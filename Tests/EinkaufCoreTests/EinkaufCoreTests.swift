@@ -1691,12 +1691,33 @@ final class SpeechItemSplitterTests: XCTestCase {
         XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("To Do: Milch"), "Milch")
         XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("todo:Milch"), "Milch")
         XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("To-Do Milch"), "Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Todo Rechnung bezahlen"), "Rechnung bezahlen")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Aufgaben: Rechnung bezahlen"), "Rechnung bezahlen")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Aufgaben Katze füttern"), "Katze füttern")
         XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("To Do"), "")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Aufgaben"), "")
         XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Today Milch"), "Today Milch")
         XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Besorgen Milch"), "Besorgen Milch")
+        XCTAssertEqual(SpeechItemSplitter.strippingTodoTriggerPrefix("Aufgabenliste Milch"), "Aufgabenliste Milch")
         XCTAssertEqual(
             SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix("To Do: Steuer und Anruf")),
             ["Steuer", "Anruf"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix("Rechnung bezahlen")),
+            ["Rechnung bezahlen"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix("Katze füttern und Müll rausbringen")),
+            ["Katze füttern", "Müll rausbringen"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix("Aufgaben: Rechnung bezahlen")),
+            ["Rechnung bezahlen"]
+        )
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTodoTriggerPrefix("Todo Katze füttern und Müll rausbringen")),
+            ["Katze füttern", "Müll rausbringen"]
         )
         XCTAssertEqual(SpeechItemSplitter.todoConfirmation(addedCount: 0), "Keine Aufgaben erkannt.")
         XCTAssertEqual(SpeechItemSplitter.todoConfirmation(addedCount: 1), "1 Aufgabe hinzugefügt.")

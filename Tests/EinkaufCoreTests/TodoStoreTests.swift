@@ -696,6 +696,13 @@ final class TodoStoreSyncAndSiriTests: XCTestCase {
         let store = TodoStore(state: .empty, enableSync: false)
         XCTAssertEqual(store.addItems(fromSpeech: "To Do: Steuer und Anruf"), 2)
         XCTAssertEqual(store.state.tasks.map(\.text), ["Steuer", "Anruf"])
+        XCTAssertEqual(store.addItems(fromSpeech: "Rechnung bezahlen"), 1)
+        XCTAssertEqual(store.state.tasks.map(\.text), ["Steuer", "Anruf", "Rechnung bezahlen"])
+        XCTAssertEqual(store.addItems(fromSpeech: "Katze füttern und Müll rausbringen"), 2)
+        XCTAssertEqual(
+            store.state.tasks.map(\.text),
+            ["Steuer", "Anruf", "Rechnung bezahlen", "Katze füttern", "Müll rausbringen"]
+        )
 
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("todo-siri-pending-test.json")
         try? FileManager.default.removeItem(at: url)

@@ -202,7 +202,7 @@ Toggle-Merge analog Einkauf: Zeitstempel `updatedAt`; ohne Stempel: erledigt gew
 
 Einkauf: Utterance mit App-Namen + **besorgen** (`EinkaufAddItemsIntent`). Das Wort nicht umdeuten.
 
-To-Do-Siri: `TodoAddItemsIntent`, Phrasen **To Do**, Nachfrage **„o“** (wie Einkauf `requestValueDialog`). Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
+To-Do-Siri: `TodoAddItemsIntent`, Phrasen **To Do**, Nachfrage **„o“** (wie Einkauf `requestValueDialog`). `parameterSummary` **ein Token** `Todo \(.$items)` (nicht `To Do …` — App Intents bindet sonst oft nur das erste Wort). Beide Shortcuts in **einem** `EinkaufShortcuts` (`AppShortcutsProvider`) — Apple erlaubt nur eine Conformance. Keine zweite Phrase mit „besorgen“.
 
 ### Theme
 
@@ -310,6 +310,14 @@ Gelandet:
 - `TodoTask` ist `Identifiable`/`Hashable` über `uid` für `.sheet(item:)`
 - Build 47 (iPhone-UI + Siri-Dialog)
 
+### To-Do Siri Mehrwort-Aufgaben — erledigt (Build 48)
+
+- `parameterSummary` `Todo \(.$items)` (ein Token, analog Einkauf `Besorgen \(.$items)`)
+- Entdeckungs-Phrasen unverändert **To Do**, Nachfrage **„o“**
+- `strippingTodoTriggerPrefix` streicht auch `Aufgaben:` / `Todo` (Siri-Echo von Summary/Parameter-Titel)
+- Split weiter nur an `,;` / `und` / `sowie` — „Rechnung bezahlen“ bleibt eine Aufgabe
+- Build 48
+
 Noch nicht: Reopen/Suche (Phase 7), MD/CSV (Phase 8), To-Do-Homescreen-Widget
 
 ### 7. Reopen-Ketten, Sort, Suche (HTML-Parity, Stretch)
@@ -401,4 +409,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Liste teilen PDF folgt dem Auge (`todo.iphone.showCompleted`), Build 45.
 - [x] Phase 6: Watch-Tab, gemergter WC-Context, To-Do-Complication, Siri To Do, Build 46.
 - [x] iPhone Bearbeiten / Fertig + Siri-Nachfrage **„o“**, Build 47.
+- [x] To-Do-Siri Mehrwort-Aufgaben: ein-tokeniges `parameterSummary`, Build 48.
 - [ ] Folge-PRs halten die Reihenfolge 7→9 und die Isolation (eigene Datei, eigenes `kind`/`format`, eigener Store, WC-Diskriminator).
