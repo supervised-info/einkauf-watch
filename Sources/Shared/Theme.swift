@@ -177,6 +177,17 @@ struct EinkaufRowModifier: ViewModifier {
     }
 }
 
+#if os(iOS)
+/// Eine Stufe kleiner als die Default-Nav-Bar (body → subheadline), nur Toolbar-Labels.
+struct EinkaufToolbarChromeModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.subheadline.weight(.semibold))
+            .imageScale(.medium)
+    }
+}
+#endif
+
 extension View {
     func einkaufScreen(_ theme: ThemeTokens) -> some View {
         modifier(EinkaufScreenModifier(theme: theme))
@@ -188,5 +199,14 @@ extension View {
 
     func einkaufRowChrome() -> some View {
         modifier(EinkaufRowModifier())
+    }
+
+    /// Kompakte iPhone-Toolbar (Laden-Pille, Edit, Auge, …). Nicht auf Listenzeilen.
+    func einkaufToolbarChrome() -> some View {
+#if os(iOS)
+        modifier(EinkaufToolbarChromeModifier())
+#else
+        self
+#endif
     }
 }

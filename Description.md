@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-05 (Build 61, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-05 (Build 62, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) und zur To-Do-PWA [todo](https://supervised-info.github.io/todo/). HTML-Spec Einkauf: Pages `einkauf/Description_index.md`. Brücke Einkauf: Backup-JSON (`kind: "einkauf-backup"`); To-Do: `format: "todo-v3-json"`. Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -39,7 +39,7 @@ To-Do **darf nicht** in `ShoppingStore` / `AppState` / `Item` / `einkauf-local.j
 
 ### iPhone (`TodoListView`)
 
-`NavigationStack`, Titel **To-Do** (inline). Theme wie Einkauf (`AppearanceSettings`). Eigenes Overflow **…** — Einkaufs-Toolbar bleibt im Einkaufs-Tab.
+`NavigationStack`, **kein** Navigationstitel (leer, `.inline`) — der Tab **To-Do** reicht. Toolbar kompakt wie Einkauf (`einkaufToolbarChrome`). Theme wie Einkauf (`AppearanceSettings`). Eigenes Overflow **…** — Einkaufs-Toolbar bleibt im Einkaufs-Tab.
 
 Felder je Aufgabe: `text`, `person`, `prioA` (A–Z oder leer), `prioB` (1–9 oder leer), `dueDate` (`YYYY-MM-DD`), `completedDate` (`YYYY-MM-DD`, intern), optionales `listId`. Zeile zeigt `#uid` Badge + reopen-Pills wie HTML: gemutetes Kapsel-Badge `#N` (`theme.paper3` / `theme.muted`) vor dem Text; danach inline `von #N` wenn `reopenedFromUid` gesetzt und `reopen #N` wenn `reopenedToUid` gesetzt (englisch wie HTML, nicht `→ #N`, `theme.slate`). Tipp auf die Pills scrollt/revealt wie bisher. Person / Prio / Datum als Nebeninfo, wenn gesetzt; bei erledigt und gesetztem `completedDate` zusätzlich **Abgeschlossen-Datum** (`geschlossen TT.MM.JJJJ`, nach dem Enddatum, `theme.muted`). Overdue (`dueDate < heute`, lokal, nicht `9999*`) in `theme.oxide`. Add-Leiste: Person, Prio-Picker („– Prio“ / „–“), Datum, Text „Neue Aufgabe …“, **Hinzufügen**. Neue Aufgaben aus der Add-Leiste und Siri **Todo** landen in der **aktuellen** Liste; bei **Alle** bleibt `listId` leer. VoiceOver nennt `uid` und die Kette.
 
@@ -115,7 +115,7 @@ Watch-UI-Änderung: Build-Nummer hochzählen, sonst bleibt die alte Companion-Ap
 
 ## Chrome / iPhone-Hauptansicht
 
-`NavigationStack`, Titel **Einkaufsliste** (inline). Hintergrund Theme-Papier. Leere Liste: `ContentUnavailableView` „Noch nichts auf der Liste.“ + „Artikel hinzufügen oder ein Backup importieren.“
+`NavigationStack`, **kein** Navigationstitel (leer, `.inline`) — der Tab **Einkauf** reicht, kein zentriertes „Einkaufsliste“. Toolbar kompakt (`einkaufToolbarChrome`, `.subheadline`): Laden-Pille, Auge, **Edit** / **Geh-Modus**, **…**. Listenartikel und Abteilungsüberschriften unverändert. Hintergrund Theme-Papier. Leere Liste: `ContentUnavailableView` „Noch nichts auf der Liste.“ + „Artikel hinzufügen oder ein Backup importieren.“
 
 Toolbar:
 
