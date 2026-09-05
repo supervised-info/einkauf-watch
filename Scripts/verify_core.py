@@ -2342,6 +2342,8 @@ def test_todo_store() -> None:
         fail("TodoIntegration.md must mark To-Do import revision floor at Build 57")
     if "erledigt (Build 58)" not in plan or "reopen #" not in plan:
         fail("TodoIntegration.md must mark #uid / reopen pills at Build 58")
+    if "erledigt (Build 62)" not in plan or "einkaufToolbarChrome" not in plan:
+        fail("TodoIntegration.md must mark compact iPhone nav chrome at Build 62")
     if "previousLocalRevision" not in store:
         fail("TodoStore.applyImported must capture previousLocalRevision before mutating")
     if "max(previousLocalRevision, incoming.revision, state.revision) + 1" not in store:
