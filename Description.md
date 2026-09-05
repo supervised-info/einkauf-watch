@@ -11,9 +11,9 @@ Zwei Domains in **einer** App **Einkauf** (`TabView` **Einkauf | To-Do**, SF-Sym
 - **Einkauf:** Liste nach Ladenweg auf **iPhone** (Geh-Modus + Edit inkl. abteilungsübergreifendem Ziehen) und **Watch** (nur Geh-Modus). Dieselbe Liste, Abhaken über WatchConnectivity. Seeds plus eigene Läden, Stamm, gespeicherte Anlass-Listen, lokales Keyword-Wörterbuch, Backup-JSON (`kind: "einkauf-backup"`), Listen-PDF mit **leeren quadratischen** Kästchen.
 - **To-Do:** Aufgaben (Text, Person, Prio A/B, Datum) auf **iPhone** (Liste + Edit) und **Watch** (nur Geh-Modus). Eigener Store und eigene Dateien — siehe **To-Do**.
 
-Sprache nur über **Siri App Intents** für **beide** Domains (kein Watch-Mikro, kein `Speech.framework`): Einkauf **besorgen** + Nachfrage **„o“**; To-Do ein Phrase-Token **Todo**, iPhone **„o“**, Watch ohne `requestValueDialog`. Ein `AppShortcutsProvider` `EinkaufShortcuts`. Siehe **Sprach-Eingabe (Siri)**.
+Sprache nur über **Siri App Intents** für **beide** Domains (kein Watch-Mikro, kein `Speech.framework`): Einkauf **besorgen** + Nachfrage **„o“**; To-Do ein Phrase-Token **Todo**, iPhone **„o“**, Watch ohne `requestValueDialog`. Ein `AppShortcutsProvider` `EinkaufShortcuts`. Siehe **Sprach-Eingabe (Siri)**. Zweit-iPhone (andere Apple-ID, **nur Einkauf**): Artikel per Kurzbefehl in eine geteilte iCloud-Drive-Datei; das Haupt-iPhone holt sie per Tipp — siehe **iCloud-Inbox (Zweitgerät)**. Noch nicht gebaut (Phase 1 = Spec).
 
-TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. Changelog der To-Do-Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Phase 10 (benannte Listen) ist geliefert (Build 55). To-Do-JSON-Backup steht unter **Einstellungen** (Build 56). To-Do-Import hebt `revision` analog Einkauf (Build 57). iPhone-To-Do-Zeile zeigt `#uid` Badge + reopen-Pills wie HTML (Build 58). Diese Datei beschreibt den gelieferten Stand.
+TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. Changelog der To-Do-Phasen: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Phase 10 (benannte Listen) ist geliefert (Build 55). To-Do-JSON-Backup steht unter **Einstellungen** (Build 56). To-Do-Import hebt `revision` analog Einkauf (Build 57). iPhone-To-Do-Zeile zeigt `#uid` Badge + reopen-Pills wie HTML (Build 58). Diese Datei beschreibt den gelieferten Stand. Geplante Inbox-Arbeit nur unter **iCloud-Inbox (Zweitgerät)** — kein `Docs/InboxIntegration.md`.
 
 ## To-Do
 
@@ -279,6 +279,78 @@ Trigger **Todo** (ein Wort, nicht **To Do** mit Leerzeichen, nicht **besorgen**)
 8. **To-Do-Phrase zwei Tokens** — Entdeckungs-Phrasen mit `To Do` (Leerzeichen) cappt Siri die gebundene Aufgabe auf genau zwei Wörter (3/4/5-Wort-Sätze wurden auf 2 gekürzt; `parameterSummary` `Todo \(.$items)` allein hat das nicht gelöst). Fix wie Besorgen: **ein** Phrase-Token `Todo`. Gesprochen **„Hey Siri, Einkauf Todo“**.
 9. **Watch-Siri weiter zwei Wörter** — iPhone akzeptierte nach dem Phrase-Fix 3+ Wörter; Watch blieb bei 2. Ursachen: `shortTitle` „To Do“ (zwei Tokens; Watch keyed oft darauf) und watchOS-`requestValueDialog` „o“ (Custom-Dialog filtert Free-Form). Fix: `shortTitle` **Todo**; watchOS lässt `requestValueDialog` weg (generischer Prompt); iPhone behält **„o“**. Nach Install Shortcut löschen/neu und **„Auf Apple Watch anzeigen“** erneut.
 
+## iCloud-Inbox (Zweitgerät)
+
+**Phase 1 (diese Spec).** Geplant, nicht geliefert. Kein Code, kein `CURRENT_PROJECT_VERSION`-Bump. **Nur Einkauf** — nie To-Do. Transport: eine geteilte **iCloud-Drive**-Datei. Kein Server, kein CloudKit Shared DB, kein Dropbox/kDrive in v1.
+
+Zweit-iPhone spricht Artikel per Kurzbefehl in die Datei. Haupt-iPhone holt sie per Tipp **Inbox abrufen** in `ShoppingStore` — derselbe Pfad wie Siri **besorgen**: `SpeechItemSplitter` + `DepartmentGuesser.guess` / `mappings` (`addItems(fromSpeech:)`). Die Datei enthält **nur noch nicht abgeholte** Zeilen. Nach dem Abruf schreibt die App die Datei ohne die konsumierten Zeilen (meist leer). Keine Statusfelder `picked` / `pending` in der Datei. Alles in der Datei = noch nicht abgeholt.
+
+App-Group-Stores bleiben lokal (`einkauf-local.json` / `todo-local.json`, **kein** iCloud für den Store). Inbox ist eine **fremde** Drive-Datei, per Dateien-Picker gebunden.
+
+### Produkt / Format
+
+| | |
+|---|---|
+| Ordner | `Einkauf-Inbox` in iCloud Drive |
+| Datei | `inbox.txt`, UTF-8 |
+| Inhalt | eine Artikelzeile pro Zeile; trimmen; leere Zeilen überspringen |
+| Header | **kein** Pflicht-Header — nur Zeilen, einfacher für Kurzbefehle. Parser darf eine erste Zeile `# einkauf-inbox v1` ignorieren, falls jemand sie setzt; v1 und Shortcut schreiben sie nicht |
+| Schreibrecht | Zweit-Apple-ID darf anhängen |
+| Status | **keine** Felder in der Datei |
+
+**Ablauf (nach Phase 2/3):**
+
+1. Kurzbefehl auf dem Zweit-iPhone **hängt** Zeilen an `inbox.txt` (Append, nicht ersetzen).
+2. Auf dem Haupt-iPhone **Inbox abrufen**: App liest alle Zeilen, überspringt Leerzeilen und eine optionale erste `#`-Kommentarzeile, trimmt. Jede Zeile geht durch `ShoppingStore.addItems(fromSpeech:)` — Split wie Siri (Komma, Semikolon, ` und `, Zeilenumbruch), Abteilung über `DepartmentGuesser` + `mappings`. Persist + WatchConnectivity wie getipptes Hinzufügen / Siri-iPhone.
+3. App schreibt die Datei **ohne die gerade konsumierten Zeilen** zurück. Normalfall: leere Datei. **Concurrent Append:** hängt der Kurzbefehl *während* des Abrufs noch Zeilen an, bleiben genau diese neuen Zeilen stehen — die App leert nicht die ganze Datei nach einem veralteten Snapshot. Optionalen `#`-Header, falls vorhanden, beim Zurückschreiben behalten.
+
+### Nicht-Ziele (v1)
+
+- Android
+- andere Clouds (Dropbox, kDrive, WebDAV, eigener Server)
+- To-Do-Inbox
+- Hintergrund-Pull ohne Tipp (kein stiller Import beim App-Start)
+- Live-Sync der ganzen Einkaufsliste über iCloud / CloudKit Shared DB
+- Watch-Inbox, Widget-Inbox
+
+### Was du tun musst
+
+Wann / wo / wie — nur die Schritte, die **du** machst. Phase-2-UI und Phase-3-Kurzbefehl baut der Agent.
+
+#### Einmalig (Setup)
+
+1. **Ordner und Datei anlegen.** **Wann:** einmal, bevor irgendetwas synct. **Wo:** Haupt-iPhone, App **Dateien**. **Wie:** iCloud Drive → Ordner `Einkauf-Inbox` anlegen → darin leere Datei `inbox.txt` anlegen (UTF-8, leer).
+2. **Mit der Zweit-Apple-ID teilen.** **Wann:** danach. **Wo:** dieselbe Dateien-App auf dem Haupt-iPhone. **Wie:** Ordner (oder die Datei) teilen, **Schreibrecht** für die Zweit-Apple-ID.
+3. **Einladung annehmen.** **Wann:** sobald die Freigabe da ist. **Wo:** Zweit-iPhone, Dateien / Mail / Nachrichten. **Wie:** Einladung annehmen; Ordner muss unter iCloud Drive sichtbar und beschreibbar sein. kDrive/Dropbox sind irrelevant (v1 nur iCloud Drive).
+4. **Inbox verbinden…** **Wann:** nach Phase 2 (App-UI). **Wo:** Einkauf-App auf dem **Haupt-iPhone**. **Wie:** einmal **Inbox verbinden…** → Dateien-Picker auf genau diese `inbox.txt` (Security-scoped Bookmark). Nicht To-Do-Dateien, nicht ein Backup-JSON.
+5. **Kurzbefehl zeigen.** **Wann:** nach Phase 3 (Rezept). **Wo:** Zweit-iPhone, App Kurzbefehle. **Wie:** Kurzbefehl installieren und auf **dieselbe** `inbox.txt` zeigen (anhängen, nicht ersetzen).
+
+Ohne Schritt 1–3 funktioniert nichts. Schritt 4 und 5 erst, wenn die jeweilige Phase geliefert ist.
+
+#### Alltag Zweit-iPhone
+
+- Kurzbefehl starten → Artikel einsprechen → Zeilen werden an `inbox.txt` **angehängt**.
+- Optional vorlesen: alles, was in der Datei steht, ist **noch nicht abgeholt**. Kein „erledigt“ in der Datei.
+
+#### Alltag Haupt-iPhone
+
+- In der Einkauf-App **Inbox abrufen** tippen.
+- Artikel landen auf der aktuellen Einkaufsliste (Splitter + Guesser + Wörterbuch wie Siri **besorgen**).
+- Datei enthält danach nur noch nicht Abgeholte — meist leer.
+
+#### Nicht deine Aufgabe / Agent baut
+
+- Phase 2: App-UI (**Inbox verbinden…**, **Inbox abrufen**, Bookmark, Lesen/Schreiben der Drive-Datei).
+- Phase 3: Shortcut-Rezept (Anleitung in dieser Datei + ggf. Rezept-Datei im Repo).
+- Parser-Tests (Zeilen, Trim, leere Zeilen, optionaler `#`-Header, concurrent Append).
+
+### Phasen
+
+- [x] **Phase 1** — Spec nur hier in `Description.md` (kein `Docs/InboxIntegration.md`, kein Build-Bump).
+- [ ] **Phase 2** — App-UI auf dem Haupt-iPhone: **Inbox verbinden…** (Dateien-Picker → `inbox.txt`), **Inbox abrufen** (Lesen → `addItems(fromSpeech:)` → Datei ohne konsumierte Zeilen). Nur Einkauf-Tab. Geplant.
+- [ ] **Phase 3** — Kurzbefehl fürs Zweit-iPhone: einsprechen, Zeilen an dieselbe `inbox.txt` anhängen; Anleitung + ggf. Rezept-Datei im Repo. Geplant.
+- [ ] **Phase 4** — Parser-Tests und Restfälle (leere Datei, nur Leerzeilen, optionaler `#`-Header, concurrent Append, Bookmark ungültig). Geplant.
+
 ## Abteilungen `Department` (IDs nicht ändern)
 
 `vor` Vor dem Einkauf; `obst` Obst & Gemüse; `brot` Brot & Backwaren; `bedienung` Fleisch, Wurst, Käse; `kuehlung` Kühlregal; `tiefkuehl` Tiefkühl; `trocken` Trockenwaren; `suess` Süßwaren & Snacks; `getraenke` Getränke; `drogerie` Drogerie & Haushalt; `sonstiges` Sonstiges; `nach` Nach dem Einkauf.
@@ -427,6 +499,7 @@ Native To-Do liefert MD/CSV wie HTML (Phase 8, **volle Liste**) und benannte Lis
 - Theme nur in Einstellungen; To-Do-Tab teilt `einkauf.theme` / `einkauf.palette`
 - PDF-Kästchen leer (kein Fill, kein Häkchen)
 - To-Do Isolation: eigener `TodoStore`, `todo-local.json` / `kind: "todo-local"`, Backup `todo-v3-json`; nie in `ShoppingStore` / `einkauf-local.json` / `kind: einkauf-backup`. WC merget `{einkauf, todo}`
+- iCloud-Inbox nur Einkauf, nur geteilte iCloud-Drive-Datei `Einkauf-Inbox/inbox.txt` (kein Server, kein Dropbox/kDrive, kein CloudKit Shared DB, keine To-Do-Inbox); Datei = nur noch nicht Abgeholte, keine Statusfelder. Siehe **iCloud-Inbox (Zweitgerät)**
 - Swipe-Löschen To-Do **nur** im Edit-Modus (Toolbar **Edit** / **Fertig**); Einkauf Toolbar **Edit** / **Geh-Modus**, Geh-Modus analog ohne Swipe-Löschen
 - Listen (Phase 10, Build 55) nativ: optionales `lists`/`listId`, Filter **Alle**, PDF+Siri+Watch folgen `currentListId`; HTML-Site nicht in diesem Repo
 - Bewusstes Rest-Delta zur HTML-PWA (Watch, PDF Liste teilen, System-Appearance in Einstellungen vs. Markdown/Bring/Erinnerungen/`einkauf-laeden`/Mast/SW) nicht angleichen
