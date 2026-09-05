@@ -2785,12 +2785,18 @@ def test_icloud_inbox() -> None:
         fail("Description.md must check Phase 3 delivered")
     if "### Kurzbefehl (Phase 3)" not in inbox_sec:
         fail("Description.md must include Kurzbefehl (Phase 3) recipe")
-    if "Einsprechen" not in inbox_sec or "Vorlesen" not in inbox_sec:
-        fail("Description.md Phase 3 recipe must name Einsprechen and Vorlesen")
+    if "Einkauf-Inbox eintragen" not in inbox_sec or "Einkauf-Inbox vorlesen" not in inbox_sec:
+        fail("Description.md Phase 3 recipe must name both Shortcuts")
+    if "An Textdatei anhängen" not in inbox_sec:
+        fail("Description.md Phase 3 must document An Textdatei anhängen")
     if "Artikel vorgemerkt" not in inbox_sec:
-        fail("Description.md Phase 3 must confirm N Artikel vorgemerkt")
-    if "Datei sichern" not in inbox_sec:
-        fail("Description.md Phase 3 must document Datei sichern append")
+        fail("Description.md Phase 3 must confirm Artikel vorgemerkt")
+    if "SpeechItemSplitter" not in inbox_sec:
+        fail("Description.md Phase 3 must leave split to SpeechItemSplitter in the app")
+    if "iOS 26" not in inbox_sec:
+        fail("Description.md Phase 3 must note the iOS 26 working recipe")
+    if "- [ ] **Phase 4**" not in inbox_sec:
+        fail("Description.md must keep Phase 4 open")
     if "Inbox verbinden…" not in inbox_sec or "Inbox abrufen" not in inbox_sec:
         fail("Description.md iCloud-Inbox must keep German Inbox labels")
     if "v1" not in inbox_sec.lower() and "leer" not in inbox_sec:
