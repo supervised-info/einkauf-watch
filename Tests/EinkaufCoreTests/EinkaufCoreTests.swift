@@ -1881,3 +1881,49 @@ final class MakeIDTests: XCTestCase {
         XCTAssertEqual(Set(stores).count, stores.count)
     }
 }
+
+final class InboxParserTests: XCTestCase {
+    func testEmpty() {
+        XCTAssertEqual(InboxParser.items(from: ""), [])
+        XCTAssertEqual(InboxParser.items(from: "   \n\n  \t  "), [])
+        XCTAssertEqual(InboxParser.items(from: Data()), [])
+        XCTAssertEqual(InboxParser.retrieveConfirmation(addedCount: 0), "Nichts abzuholen.")
+    }
+
+    func testCommentsAndBlanks() {
+        let text = """
+        # einkauf-inbox v1
+
+        Milch
+
+        # später
+        Butter
+        """
+        XCTAssertEqual(InboxParser.items(from: text), ["Milch", "Butter"])
+        XCTAssertEqual(InboxParser.items(from: "# nur Kommentar\n\n# noch einer"), [])
+    }
+
+    func testItemsTrimAndSkipEmpty() {
+        let text = "  Milch  \n\nButter\r\n  zwei Eier  \n"
+        XCTAssertEqual(InboxParser.items(from: text), ["Milch", "Butter", "zwei Eier"])
+    }
+
+    func testBOM() {
+        let bomText = "\u{FEFF}Milch\nButter"
+        XCTAssertEqual(InboxParser.items(from: bomText), ["Milch", "Butter"])
+        var data = Data([0xEF, 0xBB, 0xBF])
+        data.append(contentsOf: "Käse\nBrot".utf8)
+        XCTAssertEqual(InboxParser.items(from: data), ["Käse", "Brot"])
+    }
+
+    func testSpeechTextJoinMatchesSplitter() {
+        let items = InboxParser.items(from: "Milch\nButter und Eier")
+        XCTAssertEqual(items, ["Milch", "Butter und Eier"])
+        XCTAssertEqual(
+            SpeechItemSplitter.items(from: InboxParser.speechText(from: items)),
+            ["Milch", "Butter", "Eier"]
+        )
+        XCTAssertEqual(InboxParser.retrieveConfirmation(addedCount: 1), "1 Artikel übernommen.")
+        XCTAssertEqual(InboxParser.retrieveConfirmation(addedCount: 3), "3 Artikel übernommen.")
+    }
+}

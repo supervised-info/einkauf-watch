@@ -331,6 +331,8 @@ def test_sources() -> None:
         "Sources/WatchWidgets/TodoWatchWidgets.swift",
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
+        "Sources/Shared/InboxParser.swift",
+        "Sources/iOS/InboxBookmarkStore.swift",
         "Sources/iOS/HomeWidgetReload.swift",
         "Sources/iOSWidgets/EinkaufWidgets.swift",
         "Sources/Watch/EinkaufWatch.entitlements",
@@ -436,6 +438,37 @@ def test_sources() -> None:
         fail("Liste teilen must come after Backup teilen")
     if content[backup_btn:list_btn].count("Button(") != 1:
         fail("Liste teilen must come immediately after Backup teilen")
+    if "Inbox verbinden…" not in content:
+        fail("overflow menu missing Inbox verbinden…")
+    if "Inbox abrufen" not in content:
+        fail("overflow menu missing Inbox abrufen")
+    connect_btn = content.find('Button("Inbox verbinden…"')
+    retrieve_btn = content.find('Button("Inbox abrufen"')
+    settings_btn = content.find('Button("Einstellungen"')
+    if connect_btn < 0 or retrieve_btn < 0 or settings_btn < 0:
+        fail("Inbox overflow buttons must use German labels Inbox verbinden… / Inbox abrufen")
+    if retrieve_btn < connect_btn:
+        fail("Inbox abrufen must come after Inbox verbinden…")
+    if settings_btn < retrieve_btn:
+        fail("Inbox actions must sit before Einstellungen")
+    erledigt_btn = content.find('Button("Erledigte löschen"')
+    if erledigt_btn < 0 or connect_btn < erledigt_btn:
+        fail("Inbox actions must sit after Erledigte löschen / near Backup, before Einstellungen")
+    if "Zuerst Inbox verbinden…" not in content:
+        fail("Inbox abrufen without bookmark must alert Zuerst Inbox verbinden…")
+    if "Nichts abzuholen." not in content and "retrieveConfirmation" not in content:
+        fail("empty Inbox retrieve must use Nichts abzuholen.")
+    if "addItems(fromSpeech:" not in content:
+        fail("Inbox abrufen must feed ShoppingStore.addItems(fromSpeech:)")
+    if "InboxParser.speechText" not in content:
+        fail("Inbox abrufen must join parsed lines via InboxParser.speechText")
+    if ".plainText" not in content:
+        fail("Inbox verbinden must fileImporter plainText / public.text")
+    if "showInboxImporter" not in content:
+        fail("Inbox verbinden must use a dedicated fileImporter")
+    todo_ui = (ROOT / "Sources/iOS/TodoListView.swift").read_text()
+    if "Inbox verbinden" in todo_ui or "Inbox abrufen" in todo_ui:
+        fail("Inbox actions must not appear on the To-Do tab")
     if "Einkaufsliste speichern" not in content:
         fail("overflow menu missing Einkaufsliste speichern")
     if 'Button("Liste speichern"' in content or '.alert("Liste speichern"' in content:
@@ -443,8 +476,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 58" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 58 / CURRENT_PROJECT_VERSION")
+    if "Build 59" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 59 / CURRENT_PROJECT_VERSION")
     if "To-Do Backup" not in desc:
         fail("Description.md must document Einstellungen To-Do Backup")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
@@ -944,8 +977,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 58" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 58")
+    if "CURRENT_PROJECT_VERSION = 59" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 59")
+    if "CURRENT_PROJECT_VERSION = 58" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 58 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 57" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 57 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 56" in pbx:
@@ -1047,8 +1082,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 58" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 58")
+    if "CURRENT_PROJECT_VERSION: 59" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 59")
+    if "CURRENT_PROJECT_VERSION: 58" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 58 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 57" in yml:
         fail("stale CURRENT_PROJECT_VERSION 57 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 56" in yml:
@@ -1358,8 +1395,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 58") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 58")
+    if pbx.count("CURRENT_PROJECT_VERSION = 59") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 59")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2692,6 +2729,73 @@ def _decode_todo_csv(text: str) -> list:
     return out
 
 
+def test_icloud_inbox() -> None:
+    parser = (ROOT / "Sources/Shared/InboxParser.swift").read_text()
+    bookmark = (ROOT / "Sources/iOS/InboxBookmarkStore.swift").read_text()
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    todo_ui = (ROOT / "Sources/iOS/TodoListView.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    persist = (ROOT / "Sources/Shared/Persistence.swift").read_text()
+    ios_ent = (ROOT / "Sources/iOS/Einkauf.entitlements").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    if "enum InboxParser" not in parser:
+        fail("InboxParser helper missing")
+    if "hasPrefix(\"#\")" not in parser and 'hasPrefix("#")' not in parser:
+        fail("InboxParser must skip # comment lines")
+    if "FEFF" not in parser and "0xEF" not in parser:
+        fail("InboxParser must strip UTF-8 BOM")
+    if "speechText" not in parser or '"\\n"' not in parser:
+        fail("InboxParser.speechText must join items with newlines for SpeechItemSplitter")
+    if "Nichts abzuholen." not in parser:
+        fail("InboxParser must confirm empty retrieve as Nichts abzuholen.")
+    if "Artikel übernommen." not in parser:
+        fail("InboxParser must confirm N Artikel übernommen.")
+    if "einkauf.inbox.bookmark" not in bookmark:
+        fail("InboxBookmarkStore must persist a security-scoped bookmark")
+    if "bookmarkData" not in bookmark or "resolvingBookmarkData" not in bookmark:
+        fail("InboxBookmarkStore must create and resolve security-scoped bookmarks")
+    if "startAccessingSecurityScopedResource" not in bookmark:
+        fail("InboxBookmarkStore must startAccessingSecurityScopedResource")
+    if "Zuerst Inbox verbinden…" not in bookmark:
+        fail("missing bookmark must alert Zuerst Inbox verbinden…")
+    if "CKContainer" in bookmark or "import CloudKit" in bookmark or "NSUbiquitous" in bookmark:
+        fail("Inbox bookmark must not use CloudKit / ubiquity container")
+    if "icloud" in ios_ent.lower():
+        fail("iPhone entitlements must not add iCloud for Inbox (Files picker + bookmark)")
+    if "TodoStore" in parser or "TodoStore" in bookmark:
+        fail("Inbox must never touch TodoStore")
+    if "addItems(fromSpeech:" not in store:
+        fail("ShoppingStore.addItems(fromSpeech:) is the Inbox retrieve path")
+    if "Inbox verbinden…" not in content or "Inbox abrufen" not in content:
+        fail("ContentView overflow must offer Inbox verbinden… and Inbox abrufen")
+    if "Inbox verbinden" in todo_ui or "Inbox abrufen" in todo_ui:
+        fail("To-Do tab must not offer Inbox")
+    if "Inbox verbinden" in watch or "Inbox abrufen" in watch:
+        fail("Watch must not offer Inbox")
+    if "NSUbiquitous" in persist or "CKContainer" in persist:
+        fail("Persistence must stay local (no iCloud store)")
+    inbox_sec = desc[desc.find("## iCloud-Inbox"):desc.find("## Abteilungen")]
+    if "Build 59" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must name Phase 2 Build 59")
+    if "- [x] **Phase 2**" not in inbox_sec:
+        fail("Description.md must check Phase 2 delivered")
+    if "Inbox verbinden…" not in inbox_sec or "Inbox abrufen" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must keep German Inbox labels")
+    if "v1" not in inbox_sec.lower() and "leer" not in inbox_sec:
+        fail("Description.md must document v1 rewrite-empty after retrieve")
+    if "9. Inbox verbinden…" not in desc or "10. Inbox abrufen" not in desc:
+        fail("Description.md overflow menu must list Inbox verbinden… and Inbox abrufen")
+    if "class InboxParserTests" not in tests:
+        fail("unit tests must cover InboxParser")
+    if "testEmpty" not in tests or "testCommentsAndBlanks" not in tests:
+        fail("InboxParser tests must cover empty and comments")
+    if "testBOM" not in tests or "testItemsTrimAndSkipEmpty" not in tests:
+        fail("InboxParser tests must cover items and BOM")
+    print("icloud inbox: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -2703,6 +2807,7 @@ def main() -> None:
     test_iphone_widget()
     test_siri_app_intents()
     test_todo_store()
+    test_icloud_inbox()
     print("ALL OK")
 
 
