@@ -2,6 +2,8 @@
 
 Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). Zwei Reiter **Einkauf | To-Do** auf iPhone und Apple Watch. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
 
+Produktstand (Build 62): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append).
+
 Mindestens **Xcode 15**, iOS 17, watchOS 10. Im Apple-Developer-Account ein Team wählen. v1 ist nicht für den App-Store-Submit gedacht.
 
 Dieses Repo wurde auf Linux erzeugt. **Simulator und `xcodebuild` wurden hier nicht ausgeführt.** Bitte auf dem Mac öffnen und dort bauen.
@@ -49,7 +51,7 @@ Beispiel-Dateien im Repo:
 - `Fixtures/einkauf-backup-ohne-staples.json` — ohne `staples`
 - `Fixtures/todo-v3-json.json` — To-Do-Backup (`format: "todo-v3-json"`), nicht Einkauf
 
-To-Do-Backup importiert man im **To-Do**-Tab (**…**), nicht über das Einkaufs-Overflow.
+To-Do-Backup importiert man im **To-Do**-Tab (**…**) oder unter **Einstellungen → To-Do Backup** (nur JSON), nicht über das Einkaufs-Overflow.
 
 PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hier importieren. Die Watch zeigt die Liste in Laden-/Abteilungsreihenfolge (`vor` zuerst, `nach` zuletzt).
 
@@ -66,6 +68,8 @@ Zwei Reiter **Einkauf | To-Do** (`TabView`). Getrennte Stores, Dateien und Backu
 **Sprache / Siri:** Kein Watch-Mikro, kein `Speech.framework`. Stattdessen Siri App Intents auf iPhone und Watch in **einem** `AppShortcutsProvider`: „Hey Siri, Einkauf besorgen“ (App-Name + **besorgen**, Nachfrage **„o“**). To-Do: **„Hey Siri, Einkauf Todo“** (ein Wort **Todo**, nicht „To Do“ — Siri begrenzt zwei Phrase-Tokens auf zwei Wörter; `shortTitle` ebenfalls **Todo**). iPhone-To-Do fragt **„o“**; Watch-To-Do nutzt die generische Freitext-Nachfrage (kein `requestValueDialog`, sonst kürzt die Watch Free-Form). Dann Artikel bzw. Aufgabe sprechen (Komma / `und` trennt mehrere, `SpeechItemSplitter`). Nach einem Update: Shortcut in Kurzbefehle löschen/neu und **„Auf Apple Watch anzeigen“** erneut aktivieren. iPhone schreibt sofort in den Store und synct. Watch legt nur in eine App-Group-Queue (`UserDefaults` + Datei-Spiegel); die Watch-App drain't beim Öffnen — ggf. einmal die App antippen. Details und Verlauf: `Description.md` → **Sprach-Eingabe (Siri)**.
 
 **iPhone-Widget:** Homescreen klein (Laden + `oo/xx/yy`) und mittel (plus nächste offene Artikel). Tippen öffnet die App **Einkaufsliste**. Scheme **Einkauf** aufs iPhone; Widget über den Homescreen-Widget-Picker hinzufügen. App Group `group.net.tschelle.einkauf` für App und Widget aktivieren, falls Xcode danach fragt.
+
+**iCloud-Inbox (nur Einkauf):** **…** → **Inbox verbinden…** (einmal geteilte `Einkauf-Inbox/inbox.txt` in iCloud Drive) und **Inbox abrufen** (Auswahl-Sheet; **Löschen** entfernt Zeilen ohne Import). Zweit-iPhone: Kurzbefehle **Einkauf-Inbox eintragen** / **Einkauf-Inbox vorlesen**. Details: `Description.md` → **iCloud-Inbox (Zweitgerät)**. Concurrent Append während des Abrufs ist **optional offen** (Phase 4).
 
 **Sync:** Jede Änderung speichert lokal und schickt den Stand per WatchConnectivity (`updateApplicationContext`, bei Erreichbarkeit `sendMessage`, sonst `transferUserInfo`). Abhaken mergen nach Zeitstempel; neue Artikel/Import folgen der höheren Listenrevision. iPhone und Watch müssen sich einmal sehen (typisch: Bluetooth, Apps im Vordergrund oder kurz aktiv).
 
