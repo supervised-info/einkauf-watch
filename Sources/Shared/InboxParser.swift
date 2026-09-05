@@ -28,6 +28,24 @@ enum InboxParser {
         items.joined(separator: "\n")
     }
 
+    /// Zeilen, die nach dem Löschen in der Datei bleiben (kein Import).
+    static func removing(items: [String], at deletedOffsets: Set<Int>) -> [String] {
+        items.enumerated().compactMap { deletedOffsets.contains($0.offset) ? nil : $0.element }
+    }
+
+    /// Auswahl-Indizes nach dem Löschen: gelöschte raus, höhere Indizes nachrücken.
+    static func shiftingSelection(_ selected: Set<Int>, removing deletedOffsets: Set<Int>) -> Set<Int> {
+        guard !deletedOffsets.isEmpty else { return selected }
+        var shifted = Set<Int>()
+        for old in selected where !deletedOffsets.contains(old) {
+            let delta = deletedOffsets.reduce(into: 0) { count, deleted in
+                if deleted < old { count += 1 }
+            }
+            shifted.insert(old - delta)
+        }
+        return shifted
+    }
+
     /// Ausgewählte Zeilen zum Import; Rest bleibt in `inbox.txt`.
     static func partition(items: [String], selectedOffsets: Set<Int>) -> InboxRetrievePartition {
         var selected: [String] = []

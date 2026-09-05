@@ -134,10 +134,11 @@ enum InboxBookmarkError: LocalizedError, Equatable {
 }
 
 /// Hält den Security-Scope von Lesen bis Übernehmen / Abbrechen.
+/// `items` folgt der Sheet-Liste (Löschen schreibt sofort, ohne Import).
 final class InboxRetrieveSession: Identifiable {
     let id = UUID()
     let url: URL
-    let items: [String]
+    var items: [String]
     private let didStartAccess: Bool
     private var stopped = false
 
@@ -145,6 +146,12 @@ final class InboxRetrieveSession: Identifiable {
         self.url = url
         self.items = items
         self.didStartAccess = didStartAccess
+    }
+
+    /// Datei auf die noch sichtbaren Zeilen kürzen; Scope bleibt fürs Sheet aktiv.
+    func rewriteRemaining(_ remainingItems: [String]) throws {
+        try InboxBookmarkStore.rewrite(url: url, remainingItems: remainingItems)
+        items = remainingItems
     }
 
     func stopAccess() {

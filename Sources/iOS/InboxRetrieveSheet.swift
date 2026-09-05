@@ -1,18 +1,25 @@
 import SwiftUI
 
 /// Auswahl der Inbox-Zeilen vor dem Import. Alle markiert; Abgewählte bleiben in `inbox.txt`.
+/// **Löschen** schreibt die Datei sofort ohne Import; die Sheet-Liste folgt nach.
 struct InboxRetrieveSheet: View {
-    let items: [String]
     let onConfirm: (Set<Int>) -> Void
+    let onDeleteRemaining: ([String]) -> String?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.einkaufTheme) private var theme
+    @State private var items: [String]
     @State private var selected: Set<Int>
     @State private var alertMessage: String?
 
-    init(items: [String], onConfirm: @escaping (Set<Int>) -> Void) {
-        self.items = items
+    init(
+        items: [String],
+        onConfirm: @escaping (Set<Int>) -> Void,
+        onDeleteRemaining: @escaping ([String]) -> String?
+    ) {
         self.onConfirm = onConfirm
+        self.onDeleteRemaining = onDeleteRemaining
+        _items = State(initialValue: items)
         _selected = State(initialValue: Set(items.indices))
     }
 
@@ -20,26 +27,37 @@ struct InboxRetrieveSheet: View {
         NavigationStack {
             List {
                 ForEach(items.indices, id: \.self) { index in
-                    Button {
-                        toggle(index)
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: selected.contains(index) ? "checkmark.circle.fill" : "circle")
-                                .font(.title2)
-                                .foregroundStyle(selected.contains(index) ? theme.good : theme.muted)
-                            Text(items[index])
-                                .foregroundStyle(theme.ink)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 12) {
+                        Button {
+                            toggle(index)
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: selected.contains(index) ? "checkmark.circle.fill" : "circle")
+                                    .font(.title2)
+                                    .foregroundStyle(selected.contains(index) ? theme.good : theme.muted)
+                                Text(items[index])
+                                    .foregroundStyle(theme.ink)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .contentShape(Rectangle())
                         }
-                        .padding(.vertical, 4)
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(items[index])
+                        .accessibilityValue(selected.contains(index) ? "ausgewählt" : "abgewählt")
+                        .accessibilityAddTraits(selected.contains(index) ? .isSelected : [])
+
+                        Button(role: .destructive) {
+                            deleteItems(at: IndexSet(integer: index))
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("Löschen")
                     }
-                    .buttonStyle(.plain)
+                    .padding(.vertical, 4)
                     .einkaufRowChrome()
-                    .accessibilityLabel(items[index])
-                    .accessibilityValue(selected.contains(index) ? "ausgewählt" : "abgewählt")
-                    .accessibilityAddTraits(selected.contains(index) ? .isSelected : [])
                 }
+                .onDelete(perform: deleteItems)
             }
             .listStyle(.insetGrouped)
             .einkaufListChrome()
@@ -72,6 +90,20 @@ struct InboxRetrieveSheet: View {
         }
     }
 
+    private func deleteItems(at offsets: IndexSet) {
+        let deleted = Set(offsets)
+        let remaining = InboxParser.removing(items: items, at: deleted)
+        if let error = onDeleteRemaining(remaining) {
+            alertMessage = error
+            return
+        }
+        selected = InboxParser.shiftingSelection(selected, removing: deleted)
+        items = remaining
+        if items.isEmpty {
+            dismiss()
+        }
+    }
+
     private func confirm() {
         if selected.isEmpty {
             alertMessage = InboxParser.noneSelectedMessage()
@@ -82,6 +114,6 @@ struct InboxRetrieveSheet: View {
 }
 
 #Preview {
-    InboxRetrieveSheet(items: ["Milch", "Butter", "Eier"]) { _ in }
+    InboxRetrieveSheet(items: ["Milch", "Butter", "Eier"], onConfirm: { _ in }, onDeleteRemaining: { _ in nil })
         .environment(\.einkaufTheme, ThemeTokens.make(palette: .vintage, scheme: .light))
 }
