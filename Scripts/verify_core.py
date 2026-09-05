@@ -2781,6 +2781,16 @@ def test_icloud_inbox() -> None:
         fail("Description.md iCloud-Inbox must name Phase 2 Build 59")
     if "- [x] **Phase 2**" not in inbox_sec:
         fail("Description.md must check Phase 2 delivered")
+    if "- [x] **Phase 3**" not in inbox_sec:
+        fail("Description.md must check Phase 3 delivered")
+    if "### Kurzbefehl (Phase 3)" not in inbox_sec:
+        fail("Description.md must include Kurzbefehl (Phase 3) recipe")
+    if "Einsprechen" not in inbox_sec or "Vorlesen" not in inbox_sec:
+        fail("Description.md Phase 3 recipe must name Einsprechen and Vorlesen")
+    if "Artikel vorgemerkt" not in inbox_sec:
+        fail("Description.md Phase 3 must confirm N Artikel vorgemerkt")
+    if "Datei sichern" not in inbox_sec:
+        fail("Description.md Phase 3 must document Datei sichern append")
     if "Inbox verbinden…" not in inbox_sec or "Inbox abrufen" not in inbox_sec:
         fail("Description.md iCloud-Inbox must keep German Inbox labels")
     if "v1" not in inbox_sec.lower() and "leer" not in inbox_sec:
