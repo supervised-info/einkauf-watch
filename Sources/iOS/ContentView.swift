@@ -96,9 +96,15 @@ struct ContentView: View {
                     .ignoresSafeArea()
             }
             .sheet(item: $inboxRetrieve) { session in
-                InboxRetrieveSheet(items: session.items) { selected in
-                    confirmInboxRetrieve(session: session, selectedOffsets: selected)
-                }
+                InboxRetrieveSheet(
+                    items: session.items,
+                    onConfirm: { selected in
+                        confirmInboxRetrieve(session: session, selectedOffsets: selected)
+                    },
+                    onDeleteRemaining: { remaining in
+                        rewriteInboxRetrieve(session: session, remainingItems: remaining)
+                    }
+                )
                 .environment(\.einkaufTheme, theme)
                 .preferredColorScheme(appearance.preferredColorScheme)
                 .einkaufScreen(theme)
@@ -525,7 +531,7 @@ struct ContentView: View {
         }
         do {
             let added = store.addItems(fromSpeech: InboxParser.speechText(from: partition.selected))
-            try InboxBookmarkStore.rewrite(url: session.url, remainingItems: partition.remainder)
+            try session.rewriteRemaining(partition.remainder)
             session.stopAccess()
             inboxRetrieve = nil
             alertMessage = InboxParser.retrieveConfirmation(addedCount: added)
@@ -533,6 +539,20 @@ struct ContentView: View {
             session.stopAccess()
             inboxRetrieve = nil
             alertMessage = error.localizedDescription
+        }
+    }
+
+    /// Löschen im Sheet: Datei sofort auf die restlichen Zeilen kürzen, ohne Import.
+    private func rewriteInboxRetrieve(session: InboxRetrieveSession, remainingItems: [String]) -> String? {
+        do {
+            try session.rewriteRemaining(remainingItems)
+            if remainingItems.isEmpty {
+                session.stopAccess()
+                inboxRetrieve = nil
+            }
+            return nil
+        } catch {
+            return error.localizedDescription
         }
     }
 

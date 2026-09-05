@@ -470,6 +470,12 @@ def test_sources() -> None:
         fail("InboxRetrieveSheet must confirm with Übernehmen")
     if "Nichts ausgewählt." not in retrieve_sheet and "noneSelectedMessage" not in retrieve_sheet:
         fail("InboxRetrieveSheet must alert Nichts ausgewählt. when confirming with zero selected")
+    if ".onDelete" not in retrieve_sheet or "Löschen" not in retrieve_sheet:
+        fail("InboxRetrieveSheet must offer per-item Löschen via onDelete / trash")
+    if "onDeleteRemaining" not in retrieve_sheet:
+        fail("InboxRetrieveSheet must rewrite remaining inbox lines on delete")
+    if "addItems(fromSpeech:" in retrieve_sheet:
+        fail("InboxRetrieveSheet must not import deleted lines")
     if ".plainText" not in content:
         fail("Inbox verbinden must fileImporter plainText / public.text")
     if "showInboxImporter" not in content:
@@ -484,8 +490,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 60" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 60 / CURRENT_PROJECT_VERSION")
+    if "Build 61" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 61 / CURRENT_PROJECT_VERSION")
     if "To-Do Backup" not in desc:
         fail("Description.md must document Einstellungen To-Do Backup")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
@@ -985,8 +991,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 60" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 60")
+    if "CURRENT_PROJECT_VERSION = 61" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 61")
+    if "CURRENT_PROJECT_VERSION = 60" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 60 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 59" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 59 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 58" in pbx:
@@ -1092,8 +1100,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 60" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 60")
+    if "CURRENT_PROJECT_VERSION: 61" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 61")
+    if "CURRENT_PROJECT_VERSION: 60" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 60 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 59" in yml:
         fail("stale CURRENT_PROJECT_VERSION 59 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 58" in yml:
@@ -1407,8 +1417,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 60") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 60")
+    if pbx.count("CURRENT_PROJECT_VERSION = 61") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 61")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2768,6 +2778,8 @@ def test_icloud_inbox() -> None:
         fail("InboxParser must confirm zero selection as Nichts ausgewählt.")
     if "func partition" not in parser or "remainder" not in parser:
         fail("InboxParser must split selected vs remainder for inbox rewrite")
+    if "func removing" not in parser or "shiftingSelection" not in parser:
+        fail("InboxParser must drop deleted lines and shift sheet selection")
     if "fileText" not in parser:
         fail("InboxParser must format remainder as one UTF-8 line per item")
     if "einkauf.inbox.bookmark" not in bookmark:
@@ -2782,6 +2794,8 @@ def test_icloud_inbox() -> None:
         fail("InboxRetrieveSession must stop security-scoped access after confirm or cancel")
     if "remainingItems" not in bookmark:
         fail("InboxBookmarkStore must rewrite inbox.txt with only deselected lines")
+    if "rewriteRemaining" not in bookmark:
+        fail("InboxRetrieveSession must rewrite remaining inbox lines while the sheet scope is held")
     if "Zuerst Inbox verbinden…" not in bookmark:
         fail("missing bookmark must alert Zuerst Inbox verbinden…")
     if "CKContainer" in bookmark or "import CloudKit" in bookmark or "NSUbiquitous" in bookmark:
@@ -2799,6 +2813,15 @@ def test_icloud_inbox() -> None:
     sheet = (ROOT / "Sources/iOS/InboxRetrieveSheet.swift").read_text()
     if "Übernehmen" not in sheet or "Abbrechen" not in sheet:
         fail("InboxRetrieveSheet must offer Übernehmen and Abbrechen")
+    if ".onDelete" not in sheet or "Löschen" not in sheet:
+        fail("InboxRetrieveSheet must offer per-item Löschen")
+    if "onDeleteRemaining" not in sheet or "onDeleteRemaining" not in content:
+        fail("ContentView must rewrite inbox.txt on sheet delete without importing")
+    if "private func rewriteInboxRetrieve" not in content:
+        fail("ContentView must keep security-scoped rewrite on delete")
+    delete_fn = content[content.find("private func rewriteInboxRetrieve"):content.find("private func handleImport")]
+    if "addItems(fromSpeech:" in delete_fn:
+        fail("Inbox delete must not call addItems(fromSpeech:)")
     if "TodoStore" in sheet:
         fail("InboxRetrieveSheet must stay on the Einkauf tab")
     if "Inbox verbinden" in todo_ui or "Inbox abrufen" in todo_ui:
@@ -2812,8 +2835,12 @@ def test_icloud_inbox() -> None:
         fail("Description.md iCloud-Inbox must name Phase 2 Build 59")
     if "Build 60" not in inbox_sec:
         fail("Description.md iCloud-Inbox must name retrieve selection Build 60")
+    if "Build 61" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must name per-item Löschen Build 61")
     if "Auswahl" not in inbox_sec or "Abgewählte" not in inbox_sec:
         fail("Description.md iCloud-Inbox must document retrieve Auswahl; deselected stay in file")
+    if "Löschen" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must document per-item Löschen without import")
     if "InboxRetrieveSheet" not in inbox_sec:
         fail("Description.md iCloud-Inbox must name InboxRetrieveSheet")
     if "Nichts ausgewählt." not in inbox_sec:
@@ -2850,6 +2877,8 @@ def test_icloud_inbox() -> None:
         fail("InboxParser tests must cover items and BOM")
     if "testPartitionSelectedVersusRemainder" not in tests:
         fail("InboxParser tests must cover selected vs remainder for file rewrite")
+    if "testRemovingShiftsSelectionWithoutImport" not in tests:
+        fail("InboxParser tests must cover delete remaining lines and selection shift")
     print("icloud inbox: ok")
 
 

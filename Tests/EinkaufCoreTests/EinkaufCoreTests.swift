@@ -1946,4 +1946,16 @@ final class InboxParserTests: XCTestCase {
         XCTAssertEqual(InboxParser.speechText(from: some.selected), "Milch\nEier")
         XCTAssertEqual(InboxParser.noneSelectedMessage(), "Nichts ausgewählt.")
     }
+
+    func testRemovingShiftsSelectionWithoutImport() {
+        let items = ["Milch", "Butter", "Eier"]
+        XCTAssertEqual(InboxParser.removing(items: items, at: [1]), ["Milch", "Eier"])
+        XCTAssertEqual(InboxParser.fileText(remainingItems: InboxParser.removing(items: items, at: [1])), "Milch\nEier\n")
+        XCTAssertEqual(InboxParser.shiftingSelection([0, 1, 2], removing: [1]), [0, 1])
+        XCTAssertEqual(InboxParser.shiftingSelection([0, 2], removing: [1]), [0, 1])
+        XCTAssertEqual(InboxParser.shiftingSelection([1], removing: [1]), [])
+        XCTAssertEqual(InboxParser.removing(items: ["Milch"], at: [0]), [])
+        XCTAssertEqual(InboxParser.fileText(remainingItems: []), "")
+        XCTAssertEqual(InboxParser.shiftingSelection([0], removing: [0]), [])
+    }
 }
