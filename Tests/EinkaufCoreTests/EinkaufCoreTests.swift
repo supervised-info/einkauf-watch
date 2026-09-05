@@ -1926,4 +1926,24 @@ final class InboxParserTests: XCTestCase {
         XCTAssertEqual(InboxParser.retrieveConfirmation(addedCount: 1), "1 Artikel übernommen.")
         XCTAssertEqual(InboxParser.retrieveConfirmation(addedCount: 3), "3 Artikel übernommen.")
     }
+
+    func testPartitionSelectedVersusRemainder() {
+        let items = ["Milch", "Butter", "Eier"]
+        let all = InboxParser.partition(items: items, selectedOffsets: [0, 1, 2])
+        XCTAssertEqual(all.selected, items)
+        XCTAssertEqual(all.remainder, [])
+        XCTAssertEqual(InboxParser.fileText(remainingItems: all.remainder), "")
+
+        let none = InboxParser.partition(items: items, selectedOffsets: [])
+        XCTAssertEqual(none.selected, [])
+        XCTAssertEqual(none.remainder, items)
+        XCTAssertEqual(InboxParser.fileText(remainingItems: none.remainder), "Milch\nButter\nEier\n")
+
+        let some = InboxParser.partition(items: items, selectedOffsets: [0, 2])
+        XCTAssertEqual(some.selected, ["Milch", "Eier"])
+        XCTAssertEqual(some.remainder, ["Butter"])
+        XCTAssertEqual(InboxParser.fileText(remainingItems: some.remainder), "Butter\n")
+        XCTAssertEqual(InboxParser.speechText(from: some.selected), "Milch\nEier")
+        XCTAssertEqual(InboxParser.noneSelectedMessage(), "Nichts ausgewählt.")
+    }
 }

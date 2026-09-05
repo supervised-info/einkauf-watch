@@ -28,6 +28,28 @@ enum InboxParser {
         items.joined(separator: "\n")
     }
 
+    /// Ausgewählte Zeilen zum Import; Rest bleibt in `inbox.txt`.
+    static func partition(items: [String], selectedOffsets: Set<Int>) -> InboxRetrievePartition {
+        var selected: [String] = []
+        var remainder: [String] = []
+        selected.reserveCapacity(selectedOffsets.count)
+        remainder.reserveCapacity(max(0, items.count - selectedOffsets.count))
+        for (index, item) in items.enumerated() {
+            if selectedOffsets.contains(index) {
+                selected.append(item)
+            } else {
+                remainder.append(item)
+            }
+        }
+        return InboxRetrievePartition(selected: selected, remainder: remainder)
+    }
+
+    /// UTF-8-Text für die Datei: eine Zeile pro Artikel; leer wie `Data()` wenn nichts bleibt.
+    static func fileText(remainingItems: [String]) -> String {
+        if remainingItems.isEmpty { return "" }
+        return remainingItems.joined(separator: "\n") + "\n"
+    }
+
     static func retrieveConfirmation(addedCount: Int) -> String {
         switch addedCount {
         case 0:
@@ -38,4 +60,13 @@ enum InboxParser {
             return "\(addedCount) Artikel übernommen."
         }
     }
+
+    static func noneSelectedMessage() -> String {
+        "Nichts ausgewählt."
+    }
+}
+
+struct InboxRetrievePartition: Equatable {
+    var selected: [String]
+    var remainder: [String]
 }

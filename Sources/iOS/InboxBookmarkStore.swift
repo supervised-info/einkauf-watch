@@ -33,6 +33,20 @@ enum InboxBookmarkStore {
         return try body(url)
     }
 
+    /// Scope vor dem Lesen starten und über die Auswahl-Sheet-Lebensdauer halten.
+    /// `stopAccess()` nach Schreiben (Übernehmen) oder beim Abbrechen / Dismiss.
+    static func beginRetrieve() throws -> InboxRetrieveSession {
+        let url = try resolvedURL()
+        let scoped = url.startAccessingSecurityScopedResource()
+        do {
+            let items = try readItems(from: url)
+            return InboxRetrieveSession(url: url, items: items, didStartAccess: scoped)
+        } catch {
+            if scoped { url.stopAccessingSecurityScopedResource() }
+            throw error
+        }
+    }
+
     static func readItems(from url: URL) throws -> [String] {
         let data: Data
         do {
@@ -43,14 +57,20 @@ enum InboxBookmarkStore {
         return InboxParser.items(from: data)
     }
 
-    /// v1: ganzen gelesenen Snapshot verbrauchen und Datei leer schreiben.
-    /// Concurrent Append während des Abrufs ist kein v1-Ziel.
-    static func rewriteEmpty(url: URL) throws {
+    /// Abgewählte Zeilen zurückschreiben (eine pro Zeile, UTF-8). Leer = `Data()` wie bisher.
+    static func rewrite(url: URL, remainingItems: [String]) throws {
+        let data = Data(InboxParser.fileText(remainingItems: remainingItems).utf8)
         do {
-            try Data().write(to: url, options: .atomic)
+            try data.write(to: url, options: .atomic)
         } catch {
             throw InboxBookmarkError.writeFailed
         }
+    }
+
+    /// v1: ganzen gelesenen Snapshot verbrauchen und Datei leer schreiben.
+    /// Concurrent Append während des Abrufs ist kein v1-Ziel.
+    static func rewriteEmpty(url: URL) throws {
+        try rewrite(url: url, remainingItems: [])
     }
 
     static func clear() {
@@ -108,7 +128,34 @@ enum InboxBookmarkError: LocalizedError, Equatable {
         case .unreadable:
             return "Inbox-Datei konnte nicht gelesen werden."
         case .writeFailed:
-            return "Inbox-Datei konnte nicht geleert werden."
+            return "Inbox-Datei konnte nicht geschrieben werden."
         }
+    }
+}
+
+/// Hält den Security-Scope von Lesen bis Übernehmen / Abbrechen.
+final class InboxRetrieveSession: Identifiable {
+    let id = UUID()
+    let url: URL
+    let items: [String]
+    private let didStartAccess: Bool
+    private var stopped = false
+
+    init(url: URL, items: [String], didStartAccess: Bool) {
+        self.url = url
+        self.items = items
+        self.didStartAccess = didStartAccess
+    }
+
+    func stopAccess() {
+        guard !stopped else { return }
+        stopped = true
+        if didStartAccess {
+            url.stopAccessingSecurityScopedResource()
+        }
+    }
+
+    deinit {
+        stopAccess()
     }
 }
