@@ -333,6 +333,7 @@ def test_sources() -> None:
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/Shared/InboxParser.swift",
         "Sources/iOS/InboxBookmarkStore.swift",
+        "Sources/iOS/InboxRetrieveSheet.swift",
         "Sources/iOS/HomeWidgetReload.swift",
         "Sources/iOSWidgets/EinkaufWidgets.swift",
         "Sources/Watch/EinkaufWatch.entitlements",
@@ -458,10 +459,17 @@ def test_sources() -> None:
         fail("Inbox abrufen without bookmark must alert Zuerst Inbox verbinden…")
     if "Nichts abzuholen." not in content and "retrieveConfirmation" not in content:
         fail("empty Inbox retrieve must use Nichts abzuholen.")
+    if "InboxRetrieveSheet" not in content or "inboxRetrieve" not in content:
+        fail("Inbox abrufen must present InboxRetrieveSheet when the file has items")
     if "addItems(fromSpeech:" not in content:
         fail("Inbox abrufen must feed ShoppingStore.addItems(fromSpeech:)")
     if "InboxParser.speechText" not in content:
         fail("Inbox abrufen must join parsed lines via InboxParser.speechText")
+    retrieve_sheet = (ROOT / "Sources/iOS/InboxRetrieveSheet.swift").read_text()
+    if 'Button("Übernehmen")' not in retrieve_sheet:
+        fail("InboxRetrieveSheet must confirm with Übernehmen")
+    if "Nichts ausgewählt." not in retrieve_sheet and "noneSelectedMessage" not in retrieve_sheet:
+        fail("InboxRetrieveSheet must alert Nichts ausgewählt. when confirming with zero selected")
     if ".plainText" not in content:
         fail("Inbox verbinden must fileImporter plainText / public.text")
     if "showInboxImporter" not in content:
@@ -476,8 +484,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 59" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 59 / CURRENT_PROJECT_VERSION")
+    if "Build 60" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 60 / CURRENT_PROJECT_VERSION")
     if "To-Do Backup" not in desc:
         fail("Description.md must document Einstellungen To-Do Backup")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
@@ -977,8 +985,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 59" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 59")
+    if "CURRENT_PROJECT_VERSION = 60" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 60")
+    if "CURRENT_PROJECT_VERSION = 59" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 59 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 58" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 58 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 57" in pbx:
@@ -1082,8 +1092,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 59" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 59")
+    if "CURRENT_PROJECT_VERSION: 60" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 60")
+    if "CURRENT_PROJECT_VERSION: 59" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 59 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 58" in yml:
         fail("stale CURRENT_PROJECT_VERSION 58 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 57" in yml:
@@ -1395,8 +1407,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 59") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 59")
+    if pbx.count("CURRENT_PROJECT_VERSION = 60") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 60")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2752,12 +2764,24 @@ def test_icloud_inbox() -> None:
         fail("InboxParser must confirm empty retrieve as Nichts abzuholen.")
     if "Artikel übernommen." not in parser:
         fail("InboxParser must confirm N Artikel übernommen.")
+    if "Nichts ausgewählt." not in parser:
+        fail("InboxParser must confirm zero selection as Nichts ausgewählt.")
+    if "func partition" not in parser or "remainder" not in parser:
+        fail("InboxParser must split selected vs remainder for inbox rewrite")
+    if "fileText" not in parser:
+        fail("InboxParser must format remainder as one UTF-8 line per item")
     if "einkauf.inbox.bookmark" not in bookmark:
         fail("InboxBookmarkStore must persist a security-scoped bookmark")
     if "bookmarkData" not in bookmark or "resolvingBookmarkData" not in bookmark:
         fail("InboxBookmarkStore must create and resolve security-scoped bookmarks")
     if "startAccessingSecurityScopedResource" not in bookmark:
         fail("InboxBookmarkStore must startAccessingSecurityScopedResource")
+    if "beginRetrieve" not in bookmark or "InboxRetrieveSession" not in bookmark:
+        fail("InboxBookmarkStore must hold security-scoped access across the retrieve sheet")
+    if "stopAccessingSecurityScopedResource" not in bookmark:
+        fail("InboxRetrieveSession must stop security-scoped access after confirm or cancel")
+    if "remainingItems" not in bookmark:
+        fail("InboxBookmarkStore must rewrite inbox.txt with only deselected lines")
     if "Zuerst Inbox verbinden…" not in bookmark:
         fail("missing bookmark must alert Zuerst Inbox verbinden…")
     if "CKContainer" in bookmark or "import CloudKit" in bookmark or "NSUbiquitous" in bookmark:
@@ -2770,6 +2794,13 @@ def test_icloud_inbox() -> None:
         fail("ShoppingStore.addItems(fromSpeech:) is the Inbox retrieve path")
     if "Inbox verbinden…" not in content or "Inbox abrufen" not in content:
         fail("ContentView overflow must offer Inbox verbinden… and Inbox abrufen")
+    if "InboxRetrieveSheet" not in content:
+        fail("ContentView must present InboxRetrieveSheet after a non-empty retrieve")
+    sheet = (ROOT / "Sources/iOS/InboxRetrieveSheet.swift").read_text()
+    if "Übernehmen" not in sheet or "Abbrechen" not in sheet:
+        fail("InboxRetrieveSheet must offer Übernehmen and Abbrechen")
+    if "TodoStore" in sheet:
+        fail("InboxRetrieveSheet must stay on the Einkauf tab")
     if "Inbox verbinden" in todo_ui or "Inbox abrufen" in todo_ui:
         fail("To-Do tab must not offer Inbox")
     if "Inbox verbinden" in watch or "Inbox abrufen" in watch:
@@ -2779,6 +2810,14 @@ def test_icloud_inbox() -> None:
     inbox_sec = desc[desc.find("## iCloud-Inbox"):desc.find("## Abteilungen")]
     if "Build 59" not in inbox_sec:
         fail("Description.md iCloud-Inbox must name Phase 2 Build 59")
+    if "Build 60" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must name retrieve selection Build 60")
+    if "Auswahl" not in inbox_sec or "Abgewählte" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must document retrieve Auswahl; deselected stay in file")
+    if "InboxRetrieveSheet" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must name InboxRetrieveSheet")
+    if "Nichts ausgewählt." not in inbox_sec:
+        fail("Description.md iCloud-Inbox must document Nichts ausgewählt.")
     if "- [x] **Phase 2**" not in inbox_sec:
         fail("Description.md must check Phase 2 delivered")
     if "- [x] **Phase 3**" not in inbox_sec:
@@ -2809,6 +2848,8 @@ def test_icloud_inbox() -> None:
         fail("InboxParser tests must cover empty and comments")
     if "testBOM" not in tests or "testItemsTrimAndSkipEmpty" not in tests:
         fail("InboxParser tests must cover items and BOM")
+    if "testPartitionSelectedVersusRemainder" not in tests:
+        fail("InboxParser tests must cover selected vs remainder for file rewrite")
     print("icloud inbox: ok")
 
 

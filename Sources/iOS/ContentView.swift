@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var showImporter = false
     @State private var showInboxImporter = false
     @State private var inboxDisplayName = InboxBookmarkStore.displayName
+    @State private var inboxRetrieve: InboxRetrieveSession?
     @State private var showExporter = false
     @State private var exportDocument = BackupFileDocument(data: Data())
     @State private var shareItem: BackupShareItem?
@@ -93,6 +94,14 @@ struct ContentView: View {
             .sheet(item: $shareItem) { item in
                 ShareSheet(url: item.url)
                     .ignoresSafeArea()
+            }
+            .sheet(item: $inboxRetrieve) { session in
+                InboxRetrieveSheet(items: session.items) { selected in
+                    confirmInboxRetrieve(session: session, selectedOffsets: selected)
+                }
+                .environment(\.einkaufTheme, theme)
+                .preferredColorScheme(appearance.preferredColorScheme)
+                .einkaufScreen(theme)
             }
         }
     }
@@ -492,21 +501,37 @@ struct ContentView: View {
             return
         }
         do {
-            try InboxBookmarkStore.withResolvedURL { url in
-                let items = try InboxBookmarkStore.readItems(from: url)
-                guard !items.isEmpty else {
-                    alertMessage = InboxParser.retrieveConfirmation(addedCount: 0)
-                    return
-                }
-                let added = store.addItems(fromSpeech: InboxParser.speechText(from: items))
-                try InboxBookmarkStore.rewriteEmpty(url: url)
-                alertMessage = InboxParser.retrieveConfirmation(addedCount: added)
+            let session = try InboxBookmarkStore.beginRetrieve()
+            guard !session.items.isEmpty else {
+                session.stopAccess()
+                alertMessage = InboxParser.retrieveConfirmation(addedCount: 0)
+                return
             }
+            inboxRetrieve = session
         } catch {
             if let inboxError = error as? InboxBookmarkError, inboxError == .stale {
                 InboxBookmarkStore.clear()
                 inboxDisplayName = nil
             }
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private func confirmInboxRetrieve(session: InboxRetrieveSession, selectedOffsets: Set<Int>) {
+        let partition = InboxParser.partition(items: session.items, selectedOffsets: selectedOffsets)
+        guard !partition.selected.isEmpty else {
+            alertMessage = InboxParser.noneSelectedMessage()
+            return
+        }
+        do {
+            let added = store.addItems(fromSpeech: InboxParser.speechText(from: partition.selected))
+            try InboxBookmarkStore.rewrite(url: session.url, remainingItems: partition.remainder)
+            session.stopAccess()
+            inboxRetrieve = nil
+            alertMessage = InboxParser.retrieveConfirmation(addedCount: added)
+        } catch {
+            session.stopAccess()
+            inboxRetrieve = nil
             alertMessage = error.localizedDescription
         }
     }
