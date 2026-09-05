@@ -9,7 +9,7 @@ options:
 settings:
   SWIFT_VERSION: "5.0"
   CODE_SIGN_STYLE: Automatic
-  CURRENT_PROJECT_VERSION: 58
+  CURRENT_PROJECT_VERSION: 59
   MARKETING_VERSION: "1.0"
   DEVELOPMENT_TEAM: WV26CSTDDR
 targets:
@@ -96,6 +96,7 @@ targets:
           - TodoAddItemsIntent.swift
           - TodoSiriPendingAdds.swift
           - WatchSyncEnvelope.swift
+          - InboxParser.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf.watchkitapp.widgets
       PRODUCT_NAME: EinkaufWatchWidgets
@@ -135,6 +136,7 @@ targets:
           - TodoAddItemsIntent.swift
           - TodoSiriPendingAdds.swift
           - WatchSyncEnvelope.swift
+          - InboxParser.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: net.tschelle.einkauf.widgets
       PRODUCT_NAME: EinkaufWidgets

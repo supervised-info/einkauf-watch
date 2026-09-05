@@ -7,6 +7,8 @@ struct ContentView: View {
     @Environment(\.einkaufTheme) private var theme
     @State private var draft = ""
     @State private var showImporter = false
+    @State private var showInboxImporter = false
+    @State private var inboxDisplayName = InboxBookmarkStore.displayName
     @State private var showExporter = false
     @State private var exportDocument = BackupFileDocument(data: Data())
     @State private var shareItem: BackupShareItem?
@@ -44,6 +46,16 @@ struct ContentView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) { addBar }
             .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json], allowsMultipleSelection: false) { result in
                 handleImport(result)
+            }
+            .background {
+                Color.clear
+                    .fileImporter(
+                        isPresented: $showInboxImporter,
+                        allowedContentTypes: Self.inboxContentTypes,
+                        allowsMultipleSelection: false
+                    ) { result in
+                        handleInboxConnect(result)
+                    }
             }
             .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .json, defaultFilename: "einkauf-backup") { result in
                 if case .failure(let error) = result {
@@ -347,6 +359,16 @@ struct ContentView: View {
                 Button("Erledigte löschen", systemImage: "trash") {
                     store.clearDone()
                 }
+                Button("Inbox verbinden…", systemImage: "tray.and.arrow.down") {
+                    showInboxImporter = true
+                }
+                Button("Inbox abrufen", systemImage: "arrow.down.doc") {
+                    retrieveInbox()
+                }
+                if let name = inboxDisplayName {
+                    Text(name)
+                        .foregroundStyle(.secondary)
+                }
                 Divider()
                 Button("Einstellungen", systemImage: "gearshape") {
                     showSettings = true
@@ -434,6 +456,57 @@ struct ContentView: View {
             }
             shareItem = BackupShareItem(url: url)
         } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+
+    private static let inboxContentTypes: [UTType] = {
+        var types: [UTType] = [.plainText, .text]
+        if let txt = UTType(filenameExtension: "txt") {
+            types.append(txt)
+        }
+        return types
+    }()
+
+    private func handleInboxConnect(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            alertMessage = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            do {
+                try InboxBookmarkStore.connect(url: url)
+                inboxDisplayName = InboxBookmarkStore.displayName
+                alertMessage = "Inbox verbunden."
+            } catch {
+                InboxBookmarkStore.clear()
+                inboxDisplayName = nil
+                alertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func retrieveInbox() {
+        guard InboxBookmarkStore.hasBookmark else {
+            alertMessage = "Zuerst Inbox verbinden…"
+            return
+        }
+        do {
+            try InboxBookmarkStore.withResolvedURL { url in
+                let items = try InboxBookmarkStore.readItems(from: url)
+                guard !items.isEmpty else {
+                    alertMessage = InboxParser.retrieveConfirmation(addedCount: 0)
+                    return
+                }
+                let added = store.addItems(fromSpeech: InboxParser.speechText(from: items))
+                try InboxBookmarkStore.rewriteEmpty(url: url)
+                alertMessage = InboxParser.retrieveConfirmation(addedCount: added)
+            }
+        } catch {
+            if let inboxError = error as? InboxBookmarkError, inboxError == .stale {
+                InboxBookmarkStore.clear()
+                inboxDisplayName = nil
+            }
             alertMessage = error.localizedDescription
         }
     }
