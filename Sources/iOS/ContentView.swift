@@ -41,7 +41,7 @@ struct ContentView: View {
                 }
             }
             .background(theme.paper)
-            .navigationTitle("Einkaufsliste")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .safeAreaInset(edge: .bottom, spacing: 0) { addBar }
@@ -307,6 +307,7 @@ struct ContentView: View {
                 }
             } label: {
                 Text(store.state.currentStore.name)
+                    .einkaufToolbarChrome()
             }
             .accessibilityLabel("Laden")
         }
@@ -315,6 +316,7 @@ struct ContentView: View {
                 hideCompleted.toggle()
             } label: {
                 Image(systemName: hideCompleted ? "eye.slash" : "eye")
+                    .einkaufToolbarChrome()
             }
             .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
         }
@@ -325,6 +327,7 @@ struct ContentView: View {
                 }
                 store.toggleWalkMode()
             }
+            .einkaufToolbarChrome()
             .accessibilityLabel(store.walkMode ? "Edit" : "Geh-Modus")
             .accessibilityAddTraits(store.walkMode ? .isSelected : [])
         }
@@ -390,6 +393,7 @@ struct ContentView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
+                    .einkaufToolbarChrome()
             }
             .accessibilityLabel("Mehr")
         }

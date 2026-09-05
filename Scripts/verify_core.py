@@ -417,6 +417,12 @@ def test_sources() -> None:
         fail("ContentView store selection must be a Menu of store buttons")
     if "checkmark" not in store_menu:
         fail("ContentView store Menu must checkmark the selected store")
+    if '.navigationTitle("Einkaufsliste")' in content:
+        fail("ContentView must not show Einkaufsliste as a navigation title")
+    if '.navigationTitle("")' not in content:
+        fail("ContentView must use an empty navigation title")
+    if "einkaufToolbarChrome" not in content:
+        fail("ContentView toolbar must use compact einkaufToolbarChrome")
     leading = content[content.find("placement: .topBarLeading"):content.find("placement: .topBarTrailing")]
     if 'accessibilityLabel("Laden")' not in leading:
         fail("store Menu must stay topBarLeading")
@@ -490,8 +496,14 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 61" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 61 / CURRENT_PROJECT_VERSION")
+    if "Build 62" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 62 / CURRENT_PROJECT_VERSION")
+    if "Titel **Einkaufsliste** (inline)" in desc:
+        fail("Description.md must not document Einkaufsliste as iPhone nav title")
+    if "Titel **To-Do** (inline)" in desc:
+        fail("Description.md must not document To-Do as iPhone nav title")
+    if "einkaufToolbarChrome" not in desc:
+        fail("Description.md must document compact einkaufToolbarChrome")
     if "To-Do Backup" not in desc:
         fail("Description.md must document Einstellungen To-Do Backup")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
@@ -991,8 +1003,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 61" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 61")
+    if "CURRENT_PROJECT_VERSION = 62" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 62")
+    if "CURRENT_PROJECT_VERSION = 61" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 61 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 60" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 60 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 59" in pbx:
@@ -1100,8 +1114,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 61" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 61")
+    if "CURRENT_PROJECT_VERSION: 62" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 62")
+    if "CURRENT_PROJECT_VERSION: 61" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 61 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 60" in yml:
         fail("stale CURRENT_PROJECT_VERSION 60 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 59" in yml:
@@ -1238,6 +1254,8 @@ def test_sources() -> None:
     for token in ("0xF3EEE4", "0x1C1814", "0x9C3424", "0x2A5564", "0xD2C8B8", "0x14110E", "0xE07060", "0xF0F4FF", "0x2060DF"):
         if token not in theme:
             fail(f"theme missing {token}")
+    if "func einkaufToolbarChrome" not in theme or ".subheadline" not in theme:
+        fail("Theme must expose compact einkaufToolbarChrome (.subheadline)")
     share = (ROOT / "Sources/Shared/BackupShare.swift").read_text()
     if "yyyyMMdd_HHmm" not in share:
         fail("BackupShare missing stamped filename")
@@ -1417,8 +1435,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 61") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 61")
+    if pbx.count("CURRENT_PROJECT_VERSION = 62") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 62")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2111,6 +2129,13 @@ def test_todo_store() -> None:
         fail("TodoImport must expose offer for Settings and To-Do overflow")
     if "NavigationStack" not in todo_ui:
         fail("TodoListView needs its own NavigationStack")
+    todo_chrome = extract_some_view(todo_ui, "chrome")
+    if '.navigationTitle("To-Do")' in todo_chrome or '.navigationTitle("To Do")' in todo_chrome:
+        fail("TodoListView list chrome must not show To-Do as a navigation title")
+    if '.navigationTitle("")' not in todo_chrome:
+        fail("TodoListView list chrome must use an empty navigation title")
+    if "einkaufToolbarChrome" not in todo_ui:
+        fail("TodoListView toolbar must use compact einkaufToolbarChrome")
     if "Hinzufügen" not in todo_ui or "Neue Aufgabe" not in todo_ui:
         fail("TodoListView must add tasks via Hinzufügen")
     if "onDelete" not in todo_ui:
@@ -2317,6 +2342,8 @@ def test_todo_store() -> None:
         fail("TodoIntegration.md must mark To-Do import revision floor at Build 57")
     if "erledigt (Build 58)" not in plan or "reopen #" not in plan:
         fail("TodoIntegration.md must mark #uid / reopen pills at Build 58")
+    if "erledigt (Build 62)" not in plan or "einkaufToolbarChrome" not in plan:
+        fail("TodoIntegration.md must mark compact iPhone nav chrome at Build 62")
     if "previousLocalRevision" not in store:
         fail("TodoStore.applyImported must capture previousLocalRevision before mutating")
     if "max(previousLocalRevision, incoming.revision, state.revision) + 1" not in store:

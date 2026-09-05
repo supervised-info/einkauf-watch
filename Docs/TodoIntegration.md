@@ -1,6 +1,6 @@
 # To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-04, Build 58. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). **Einstellungen** hat To-Do-JSON-Backup (Import/Export/Teilen). Import hebt `revision` analog Einkauf. iPhone-Zeile zeigt `#uid` Badge + reopen-Pills wie HTML. `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels und Listenfilter. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
+Stand: 2026-09-05, Build 62. Phasen 1–10 **geliefert** (MD/CSV volle Liste, benannte Listen). **Einstellungen** hat To-Do-JSON-Backup (Import/Export/Teilen). Import hebt `revision` analog Einkauf. iPhone-Zeile zeigt `#uid` Badge + reopen-Pills wie HTML. iPhone-Listen ohne großen Nav-Titel, Toolbar kompakt (`einkaufToolbarChrome`). `Description.md` beschreibt den ausgelieferten Stand inkl. **Edit**-Labels, Listenfilter und Chrome (Build 62). HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen bleiben die Wahrheit. HTML-PWA [todo](https://supervised-info.github.io/todo/) ist die Produktreferenz für Task-Shape und JSON-Brücke; natives To-Do-Verhalten steht in `Description.md`.
 
@@ -24,7 +24,7 @@ Nicht das Ziel: eine zweite App, ein zweites Bundle, ein zweites App Group, oder
 |---|---|
 | HTML-PWA | [todo](https://supervised-info.github.io/todo/) |
 | Spec | Pages-Repo `supervised-info/supervised-info.github.io`, Datei [`todo/Description_index.md`](https://github.com/supervised-info/supervised-info.github.io/blob/main/todo/Description_index.md) |
-| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 58) |
+| Native Einkauf + To-Do | dieses Repo, `Description.md` (gelieferter Stand, Build 62) |
 
 Native scrapt die Website nicht. Brücke ist eine **eigene** JSON-Datei (siehe Backup), analog zur Einkauf-Brücke `kind: "einkauf-backup"`.
 
@@ -108,7 +108,7 @@ EinkaufApp
   TodoStore
   TabView
     Tab 1 „Einkauf“ → ContentView / EinkaufRoot
-    Tab 2 „To-Do“   → TodoListView (eigene NavigationStack)
+    Tab 2 „To-Do“   → TodoListView (eigene NavigationStack, kein Nav-Titel)
 ```
 
 Tab-Labels **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`. Einkaufs-Toolbar, Overflow, Einstellungen, Add-Leiste bleiben **im Einkaufs-Tab**. To-Do hat ein **eigenes** Overflow (Import/Export/Liste teilen), kein gemeinsames „…“ das beide Domains anfasst. **Einstellungen** (`SettingsSheet`, geöffnet vom Einkauf-**…**) hat zusätzlich die Sektion **To-Do Backup**: JSON **Backup importieren…** / **exportieren…** / **teilen** über `TodoStore` (`TodoImport.offer` / `importAny`). MD/CSV bleiben nur im To-Do-**…**. Einkauf-JSON wird dort abgelehnt, nie in `ShoppingStore` geschrieben.
@@ -408,6 +408,13 @@ iPhone-Zeile wie HTML-Creme: `#uid` Badge (muted capsule, `theme.paper3` / `them
 
 - Build 58
 
+### iPhone-Nav ohne Listen-Titel, Toolbar kompakt — erledigt (Build 62)
+
+- `TodoListView` / `ContentView`: `.navigationTitle("")` + `.inline` — die Tabs **Einkauf | To-Do** reichen, kein zentriertes „To-Do“ / „Einkaufsliste“
+- Toolbar-Labels eine Stufe kleiner (`einkaufToolbarChrome`, `.subheadline` + `.imageScale(.medium)`): Liste, Auge, **Edit**, Sort, **…**
+- Sheets **Aufgabe** / **Listen** behalten ihren Titel. Listenzeilen und Abteilungsüberschriften unverändert
+- Build 62
+
 ---
 
 ## Historisch: Non-Goals für Phase 3
@@ -497,3 +504,4 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] To-Do-Import: `revision`-Floor `max(lokal, import) + 1` (Watch-Sync überschreibt nicht), Build 57.
 - [x] Zeile zeigt `completedDate` als „geschlossen …“ (iPhone, Watch, PDF-Meta), Build 57.
 - [x] iPhone-Zeile `#uid` Badge + reopen-Pills `von #` / `reopen #` wie HTML; Watch kompaktes `#uid`, Build 58.
+- [x] iPhone-Nav ohne Listen-Titel, Toolbar kompakt (`einkaufToolbarChrome`), Build 62.

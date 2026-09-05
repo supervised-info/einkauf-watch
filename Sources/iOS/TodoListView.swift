@@ -82,7 +82,7 @@ struct TodoListView: View {
     private var chrome: some View {
         mainContent
             .background(theme.paper)
-            .navigationTitle("To-Do")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .safeAreaInset(edge: .top, spacing: 0) { searchBar }
@@ -346,6 +346,7 @@ struct TodoListView: View {
             } label: {
                 Image(systemName: "magnifyingglass")
                     .symbolVariant(isSearching || !searchQuery.isEmpty ? .fill : .none)
+                    .einkaufToolbarChrome()
             }
             .accessibilityLabel(isSearching ? "Suche schließen" : "Suche")
         }
@@ -357,6 +358,7 @@ struct TodoListView: View {
                 showCompleted.toggle()
             } label: {
                 Image(systemName: showCompleted ? "eye" : "eye.slash")
+                    .einkaufToolbarChrome()
             }
             .accessibilityLabel(showCompleted ? "Abgeschlossene ausblenden" : "Abgeschlossene einblenden")
         }
@@ -364,6 +366,7 @@ struct TodoListView: View {
             Button(isEditing ? "Fertig" : "Edit") {
                 isEditing.toggle()
             }
+            .einkaufToolbarChrome()
             .accessibilityLabel(isEditing ? "Fertig" : "Edit")
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -409,6 +412,7 @@ struct TodoListView: View {
                 Image(systemName: "list.bullet")
                 Text(currentListTitle)
             }
+            .einkaufToolbarChrome()
         }
         .accessibilityLabel("Liste")
         .accessibilityValue("\(currentListTitle), \(progressLabel)")
@@ -423,6 +427,7 @@ struct TodoListView: View {
             }
         } label: {
             Image(systemName: "arrow.up.arrow.down")
+                .einkaufToolbarChrome()
         }
         .accessibilityLabel("Sortierung")
     }
@@ -458,6 +463,7 @@ struct TodoListView: View {
             }
         } label: {
             Image(systemName: "ellipsis.circle")
+                .einkaufToolbarChrome()
         }
         .accessibilityLabel("Mehr")
     }
