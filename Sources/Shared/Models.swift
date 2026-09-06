@@ -78,12 +78,12 @@ enum ItemUrgency: String, Equatable, Codable, CaseIterable, Sendable {
         }
     }
 
-    /// Chip-Icon: eilig ⚡, normal leer (Rahmen ohne Glyphe), später ↓ (U+2193).
-    /// Der leere Zustand ist der umrandete Chip, nicht ein Kreis- oder Strich-Zeichen.
+    /// Chip-Icon: eilig ⚡, normal ↔ (U+2194), später ↓ (U+2193).
+    /// `normal` ist das eine Zeichen ↔ — nicht leer, nicht `<->`, nicht ○/–.
     var symbol: String {
         switch self {
         case .urgent: return "⚡"
-        case .normal: return ""
+        case .normal: return "\u{2194}"
         case .later: return "\u{2193}"
         }
     }
