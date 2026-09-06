@@ -2340,17 +2340,17 @@ def test_todo_store() -> None:
     if b"Prio A" not in csv_fix or b"## Abgeschlossen" not in csv_fix:
         fail("todo-liste.csv fixture must have HTML CSV header and Abgeschlossen row")
     plan = (ROOT / "Docs/TodoIntegration.md").read_text()
-    if "Phase 8" not in plan or "erledigt (Build 53)" not in plan:
-        fail("TodoIntegration.md must mark Phase 8 done at Build 53")
-    if "erledigt (Build 55)" not in plan or "listId" not in plan:
+    if "8 MD/CSV" not in plan or "| 53 |" not in plan:
+        fail("TodoIntegration.md must mark Phase 8 MD/CSV at Build 53")
+    if "10 Listen" not in plan or "listId" not in plan:
         fail("TodoIntegration.md must mark Phase 10 Listen done at Build 55")
-    if "erledigt (Build 56)" not in plan or "To-Do Backup" not in plan:
+    if "| 56 |" not in plan or "To-Do Backup" not in plan:
         fail("TodoIntegration.md must mark Einstellungen To-Do Backup done at Build 56")
-    if "erledigt (Build 57)" not in plan or "revision = max" not in plan:
+    if "| 57 |" not in plan or "revision = max" not in plan:
         fail("TodoIntegration.md must mark To-Do import revision floor at Build 57")
-    if "erledigt (Build 58)" not in plan or "reopen #" not in plan:
+    if "reopen-Pills" not in plan or "| 58 |" not in plan:
         fail("TodoIntegration.md must mark #uid / reopen pills at Build 58")
-    if "erledigt (Build 62)" not in plan or "einkaufToolbarChrome" not in plan:
+    if "iPhone-Nav kompakt" not in plan or "einkaufToolbarChrome" not in plan:
         fail("TodoIntegration.md must mark compact iPhone nav chrome at Build 62")
     if "previousLocalRevision" not in store:
         fail("TodoStore.applyImported must capture previousLocalRevision before mutating")

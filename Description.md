@@ -422,7 +422,7 @@ Alles Vorgelesene ist weiterhin **noch nicht abgeholt**, bis das Haupt-iPhone **
 - [x] **Phase 1** — Spec nur hier in `Description.md` (kein `Docs/InboxIntegration.md`, kein Build-Bump).
 - [x] **Phase 2** — App-UI auf dem Haupt-iPhone (Build 59): **Inbox verbinden…** (Dateien-Picker → `inbox.txt`). **Inbox abrufen** (Build 60): Auswahl-Sheet, ausgewählte → `addItems(fromSpeech:)`, Abgewählte bleiben in der Datei. **Löschen** pro Zeile ohne Import (Build 61). Nur Einkauf-Tab. Parser-Grundtests.
 - [x] **Phase 3** — zwei Kurzbefehle **Einkauf-Inbox eintragen** / **Einkauf-Inbox vorlesen** (Rezept überarbeitet für iOS 26 / echtes Gerät); Anhängen per **An Textdatei anhängen**; Split in der App (`SpeechItemSplitter`). Rezept in dieser Datei unter **Kurzbefehl (Phase 3)**. Kein Build-Bump, keine `.shortcut`-Binärdatei.
-- [ ] **Phase 4 (optional, nicht v1)** — concurrent Append während **Inbox abrufen**, Bookmark ungültig. Parser-Grundtests (leer, Kommentare, Items, BOM) liegen in Phase 2.
+- [ ] **Phase 4** (optional, nicht v1) — concurrent Append während **Inbox abrufen**, Bookmark ungültig. Parser-Grundtests (leer, Kommentare, Items, BOM) liegen in Phase 2.
 
 ## Abteilungen `Department` (IDs nicht ändern)
 
