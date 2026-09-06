@@ -203,42 +203,55 @@ struct ItemImportedMark: View {
     }
 }
 
-/// Tippen: urgent → normal → later → urgent. Unabhängig vom Import-Marker.
+/// iPhone: Tippen wechselt urgent → normal → later → urgent.
+/// Watch: `action == nil` — nur Anzeige, kein Zyklus.
 /// `normal` ist ein leerer umrandeter Chip (nur Rahmen, keine Glyphe innen).
+/// `Color.clear` bekommt eine feste Seite plus `fixedSize`, sonst streckt SwiftUI eine breite Pille.
 struct ItemUrgencyChip: View {
     var urgency: ItemUrgency
     var theme: ThemeTokens
     var compact: Bool = false
-    var action: () -> Void
+    var action: (() -> Void)? = nil
 
     private var minSide: CGFloat { compact ? 22 : 26 }
 
     var body: some View {
-        Button(action: action) {
-            Group {
-                if urgency.symbol.isEmpty {
-                    Color.clear
-                } else {
-                    Text(urgency.symbol)
-                        .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
-                        .foregroundStyle(urgency == .urgent ? theme.oxide : theme.muted)
-                }
+        Group {
+            if let action {
+                Button(action: action) { chipLabel }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Tippen wechselt eilig, normal, später")
+            } else {
+                chipLabel
             }
-            .frame(minWidth: minSide, minHeight: minSide)
-            .padding(.horizontal, compact ? 4 : 6)
-            .background(urgency.symbol.isEmpty ? Color.clear : theme.paper3)
-            .clipShape(Capsule())
-            .overlay {
-                if urgency.symbol.isEmpty {
-                    Capsule()
-                        .strokeBorder(theme.muted, lineWidth: compact ? 1.25 : 1.5)
-                }
-            }
-            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .fixedSize()
         .accessibilityLabel("Dringlichkeit \(urgency.label)")
-        .accessibilityHint("Tippen wechselt eilig, normal, später")
+    }
+
+    private var chipLabel: some View {
+        Group {
+            if urgency.symbol.isEmpty {
+                Color.clear
+                    .frame(width: minSide, height: minSide)
+            } else {
+                Text(urgency.symbol)
+                    .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+                    .foregroundStyle(urgency == .urgent ? theme.oxide : theme.muted)
+            }
+        }
+        .frame(minWidth: minSide, minHeight: minSide)
+        .fixedSize()
+        .padding(.horizontal, compact ? 4 : 6)
+        .background(urgency.symbol.isEmpty ? Color.clear : theme.paper3)
+        .clipShape(Capsule())
+        .overlay {
+            if urgency.symbol.isEmpty {
+                Capsule()
+                    .strokeBorder(theme.muted, lineWidth: compact ? 1.25 : 1.5)
+            }
+        }
+        .contentShape(Capsule())
     }
 }
 

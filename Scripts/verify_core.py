@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 64" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 64 / CURRENT_PROJECT_VERSION")
+    if "Build 65" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 65 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1005,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 64" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 64")
+    if "CURRENT_PROJECT_VERSION = 65" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 65")
+    if "CURRENT_PROJECT_VERSION = 64" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 64 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 63" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 63 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 62" in pbx:
@@ -1120,8 +1122,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 64" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 64")
+    if "CURRENT_PROJECT_VERSION: 65" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 65")
+    if "CURRENT_PROJECT_VERSION: 64" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 64 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 63" in yml:
         fail("stale CURRENT_PROJECT_VERSION 63 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 62" in yml:
@@ -1445,8 +1449,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 64") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 64")
+    if pbx.count("CURRENT_PROJECT_VERSION = 65") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 65")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2996,6 +3000,12 @@ def test_item_imported_urgency() -> None:
         fail("empty outlined urgency chip must keep a tappable contentShape")
     if "minWidth" not in chip:
         fail("urgency chip must keep a minWidth for layout stability")
+    if "fixedSize()" not in chip:
+        fail("urgency chip must use fixedSize so Color.clear does not stretch into a wide pill")
+    if ".frame(width: minSide, height: minSide)" not in chip:
+        fail("normal outlined chip must pin Color.clear to the same compact side as ⚡/↓")
+    if "(() -> Void)?" not in chip:
+        fail("ItemUrgencyChip action must be optional so Watch can omit the tap")
     if "○" in chip or "–" in chip or "·" in chip or "◌" in chip:
         fail("ItemUrgencyChip must not draw ○, –, ·, or ◌")
     if "theme.slate" not in theme:
@@ -3023,8 +3033,8 @@ def test_item_imported_urgency() -> None:
 
     if "ItemImportedMark" not in watch or "ItemUrgencyChip" not in watch:
         fail("Watch walk mode must show import mark and urgency chip")
-    if "cycleItemUrgency" not in watch:
-        fail("Watch must cycle urgency on chip tap")
+    if "cycleItemUrgency" in watch:
+        fail("Watch urgency chip must be display-only (no cycleItemUrgency)")
     item_start = watch.find("case .item")
     watch_item = watch[item_start:watch.find("listRowInsets", item_start)]
     if watch_item.find("checkmark.circle") > watch_item.find("ItemImportedMark"):
@@ -3060,6 +3070,22 @@ def test_item_imported_urgency() -> None:
         fail("Description.md must document normal as an outlined empty chip")
     if "nicht ○" not in artikel and "kein ○" not in artikel:
         fail("Description.md must reject circle glyph ○ for normal")
+    if "kompakt" not in artikel:
+        fail("Description.md must say the normal chip is compact like ⚡/↓")
+    if "nur iPhone" not in artikel:
+        fail("Description.md Artikel-Modell must limit urgency cycling to iPhone")
+    geh = desc[desc.find("### Geh-Modus"):desc.find("### Edit")]
+    if "kompakt" not in geh:
+        fail("Description.md Geh-Modus must say the normal chip is compact")
+    if "nur iPhone" not in geh:
+        fail("Description.md Geh-Modus must limit chip tap to iPhone")
+    watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
+    if "Tipp wechselt" in watch_sec:
+        fail("Description.md Watch must not say tap cycles urgency")
+    if "nur Anzeige" not in watch_sec:
+        fail("Description.md Watch must say urgency chip is display-only")
+    if "kein `cycleItemUrgency`" not in watch_sec and "kein cycleItemUrgency" not in watch_sec:
+        fail("Description.md Watch must forbid cycleItemUrgency")
     if "testUrgencyChipSymbols" not in tests:
         fail("tests must cover urgency chip symbols")
     if "imported: true" not in desc:
