@@ -88,7 +88,7 @@ struct TodoComplicationView: View {
 
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(TodoComplicationSnapshot.labelText)
+            Text(entry.snapshot.labelText)
                 .font(.headline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -110,7 +110,7 @@ struct TodoComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Ecke: offene Anzahl größer als das Label **To Do** (~19pt / ~11pt).
+    /// Ecke: offene Anzahl größer als der Listenname (~19pt / ~11pt).
     private var corner: some View {
         Text(entry.snapshot.compactCountText)
             .font(.system(size: 19, weight: .semibold, design: .rounded))
@@ -119,9 +119,10 @@ struct TodoComplicationView: View {
             .minimumScaleFactor(0.5)
             .widgetAccentable()
             .widgetLabel {
-                Text(TodoComplicationSnapshot.labelText)
+                Text(entry.snapshot.labelText)
                     .font(.system(size: 11, weight: .regular, design: .rounded))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
     }
 }
@@ -130,7 +131,7 @@ struct TodoComplicationView: View {
     TodoComplication()
 } timeline: {
     TodoTimelineEntry(date: .now, snapshot: .placeholder)
-    TodoTimelineEntry(date: .now, snapshot: TodoComplicationSnapshot(openCount: 0, doneCount: 0, total: 0, isEmpty: true, progress: 0))
+    TodoTimelineEntry(date: .now, snapshot: TodoComplicationSnapshot(labelText: TodoComplicationSnapshot.fallbackLabel, openCount: 0, doneCount: 0, total: 0, isEmpty: true, progress: 0))
 }
 
 #Preview(as: .accessoryCorner) {

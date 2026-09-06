@@ -93,7 +93,7 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Rechteck: kurzer Ladenname plus offene Anzahl bzw. „erledigt“.
+    /// Rechteck: fester Titel **Einkauf** plus offene Anzahl bzw. „erledigt“.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(entry.snapshot.storeName)
@@ -110,7 +110,7 @@ struct EinkaufComplicationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Inline-Zeile: Laden + Zähler, sonst nur offene Anzahl bzw. „erledigt“.
+    /// Inline-Zeile: **Einkauf** + Zähler, sonst nur offene Anzahl bzw. „erledigt“.
     private var inline: some View {
         ViewThatFits(in: .horizontal) {
             Text(entry.snapshot.inlineText)
@@ -119,7 +119,7 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Ecke: Zähler größer als der gebogene Ladenname (explizite pt-Größen, kein `.title2` → sonst „!“).
+    /// Ecke: Zähler größer als der gebogene Titel **Einkauf** (explizite pt-Größen, kein `.title2` → sonst „!“).
     /// `minimumScaleFactor` hält „erledigt“ in der Ecke lesbar.
     private var corner: some View {
         Text(entry.snapshot.compactCountText)
@@ -140,7 +140,7 @@ struct EinkaufComplicationView: View {
     EinkaufComplication()
 } timeline: {
     EinkaufTimelineEntry(date: .now, snapshot: .placeholder)
-    EinkaufTimelineEntry(date: .now, snapshot: ComplicationSnapshot(progressLabel: "0/0/0", storeName: "Edeka", isEmpty: true))
+    EinkaufTimelineEntry(date: .now, snapshot: ComplicationSnapshot(progressLabel: "0/0/0", storeName: ComplicationSnapshot.titleLabel, isEmpty: true))
 }
 
 #Preview(as: .accessoryRectangular) {

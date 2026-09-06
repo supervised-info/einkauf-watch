@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 70" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 70 / CURRENT_PROJECT_VERSION")
+    if "Build 71" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 71 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1005,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 70" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 70")
+    if "CURRENT_PROJECT_VERSION = 71" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 71")
+    if "CURRENT_PROJECT_VERSION = 70" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 70 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 69" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 69 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 68" in pbx:
@@ -1132,8 +1134,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 70" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 70")
+    if "CURRENT_PROJECT_VERSION: 71" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 71")
+    if "CURRENT_PROJECT_VERSION: 70" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 70 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 69" in yml:
         fail("stale CURRENT_PROJECT_VERSION 69 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 68" in yml:
@@ -1400,8 +1404,12 @@ def test_watch_complication() -> None:
         fail("ComplicationSnapshot missing widgetKind")
     if "func make(from state: AppState)" not in models:
         fail("ComplicationSnapshot must be built from AppState")
-    if "clippedWatchStoreName" not in models or "storeName" not in models:
-        fail("ComplicationSnapshot must reuse clipped watch store name")
+    if 'titleLabel = "Einkauf"' not in models:
+        fail("ComplicationSnapshot must use fixed title Einkauf")
+    if "storeName: titleLabel" not in models and 'storeName: Self.titleLabel' not in models:
+        fail("ComplicationSnapshot.storeName must be the fixed title, not the store")
+    if "clippedWatchStoreName(state.currentStore.name)" in models.split("struct ComplicationSnapshot", 1)[-1].split("struct HomeWidgetSnapshot", 1)[0]:
+        fail("ComplicationSnapshot must not clip the current store name")
     if "group.net.tschelle.einkauf" not in persist:
         fail("Persistence must use App Group for Watch widget")
     if "NSUbiquitous" in persist or "ubiquityContainer" in persist or "CKContainer" in persist:
@@ -1439,6 +1447,10 @@ def test_watch_complication() -> None:
     comp_sec = desc[desc.find("### Watch-Complication"):desc.find("### iPhone-Widget")]
     if "compactCountText" not in comp_sec:
         fail("Description.md complication must name compactCountText")
+    if "titleLabel" not in comp_sec or "Einkauf" not in comp_sec:
+        fail("Description.md complication must document the fixed Einkauf title")
+    if "Listenname" not in comp_sec or "Alle" not in comp_sec:
+        fail("Description.md To-Do complication must document list name + Alle fallback")
     if "erledigt" not in comp_sec:
         fail("Description.md complication must document erledigt when open is 0")
     if "19pt" not in comp_sec and "18–20pt" not in comp_sec and "18-20pt" not in comp_sec:
@@ -1469,8 +1481,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 70") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 70")
+    if pbx.count("CURRENT_PROJECT_VERSION = 71") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 71")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1509,8 +1521,12 @@ def test_watch_complication() -> None:
         fail("TodoComplication must live in WatchWidgets, separate from EinkaufComplication")
     if "TodoProgress" not in todo_models:
         fail("TodoComplicationSnapshot widgetKind must be TodoProgress")
-    if 'labelText = "To Do"' not in todo_models:
-        fail("To-Do complication label must be exactly To Do")
+    if "TodoListFilter.title" not in todo_models:
+        fail("To-Do complication label must resolve the current list name")
+    if "fallbackLabel" not in todo_models or "allTitle" not in todo_models:
+        fail("To-Do complication must fall back to Alle when no list is selected")
+    if 'labelText = "To Do"' in todo_models:
+        fail("To-Do complication label must not stay a static To Do")
     if "einkauf://todo" not in todo_models:
         fail("To-Do complication openURL must be einkauf://todo")
     if "TodoPersistence.load" not in todo_widget:
@@ -1533,8 +1549,11 @@ def test_watch_complication() -> None:
     assert_corner_count_larger_than_label(todo_corner)
     if "Gauge" not in todo_circular:
         fail("To-Do circular must use Gauge")
-    if "TodoComplicationSnapshot.labelText" not in todo_corner and '"To Do"' not in todo_corner:
-        fail("To-Do corner widgetLabel must be To Do")
+    if "entry.snapshot.labelText" not in todo_corner:
+        fail("To-Do corner widgetLabel must show the current list name")
+    todo_rect = extract_some_view(todo_widget, "rectangular")
+    if "entry.snapshot.labelText" not in todo_rect:
+        fail("To-Do rectangular must show the current list name")
     print("watch complication: ok")
 
 

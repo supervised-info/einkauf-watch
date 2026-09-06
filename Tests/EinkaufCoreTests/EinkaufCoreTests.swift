@@ -448,12 +448,13 @@ final class ComplicationSnapshotTests: XCTestCase {
     func testEmptyListIsZeroOverZeroNotHidden() {
         let snap = ComplicationSnapshot.make(from: .seed)
         XCTAssertEqual(snap.progressLabel, "0/0/0")
-        XCTAssertEqual(snap.storeName, "Edeka")
+        XCTAssertEqual(snap.storeName, ComplicationSnapshot.titleLabel)
+        XCTAssertEqual(snap.storeName, "Einkauf")
         XCTAssertTrue(snap.isEmpty)
         XCTAssertEqual(snap.openCount, 0)
         XCTAssertEqual(snap.compactCountText, "erledigt")
-        XCTAssertEqual(snap.inlineText, "Edeka  erledigt")
-        XCTAssertEqual(snap.accessibilityLabel, "Edeka, Liste erledigt")
+        XCTAssertEqual(snap.inlineText, "Einkauf  erledigt")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, Liste erledigt")
         XCTAssertEqual(snap.progress, 0, accuracy: 0.0001)
         XCTAssertEqual(snap.openText, "0")
         XCTAssertEqual(snap.doneText, "0")
@@ -481,7 +482,7 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(state.complicationSnapshot.progressLabel, "0/2/2")
         XCTAssertEqual(state.complicationSnapshot.openText, "0")
         XCTAssertEqual(state.complicationSnapshot.compactCountText, "erledigt")
-        XCTAssertEqual(state.complicationSnapshot.accessibilityLabel, "Edeka, Liste erledigt")
+        XCTAssertEqual(state.complicationSnapshot.accessibilityLabel, "Einkauf, Liste erledigt")
         XCTAssertEqual(state.complicationSnapshot.doneText, "2")
         XCTAssertEqual(state.complicationSnapshot.totalText, "2")
     }
@@ -496,25 +497,26 @@ final class ComplicationSnapshotTests: XCTestCase {
         let snap = state.complicationSnapshot
         XCTAssertEqual(snap.progressLabel, state.progressLabel)
         XCTAssertEqual(snap.progressLabel, "1/2/3")
-        XCTAssertEqual(snap.storeName, AppState.clippedWatchStoreName(state.currentStore.name))
+        XCTAssertEqual(snap.storeName, ComplicationSnapshot.titleLabel)
         XCTAssertFalse(snap.isEmpty)
         XCTAssertEqual(snap.openCount, 1)
         XCTAssertEqual(snap.compactCountText, "1")
-        XCTAssertEqual(snap.inlineText, "Edeka  1")
-        XCTAssertEqual(snap.accessibilityLabel, "Edeka, 1 offen")
+        XCTAssertEqual(snap.inlineText, "Einkauf  1")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 1 offen")
         XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
         XCTAssertFalse(snap.inlineText.contains(snap.progressLabel))
     }
 
-    func testStoreChangeAndClippedName() {
+    func testStoreChangeDoesNotChangeComplicationTitle() {
         var state = AppState.seed
         state.currentStoreId = "rewe"
-        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Rewe")
+        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Einkauf")
         state.currentStoreId = "eigenes"
-        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Eigen…")
+        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Einkauf")
         state.stores.append(Store(id: "lang", name: "Wochenmarkt Neustadt", layout: ["vor", "sonstiges", "nach"], builtin: false))
         state.currentStoreId = "lang"
-        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, "Woche…")
+        XCTAssertEqual(ComplicationSnapshot.make(from: state).storeName, ComplicationSnapshot.titleLabel)
+        XCTAssertEqual(AppState.clippedWatchStoreName(state.currentStore.name), "Woche…")
     }
 
     func testPlaceholderSplitsThreeParts() {
@@ -535,18 +537,18 @@ final class ComplicationSnapshotTests: XCTestCase {
         var snap = state.complicationSnapshot
         XCTAssertEqual(snap.progressLabel, "2/0/2")
         XCTAssertEqual(snap.compactCountText, "2")
-        XCTAssertEqual(snap.accessibilityLabel, "Edeka, 2 offen")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 2 offen")
         state.items[0].done = true
         snap = state.complicationSnapshot
         XCTAssertEqual(snap.progressLabel, "1/1/2")
         XCTAssertEqual(snap.compactCountText, "1")
-        XCTAssertEqual(snap.inlineText, "Edeka  1")
+        XCTAssertEqual(snap.inlineText, "Einkauf  1")
         state.items[1].done = true
         snap = state.complicationSnapshot
         XCTAssertEqual(snap.progressLabel, "0/2/2")
         XCTAssertEqual(snap.compactCountText, "erledigt")
-        XCTAssertEqual(snap.inlineText, "Edeka  erledigt")
-        XCTAssertEqual(snap.accessibilityLabel, "Edeka, Liste erledigt")
+        XCTAssertEqual(snap.inlineText, "Einkauf  erledigt")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, Liste erledigt")
     }
 
     func testWidgetKindIsStable() {
