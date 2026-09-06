@@ -492,6 +492,7 @@ enum TodoListFilter {
 /// Aktuelle Liste: iPhone `todo.iphone.currentListId` (Standard-UserDefaults, nicht Backup).
 /// Watch/Complication: App-Group `todo.currentListId`, gefüllt aus dem WC-Feld `currentListId`
 /// (nicht aus dem Todo-Snapshot — UI-Filter, kein `revision`-Bump).
+/// iPhone-Widget: App-Group-Spiegel derselben Wahl (`syncIphoneToAppGroup`).
 enum TodoCurrentList {
     static let iphoneDefaultsKey = TodoListFilter.iphoneDefaultsKey
     static let syncedDefaultsKey = TodoListFilter.syncedDefaultsKey
@@ -521,6 +522,26 @@ enum TodoCurrentList {
             return TodoListFilter.resolved(s)
         }
         return TodoListFilter.resolved(UserDefaults.standard.string(forKey: syncedDefaultsKey))
+    }
+
+    /// Widget-Prozess: App-Group `todo.iphone.currentListId`, sonst `todo.currentListId`.
+    /// Leere ID = **Alle**. Die Extension sieht die App-Standard-Defaults nicht.
+    static var iphoneWidgetId: String {
+        if let defaults = suiteDefaults, defaults.object(forKey: iphoneDefaultsKey) != nil {
+            return TodoListFilter.resolved(defaults.string(forKey: iphoneDefaultsKey))
+        }
+        if let defaults = suiteDefaults, defaults.object(forKey: syncedDefaultsKey) != nil {
+            return TodoListFilter.resolved(defaults.string(forKey: syncedDefaultsKey))
+        }
+        return payloadId
+    }
+
+    /// Spiegelt die iPhone-Listenwahl in die App-Group für Widget + Watch-Payload.
+    static func syncIphoneToAppGroup(_ raw: String? = nil) {
+        let value = raw.map(TodoListFilter.resolved) ?? payloadId
+        suiteDefaults?.set(value, forKey: iphoneDefaultsKey)
+        suiteDefaults?.set(value, forKey: syncedDefaultsKey)
+        suiteDefaults?.synchronize()
     }
 
     static func applyRemote(_ raw: String) {

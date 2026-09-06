@@ -8,16 +8,16 @@ struct EinkaufWidgets: WidgetBundle {
     }
 }
 
-/// Homescreen-Widget (iOS 17, nicht Watch, nicht Sperrbildschirm). Tippen öffnet die iPhone-App.
+/// Homescreen-Widget (iOS 17, nicht Watch, nicht Sperrbildschirm).
+/// Klein: zwei Zeilen `oo/xx/yy`. Mittel/Groß: Mini-Tabelle mit Spaltenköpfen.
 struct EinkaufHomeWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: HomeWidgetSnapshot.widgetKind, provider: EinkaufHomeTimelineProvider()) { entry in
             EinkaufHomeWidgetView(entry: entry)
-                .widgetURL(HomeWidgetSnapshot.openURL)
         }
         .configurationDisplayName("Einkauf")
-        .description("Laden und Fortschritt der Einkaufsliste, offen/erledigt/gesamt.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .description("Einkauf und To-Do: offen, erledigt, gesamt.")
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
@@ -42,8 +42,13 @@ struct EinkaufHomeTimelineProvider: TimelineProvider {
     }
 
     private func makeEntry() -> EinkaufHomeTimelineEntry {
-        let state = Persistence.load() ?? .seed
-        return EinkaufHomeTimelineEntry(date: Date(), snapshot: .make(from: state))
+        let einkauf = Persistence.load() ?? .seed
+        let todo = TodoPersistence.load() ?? .empty
+        let listId = TodoCurrentList.iphoneWidgetId
+        return EinkaufHomeTimelineEntry(
+            date: Date(),
+            snapshot: .make(from: einkauf, todo: todo, currentListId: listId)
+        )
     }
 }
 
@@ -54,52 +59,115 @@ struct EinkaufHomeWidgetView: View {
     var body: some View {
         Group {
             switch family {
-            case .systemMedium:
-                medium
+            case .systemMedium, .systemLarge:
+                table
             default:
                 small
+                    .widgetURL(HomeWidgetSnapshot.openURL)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .containerBackground(for: .widget) {
             Color.clear
         }
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(entry.snapshot.accessibilityLabel)
-        .accessibilityHint("Öffnet die Einkaufsliste")
+        .accessibilityHint(family == .systemSmall ? "Öffnet die Einkaufsliste" : "Öffnet Einkauf oder To-Do")
     }
 
-    /// Klein: Ladenname plus `oo/xx/yy`.
+    /// Klein: `Einkaufsliste: oo/xx/yy` (sonst `Einkauf`) und `To Do (<Liste>): oo/xx/yy`.
     private var small: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(entry.snapshot.storeName)
-                .font(.headline)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(entry.snapshot.progressLabel)
-                .font(.system(.title, design: .rounded).weight(.semibold))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.45)
-        }
-    }
-
-    /// Mittel: Laden, `oo/xx/yy`, danach die nächsten offenen Artikel in Geh-Modus-Reihenfolge.
-    private var medium: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(entry.snapshot.storeName)
-                .font(.headline)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            Text(entry.snapshot.progressLabel)
-                .font(.system(.title2, design: .rounded).weight(.semibold))
-                .monospacedDigit()
-                .lineLimit(1)
-            ForEach(Array(entry.snapshot.openItemNames.enumerated()), id: \.offset) { _, name in
-                Text(name)
-                    .font(.subheadline)
-                    .lineLimit(1)
+        VStack(alignment: .leading, spacing: 6) {
+            compactRow {
+                ViewThatFits(in: .horizontal) {
+                    Text("\(HomeWidgetSnapshot.einkaufLabel):")
+                    Text("\(HomeWidgetSnapshot.einkaufLabelCompact):")
+                }
+            } counts: {
+                Text(entry.snapshot.einkauf.progressLabel)
+            }
+            compactRow {
+                Text("\(entry.snapshot.todoRowLabel):")
+            } counts: {
+                Text(entry.snapshot.todo.progressLabel)
             }
         }
+    }
+
+    /// Mittel/Groß: dieselben zwei Domains, Spalten Offen | Erledigt | Gesamt.
+    private var table: some View {
+        VStack(alignment: .leading, spacing: family == .systemLarge ? 10 : 6) {
+            headerRow
+            Link(destination: HomeWidgetSnapshot.openURL) {
+                dataRow(label: HomeWidgetSnapshot.einkaufLabelCompact, counts: entry.snapshot.einkauf)
+            }
+            Link(destination: HomeWidgetSnapshot.todoURL) {
+                dataRow(label: entry.snapshot.todoRowLabel, counts: entry.snapshot.todo)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var headerRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            headerCell(HomeWidgetSnapshot.columnHeaders.0)
+            headerCell(HomeWidgetSnapshot.columnHeaders.1)
+            headerCell(HomeWidgetSnapshot.columnHeaders.2)
+        }
+    }
+
+    private func compactRow<Label: View, Counts: View>(
+        @ViewBuilder label: () -> Label,
+        @ViewBuilder counts: () -> Counts
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            label()
+                .font(.subheadline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            counts()
+                .font(.system(.headline, design: .rounded).weight(.semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+        }
+    }
+
+    private func dataRow(label: String, counts: HomeWidgetCounts) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(label)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            countCell(counts.open)
+            countCell(counts.done)
+            countCell(counts.total)
+        }
+    }
+
+    private func headerCell(_ title: String) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .frame(minWidth: columnWidth, alignment: .trailing)
+    }
+
+    private func countCell(_ value: Int) -> some View {
+        Text("\(value)")
+            .font(.system(.headline, design: .rounded).weight(.semibold))
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .frame(minWidth: columnWidth, alignment: .trailing)
+    }
+
+    private var columnWidth: CGFloat {
+        family == .systemLarge ? 64 : 52
     }
 }
 
@@ -107,10 +175,23 @@ struct EinkaufHomeWidgetView: View {
     EinkaufHomeWidget()
 } timeline: {
     EinkaufHomeTimelineEntry(date: .now, snapshot: .placeholder)
-    EinkaufHomeTimelineEntry(date: .now, snapshot: HomeWidgetSnapshot(progressLabel: "0/0/0", storeName: "Edeka", isEmpty: true, openItemNames: []))
+    EinkaufHomeTimelineEntry(
+        date: .now,
+        snapshot: HomeWidgetSnapshot(
+            einkauf: HomeWidgetCounts(open: 0, done: 0, total: 0),
+            todo: HomeWidgetCounts(open: 0, done: 0, total: 0),
+            todoListName: TodoListFilter.allTitle
+        )
+    )
 }
 
 #Preview(as: .systemMedium) {
+    EinkaufHomeWidget()
+} timeline: {
+    EinkaufHomeTimelineEntry(date: .now, snapshot: .placeholder)
+}
+
+#Preview(as: .systemLarge) {
     EinkaufHomeWidget()
 } timeline: {
     EinkaufHomeTimelineEntry(date: .now, snapshot: .placeholder)

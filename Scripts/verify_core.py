@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 66" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 66 / CURRENT_PROJECT_VERSION")
+    if "Build 67" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 67 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1005,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 66" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 66")
+    if "CURRENT_PROJECT_VERSION = 67" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 67")
+    if "CURRENT_PROJECT_VERSION = 66" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 66 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 65" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 65 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 64" in pbx:
@@ -1124,8 +1126,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 66" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 66")
+    if "CURRENT_PROJECT_VERSION: 67" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 67")
+    if "CURRENT_PROJECT_VERSION: 66" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 66 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 65" in yml:
         fail("stale CURRENT_PROJECT_VERSION 65 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 64" in yml:
@@ -1453,8 +1457,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 66") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 66")
+    if pbx.count("CURRENT_PROJECT_VERSION = 67") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 67")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1551,30 +1555,50 @@ def test_iphone_widget() -> None:
         fail("iPhone widget must not use ClockKit")
     if "WidgetKit" not in widget or "StaticConfiguration" not in widget:
         fail("iPhone widget must be WidgetKit StaticConfiguration")
-    for family in ("systemSmall", "systemMedium"):
+    for family in ("systemSmall", "systemMedium", "systemLarge"):
         if family not in widget:
             fail(f"iPhone widget missing family {family}")
     for family in ("accessoryCircular", "accessoryRectangular", "accessoryInline", "accessoryCorner"):
         if family in widget:
             fail(f"iPhone widget must not include Lock Screen/Watch family {family}")
-    if "systemLarge" in widget:
-        fail("iPhone widget must not add systemLarge unless asked")
     if "Picker" in widget:
         fail("iPhone widget must not have a store picker")
     if "widgetURL" not in widget:
         fail("iPhone widget tap must set widgetURL")
+    if "einkauf://todo" not in widget and "todoURL" not in widget:
+        fail("iPhone widget must deep-link To-Do via einkauf://todo")
+    if "Link(destination:" not in widget:
+        fail("medium/large widget rows must use Link tap targets")
     if "progressLabel" not in widget:
         fail("iPhone widget must show progressLabel oo/xx/yy")
-    if "openItemNames" not in widget:
-        fail("medium widget must list openItemNames")
+    if "Einkaufsliste" not in widget:
+        fail("small widget must prefer label Einkaufsliste")
+    if "To Do" not in widget:
+        fail("iPhone widget must label To Do")
+    if "Offen" not in widget or "Erledigt" not in widget or "Gesamt" not in widget:
+        fail("medium/large widget must show Offen / Erledigt / Gesamt headers")
+    if "TodoPersistence.load" not in widget:
+        fail("iPhone widget timeline must read TodoPersistence / todo-local.json")
+    if "iphoneWidgetId" not in widget:
+        fail("iPhone widget must filter To-Do via TodoCurrentList.iphoneWidgetId")
+    if "openItemNames" in widget:
+        fail("iPhone widget must not list next open shopping items")
     if "struct HomeWidgetSnapshot" not in models:
         fail("Models missing HomeWidgetSnapshot")
+    if "struct HomeWidgetCounts" not in models:
+        fail("Models missing HomeWidgetCounts")
     if "static let widgetKind" not in models or "EinkaufHome" not in models:
         fail("HomeWidgetSnapshot missing widgetKind EinkaufHome")
-    if "func make(from state: AppState)" not in models:
-        fail("HomeWidgetSnapshot must be built from AppState")
+    if "todoURL" not in models or "einkauf://todo" not in models:
+        fail("HomeWidgetSnapshot must expose todoURL einkauf://todo")
+    if "func make(" not in models or "currentListId" not in models:
+        fail("HomeWidgetSnapshot must be built from AppState + TodoState + currentListId")
     if "func openItemNames" not in models:
         fail("ListGrouping must expose openItemNames")
+    todo_models = (ROOT / "Sources/Shared/TodoModels.swift").read_text()
+    todo_store = (ROOT / "Sources/Shared/TodoStore.swift").read_text()
+    if "iphoneWidgetId" not in todo_models or "syncIphoneToAppGroup" not in todo_models:
+        fail("TodoCurrentList must sync iPhone currentListId into the App Group for the widget")
     if "os(iOS)" not in persist or "os(watchOS)" not in persist:
         fail("Persistence App Group must be used on iOS and watchOS")
     if "watchGroupFileURL" in persist:
@@ -1595,12 +1619,24 @@ def test_iphone_widget() -> None:
         fail("HomeWidgetReload must use HomeWidgetSnapshot.widgetKind")
     if "HomeWidgetReload.timelines()" not in app:
         fail("EinkaufApp must reload the iPhone widget when becoming active")
+    if "syncIphoneToAppGroup" not in app:
+        fail("EinkaufApp must sync todo.currentListId / AppStorage into the App Group")
+    if "HomeWidgetReload.timelines()" not in todo_store:
+        fail("TodoStore persist must reload the iPhone widget")
+    if "syncIphoneToAppGroup" not in todo_store:
+        fail("TodoStore broadcastCurrentList must sync the current list into the App Group")
     if "iPhone-Widget" not in desc or "systemSmall" not in desc or "systemMedium" not in desc:
         fail("Description.md must document the iPhone widget families")
+    if "systemLarge" not in desc:
+        fail("Description.md must document systemLarge for the iPhone widget")
+    if "To Do (" not in desc and "To Do (`" not in desc:
+        fail("Description.md must document To Do (<list>) on the iPhone widget")
     if "nicht auf der Watch" not in desc.lower() and "Nicht auf der Watch" not in desc:
         fail("Description.md must say the iPhone widget is not on Watch")
     if "App Group `group.net.tschelle.einkauf`" not in desc:
         fail("Description.md must name the App Group for the iPhone widget")
+    if "testTodoCountsFollowCurrentListOnly" not in tests:
+        fail("tests must cover widget To-Do counts for the current list only")
     if "testOpenItemsFollowWalkOrderAndSkipDone" not in tests:
         fail("tests must cover widget open items in Geh-Modus order")
     if "testOpenItemLimitAndFullStoreName" not in tests:

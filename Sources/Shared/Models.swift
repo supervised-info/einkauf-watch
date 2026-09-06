@@ -325,46 +325,83 @@ struct ComplicationSnapshot: Equatable, Sendable {
     }
 }
 
-/// Homescreen-Widget (iPhone): gleicher Zähler wie `watchTitle` / `ComplicationSnapshot` (`openCount/doneCount/items.count`, inkl. vor/nach).
+/// Zähler `oo/xx/yy` (offen / erledigt / gesamt) für eine Homescreen-Widget-Zeile.
+struct HomeWidgetCounts: Equatable, Sendable {
+    var open: Int
+    var done: Int
+    var total: Int
+
+    var progressLabel: String { "\(open)/\(done)/\(total)" }
+    var isEmpty: Bool { total == 0 }
+
+    static func shopping(_ state: AppState) -> HomeWidgetCounts {
+        HomeWidgetCounts(open: state.openCount, done: state.doneCount, total: state.items.count)
+    }
+
+    static func todo(_ tasks: [TodoTask]) -> HomeWidgetCounts {
+        let done = tasks.filter(\.completed).count
+        return HomeWidgetCounts(open: tasks.count - done, done: done, total: tasks.count)
+    }
+}
+
+/// Homescreen-Widget (iPhone): Einkauf + To-Do der **aktuellen Liste**, beide `oo/xx/yy`.
 struct HomeWidgetSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufHome"
     static let openURL = URL(string: "einkauf://list")!
-    static let openItemLimit = 5
+    static let todoURL = URL(string: "einkauf://todo")!
+    static let einkaufLabel = "Einkaufsliste"
+    static let einkaufLabelCompact = "Einkauf"
+    /// Spaltenköpfe der Mini-Tabelle (mittel/groß).
+    static let columnHeaders = ("Offen", "Erledigt", "Gesamt")
 
-    var progressLabel: String
-    var storeName: String
-    var isEmpty: Bool
-    var openItemNames: [String]
+    var einkauf: HomeWidgetCounts
+    var todo: HomeWidgetCounts
+    /// Listenname für `To Do (…)` — **Alle** bei leerer oder unbekannter ID.
+    var todoListName: String
 
     static let placeholder = HomeWidgetSnapshot(
-        progressLabel: "5/2/7",
-        storeName: "Edeka",
-        isEmpty: false,
-        openItemNames: ["Milch", "Äpfel", "Klopapier"]
+        einkauf: HomeWidgetCounts(open: 5, done: 2, total: 7),
+        todo: HomeWidgetCounts(open: 3, done: 1, total: 4),
+        todoListName: "Haus"
     )
 
-    static func make(from state: AppState) -> HomeWidgetSnapshot {
-        HomeWidgetSnapshot(
-            progressLabel: state.progressLabel,
-            storeName: state.currentStore.name,
-            isEmpty: state.items.isEmpty,
-            openItemNames: ListGrouping.openItemNames(
-                items: state.items,
-                store: state.currentStore,
-                limit: openItemLimit
-            )
+    static func make(
+        from state: AppState,
+        todo todoState: TodoState = .empty,
+        currentListId: String = ""
+    ) -> HomeWidgetSnapshot {
+        let listId = TodoListFilter.resolved(currentListId)
+        let tasks = TodoListFilter.tasks(todoState.tasks, currentListId: listId)
+        return HomeWidgetSnapshot(
+            einkauf: .shopping(state),
+            todo: .todo(tasks),
+            todoListName: TodoListFilter.title(lists: todoState.lists, currentListId: listId)
         )
     }
 
+    /// Einkauf-Zähler, gleiche Form wie `AppState.progressLabel`.
+    var progressLabel: String { einkauf.progressLabel }
+
+    var todoProgressLabel: String { todo.progressLabel }
+
+    var todoRowLabel: String { "To Do (\(todoListName))" }
+
+    func compactEinkaufLine(short: Bool) -> String {
+        let name = short ? Self.einkaufLabelCompact : Self.einkaufLabel
+        return "\(name): \(einkauf.progressLabel)"
+    }
+
+    var compactTodoLine: String {
+        "\(todoRowLabel): \(todo.progressLabel)"
+    }
+
     var accessibilityLabel: String {
-        let store = storeName.isEmpty ? "Einkauf" : storeName
-        if isEmpty {
-            return "\(store), Liste leer"
-        }
-        if openItemNames.isEmpty {
-            return "\(store), \(progressLabel)"
-        }
-        return "\(store), \(progressLabel), als nächstes " + openItemNames.joined(separator: ", ")
+        "\(Self.einkaufLabel) \(spoken(einkauf)), \(todoRowLabel) \(spoken(todo))"
+    }
+
+    private func spoken(_ counts: HomeWidgetCounts) -> String {
+        if counts.isEmpty { return "Liste leer" }
+        return "\(counts.open) offen, \(counts.done) erledigt, \(counts.total) gesamt"
     }
 }
 

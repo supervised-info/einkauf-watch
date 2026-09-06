@@ -126,7 +126,7 @@ Zwei Reiter **Einkauf | To-Do**. To-Do auf der Watch **nur Geh-Modus**:
 
 Erledigte ausblenden: eigenes Flag (`todo.watch.hideCompleted`), **nicht** `einkauf.watch.hideCompleted`, nicht im Backup, nicht zum iPhone.
 
-Watch-To-Do-Complication `TodoProgress` (Label **To Do**, offene Anzahl der aktuellen Liste / „erledigt“). Kein To-Do-Homescreen-Widget.
+Watch-To-Do-Complication `TodoProgress` (Label **To Do**, offene Anzahl der aktuellen Liste / „erledigt“). iPhone-Homescreen-Widget kombiniert Einkauf + To-Do der aktuellen Liste (kein per-Liste-Raster).
 
 ### Store und Persistenz
 
@@ -233,7 +233,7 @@ Produktverhalten steht in `Description.md`. Hier nur die gelandeten Schnitte, oh
 
 ## Non-Goals (weiterhin)
 
-- To-Do-Homescreen-Widget, Sperrbildschirm (Watch-To-Do-Complication ist gelandet)
+- Separates To-Do-only-Homescreen-Widget, Sperrbildschirm, per-Liste-Raster im Large-Widget (Watch-To-Do-Complication und kombiniertes iPhone-Widget sind gelandet)
 - To-Do-Siri verdünnt nicht „besorgen“ (ein `AppShortcutsProvider`)
 - Edit / Prio / Reopen / Listen-Verwaltung auf der Watch (Watch filtert nur)
 - iCloud / CloudKit für den To-Do-Store; gemeinsames JSON mit Einkauf; To-Do-Inbox
