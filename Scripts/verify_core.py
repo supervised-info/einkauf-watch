@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 67" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 67 / CURRENT_PROJECT_VERSION")
+    if "Build 68" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 68 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1005,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 67" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 67")
+    if "CURRENT_PROJECT_VERSION = 68" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 68")
+    if "CURRENT_PROJECT_VERSION = 67" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 67 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 66" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 66 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 65" in pbx:
@@ -1126,8 +1128,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 67" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 67")
+    if "CURRENT_PROJECT_VERSION: 68" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 68")
+    if "CURRENT_PROJECT_VERSION: 67" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 67 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 66" in yml:
         fail("stale CURRENT_PROJECT_VERSION 66 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 65" in yml:
@@ -1457,8 +1461,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 67") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 67")
+    if pbx.count("CURRENT_PROJECT_VERSION = 68") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 68")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1575,6 +1579,40 @@ def test_iphone_widget() -> None:
         fail("small widget must prefer label Einkaufsliste")
     if "To Do" not in widget:
         fail("iPhone widget must label To Do")
+    if "smallLabelFont" not in widget or "smallCountsFont" not in widget:
+        fail("small widget must name one shared label font and one shared counts font")
+    label_font = widget.split("smallLabelFont", 1)[-1][:80]
+    counts_font = widget.split("smallCountsFont", 1)[-1][:160]
+    if ".caption" not in label_font:
+        fail("small labels must use Caption for both rows")
+    if "headline" not in counts_font:
+        fail("small counts must use Headline for both rows")
+    compact_m = re.search(r"func compactRow\b", widget)
+    if not compact_m:
+        fail("small widget missing compactRow")
+    compact = extract_braced(widget, compact_m.start(), "compactRow")
+    if "smallLabelFont" not in compact or "smallCountsFont" not in compact:
+        fail("compactRow must apply the shared small fonts to both rows")
+    if "minimumScaleFactor" in compact:
+        fail("compactRow must not scale rows independently")
+    if "maxWidth: .infinity" not in compact:
+        fail("small labels must fill so counts sit trailing")
+    if "fixedSize(horizontal: true" not in compact:
+        fail("small counts must keep one size via fixedSize")
+    small_src = extract_some_view(widget, "small")
+    if small_src.count("compactRow") < 2:
+        fail("small widget must use compactRow for both rows")
+    table_src = extract_some_view(widget, "table")
+    if "compactRow" in table_src or "smallLabelFont" in table_src or "smallCountsFont" in table_src:
+        fail("medium/large table must not use Small-only compactRow fonts")
+    data_m = re.search(r"func dataRow\b", widget)
+    if not data_m:
+        fail("medium/large widget missing dataRow")
+    data_row = extract_braced(widget, data_m.start(), "dataRow")
+    if ".subheadline.weight(.semibold)" not in data_row:
+        fail("medium/large dataRow labels must stay subheadline semibold")
+    if "countCell" not in data_row:
+        fail("medium/large must keep countCell columns")
     if "Offen" not in widget or "Erledigt" not in widget or "Gesamt" not in widget:
         fail("medium/large widget must show Offen / Erledigt / Gesamt headers")
     if "TodoPersistence.load" not in widget:
@@ -1629,6 +1667,11 @@ def test_iphone_widget() -> None:
         fail("Description.md must document the iPhone widget families")
     if "systemLarge" not in desc:
         fail("Description.md must document systemLarge for the iPhone widget")
+    iphone_sec = desc[desc.find("### iPhone-Widget"):desc.find("## Sprach-Eingabe")]
+    if "Caption" not in iphone_sec or "Headline" not in iphone_sec:
+        fail("Description.md must document Small widget Caption + Headline")
+    if "rechtsbündig" not in iphone_sec:
+        fail("Description.md must document Small counts as right-aligned oo/xx/yy")
     if "To Do (" not in desc and "To Do (`" not in desc:
         fail("Description.md must document To Do (<list>) on the iPhone widget")
     if "nicht auf der Watch" not in desc.lower() and "Nicht auf der Watch" not in desc:
