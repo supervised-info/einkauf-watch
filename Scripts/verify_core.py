@@ -3016,8 +3016,10 @@ def test_item_imported_urgency() -> None:
     ):
         if blob.find("checkmark.circle") > blob.find("ItemImportedMark"):
             fail(f"iPhone {fn} must put import mark after checkbox/text, not leading")
-        if blob.find("ItemImportedMark") > blob.find("ItemUrgencyChip"):
-            fail(f"iPhone {fn} trailing order must be import mark then urgency chip")
+        if blob.find("ItemUrgencyChip") > blob.find("ItemImportedMark"):
+            fail(f"iPhone {fn} trailing order must be urgency chip then import mark (rightmost)")
+        if fn == "editRow" and blob.rfind("Picker") > blob.rfind("ItemUrgencyChip"):
+            fail("iPhone editRow dept picker must sit before urgency chip and import mark")
 
     if "ItemImportedMark" not in watch or "ItemUrgencyChip" not in watch:
         fail("Watch walk mode must show import mark and urgency chip")
@@ -3027,8 +3029,8 @@ def test_item_imported_urgency() -> None:
     watch_item = watch[item_start:watch.find("listRowInsets", item_start)]
     if watch_item.find("checkmark.circle") > watch_item.find("ItemImportedMark"):
         fail("Watch row must put import mark after checkbox/text, not leading")
-    if watch_item.find("ItemImportedMark") > watch_item.find("ItemUrgencyChip"):
-        fail("Watch trailing order must be import mark then urgency chip")
+    if watch_item.find("ItemUrgencyChip") > watch_item.find("ItemImportedMark"):
+        fail("Watch trailing order must be urgency chip then import mark (rightmost)")
 
     if "ItemImportedMark" in todo_ui or "ItemUrgencyChip" in todo_ui:
         fail("To-Do UI must not show Einkauf imported/urgency chrome")
@@ -3045,8 +3047,10 @@ def test_item_imported_urgency() -> None:
     geh = desc[desc.find("### Geh-Modus"):desc.find("### Edit")]
     if "führend" not in geh and "kein führender" not in geh and "Links nur Checkbox" not in geh:
         fail("Description.md Geh-Modus must say import mark is not leading")
-    if "rechts" not in geh.lower() or "trailing" not in geh:
-        fail("Description.md Geh-Modus must place import mark trailing before the urgency chip")
+    if "rechts" not in geh.lower():
+        fail("Description.md Geh-Modus must place import mark on the right")
+    if "äußerster" not in geh and "rechtester" not in geh and "ganz außen" not in geh and "ganz rechts" not in geh:
+        fail("Description.md Geh-Modus must put import mark rightmost after the urgency chip")
     if "urgent" not in desc or "later" not in desc:
         fail("Description.md must name urgency values")
     artikel = desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]

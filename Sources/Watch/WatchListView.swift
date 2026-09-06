@@ -72,10 +72,10 @@ struct WatchListView: View {
                                         .buttonStyle(.plain)
                                         .accessibilityLabel(item.name)
                                         .accessibilityValue(item.done ? "erledigt" : "offen")
-                                        ItemImportedMark(imported: item.imported, theme: theme)
                                         ItemUrgencyChip(urgency: item.urgency, theme: theme, compact: true) {
                                             store.cycleItemUrgency(item.id)
                                         }
+                                        ItemImportedMark(imported: item.imported, theme: theme)
                                     }
                                     .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowBackground(theme.paper2)
