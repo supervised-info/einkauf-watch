@@ -199,7 +199,6 @@ struct ContentView: View {
 
     private func walkRow(_ item: Item) -> some View {
         HStack(spacing: 10) {
-            ItemImportedMark(imported: item.imported, theme: theme)
             Button {
                 store.toggle(item.id)
             } label: {
@@ -218,6 +217,7 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(item.name)
             .accessibilityValue(item.done ? "erledigt" : "offen")
+            ItemImportedMark(imported: item.imported, theme: theme)
             ItemUrgencyChip(urgency: item.urgency, theme: theme) {
                 store.cycleItemUrgency(item.id)
             }
@@ -231,7 +231,6 @@ struct ContentView: View {
 
     private func editRow(_ item: Item) -> some View {
         HStack(spacing: 10) {
-            ItemImportedMark(imported: item.imported, theme: theme)
             Button {
                 store.toggle(item.id)
             } label: {
@@ -266,6 +265,7 @@ struct ContentView: View {
                 .accessibilityLabel("Umbenennen: \(item.name)")
             }
 
+            ItemImportedMark(imported: item.imported, theme: theme)
             ItemUrgencyChip(urgency: item.urgency, theme: theme) {
                 store.cycleItemUrgency(item.id)
             }
