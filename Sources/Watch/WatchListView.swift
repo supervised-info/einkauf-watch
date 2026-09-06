@@ -50,7 +50,6 @@ struct WatchListView: View {
                                         .accessibilityLabel(Department.title(for: dept))
                                 case .item(_, let item):
                                     HStack(alignment: .center, spacing: 8) {
-                                        ItemImportedMark(imported: item.imported, theme: theme)
                                         Button {
                                             store.toggle(item.id)
                                         } label: {
@@ -76,6 +75,7 @@ struct WatchListView: View {
                                         ItemUrgencyChip(urgency: item.urgency, theme: theme, compact: true) {
                                             store.cycleItemUrgency(item.id)
                                         }
+                                        ItemImportedMark(imported: item.imported, theme: theme)
                                     }
                                     .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowBackground(theme.paper2)

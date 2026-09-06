@@ -199,7 +199,6 @@ struct ContentView: View {
 
     private func walkRow(_ item: Item) -> some View {
         HStack(spacing: 10) {
-            ItemImportedMark(imported: item.imported, theme: theme)
             Button {
                 store.toggle(item.id)
             } label: {
@@ -221,6 +220,7 @@ struct ContentView: View {
             ItemUrgencyChip(urgency: item.urgency, theme: theme) {
                 store.cycleItemUrgency(item.id)
             }
+            ItemImportedMark(imported: item.imported, theme: theme)
         }
         .einkaufRowChrome()
         .deleteDisabled(true)
@@ -231,7 +231,6 @@ struct ContentView: View {
 
     private func editRow(_ item: Item) -> some View {
         HStack(spacing: 10) {
-            ItemImportedMark(imported: item.imported, theme: theme)
             Button {
                 store.toggle(item.id)
             } label: {
@@ -266,10 +265,6 @@ struct ContentView: View {
                 .accessibilityLabel("Umbenennen: \(item.name)")
             }
 
-            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
-                store.cycleItemUrgency(item.id)
-            }
-
             Picker("Abteilung", selection: Binding(
                 get: { Department.resolved(item.dept) },
                 set: { store.setItemDept(item.id, dept: $0) }
@@ -282,6 +277,11 @@ struct ContentView: View {
             .labelsHidden()
             .fixedSize()
             .accessibilityLabel("Abteilung für \(item.name)")
+
+            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
+                store.cycleItemUrgency(item.id)
+            }
+            ItemImportedMark(imported: item.imported, theme: theme)
         }
         .padding(.vertical, 2)
         .einkaufRowChrome()

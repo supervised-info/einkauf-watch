@@ -204,11 +204,14 @@ struct ItemImportedMark: View {
 }
 
 /// Tippen: urgent → normal → later → urgent. Unabhängig vom Import-Marker.
+/// `normal` ist ein leerer umrandeter Chip (nur Rahmen, keine Glyphe innen).
 struct ItemUrgencyChip: View {
     var urgency: ItemUrgency
     var theme: ThemeTokens
     var compact: Bool = false
     var action: () -> Void
+
+    private var minSide: CGFloat { compact ? 22 : 26 }
 
     var body: some View {
         Button(action: action) {
@@ -221,10 +224,17 @@ struct ItemUrgencyChip: View {
                         .foregroundStyle(urgency == .urgent ? theme.oxide : theme.muted)
                 }
             }
-            .frame(minWidth: compact ? 22 : 26, minHeight: compact ? 22 : 26)
+            .frame(minWidth: minSide, minHeight: minSide)
             .padding(.horizontal, compact ? 4 : 6)
             .background(urgency.symbol.isEmpty ? Color.clear : theme.paper3)
             .clipShape(Capsule())
+            .overlay {
+                if urgency.symbol.isEmpty {
+                    Capsule()
+                        .strokeBorder(theme.muted, lineWidth: compact ? 1.25 : 1.5)
+                }
+            }
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Dringlichkeit \(urgency.label)")

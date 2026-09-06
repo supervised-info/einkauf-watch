@@ -1850,6 +1850,8 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(ItemUrgency.urgent.symbol, "⚡")
         XCTAssertEqual(ItemUrgency.normal.symbol, "")
         XCTAssertFalse(ItemUrgency.normal.symbol.contains(" "))
+        XCTAssertFalse(ItemUrgency.normal.symbol.contains("○"))
+        XCTAssertFalse(ItemUrgency.normal.symbol.contains("–"))
         XCTAssertEqual(ItemUrgency.later.symbol, "\u{2193}")
     }
 
