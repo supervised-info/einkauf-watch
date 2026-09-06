@@ -3033,14 +3033,22 @@ def test_item_imported_urgency() -> None:
 
     if "ItemImportedMark" not in watch or "ItemUrgencyChip" not in watch:
         fail("Watch walk mode must show import mark and urgency chip")
-    if "cycleItemUrgency" in watch:
-        fail("Watch urgency chip must be display-only (no cycleItemUrgency)")
+    if "store.cycleItemUrgency" in watch or "cycleItemUrgency(" in watch:
+        fail("Watch urgency chip must be display-only (no cycleItemUrgency call)")
     item_start = watch.find("case .item")
     watch_item = watch[item_start:watch.find("listRowInsets", item_start)]
     if watch_item.find("checkmark.circle") > watch_item.find("ItemImportedMark"):
         fail("Watch row must put import mark after checkbox/text, not leading")
     if watch_item.find("ItemUrgencyChip") > watch_item.find("ItemImportedMark"):
         fail("Watch trailing order must be urgency chip then import mark (rightmost)")
+    if "compact: true" not in watch_item:
+        fail("Watch urgency chip must use compact size (same capsule as ⚡/↓)")
+    if re.search(r"if\s+item\.urgency\s*!=\s*\.normal", watch_item) or re.search(
+        r"if\s+!?(item\.)?urgency\.symbol\.isEmpty", watch_item
+    ):
+        fail("Watch must always show ItemUrgencyChip, including normal (do not hide)")
+    if "EmptyView()" in watch_item and "urgency" in watch_item:
+        fail("Watch must not replace the normal urgency chip with EmptyView")
 
     if "ItemImportedMark" in todo_ui or "ItemUrgencyChip" in todo_ui:
         fail("To-Do UI must not show Einkauf imported/urgency chrome")
@@ -3086,6 +3094,10 @@ def test_item_imported_urgency() -> None:
         fail("Description.md Watch must say urgency chip is display-only")
     if "kein `cycleItemUrgency`" not in watch_sec and "kein cycleItemUrgency" not in watch_sec:
         fail("Description.md Watch must forbid cycleItemUrgency")
+    if "alle drei" not in watch_sec and "nicht ausblenden" not in watch_sec and "nicht** ausblenden" not in watch_sec:
+        fail("Description.md Watch must show all three urgency states including normal")
+    if "kompakt" not in watch_sec:
+        fail("Description.md Watch must say the normal chip is compact")
     if "testUrgencyChipSymbols" not in tests:
         fail("tests must cover urgency chip symbols")
     if "imported: true" not in desc:
