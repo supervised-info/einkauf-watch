@@ -217,6 +217,24 @@ final class TodoPersistenceTests: XCTestCase {
         }
         XCTAssertNil(TodoPersistence.load())
     }
+
+    func testEmptyOrGarbageJSONLoadsNil() throws {
+        let todo = TodoPersistence.fileURL
+        let previous = try? Data(contentsOf: todo)
+        defer {
+            if let previous {
+                try? previous.write(to: todo, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: todo)
+            }
+        }
+        try Data().write(to: todo, options: .atomic)
+        XCTAssertNil(TodoPersistence.load())
+        try Data("{not-json".utf8).write(to: todo, options: .atomic)
+        XCTAssertNil(TodoPersistence.load())
+        try Data(#"{"kind":"einkauf-local"}"#.utf8).write(to: todo, options: .atomic)
+        XCTAssertNil(TodoPersistence.load())
+    }
 }
 
 @MainActor

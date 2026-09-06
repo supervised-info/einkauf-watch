@@ -42,6 +42,7 @@ struct EinkaufHomeTimelineProvider: TimelineProvider {
     }
 
     private func makeEntry() -> EinkaufHomeTimelineEntry {
+        // Kaputtes / leeres JSON → Seed bzw. empty, nie throw/crash.
         let einkauf = Persistence.load() ?? .seed
         let todo = TodoPersistence.load() ?? .empty
         let listId = TodoCurrentList.iphoneWidgetId

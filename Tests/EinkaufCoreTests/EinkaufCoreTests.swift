@@ -142,6 +142,26 @@ final class BackupCodecTests: XCTestCase {
     }
 }
 
+final class PersistenceLoadGuardTests: XCTestCase {
+    func testEmptyOrGarbageJSONLoadsNil() throws {
+        let url = Persistence.fileURL
+        let previous = try? Data(contentsOf: url)
+        defer {
+            if let previous {
+                try? previous.write(to: url, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+        try Data().write(to: url, options: .atomic)
+        XCTAssertNil(Persistence.load())
+        try Data("{not-json".utf8).write(to: url, options: .atomic)
+        XCTAssertNil(Persistence.load())
+        try Data(#"{"kind":"todo-local"}"#.utf8).write(to: url, options: .atomic)
+        XCTAssertNil(Persistence.load())
+    }
+}
+
 final class GroupingTests: XCTestCase {
     func testVorFirstNachLast() throws {
         let state = try BackupCodec.decode(try loadFixture("einkauf-backup.json"))

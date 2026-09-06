@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 69" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 69 / CURRENT_PROJECT_VERSION")
+    if "Build 70" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 70 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1005,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 69" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 69")
+    if "CURRENT_PROJECT_VERSION = 70" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 70")
+    if "CURRENT_PROJECT_VERSION = 69" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 69 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 68" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 68 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 67" in pbx:
@@ -1130,8 +1132,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 69" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 69")
+    if "CURRENT_PROJECT_VERSION: 70" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 70")
+    if "CURRENT_PROJECT_VERSION: 69" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 69 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 68" in yml:
         fail("stale CURRENT_PROJECT_VERSION 68 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 67" in yml:
@@ -1465,8 +1469,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 69") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 69")
+    if pbx.count("CURRENT_PROJECT_VERSION = 70") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 70")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1673,6 +1677,12 @@ def test_iphone_widget() -> None:
         fail("HomeWidgetReload must call WidgetCenter.reloadTimelines")
     if "HomeWidgetSnapshot.widgetKind" not in reload and "EinkaufHome" not in reload:
         fail("HomeWidgetReload must use HomeWidgetSnapshot.widgetKind")
+    if "asyncAfter" not in reload:
+        fail("HomeWidgetReload must debounce reloadTimelines via asyncAfter")
+    if "pending" not in reload or "cancel()" not in reload:
+        fail("HomeWidgetReload must cancel a pending reload when coalescing")
+    if "DispatchQueue.main" in reload:
+        fail("HomeWidgetReload must not hop onto DispatchQueue.main for reloadTimelines")
     if "HomeWidgetReload.timelines()" not in app:
         fail("EinkaufApp must reload the iPhone widget when becoming active")
     if "syncIphoneToAppGroup" not in app:
@@ -1700,6 +1710,10 @@ def test_iphone_widget() -> None:
         fail("Description.md must say the iPhone widget is not on Watch")
     if "App Group `group.net.tschelle.einkauf`" not in desc:
         fail("Description.md must name the App Group for the iPhone widget")
+    if "zusammengezogen" not in iphone_sec and "Debounce" not in iphone_sec:
+        fail("Description.md must document coalesced / debounced iPhone widget reloads")
+    if "testEmptyOrGarbageJSONLoadsNil" not in tests:
+        fail("tests must cover Persistence empty/garbage JSON loading as nil")
     if "testTodoCountsFollowCurrentListOnly" not in tests:
         fail("tests must cover widget To-Do counts for the current list only")
     if "testOpenItemsFollowWalkOrderAndSkipDone" not in tests:

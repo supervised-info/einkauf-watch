@@ -69,7 +69,7 @@ enum Persistence {
 
     private static func read(_ url: URL) -> AppState? {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-        guard let data = try? Data(contentsOf: url) else { return nil }
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return nil }
         return try? BackupCodec.decodeLocal(data)
     }
 }

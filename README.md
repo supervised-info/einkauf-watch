@@ -2,7 +2,7 @@
 
 Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). Zwei Reiter **Einkauf | To-Do** auf iPhone und Apple Watch. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
 
-Produktstand (Build 69): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen.
+Produktstand (Build 70): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen.
 
 Mindestens **Xcode 15**, iOS 17, watchOS 10. Im Apple-Developer-Account ein Team wählen. v1 ist nicht für den App-Store-Submit gedacht.
 
