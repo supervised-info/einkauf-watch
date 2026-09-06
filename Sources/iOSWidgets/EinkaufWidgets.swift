@@ -76,6 +76,7 @@ struct EinkaufHomeWidgetView: View {
     }
 
     /// Klein: `Einkaufsliste: oo/xx/yy` (sonst `Einkauf`) und `To Do (<Liste>): oo/xx/yy`.
+    /// Beide Zeilen dieselbe Label-Schrift und dieselbe Zähler-Schrift; Zähler rechts `oo/xx/yy`.
     private var small: some View {
         VStack(alignment: .leading, spacing: 6) {
             compactRow {
@@ -93,6 +94,12 @@ struct EinkaufHomeWidgetView: View {
             }
         }
     }
+
+    /// Eine Label-Schrift für beide Small-Zeilen.
+    private var smallLabelFont: Font { .caption }
+
+    /// Eine Zähler-Schrift für beide Small-Zeilen (`oo/xx/yy`).
+    private var smallCountsFont: Font { .system(.headline, design: .rounded).weight(.semibold) }
 
     /// Mittel/Groß: dieselben zwei Domains, Spalten Offen | Erledigt | Gesamt.
     private var table: some View {
@@ -124,14 +131,16 @@ struct EinkaufHomeWidgetView: View {
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             label()
-                .font(.subheadline)
+                .font(smallLabelFont)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
             counts()
-                .font(.system(.headline, design: .rounded).weight(.semibold))
+                .font(smallCountsFont)
                 .monospacedDigit()
                 .lineLimit(1)
-                .minimumScaleFactor(0.55)
+                .fixedSize(horizontal: true, vertical: false)
+                .multilineTextAlignment(.trailing)
         }
     }
 
