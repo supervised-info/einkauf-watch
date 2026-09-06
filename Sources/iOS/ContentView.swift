@@ -198,33 +198,40 @@ struct ContentView: View {
     }
 
     private func walkRow(_ item: Item) -> some View {
-        Button {
-            store.toggle(item.id)
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(item.done ? theme.good : theme.muted)
-                Text(item.name)
-                    .foregroundStyle(theme.ink)
-                    .strikethrough(item.done, color: theme.muted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(spacing: 10) {
+            ItemImportedMark(imported: item.imported, theme: theme)
+            Button {
+                store.toggle(item.id)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                        .font(.title2)
+                        .foregroundStyle(item.done ? theme.good : theme.muted)
+                    Text(item.name)
+                        .foregroundStyle(theme.ink)
+                        .strikethrough(item.done, color: theme.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityLabel(item.name)
+            .accessibilityValue(item.done ? "erledigt" : "offen")
+            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
+                store.cycleItemUrgency(item.id)
+            }
         }
-        .buttonStyle(.plain)
         .einkaufRowChrome()
         .deleteDisabled(true)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             EmptyView()
         }
-        .accessibilityLabel(item.name)
-        .accessibilityValue(item.done ? "erledigt" : "offen")
     }
 
     private func editRow(_ item: Item) -> some View {
         HStack(spacing: 10) {
+            ItemImportedMark(imported: item.imported, theme: theme)
             Button {
                 store.toggle(item.id)
             } label: {
@@ -257,6 +264,10 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Umbenennen: \(item.name)")
+            }
+
+            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
+                store.cycleItemUrgency(item.id)
             }
 
             Picker("Abteilung", selection: Binding(
@@ -534,7 +545,7 @@ struct ContentView: View {
             return
         }
         do {
-            let added = store.addItems(fromSpeech: InboxParser.speechText(from: partition.selected))
+            let added = store.addItems(fromSpeech: InboxParser.speechText(from: partition.selected), imported: true)
             try session.rewriteRemaining(partition.remainder)
             session.stopAccess()
             inboxRetrieve = nil

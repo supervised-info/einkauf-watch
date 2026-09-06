@@ -188,6 +188,50 @@ struct EinkaufToolbarChromeModifier: ViewModifier {
 }
 #endif
 
+/// Teal-Importstreifen (`theme.slate`, nie `theme.good` — Grün ist erledigt). Nur Anzeige.
+struct ItemImportedMark: View {
+    var imported: Bool
+    var theme: ThemeTokens
+
+    var body: some View {
+        if imported {
+            RoundedRectangle(cornerRadius: 1)
+                .fill(theme.slate)
+                .frame(width: 4)
+                .accessibilityLabel("importiert")
+        }
+    }
+}
+
+/// Tippen: urgent → normal → later → urgent. Unabhängig vom Import-Marker.
+struct ItemUrgencyChip: View {
+    var urgency: ItemUrgency
+    var theme: ThemeTokens
+    var compact: Bool = false
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if urgency.symbol.isEmpty {
+                    Color.clear
+                } else {
+                    Text(urgency.symbol)
+                        .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+                        .foregroundStyle(urgency == .urgent ? theme.oxide : theme.muted)
+                }
+            }
+            .frame(minWidth: compact ? 22 : 26, minHeight: compact ? 22 : 26)
+            .padding(.horizontal, compact ? 4 : 6)
+            .background(urgency.symbol.isEmpty ? Color.clear : theme.paper3)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Dringlichkeit \(urgency.label)")
+        .accessibilityHint("Tippen wechselt eilig, normal, später")
+    }
+}
+
 extension View {
     func einkaufScreen(_ theme: ThemeTokens) -> some View {
         modifier(EinkaufScreenModifier(theme: theme))

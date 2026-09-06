@@ -82,7 +82,9 @@ enum BackupCodec {
                     "dept": item.dept,
                     "done": item.done,
                     "added": item.added,
-                    "ord": item.sortOrd
+                    "ord": item.sortOrd,
+                    "imported": item.imported,
+                    "urgency": item.urgency.rawValue
                 ] as [String: Any]
             },
             "walkMode": state.walkMode,
@@ -200,7 +202,9 @@ enum BackupCodec {
                     done: s["done"] as? Bool ?? false,
                     added: added,
                     ord: ord ?? added,
-                    doneChangedAt: number(s["doneChangedAt"])
+                    doneChangedAt: number(s["doneChangedAt"]),
+                    imported: s["imported"] as? Bool ?? false,
+                    urgency: ItemUrgency.parse(string(s["urgency"]))
                 )
             )
         }
