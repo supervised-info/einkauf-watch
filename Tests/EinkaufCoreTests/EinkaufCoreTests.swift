@@ -1846,6 +1846,13 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.state.listRevision, 3)
     }
 
+    func testUrgencyChipSymbols() {
+        XCTAssertEqual(ItemUrgency.urgent.symbol, "⚡")
+        XCTAssertEqual(ItemUrgency.normal.symbol, "")
+        XCTAssertFalse(ItemUrgency.normal.symbol.contains(" "))
+        XCTAssertEqual(ItemUrgency.later.symbol, "\u{2193}")
+    }
+
     func testManualAddAndStaplesAreNotImported() {
         let store = ShoppingStore(state: .seed, enableSync: false)
         store.addItem("Milch")

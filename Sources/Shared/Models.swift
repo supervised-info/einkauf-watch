@@ -78,12 +78,12 @@ enum ItemUrgency: String, Equatable, Codable, CaseIterable, Sendable {
         }
     }
 
-    /// Kompaktes Icon für Chip (⚡ / · / ◌).
+    /// Chip-Icon: eilig ⚡, normal leer, später ↓ (U+2193).
     var symbol: String {
         switch self {
         case .urgent: return "⚡"
-        case .normal: return "·"
-        case .later: return "◌"
+        case .normal: return ""
+        case .later: return "\u{2193}"
         }
     }
 

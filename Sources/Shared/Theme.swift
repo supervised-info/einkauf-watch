@@ -212,13 +212,19 @@ struct ItemUrgencyChip: View {
 
     var body: some View {
         Button(action: action) {
-            Text(urgency.symbol)
-                .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
-                .foregroundStyle(urgency == .urgent ? theme.oxide : theme.muted)
-                .frame(minWidth: compact ? 22 : 26, minHeight: compact ? 22 : 26)
-                .padding(.horizontal, compact ? 4 : 6)
-                .background(theme.paper3)
-                .clipShape(Capsule())
+            Group {
+                if urgency.symbol.isEmpty {
+                    Color.clear
+                } else {
+                    Text(urgency.symbol)
+                        .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+                        .foregroundStyle(urgency == .urgent ? theme.oxide : theme.muted)
+                }
+            }
+            .frame(minWidth: compact ? 22 : 26, minHeight: compact ? 22 : 26)
+            .padding(.horizontal, compact ? 4 : 6)
+            .background(urgency.symbol.isEmpty ? Color.clear : theme.paper3)
+            .clipShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Dringlichkeit \(urgency.label)")

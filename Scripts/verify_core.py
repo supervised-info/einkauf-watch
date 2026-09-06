@@ -2941,6 +2941,14 @@ def test_item_imported_urgency() -> None:
         fail("ItemUrgency missing")
     if 'case urgent' not in models or 'case normal' not in models or 'case later' not in models:
         fail("ItemUrgency must be urgent | normal | later")
+    if 'case .urgent: return "⚡"' not in models:
+        fail("urgent chip must be ⚡")
+    if 'case .normal: return ""' not in models:
+        fail("normal chip must be empty (no glyph, no spaces)")
+    if "case .later: return \"\\u{2193}\"" not in models and "case .later: return \"↓\"" not in models:
+        fail("later chip must be ↓ (U+2193)")
+    if 'return "·"' in models or 'return "◌"' in models:
+        fail("urgency chips must not use · or ◌")
     if "var imported: Bool" not in models or "var urgency: ItemUrgency" not in models:
         fail("Item must have imported and urgency")
     if "imported = try c.decodeIfPresent(Bool.self, forKey: .imported) ?? false" not in models:
@@ -2973,6 +2981,13 @@ def test_item_imported_urgency() -> None:
 
     if "ItemImportedMark" not in theme or "ItemUrgencyChip" not in theme:
         fail("theme must provide ItemImportedMark and ItemUrgencyChip")
+    chip = theme[theme.find("struct ItemUrgencyChip"):theme.find("extension View")]
+    if 'Text("  ")' in chip or 'Text(" ")' in chip:
+        fail("normal urgency chip must not use spaces as content")
+    if "urgency.symbol.isEmpty" not in chip or "Color.clear" not in chip:
+        fail("normal urgency chip must render empty with Color.clear, not a glyph")
+    if "minWidth" not in chip:
+        fail("urgency chip must keep a minWidth for layout stability")
     if "theme.slate" not in theme:
         fail("import mark must use theme.slate (teal), not green")
     imported_mark = theme[theme.find("struct ItemImportedMark"):theme.find("struct ItemUrgencyChip")]
@@ -3005,6 +3020,10 @@ def test_item_imported_urgency() -> None:
         fail("Description.md must document teal import mark via theme.slate")
     if "urgent" not in desc or "later" not in desc:
         fail("Description.md must name urgency values")
+    if "↓" not in desc or "leer" not in desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]:
+        fail("Description.md must document urgency icons ⚡ / leer / ↓")
+    if "testUrgencyChipSymbols" not in tests:
+        fail("tests must cover urgency chip symbols")
     if "imported: true" not in desc:
         fail("Description.md must document Inbox imported: true")
     if "Siri" not in desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]:
