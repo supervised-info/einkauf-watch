@@ -1294,16 +1294,18 @@ final class TodoMergeTests: XCTestCase {
 final class TodoComplicationSnapshotTests: XCTestCase {
     func testOpenCountAndErledigtNeverReadsEinkauf() {
         XCTAssertEqual(TodoComplicationSnapshot.widgetKind, "TodoProgress")
-        XCTAssertEqual(TodoComplicationSnapshot.labelText, "To Do")
+        XCTAssertEqual(TodoComplicationSnapshot.fallbackLabel, TodoListFilter.allTitle)
+        XCTAssertEqual(TodoComplicationSnapshot.fallbackLabel, "Alle")
         XCTAssertEqual(TodoComplicationSnapshot.openURL.absoluteString, "einkauf://todo")
         XCTAssertNotEqual(TodoComplicationSnapshot.widgetKind, ComplicationSnapshot.widgetKind)
 
         let empty = TodoComplicationSnapshot.make(from: .empty)
+        XCTAssertEqual(empty.labelText, "Alle")
         XCTAssertEqual(empty.compactCountText, "erledigt")
         XCTAssertEqual(empty.openCount, 0)
         XCTAssertEqual(empty.progress, 0, accuracy: 0.0001)
-        XCTAssertEqual(empty.inlineText, "To Do  erledigt")
-        XCTAssertEqual(empty.accessibilityLabel, "To Do, Liste erledigt")
+        XCTAssertEqual(empty.inlineText, "Alle  erledigt")
+        XCTAssertEqual(empty.accessibilityLabel, "Alle, Liste erledigt")
 
         var state = TodoState(
             tasks: [
@@ -1319,8 +1321,9 @@ final class TodoComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.openCount, 2)
         XCTAssertEqual(snap.doneCount, 1)
         XCTAssertEqual(snap.progress, 1.0 / 3.0, accuracy: 0.0001)
-        XCTAssertEqual(snap.inlineText, "To Do  2")
-        XCTAssertEqual(snap.accessibilityLabel, "To Do, 2 offen")
+        XCTAssertEqual(snap.labelText, "Alle")
+        XCTAssertEqual(snap.inlineText, "Alle  2")
+        XCTAssertEqual(snap.accessibilityLabel, "Alle, 2 offen")
 
         state.tasks[0].completed = true
         state.tasks[2].completed = true
@@ -1342,12 +1345,29 @@ final class TodoComplicationSnapshotTests: XCTestCase {
         )
         let all = TodoComplicationSnapshot.make(from: state)
         XCTAssertEqual(all.openCount, 2)
+        XCTAssertEqual(all.labelText, "Alle")
+        XCTAssertEqual(all.inlineText, "Alle  2")
         let filtered = TodoComplicationSnapshot.make(from: state, currentListId: "haus")
         XCTAssertEqual(filtered.openCount, 1)
         XCTAssertEqual(filtered.doneCount, 1)
         XCTAssertEqual(filtered.compactCountText, "1")
+        XCTAssertEqual(filtered.labelText, "Haus")
+        XCTAssertEqual(filtered.inlineText, "Haus  1")
+        XCTAssertEqual(filtered.accessibilityLabel, "Haus, 1 offen")
         let emptyFilter = TodoComplicationSnapshot.make(from: state, currentListId: "missing")
         XCTAssertEqual(emptyFilter.compactCountText, "erledigt")
+        XCTAssertEqual(emptyFilter.labelText, "Alle")
+        XCTAssertEqual(emptyFilter.accessibilityLabel, "Alle, Liste erledigt")
+    }
+
+    func testComplicationLabelClipsLongListName() {
+        let state = TodoState(
+            lists: [TodoNamedList(id: "lang", name: "Wochenplanung Extra")]
+        )
+        let snap = TodoComplicationSnapshot.make(from: state, currentListId: "lang")
+        XCTAssertEqual(snap.labelText, AppState.clippedWatchStoreName("Wochenplanung Extra"))
+        XCTAssertEqual(snap.labelText, "Woch…")
+        XCTAssertLessThanOrEqual(snap.labelText.count, AppState.watchStoreNameLimit)
     }
 }
 

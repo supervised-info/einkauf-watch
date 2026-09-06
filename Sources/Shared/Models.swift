@@ -267,11 +267,15 @@ struct AppState: Equatable, Codable, Sendable {
 
 /// Anzeige für die Watch-Complication. `progressLabel` bleibt `oo/xx/yy` (wie `watchTitle`);
 /// der sichtbare Zähler ist `compactCountText` (nur offene Anzahl, bei 0 „erledigt“).
+/// Titel fest **Einkauf** (nicht Ladenname, nicht „Einkaufsliste“ — zu lang für Corner/Inline).
 struct ComplicationSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufProgress"
     static let openURL = URL(string: "einkauf://list")!
+    /// Rectangular / Corner / Inline — kürzer als „Einkaufsliste“.
+    static let titleLabel = "Einkauf"
 
     var progressLabel: String
+    /// Immer `titleLabel`. Feldname bleibt `storeName` für die bestehenden Widget-Bindings.
     var storeName: String
     var isEmpty: Bool
     /// Gauge 0…1 (erledigt/gesamt); leere Liste ist 0.
@@ -279,7 +283,7 @@ struct ComplicationSnapshot: Equatable, Sendable {
 
     static let placeholder = ComplicationSnapshot(
         progressLabel: "5/2/7",
-        storeName: "Edeka",
+        storeName: titleLabel,
         isEmpty: false,
         progress: 2.0 / 7.0
     )
@@ -288,7 +292,7 @@ struct ComplicationSnapshot: Equatable, Sendable {
         let total = state.items.count
         return ComplicationSnapshot(
             progressLabel: state.progressLabel,
-            storeName: AppState.clippedWatchStoreName(state.currentStore.name),
+            storeName: titleLabel,
             isEmpty: state.items.isEmpty,
             progress: total == 0 ? 0 : Double(state.doneCount) / Double(total)
         )
@@ -309,7 +313,7 @@ struct ComplicationSnapshot: Equatable, Sendable {
         openCount == 0 ? "erledigt" : openText
     }
 
-    /// Inline: kurzer Ladenname und kompakter Zähler (0 → „erledigt“).
+    /// Inline: fester Titel **Einkauf** und kompakter Zähler (0 → „erledigt“).
     var inlineText: String {
         let name = storeName.trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty { return compactCountText }
@@ -317,11 +321,11 @@ struct ComplicationSnapshot: Equatable, Sendable {
     }
 
     var accessibilityLabel: String {
-        let store = storeName.isEmpty ? "Einkauf" : storeName
+        let title = storeName.isEmpty ? Self.titleLabel : storeName
         if openCount == 0 {
-            return "\(store), Liste erledigt"
+            return "\(title), Liste erledigt"
         }
-        return "\(store), \(openCount) offen"
+        return "\(title), \(openCount) offen"
     }
 }
 

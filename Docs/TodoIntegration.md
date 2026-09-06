@@ -126,7 +126,7 @@ Zwei Reiter **Einkauf | To-Do**. To-Do auf der Watch **nur Geh-Modus**:
 
 Erledigte ausblenden: eigenes Flag (`todo.watch.hideCompleted`), **nicht** `einkauf.watch.hideCompleted`, nicht im Backup, nicht zum iPhone.
 
-Watch-To-Do-Complication `TodoProgress` (Label **To Do**, offene Anzahl der aktuellen Liste / „erledigt“). iPhone-Homescreen-Widget kombiniert Einkauf + To-Do der aktuellen Liste (kein per-Liste-Raster).
+Watch-To-Do-Complication `TodoProgress` (Label = aktueller Listenname, Fallback **Alle**, offene Anzahl der aktuellen Liste / „erledigt“). iPhone-Homescreen-Widget kombiniert Einkauf + To-Do der aktuellen Liste (kein per-Liste-Raster).
 
 ### Store und Persistenz
 
@@ -217,7 +217,7 @@ Produktverhalten steht in `Description.md`. Hier nur die gelandeten Schnitte, oh
 | 4 Person / Prio / Datum | 43 | Add-Form, Overdue, Auge `todo.iphone.showCompleted` |
 | 5 JSON-Backup | 44 | `todo-v3-json`, To-Do-**…**, `onOpenURL`-Router |
 | Liste teilen PDF | 45 | folgt Auge |
-| 6 Watch + WC + Siri | 46 | Watch-Tab, `{einkauf, todo}`, Complication **To Do**, `TodoAddItemsIntent` |
+| 6 Watch + WC + Siri | 46 | Watch-Tab, `{einkauf, todo}`, Complication Listenname / **Alle**, `TodoAddItemsIntent` |
 | iPhone **Edit** + Siri „o“ | 47 | Swipe-Löschen nur Edit (Build 50); Label **Edit** |
 | Siri Mehrwort / ein Token | 48–51 | Phrase **Todo**, Watch ohne `requestValueDialog` |
 | 7 Reopen / Sort / Suche | 52 | iPhone; Watch bleibt Geh-Modus |
@@ -290,7 +290,7 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] Isolation: eigener Store, `todo-local.json` / `kind: "todo-local"`, Backup `todo-v3-json`, WC `{einkauf, todo}` plus `currentListId`.
 - [x] iPhone: Text, Person, Prio, Datum, Listen, `#uid` + reopen-Pills, Auge, **Edit** / **Fertig**, Swipe-Löschen nur Edit, Reopen, Sort, Suche, MD/CSV volle Liste, PDF folgt Liste + Auge.
 - [x] iPhone-Nav ohne Listen-Titel, Toolbar kompakt (`einkaufToolbarChrome`).
-- [x] Watch nur Geh-Modus (Filter `todo.currentListId`, kompaktes `#uid`, kein Edit/Reopen/Suche/Listen-UI). Complication **To Do**.
+- [x] Watch nur Geh-Modus (Filter `todo.currentListId`, kompaktes `#uid`, kein Edit/Reopen/Suche/Listen-UI). Complication Listenname / **Alle**.
 - [x] Siri **Todo** (ein Token, iPhone „o“, Watch ohne `requestValueDialog`), ein `AppShortcutsProvider`.
 - [x] **Einstellungen → To-Do Backup** (JSON); Import-`revision`-Floor analog Einkauf.
 - [x] Phasen 1–10 und Folgearbeit bis Build 62 gelandet. Kein offener To-Do-Plan.

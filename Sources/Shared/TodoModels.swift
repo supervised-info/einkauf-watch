@@ -653,13 +653,16 @@ enum TodoListGrouping {
 }
 
 /// Watch-Complication nur für To-Do. Liest `todo-local.json`, nie `einkauf-local.json`.
-/// Label-Text genau **To Do** (mit Leerzeichen). Zähler = offene Aufgaben, bei 0 „erledigt“.
+/// Label = Name der aktuellen Liste (`TodoListFilter.title`); Fallback **Alle**
+/// (leere / unbekannte ID — wie Listenmenü, Watch-Titel und iPhone-Widget `To Do (Alle)`).
+/// Zähler = offene Aufgaben der gefilterten Sicht, bei 0 „erledigt“.
 struct TodoComplicationSnapshot: Equatable, Sendable {
     static let widgetKind = "TodoProgress"
     static let openURL = URL(string: "einkauf://todo")!
-    /// Genau diese Schreibweise — nicht „To-Do“.
-    static let labelText = "To Do"
+    /// Wie `TodoListFilter.allTitle` — nicht „To Do“ (das bleibt `configurationDisplayName`).
+    static let fallbackLabel = TodoListFilter.allTitle
 
+    var labelText: String
     var openCount: Int
     var doneCount: Int
     var total: Int
@@ -668,6 +671,7 @@ struct TodoComplicationSnapshot: Equatable, Sendable {
     var progress: Double
 
     static let placeholder = TodoComplicationSnapshot(
+        labelText: "Haus",
         openCount: 3,
         doneCount: 1,
         total: 4,
@@ -676,11 +680,14 @@ struct TodoComplicationSnapshot: Equatable, Sendable {
     )
 
     static func make(from state: TodoState, currentListId: String = "") -> TodoComplicationSnapshot {
-        let tasks = TodoListFilter.tasks(state.tasks, currentListId: currentListId)
+        let listId = TodoListFilter.resolved(currentListId)
+        let tasks = TodoListFilter.tasks(state.tasks, currentListId: listId)
         let done = tasks.filter(\.completed).count
         let total = tasks.count
         let open = total - done
+        let raw = TodoListFilter.title(lists: state.lists, currentListId: listId)
         return TodoComplicationSnapshot(
+            labelText: AppState.clippedWatchStoreName(raw),
             openCount: open,
             doneCount: done,
             total: total,
@@ -694,13 +701,14 @@ struct TodoComplicationSnapshot: Equatable, Sendable {
     }
 
     var inlineText: String {
-        "\(Self.labelText)  \(compactCountText)"
+        "\(labelText)  \(compactCountText)"
     }
 
     var accessibilityLabel: String {
+        let title = labelText.isEmpty ? Self.fallbackLabel : labelText
         if openCount == 0 {
-            return "\(Self.labelText), Liste erledigt"
+            return "\(title), Liste erledigt"
         }
-        return "\(Self.labelText), \(openCount) offen"
+        return "\(title), \(openCount) offen"
     }
 }
