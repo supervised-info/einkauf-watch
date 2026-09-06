@@ -89,6 +89,7 @@ struct WatchListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .watchTopSafeChrome()
             .toolbar(.hidden, for: .navigationBar)
             .id(store.state.currentStoreId)
             .containerBackground(theme.paper, for: .navigation)
@@ -98,8 +99,9 @@ struct WatchListView: View {
         }
     }
 
-    /// Chrome direkt unter der Systemuhr, über der Titelzeile: Nav-Bar ausgeblendet, Auge nicht in der Toolbar (Trailing frisst die Uhr).
+    /// Chrome über der Titelzeile: Nav-Bar ausgeblendet, Auge nicht in der Toolbar (Trailing frisst die Uhr).
     /// Kompakte Zeile (~18–20pt) — kein 44pt-minHeight, sonst leere Bänder über und unter dem Glyph.
+    /// Abstand nach oben kommt von `watchTopSafeChrome()`, nicht von dieser Zeile.
     private var hideCompletedBar: some View {
         HStack(spacing: 0) {
             Button {

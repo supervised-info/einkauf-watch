@@ -108,6 +108,7 @@ struct WatchTodoListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .watchTopSafeChrome()
             .toolbar(.hidden, for: .navigationBar)
             .containerBackground(theme.paper, for: .navigation)
             .onAppear {
@@ -117,6 +118,7 @@ struct WatchTodoListView: View {
     }
 
     /// Chrome wie Einkauf-Watch: Nav-Bar ausgeblendet, Auge nicht in der Toolbar.
+    /// Abstand nach oben kommt von `watchTopSafeChrome()`, nicht von dieser Zeile.
     private var hideCompletedBar: some View {
         HStack(spacing: 0) {
             Button {

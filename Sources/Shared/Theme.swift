@@ -265,4 +265,27 @@ extension View {
         self
 #endif
     }
+
+    /// Watch-Listen ohne Nav-Bar: Auge + Titel unter die Systemuhr schieben.
+    /// `safeAreaPadding(.top)` respektiert die watchOS-Safe-Area; plus ~16pt, falls die Uhr nur Overlay ist.
+    /// Kein Extra-Abstand zwischen Auge, Titel und erstem Listenartikel.
+    func watchTopSafeChrome() -> some View {
+#if os(watchOS)
+        modifier(WatchTopSafeChromeModifier())
+#else
+        self
+#endif
+    }
 }
+
+#if os(watchOS)
+/// Nav-Bar ausgeblendet: Inhalt sonst am oberen Gehäuserand / unter der Uhr.
+/// Kein 44pt-Band, kein zweiter `safeAreaInset`-Zähler-Header.
+struct WatchTopSafeChromeModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .safeAreaPadding(.top)
+            .padding(.top, 16)
+    }
+}
+#endif

@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 66" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 66 / CURRENT_PROJECT_VERSION")
+    if "Build 67" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 67 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -534,6 +534,10 @@ def test_sources() -> None:
         fail("Description.md must hide the Watch navigation bar with toolbar(.hidden)")
     if "Systemuhr" not in watch_sec:
         fail("Description.md must keep the system clock visible under a hidden nav bar")
+    if "watchTopSafeChrome" not in watch_sec:
+        fail("Description.md must document watchTopSafeChrome above the Watch eye/title")
+    if "safeAreaPadding(.top)" not in watch_sec:
+        fail("Description.md must document safeAreaPadding(.top) for Watch top chrome")
     if "Navigation-Titel leer" in watch_sec:
         fail("Description.md still says empty navigation title instead of hiding the bar")
     if "theme.good" not in watch_sec:
@@ -875,6 +879,8 @@ def test_sources() -> None:
         fail("Watch hideCompletedBar must be a compact ~18–20pt row")
     if "VStack(spacing: 0)" not in watch:
         fail("Watch must use VStack(spacing: 0) so eye, title, and list stack tightly")
+    if "watchTopSafeChrome()" not in watch:
+        fail("Watch list must apply watchTopSafeChrome() so eye + title clear the status time")
     if ".contentMargins(.top, 0" not in watch:
         fail("Watch List must zero top contentMargins so the first item sits under the eye")
     if re.search(r"\.padding\(\)", watch):
@@ -1005,8 +1011,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 66" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 66")
+    if "CURRENT_PROJECT_VERSION = 67" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 67")
+    if "CURRENT_PROJECT_VERSION = 66" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 66 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 65" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 65 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 64" in pbx:
@@ -1124,8 +1132,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 66" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 66")
+    if "CURRENT_PROJECT_VERSION: 67" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 67")
+    if "CURRENT_PROJECT_VERSION: 66" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 66 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 65" in yml:
         fail("stale CURRENT_PROJECT_VERSION 65 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 64" in yml:
@@ -1274,6 +1284,14 @@ def test_sources() -> None:
             fail(f"theme missing {token}")
     if "func einkaufToolbarChrome" not in theme or ".subheadline" not in theme:
         fail("Theme must expose compact einkaufToolbarChrome (.subheadline)")
+    if "func watchTopSafeChrome" not in theme:
+        fail("Theme must expose watchTopSafeChrome for Watch list chrome")
+    if "safeAreaPadding(.top)" not in theme:
+        fail("watchTopSafeChrome must use safeAreaPadding(.top) for the Watch status area")
+    if "padding(.top, 16)" not in theme:
+        fail("watchTopSafeChrome must add modest ~16pt top padding under the clock overlay")
+    if re.search(r"minHeight:\s*44", theme) or "padding(.top, 44)" in theme:
+        fail("watchTopSafeChrome must not reintroduce a 44pt top band")
     share = (ROOT / "Sources/Shared/BackupShare.swift").read_text()
     if "yyyyMMdd_HHmm" not in share:
         fail("BackupShare missing stamped filename")
@@ -1453,8 +1471,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 66") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 66")
+    if pbx.count("CURRENT_PROJECT_VERSION = 67") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 67")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2526,6 +2544,12 @@ def test_todo_store() -> None:
         fail("Watch To-Do must not offer MD/CSV")
     if "toolbar(.hidden, for: .navigationBar)" not in watch_todo:
         fail("Watch To-Do must hide the navigation bar like Einkauf")
+    if "watchTopSafeChrome()" not in watch_todo:
+        fail("Watch To-Do must apply the same watchTopSafeChrome() as Einkauf")
+    if "VStack(spacing: 0)" not in watch_todo:
+        fail("Watch To-Do must keep VStack(spacing: 0) under the title")
+    if ".contentMargins(.top, 0" not in watch_todo:
+        fail("Watch To-Do List must zero top contentMargins like Einkauf")
     if '"eye"' not in watch_todo or "eye.slash" not in watch_todo:
         fail("Watch To-Do must use eye / eye.slash")
     if "consumeSiriPendingAdds" not in watch_todo:
