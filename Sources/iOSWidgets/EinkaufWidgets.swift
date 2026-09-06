@@ -9,7 +9,7 @@ struct EinkaufWidgets: WidgetBundle {
 }
 
 /// Homescreen-Widget (iOS 17, nicht Watch, nicht Sperrbildschirm).
-/// Klein: zwei Zeilen `oo/xx/yy`. Mittel/Groß: Mini-Tabelle mit Spaltenköpfen.
+/// Klein: zwei gestapelte Blöcke (Label, darunter `oo/xx/yy`). Mittel/Groß: Mini-Tabelle.
 struct EinkaufHomeWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: HomeWidgetSnapshot.widgetKind, provider: EinkaufHomeTimelineProvider()) { entry in
@@ -75,30 +75,30 @@ struct EinkaufHomeWidgetView: View {
         .accessibilityHint(family == .systemSmall ? "Öffnet die Einkaufsliste" : "Öffnet Einkauf oder To-Do")
     }
 
-    /// Klein: `Einkaufsliste: oo/xx/yy` (sonst `Einkauf`) und `To Do (<Liste>): oo/xx/yy`.
-    /// Beide Zeilen dieselbe Label-Schrift und dieselbe Zähler-Schrift; Zähler rechts `oo/xx/yy`.
+    /// Klein: `Einkaufsliste` (sonst `Einkauf`) und `To Do (<Liste>)` als gestapelte Blöcke.
+    /// Pro Domain Label in eigener Zeile, darunter `oo/xx/yy`. Abstand dazwischen.
     private var small: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            compactRow {
+        VStack(alignment: .leading, spacing: 12) {
+            stackedBlock {
                 ViewThatFits(in: .horizontal) {
-                    Text("\(HomeWidgetSnapshot.einkaufLabel):")
-                    Text("\(HomeWidgetSnapshot.einkaufLabelCompact):")
+                    Text(HomeWidgetSnapshot.einkaufLabel)
+                    Text(HomeWidgetSnapshot.einkaufLabelCompact)
                 }
             } counts: {
                 Text(entry.snapshot.einkauf.progressLabel)
             }
-            compactRow {
-                Text("\(entry.snapshot.todoRowLabel):")
+            stackedBlock {
+                Text(entry.snapshot.todoRowLabel)
             } counts: {
                 Text(entry.snapshot.todo.progressLabel)
             }
         }
     }
 
-    /// Eine Label-Schrift für beide Small-Zeilen.
+    /// Eine Label-Schrift für beide Small-Blöcke.
     private var smallLabelFont: Font { .caption }
 
-    /// Eine Zähler-Schrift für beide Small-Zeilen (`oo/xx/yy`).
+    /// Eine Zähler-Schrift für beide Small-Blöcke (`oo/xx/yy`).
     private var smallCountsFont: Font { .system(.headline, design: .rounded).weight(.semibold) }
 
     /// Mittel/Groß: dieselben zwei Domains, Spalten Offen | Erledigt | Gesamt.
@@ -125,11 +125,12 @@ struct EinkaufHomeWidgetView: View {
         }
     }
 
-    private func compactRow<Label: View, Counts: View>(
+    /// Ein Domain-Block: Caption-Label, darunter Headline-Zähler — nicht nebeneinander.
+    private func stackedBlock<Label: View, Counts: View>(
         @ViewBuilder label: () -> Label,
         @ViewBuilder counts: () -> Counts
     ) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        VStack(alignment: .leading, spacing: 2) {
             label()
                 .font(smallLabelFont)
                 .lineLimit(1)
@@ -139,8 +140,7 @@ struct EinkaufHomeWidgetView: View {
                 .font(smallCountsFont)
                 .monospacedDigit()
                 .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
