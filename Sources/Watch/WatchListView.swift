@@ -72,7 +72,7 @@ struct WatchListView: View {
                                         .buttonStyle(.plain)
                                         .accessibilityLabel(item.name)
                                         .accessibilityValue(item.done ? "erledigt" : "offen")
-                                        // Alle drei Zustände wie iPhone (⚡ / kompakter leerer Rahmen / ↓),
+                                        // Alle drei Zustände wie iPhone (⚡ / ↔ / ↓),
                                         // auch bei normal — nicht ausblenden. Nur Anzeige, kein Urgency-Zyklus.
                                         ItemUrgencyChip(urgency: item.urgency, theme: theme, compact: true)
                                         ItemImportedMark(imported: item.imported, theme: theme)

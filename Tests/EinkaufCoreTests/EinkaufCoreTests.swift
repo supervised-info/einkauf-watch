@@ -1848,7 +1848,9 @@ final class SpeechAddItemsTests: XCTestCase {
 
     func testUrgencyChipSymbols() {
         XCTAssertEqual(ItemUrgency.urgent.symbol, "⚡")
-        XCTAssertEqual(ItemUrgency.normal.symbol, "")
+        XCTAssertEqual(ItemUrgency.normal.symbol, "\u{2194}")
+        XCTAssertFalse(ItemUrgency.normal.symbol.isEmpty)
+        XCTAssertNotEqual(ItemUrgency.normal.symbol, "<->")
         XCTAssertFalse(ItemUrgency.normal.symbol.contains(" "))
         XCTAssertFalse(ItemUrgency.normal.symbol.contains("○"))
         XCTAssertFalse(ItemUrgency.normal.symbol.contains("–"))

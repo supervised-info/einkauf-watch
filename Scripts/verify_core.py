@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 65" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 65 / CURRENT_PROJECT_VERSION")
+    if "Build 66" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 66 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1005,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 65" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 65")
+    if "CURRENT_PROJECT_VERSION = 66" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 66")
+    if "CURRENT_PROJECT_VERSION = 65" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 65 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 64" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 64 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 63" in pbx:
@@ -1122,8 +1124,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 65" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 65")
+    if "CURRENT_PROJECT_VERSION: 66" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 66")
+    if "CURRENT_PROJECT_VERSION: 65" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 65 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 64" in yml:
         fail("stale CURRENT_PROJECT_VERSION 64 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 63" in yml:
@@ -1449,8 +1453,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 65") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 65")
+    if pbx.count("CURRENT_PROJECT_VERSION = 66") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 66")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2951,8 +2955,12 @@ def test_item_imported_urgency() -> None:
         fail("ItemUrgency must be urgent | normal | later")
     if 'case .urgent: return "⚡"' not in models:
         fail("urgent chip must be ⚡")
-    if 'case .normal: return ""' not in models:
-        fail("normal chip must be empty (no glyph, no spaces)")
+    if 'case .normal: return ""' in models:
+        fail("normal chip must not be empty")
+    if "case .normal: return \"\\u{2194}\"" not in models and "case .normal: return \"↔\"" not in models:
+        fail("normal chip must be ↔ (U+2194)")
+    if '"<->"' in models or "return \"<->\"" in models:
+        fail("normal chip must not be ASCII <->")
     if "case .later: return \"\\u{2193}\"" not in models and "case .later: return \"↓\"" not in models:
         fail("later chip must be ↓ (U+2193)")
     if 'return "·"' in models or 'return "◌"' in models or 'return "○"' in models or 'return "–"' in models:
@@ -2992,22 +3000,28 @@ def test_item_imported_urgency() -> None:
     chip = theme[theme.find("struct ItemUrgencyChip"):theme.find("extension View")]
     if 'Text("  ")' in chip or 'Text(" ")' in chip:
         fail("normal urgency chip must not use spaces as content")
-    if "urgency.symbol.isEmpty" not in chip:
-        fail("normal urgency chip must render empty (no glyph), not a letter-like mark")
-    if "strokeBorder" not in chip:
-        fail("normal urgency chip must be a visible outlined chip (strokeBorder), not Color.clear alone")
+    if "urgency.symbol.isEmpty" in chip:
+        fail("normal urgency chip must show ↔, not an empty Color.clear outline")
+    if "Color.clear" in chip:
+        fail("urgency chip must not use Color.clear (empty outline stretches on Watch)")
+    if "strokeBorder" in chip:
+        fail("urgency chip must not draw an empty outlined capsule for normal")
+    if "Text(urgency.symbol)" not in chip:
+        fail("ItemUrgencyChip must render urgency.symbol for all three states")
     if "contentShape" not in chip:
-        fail("empty outlined urgency chip must keep a tappable contentShape")
+        fail("urgency chip must keep a tappable contentShape")
     if "minWidth" not in chip:
         fail("urgency chip must keep a minWidth for layout stability")
     if "fixedSize()" not in chip:
-        fail("urgency chip must use fixedSize so Color.clear does not stretch into a wide pill")
+        fail("urgency chip must use fixedSize so the capsule does not stretch")
     if ".frame(width: minSide, height: minSide)" not in chip:
-        fail("normal outlined chip must pin Color.clear to the same compact side as ⚡/↓")
+        fail("all urgency chips must pin the same compact side so ↔ sits like ⚡/↓")
     if "(() -> Void)?" not in chip:
         fail("ItemUrgencyChip action must be optional so Watch can omit the tap")
     if "○" in chip or "–" in chip or "·" in chip or "◌" in chip:
         fail("ItemUrgencyChip must not draw ○, –, ·, or ◌")
+    if "<->" in chip:
+        fail("ItemUrgencyChip must not draw ASCII <->")
     if "theme.slate" not in theme:
         fail("import mark must use theme.slate (teal), not green")
     imported_mark = theme[theme.find("struct ItemImportedMark"):theme.find("struct ItemUrgencyChip")]
@@ -3072,10 +3086,16 @@ def test_item_imported_urgency() -> None:
     if "urgent" not in desc or "later" not in desc:
         fail("Description.md must name urgency values")
     artikel = desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]
-    if "↓" not in desc or "leer" not in artikel:
-        fail("Description.md must document urgency icons ⚡ / leer / ↓")
-    if "umrandet" not in artikel and "Rahmen" not in artikel:
-        fail("Description.md must document normal as an outlined empty chip")
+    if "↓" not in desc or "↔" not in artikel:
+        fail("Description.md must document urgency icons ⚡ / ↔ / ↓")
+    if "U+2194" not in artikel:
+        fail("Description.md must name ↔ as U+2194")
+    if "leerer umrandeter Chip" in artikel or "kompakter leerer Rahmen" in artikel:
+        fail("Description.md must not document normal as an empty outlined chip")
+    if "keine Glyphe" in artikel:
+        fail("Description.md must not document normal as a chip without a glyph")
+    if '"<->"' not in artikel and "`<->`" not in artikel and "nicht `<->`" not in artikel:
+        fail("Description.md must reject ASCII <-> for normal")
     if "nicht ○" not in artikel and "kein ○" not in artikel:
         fail("Description.md must reject circle glyph ○ for normal")
     if "kompakt" not in artikel:
@@ -3085,6 +3105,8 @@ def test_item_imported_urgency() -> None:
     geh = desc[desc.find("### Geh-Modus"):desc.find("### Edit")]
     if "kompakt" not in geh:
         fail("Description.md Geh-Modus must say the normal chip is compact")
+    if "↔" not in geh:
+        fail("Description.md Geh-Modus must show ↔ for normal")
     if "nur iPhone" not in geh:
         fail("Description.md Geh-Modus must limit chip tap to iPhone")
     watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
@@ -3098,8 +3120,14 @@ def test_item_imported_urgency() -> None:
         fail("Description.md Watch must show all three urgency states including normal")
     if "kompakt" not in watch_sec:
         fail("Description.md Watch must say the normal chip is compact")
+    if "↔" not in watch_sec:
+        fail("Description.md Watch must show ↔ for normal")
     if "testUrgencyChipSymbols" not in tests:
         fail("tests must cover urgency chip symbols")
+    if "\\u{2194}" not in tests and '"↔"' not in tests:
+        fail("tests must require ↔ (U+2194) for normal")
+    if 'ItemUrgency.normal.symbol, ""' in tests:
+        fail("tests must not expect an empty normal symbol")
     if "imported: true" not in desc:
         fail("Description.md must document Inbox imported: true")
     if "Siri" not in desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]:
