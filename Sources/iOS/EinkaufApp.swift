@@ -18,6 +18,7 @@ struct EinkaufApp: App {
             guard phase == .active else { return }
             store.reloadFromPersistenceIfNewer()
             todos.reloadFromPersistenceIfNewer()
+            TodoCurrentList.syncIphoneToAppGroup()
             HomeWidgetReload.timelines()
         }
     }

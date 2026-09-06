@@ -286,6 +286,10 @@ final class TodoStore: ObservableObject {
 
     /// WC ohne Datenänderung — sendet den Snapshot inkl. `currentListId` im Payload.
     func broadcastCurrentList() {
+#if os(iOS)
+        TodoCurrentList.syncIphoneToAppGroup()
+        HomeWidgetReload.timelines()
+#endif
 #if os(iOS) || os(watchOS)
         sync?.broadcast(state)
 #endif
@@ -376,10 +380,16 @@ final class TodoStore: ObservableObject {
 #if os(watchOS)
             WatchComplicationReload.todoTimelines()
 #endif
+#if os(iOS)
+            HomeWidgetReload.timelines()
+#endif
         }
         TodoPersistence.save(state)
 #if os(watchOS)
         WatchComplicationReload.todoTimelines()
+#endif
+#if os(iOS)
+        HomeWidgetReload.timelines()
 #endif
     }
 }

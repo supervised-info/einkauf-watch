@@ -536,12 +536,16 @@ final class ComplicationSnapshotTests: XCTestCase {
 }
 
 final class HomeWidgetSnapshotTests: XCTestCase {
-    func testEmptyListIsZeroOverZeroNotHidden() {
-        let snap = HomeWidgetSnapshot.make(from: .seed)
+    func testEmptyListsAreZeroOverZero() {
+        let snap = HomeWidgetSnapshot.make(from: .seed, todo: .empty, currentListId: "")
+        XCTAssertEqual(snap.einkauf.progressLabel, "0/0/0")
+        XCTAssertEqual(snap.todo.progressLabel, "0/0/0")
         XCTAssertEqual(snap.progressLabel, "0/0/0")
-        XCTAssertEqual(snap.storeName, "Edeka")
-        XCTAssertTrue(snap.isEmpty)
-        XCTAssertTrue(snap.openItemNames.isEmpty)
+        XCTAssertEqual(snap.todoListName, "Alle")
+        XCTAssertEqual(snap.todoRowLabel, "To Do (Alle)")
+        XCTAssertEqual(snap.compactEinkaufLine(short: false), "Einkaufsliste: 0/0/0")
+        XCTAssertEqual(snap.compactEinkaufLine(short: true), "Einkauf: 0/0/0")
+        XCTAssertEqual(snap.compactTodoLine, "To Do (Alle): 0/0/0")
         XCTAssertTrue(snap.accessibilityLabel.contains("leer"))
     }
 
@@ -555,13 +559,63 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         let snap = HomeWidgetSnapshot.make(from: state)
         XCTAssertEqual(snap.progressLabel, state.progressLabel)
         XCTAssertEqual(snap.progressLabel, "1/2/3")
-        XCTAssertEqual(snap.storeName, state.currentStore.name)
-        XCTAssertFalse(snap.isEmpty)
-        XCTAssertEqual(snap.openItemNames, ["Milch"])
+        XCTAssertEqual(snap.einkauf.open, 1)
+        XCTAssertEqual(snap.einkauf.done, 2)
+        XCTAssertEqual(snap.einkauf.total, 3)
         XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
         XCTAssertEqual(state.complicationSnapshot.progressLabel, snap.progressLabel)
     }
 
+    func testTodoCountsFollowCurrentListOnly() {
+        let todo = TodoState(
+            tasks: [
+                TodoTask(uid: 1, text: "A", listId: "haus"),
+                TodoTask(uid: 2, text: "B", completed: true, listId: "haus"),
+                TodoTask(uid: 3, text: "C"),
+                TodoTask(uid: 4, text: "D", completed: true, listId: "arbeit")
+            ],
+            nextUid: 5,
+            lists: [
+                TodoNamedList(id: "haus", name: "Haus"),
+                TodoNamedList(id: "arbeit", name: "Arbeit")
+            ]
+        )
+        let all = HomeWidgetSnapshot.make(from: .seed, todo: todo, currentListId: "")
+        XCTAssertEqual(all.todo.progressLabel, "2/2/4")
+        XCTAssertEqual(all.todoListName, "Alle")
+        XCTAssertEqual(all.todoRowLabel, "To Do (Alle)")
+
+        let haus = HomeWidgetSnapshot.make(from: .seed, todo: todo, currentListId: "haus")
+        XCTAssertEqual(haus.todo.progressLabel, "1/1/2")
+        XCTAssertEqual(haus.todoRowLabel, "To Do (Haus)")
+        XCTAssertEqual(haus.compactTodoLine, "To Do (Haus): 1/1/2")
+
+        let blank = HomeWidgetSnapshot.make(from: .seed, todo: todo, currentListId: "   ")
+        XCTAssertEqual(blank.todoListName, "Alle")
+        XCTAssertEqual(blank.todo.progressLabel, "2/2/4")
+
+        let missing = HomeWidgetSnapshot.make(from: .seed, todo: todo, currentListId: "missing")
+        XCTAssertEqual(missing.todo.progressLabel, "0/0/0")
+        XCTAssertEqual(missing.todoListName, "Alle")
+        XCTAssertEqual(missing.todoRowLabel, "To Do (Alle)")
+    }
+
+    func testWidgetKindUrlsAndColumnHeaders() {
+        XCTAssertEqual(HomeWidgetSnapshot.widgetKind, "EinkaufHome")
+        XCTAssertEqual(HomeWidgetSnapshot.openURL.scheme, "einkauf")
+        XCTAssertEqual(HomeWidgetSnapshot.openURL, ComplicationSnapshot.openURL)
+        XCTAssertEqual(HomeWidgetSnapshot.todoURL, TodoComplicationSnapshot.openURL)
+        XCTAssertEqual(HomeWidgetSnapshot.todoURL.absoluteString, "einkauf://todo")
+        XCTAssertEqual(HomeWidgetSnapshot.columnHeaders.0, "Offen")
+        XCTAssertEqual(HomeWidgetSnapshot.columnHeaders.1, "Erledigt")
+        XCTAssertEqual(HomeWidgetSnapshot.columnHeaders.2, "Gesamt")
+        XCTAssertEqual(HomeWidgetSnapshot.placeholder.progressLabel, "5/2/7")
+        XCTAssertEqual(HomeWidgetSnapshot.placeholder.todoProgressLabel, "3/1/4")
+        XCTAssertEqual(HomeWidgetSnapshot.placeholder.todoRowLabel, "To Do (Haus)")
+    }
+}
+
+final class ListGroupingOpenItemTests: XCTestCase {
     func testOpenItemsFollowWalkOrderAndSkipDone() {
         var state = AppState.seed
         state.items = [
@@ -570,11 +624,11 @@ final class HomeWidgetSnapshotTests: XCTestCase {
             Item(id: "o", name: "Äpfel", dept: "obst", done: true, added: 3, ord: 1),
             Item(id: "v", name: "Tasche", dept: "vor", done: false, added: 4, ord: 1)
         ]
-        let edeka = HomeWidgetSnapshot.make(from: state)
-        XCTAssertEqual(edeka.openItemNames, ["Tasche", "Milch", "Seife"])
+        let edeka = ListGrouping.openItemNames(items: state.items, store: state.currentStore, limit: 5)
+        XCTAssertEqual(edeka, ["Tasche", "Milch", "Seife"])
         state.currentStoreId = "dm"
-        let dm = HomeWidgetSnapshot.make(from: state)
-        XCTAssertEqual(dm.openItemNames, ["Tasche", "Seife", "Milch"])
+        let dm = ListGrouping.openItemNames(items: state.items, store: state.currentStore, limit: 5)
+        XCTAssertEqual(dm, ["Tasche", "Seife", "Milch"])
     }
 
     func testOpenItemLimitAndFullStoreName() {
@@ -583,17 +637,11 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         state.items = (0..<8).map { i in
             Item(id: "i\(i)", name: "Artikel \(i)", dept: "sonstiges", done: false, added: Double(i), ord: Double(i))
         }
-        let snap = HomeWidgetSnapshot.make(from: state)
-        XCTAssertEqual(snap.storeName, "Eigenes Layout")
-        XCTAssertNotEqual(snap.storeName, AppState.clippedWatchStoreName(state.currentStore.name))
-        XCTAssertEqual(snap.openItemNames.count, HomeWidgetSnapshot.openItemLimit)
-        XCTAssertEqual(snap.openItemNames, (0..<5).map { "Artikel \($0)" })
-    }
-
-    func testWidgetKindIsStable() {
-        XCTAssertEqual(HomeWidgetSnapshot.widgetKind, "EinkaufHome")
-        XCTAssertEqual(HomeWidgetSnapshot.openURL.scheme, "einkauf")
-        XCTAssertEqual(HomeWidgetSnapshot.openURL, ComplicationSnapshot.openURL)
+        XCTAssertEqual(state.currentStore.name, "Eigenes Layout")
+        XCTAssertNotEqual(state.currentStore.name, AppState.clippedWatchStoreName(state.currentStore.name))
+        let names = ListGrouping.openItemNames(items: state.items, store: state.currentStore, limit: 5)
+        XCTAssertEqual(names.count, 5)
+        XCTAssertEqual(names, (0..<5).map { "Artikel \($0)" })
     }
 }
 
