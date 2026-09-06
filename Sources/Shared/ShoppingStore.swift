@@ -490,15 +490,13 @@ final class ShoppingStore: ObservableObject {
 #if os(watchOS)
             WatchComplicationReload.timelines()
 #endif
-#if os(iOS)
-            HomeWidgetReload.timelines()
-#endif
         }
         Persistence.save(state)
 #if os(watchOS)
         WatchComplicationReload.timelines()
 #endif
 #if os(iOS)
+        // Ein Request; HomeWidgetReload coalesct sofort+80ms und Store-übergreifende Bursts.
         HomeWidgetReload.timelines()
 #endif
     }

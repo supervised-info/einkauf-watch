@@ -58,7 +58,7 @@ enum TodoPersistence {
 
     private static func read(_ url: URL) -> TodoState? {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
-        guard let data = try? Data(contentsOf: url) else { return nil }
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return nil }
         return try? TodoCodec.decodeLocal(data)
     }
 }

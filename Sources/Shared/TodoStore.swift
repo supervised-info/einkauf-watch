@@ -380,15 +380,13 @@ final class TodoStore: ObservableObject {
 #if os(watchOS)
             WatchComplicationReload.todoTimelines()
 #endif
-#if os(iOS)
-            HomeWidgetReload.timelines()
-#endif
         }
         TodoPersistence.save(state)
 #if os(watchOS)
         WatchComplicationReload.todoTimelines()
 #endif
 #if os(iOS)
+        // Ein Request; HomeWidgetReload coalesct sofort+80ms und Store-übergreifende Bursts.
         HomeWidgetReload.timelines()
 #endif
     }
