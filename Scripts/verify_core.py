@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 63" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 63 / CURRENT_PROJECT_VERSION")
+    if "Build 64" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 64 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1005,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 63" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 63")
+    if "CURRENT_PROJECT_VERSION = 64" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 64")
+    if "CURRENT_PROJECT_VERSION = 63" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 63 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 62" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 62 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 61" in pbx:
@@ -1118,8 +1120,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 63" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 63")
+    if "CURRENT_PROJECT_VERSION: 64" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 64")
+    if "CURRENT_PROJECT_VERSION: 63" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 63 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 62" in yml:
         fail("stale CURRENT_PROJECT_VERSION 62 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 61" in yml:
@@ -1441,8 +1445,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 63") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 63")
+    if pbx.count("CURRENT_PROJECT_VERSION = 64") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 64")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2947,8 +2951,8 @@ def test_item_imported_urgency() -> None:
         fail("normal chip must be empty (no glyph, no spaces)")
     if "case .later: return \"\\u{2193}\"" not in models and "case .later: return \"↓\"" not in models:
         fail("later chip must be ↓ (U+2193)")
-    if 'return "·"' in models or 'return "◌"' in models:
-        fail("urgency chips must not use · or ◌")
+    if 'return "·"' in models or 'return "◌"' in models or 'return "○"' in models or 'return "–"' in models:
+        fail("urgency chips must not use ·, ◌, ○, or –")
     if "var imported: Bool" not in models or "var urgency: ItemUrgency" not in models:
         fail("Item must have imported and urgency")
     if "imported = try c.decodeIfPresent(Bool.self, forKey: .imported) ?? false" not in models:
@@ -2984,10 +2988,16 @@ def test_item_imported_urgency() -> None:
     chip = theme[theme.find("struct ItemUrgencyChip"):theme.find("extension View")]
     if 'Text("  ")' in chip or 'Text(" ")' in chip:
         fail("normal urgency chip must not use spaces as content")
-    if "urgency.symbol.isEmpty" not in chip or "Color.clear" not in chip:
-        fail("normal urgency chip must render empty with Color.clear, not a glyph")
+    if "urgency.symbol.isEmpty" not in chip:
+        fail("normal urgency chip must render empty (no glyph), not a letter-like mark")
+    if "strokeBorder" not in chip:
+        fail("normal urgency chip must be a visible outlined chip (strokeBorder), not Color.clear alone")
+    if "contentShape" not in chip:
+        fail("empty outlined urgency chip must keep a tappable contentShape")
     if "minWidth" not in chip:
         fail("urgency chip must keep a minWidth for layout stability")
+    if "○" in chip or "–" in chip or "·" in chip or "◌" in chip:
+        fail("ItemUrgencyChip must not draw ○, –, ·, or ◌")
     if "theme.slate" not in theme:
         fail("import mark must use theme.slate (teal), not green")
     imported_mark = theme[theme.find("struct ItemImportedMark"):theme.find("struct ItemUrgencyChip")]
@@ -3020,8 +3030,13 @@ def test_item_imported_urgency() -> None:
         fail("Description.md must document teal import mark via theme.slate")
     if "urgent" not in desc or "later" not in desc:
         fail("Description.md must name urgency values")
-    if "↓" not in desc or "leer" not in desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]:
+    artikel = desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]
+    if "↓" not in desc or "leer" not in artikel:
         fail("Description.md must document urgency icons ⚡ / leer / ↓")
+    if "umrandet" not in artikel and "Rahmen" not in artikel:
+        fail("Description.md must document normal as an outlined empty chip")
+    if "nicht ○" not in artikel and "kein ○" not in artikel:
+        fail("Description.md must reject circle glyph ○ for normal")
     if "testUrgencyChipSymbols" not in tests:
         fail("tests must cover urgency chip symbols")
     if "imported: true" not in desc:
