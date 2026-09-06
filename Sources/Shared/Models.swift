@@ -56,6 +56,46 @@ struct SavedList: Identifiable, Equatable, Codable, Sendable {
     }
 }
 
+/// Dringlichkeit eines Einkaufs-Artikels. Fehlender / unbekannter Key = `normal`.
+enum ItemUrgency: String, Equatable, Codable, CaseIterable, Sendable {
+    case urgent
+    case normal
+    case later
+
+    static func parse(_ raw: String?) -> ItemUrgency {
+        switch raw?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case ItemUrgency.urgent.rawValue: return .urgent
+        case ItemUrgency.later.rawValue: return .later
+        default: return .normal
+        }
+    }
+
+    var next: ItemUrgency {
+        switch self {
+        case .urgent: return .normal
+        case .normal: return .later
+        case .later: return .urgent
+        }
+    }
+
+    /// Kompaktes Icon für Chip (⚡ / · / ◌).
+    var symbol: String {
+        switch self {
+        case .urgent: return "⚡"
+        case .normal: return "·"
+        case .later: return "◌"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .urgent: return "eilig"
+        case .normal: return "normal"
+        case .later: return "später"
+        }
+    }
+}
+
 struct Item: Identifiable, Equatable, Codable, Sendable {
     var id: String
     var name: String
@@ -65,12 +105,26 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
     var ord: Double
     /// Nur intern (Sync). Wird beim PWA-Export weggelassen.
     var doneChangedAt: Double?
+    /// Nur Inbox-Abruf und expliziter Fremd-Datei-Import. Fehlender Key = false.
+    var imported: Bool
+    /// Fehlender / unbekannter Key = `normal`.
+    var urgency: ItemUrgency
 
     enum CodingKeys: String, CodingKey {
-        case id, name, dept, done, added, ord, doneChangedAt
+        case id, name, dept, done, added, ord, doneChangedAt, imported, urgency
     }
 
-    init(id: String, name: String, dept: String, done: Bool, added: Double, ord: Double, doneChangedAt: Double? = nil) {
+    init(
+        id: String,
+        name: String,
+        dept: String,
+        done: Bool,
+        added: Double,
+        ord: Double,
+        doneChangedAt: Double? = nil,
+        imported: Bool = false,
+        urgency: ItemUrgency = .normal
+    ) {
         self.id = id
         self.name = name
         self.dept = dept
@@ -78,6 +132,8 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         self.added = added
         self.ord = ord
         self.doneChangedAt = doneChangedAt
+        self.imported = imported
+        self.urgency = urgency
     }
 
     init(from decoder: Decoder) throws {
@@ -90,6 +146,8 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         added = try Self.decodeNumber(c, key: .added) ?? Date.nowEpochMillis
         ord = try Self.decodeNumber(c, key: .ord) ?? added
         doneChangedAt = try Self.decodeNumber(c, key: .doneChangedAt)
+        imported = try c.decodeIfPresent(Bool.self, forKey: .imported) ?? false
+        urgency = ItemUrgency.parse(try c.decodeIfPresent(String.self, forKey: .urgency))
     }
 
     func encode(to encoder: Encoder) throws {
@@ -100,6 +158,8 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         try c.encode(done, forKey: .done)
         try c.encode(added, forKey: .added)
         try c.encode(ord, forKey: .ord)
+        try c.encode(imported, forKey: .imported)
+        try c.encode(urgency.rawValue, forKey: .urgency)
         if encoder.userInfo[BackupCodec.includeInternalKeys] as? Bool == true, let doneChangedAt {
             try c.encode(doneChangedAt, forKey: .doneChangedAt)
         }

@@ -49,30 +49,36 @@ struct WatchListView: View {
                                         .accessibilityAddTraits(.isHeader)
                                         .accessibilityLabel(Department.title(for: dept))
                                 case .item(_, let item):
-                                    Button {
-                                        store.toggle(item.id)
-                                    } label: {
-                                        HStack(alignment: .center, spacing: 10) {
-                                            Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                                                .font(.title)
-                                                .foregroundStyle(item.done ? theme.good : theme.muted)
-                                                .frame(width: 36, height: 36)
-                                            Text(item.name)
-                                                .font(.headline)
-                                                .foregroundStyle(theme.ink)
-                                                .strikethrough(item.done, color: theme.muted)
-                                                .lineLimit(3)
-                                                .multilineTextAlignment(.leading)
-                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                    HStack(alignment: .center, spacing: 8) {
+                                        ItemImportedMark(imported: item.imported, theme: theme)
+                                        Button {
+                                            store.toggle(item.id)
+                                        } label: {
+                                            HStack(alignment: .center, spacing: 10) {
+                                                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                                                    .font(.title)
+                                                    .foregroundStyle(item.done ? theme.good : theme.muted)
+                                                    .frame(width: 36, height: 36)
+                                                Text(item.name)
+                                                    .font(.headline)
+                                                    .foregroundStyle(theme.ink)
+                                                    .strikethrough(item.done, color: theme.muted)
+                                                    .lineLimit(3)
+                                                    .multilineTextAlignment(.leading)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                            }
+                                            .padding(.vertical, 4)
+                                            .contentShape(Rectangle())
                                         }
-                                        .padding(.vertical, 4)
-                                        .contentShape(Rectangle())
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel(item.name)
+                                        .accessibilityValue(item.done ? "erledigt" : "offen")
+                                        ItemUrgencyChip(urgency: item.urgency, theme: theme, compact: true) {
+                                            store.cycleItemUrgency(item.id)
+                                        }
                                     }
-                                    .buttonStyle(.plain)
                                     .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                     .listRowBackground(theme.paper2)
-                                    .accessibilityLabel(item.name)
-                                    .accessibilityValue(item.done ? "erledigt" : "offen")
                                 }
                             }
                         }

@@ -30,6 +30,62 @@ final class BackupCodecTests: XCTestCase {
         let state = try BackupCodec.decode(Data(json.utf8))
         XCTAssertEqual(state.items.count, 1)
         XCTAssertEqual(state.items[0].name, "Milch")
+        XCTAssertFalse(state.items[0].imported)
+        XCTAssertEqual(state.items[0].urgency, .normal)
+    }
+
+    func testMissingImportedAndUrgencyDefault() throws {
+        let json = """
+        {"kind":"einkauf-backup","v":1,"currentStoreId":"edeka","stores":[],"items":[{"id":"a","name":"Milch","dept":"kuehlung","done":false,"added":1,"ord":1}]}
+        """
+        let state = try BackupCodec.decode(Data(json.utf8))
+        XCTAssertEqual(state.items.count, 1)
+        XCTAssertFalse(state.items[0].imported)
+        XCTAssertEqual(state.items[0].urgency, .normal)
+    }
+
+    func testUnknownUrgencyIsNormal() throws {
+        let json = """
+        {"kind":"einkauf-backup","v":1,"currentStoreId":"edeka","stores":[],"items":[{"id":"a","name":"Milch","dept":"kuehlung","done":false,"added":1,"ord":1,"imported":true,"urgency":"soon"}]}
+        """
+        let state = try BackupCodec.decode(Data(json.utf8))
+        XCTAssertTrue(state.items[0].imported)
+        XCTAssertEqual(state.items[0].urgency, .normal)
+    }
+
+    func testExportRoundTripPreservesImportedAndUrgency() throws {
+        var original = AppState.seed
+        original.items = [
+            Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .urgent),
+            Item(id: "i2", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 2, imported: false, urgency: .later)
+        ]
+        let exported = try BackupCodec.encodeExport(original)
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        let rawItems = obj["items"] as! [[String: Any]]
+        XCTAssertEqual(rawItems[0]["imported"] as? Bool, true)
+        XCTAssertEqual(rawItems[0]["urgency"] as? String, "urgent")
+        XCTAssertEqual(rawItems[1]["imported"] as? Bool, false)
+        XCTAssertEqual(rawItems[1]["urgency"] as? String, "later")
+        XCTAssertNil(rawItems[0]["doneChangedAt"])
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.items.map(\.imported), [true, false])
+        XCTAssertEqual(again.items.map(\.urgency), [.urgent, .later])
+    }
+
+    func testLocalEncodeWritesImportedAndUrgency() throws {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "i1", name: "Butter", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .later)
+        ]
+        let data = try BackupCodec.encodeLocal(state)
+        let again = try BackupCodec.decodeLocal(data)
+        XCTAssertEqual(again.items[0].imported, true)
+        XCTAssertEqual(again.items[0].urgency, .later)
+        let obj = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let nested = obj["state"] as! [String: Any]
+        let items = nested["items"] as! [[String: Any]]
+        XCTAssertEqual(items[0]["imported"] as? Bool, true)
+        XCTAssertEqual(items[0]["urgency"] as? String, "later")
     }
 
     func testExportRoundTrip() throws {
@@ -1760,7 +1816,58 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.addItems(fromSpeech: "Milch, Butter und zwei Eier"), 3)
         XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "zwei Eier"])
         XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
+        XCTAssertEqual(store.state.items.map(\.imported), [false, false, false])
+        XCTAssertEqual(store.state.items.map(\.urgency), [.normal, .normal, .normal])
         XCTAssertEqual(store.state.listRevision, 1)
+    }
+
+    func testAddImportedItemsMarksOnlyInboxPath() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        XCTAssertEqual(store.addItems(fromSpeech: "Milch"), 1)
+        XCTAssertFalse(store.state.items[0].imported)
+        XCTAssertEqual(store.addItems(fromSpeech: "Butter", imported: true), 1)
+        XCTAssertTrue(store.state.items[1].imported)
+        XCTAssertEqual(store.addImportedItems(fromSpeech: "Eier"), 1)
+        XCTAssertTrue(store.state.items[2].imported)
+        XCTAssertEqual(store.state.items.map(\.urgency), [.normal, .normal, .normal])
+    }
+
+    func testCycleItemUrgencyUrgentNormalLater() {
+        var seed = AppState.seed
+        seed.items = [Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true)]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        store.cycleItemUrgency("i1")
+        XCTAssertEqual(store.state.items[0].urgency, .later)
+        store.cycleItemUrgency("i1")
+        XCTAssertEqual(store.state.items[0].urgency, .urgent)
+        store.cycleItemUrgency("i1")
+        XCTAssertEqual(store.state.items[0].urgency, .normal)
+        XCTAssertTrue(store.state.items[0].imported)
+        XCTAssertEqual(store.state.listRevision, 3)
+    }
+
+    func testManualAddAndStaplesAreNotImported() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.addItem("Milch")
+        XCTAssertFalse(store.state.items[0].imported)
+        XCTAssertEqual(store.state.items[0].urgency, .normal)
+        _ = store.applyStaple(Staple(name: "Butter", dept: "kuehlung"))
+        XCTAssertEqual(store.state.items.count, 2)
+        XCTAssertTrue(store.state.items.allSatisfy { !$0.imported })
+        XCTAssertTrue(store.state.items.allSatisfy { $0.urgency == .normal })
+    }
+
+    func testImportBackupPreservesImportedAndUrgency() throws {
+        var original = AppState.seed
+        original.items = [
+            Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .urgent),
+            Item(id: "i2", name: "Brot", dept: "brot", done: false, added: 2, ord: 2, imported: false, urgency: .later)
+        ]
+        let data = try BackupCodec.encodeExport(original)
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        try store.importBackup(data)
+        XCTAssertEqual(store.state.items.map(\.imported), [true, false])
+        XCTAssertEqual(store.state.items.map(\.urgency), [.urgent, .later])
     }
 
     func testAddItemsFromSpeechEmptyAddsNothing() {

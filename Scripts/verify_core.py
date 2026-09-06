@@ -469,6 +469,8 @@ def test_sources() -> None:
         fail("Inbox abrufen must present InboxRetrieveSheet when the file has items")
     if "addItems(fromSpeech:" not in content:
         fail("Inbox abrufen must feed ShoppingStore.addItems(fromSpeech:)")
+    if "imported: true" not in content:
+        fail("Inbox abrufen must pass imported: true")
     if "InboxParser.speechText" not in content:
         fail("Inbox abrufen must join parsed lines via InboxParser.speechText")
     retrieve_sheet = (ROOT / "Sources/iOS/InboxRetrieveSheet.swift").read_text()
@@ -496,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 62" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 62 / CURRENT_PROJECT_VERSION")
+    if "Build 63" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 63 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1003,8 +1005,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 62" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 62")
+    if "CURRENT_PROJECT_VERSION = 63" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 63")
+    if "CURRENT_PROJECT_VERSION = 62" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 62 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 61" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 61 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 60" in pbx:
@@ -1114,8 +1118,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 62" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 62")
+    if "CURRENT_PROJECT_VERSION: 63" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 63")
+    if "CURRENT_PROJECT_VERSION: 62" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 62 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 61" in yml:
         fail("stale CURRENT_PROJECT_VERSION 61 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 60" in yml:
@@ -1435,8 +1441,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 62") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 62")
+    if pbx.count("CURRENT_PROJECT_VERSION = 63") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 63")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1670,6 +1676,8 @@ def test_siri_app_intents() -> None:
         fail("addItemsFromSiri soft-save path must be gone")
     if "addItems(fromSpeech:" not in intent:
         fail("iOS Intent perform must call addItems(fromSpeech:)")
+    if "imported: true" in intent:
+        fail("Siri must not pass imported: true")
     if "ShoppingStore(enableSync: true)" not in intent:
         fail("iOS Intent must keep ShoppingStore(enableSync: true)")
     if "ShoppingStore(enableSync: false)" in intent:
@@ -2833,6 +2841,12 @@ def test_icloud_inbox() -> None:
         fail("Inbox must never touch TodoStore")
     if "addItems(fromSpeech:" not in store:
         fail("ShoppingStore.addItems(fromSpeech:) is the Inbox retrieve path")
+    if "imported: Bool = false" not in store:
+        fail("addItems(fromSpeech:) must default imported to false")
+    if "func addImportedItems" not in store:
+        fail("ShoppingStore.addImportedItems is the foreign-import add path")
+    if "func cycleItemUrgency" not in store:
+        fail("ShoppingStore.cycleItemUrgency missing")
     if "Inbox verbinden…" not in content or "Inbox abrufen" not in content:
         fail("ContentView overflow must offer Inbox verbinden… and Inbox abrufen")
     if "InboxRetrieveSheet" not in content:
@@ -2909,6 +2923,108 @@ def test_icloud_inbox() -> None:
     print("icloud inbox: ok")
 
 
+def test_item_imported_urgency() -> None:
+    models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    codec = (ROOT / "Sources/Shared/BackupCodec.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    theme = (ROOT / "Sources/Shared/Theme.swift").read_text()
+    ios = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    todo_ui = (ROOT / "Sources/iOS/TodoListView.swift").read_text()
+    todo_models = (ROOT / "Sources/Shared/TodoModels.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    staple = (ROOT / "Sources/Shared/StapleApply.swift").read_text()
+    intent = (ROOT / "Sources/Shared/EinkaufAddItemsIntent.swift").read_text()
+
+    if "enum ItemUrgency" not in models:
+        fail("ItemUrgency missing")
+    if 'case urgent' not in models or 'case normal' not in models or 'case later' not in models:
+        fail("ItemUrgency must be urgent | normal | later")
+    if "var imported: Bool" not in models or "var urgency: ItemUrgency" not in models:
+        fail("Item must have imported and urgency")
+    if "imported = try c.decodeIfPresent(Bool.self, forKey: .imported) ?? false" not in models:
+        fail("Item decode must default missing imported to false")
+    if "ItemUrgency.parse" not in models:
+        fail("Item decode must parse urgency with unknown → normal")
+    if "try c.encode(imported, forKey: .imported)" not in models:
+        fail("Item encode must write imported")
+    if "try c.encode(urgency.rawValue, forKey: .urgency)" not in models:
+        fail("Item encode must write urgency")
+
+    if '"imported": item.imported' not in codec or '"urgency": item.urgency.rawValue' not in codec:
+        fail("backup export must write imported and urgency")
+    if "imported: s[\"imported\"] as? Bool ?? false" not in codec:
+        fail("sanitizeItems must default missing imported to false")
+    if "ItemUrgency.parse(string(s[\"urgency\"]))" not in codec:
+        fail("sanitizeItems must parse urgency")
+
+    if "imported: Bool = false" not in store:
+        fail("addItems(fromSpeech:) must default imported false")
+    if "func addImportedItems" not in store:
+        fail("addImportedItems missing")
+    if "func cycleItemUrgency" not in store:
+        fail("cycleItemUrgency missing")
+    if "Kein Nachstempeln" not in store:
+        fail("importBackup must not stamp imported")
+
+    if "imported: true" in staple:
+        fail("StapleApply must not mark imported")
+
+    if "ItemImportedMark" not in theme or "ItemUrgencyChip" not in theme:
+        fail("theme must provide ItemImportedMark and ItemUrgencyChip")
+    if "theme.slate" not in theme:
+        fail("import mark must use theme.slate (teal), not green")
+    imported_mark = theme[theme.find("struct ItemImportedMark"):theme.find("struct ItemUrgencyChip")]
+    if "theme.good" in imported_mark:
+        fail("import mark must not use theme.good (green is done)")
+
+    if "ItemImportedMark" not in ios or "ItemUrgencyChip" not in ios:
+        fail("iPhone list must show import mark and urgency chip")
+    if "cycleItemUrgency" not in ios:
+        fail("iPhone must cycle urgency on chip tap")
+    if "imported: true" not in ios:
+        fail("Inbox retrieve must pass imported: true")
+
+    if "ItemImportedMark" not in watch or "ItemUrgencyChip" not in watch:
+        fail("Watch walk mode must show import mark and urgency chip")
+    if "cycleItemUrgency" not in watch:
+        fail("Watch must cycle urgency on chip tap")
+
+    if "ItemImportedMark" in todo_ui or "ItemUrgencyChip" in todo_ui:
+        fail("To-Do UI must not show Einkauf imported/urgency chrome")
+    if "var imported: Bool" in todo_models or "ItemUrgency" in todo_models:
+        fail("To-Do tasks must not grow imported/urgency")
+
+    if "imported: true" in intent:
+        fail("Siri intent must not mark items imported")
+
+    if "imported" not in desc or "urgency" not in desc:
+        fail("Description.md must document imported and urgency")
+    if "theme.slate" not in desc:
+        fail("Description.md must document teal import mark via theme.slate")
+    if "urgent" not in desc or "later" not in desc:
+        fail("Description.md must name urgency values")
+    if "imported: true" not in desc:
+        fail("Description.md must document Inbox imported: true")
+    if "Siri" not in desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]:
+        fail("Description.md Artikel-Modell must say Siri never sets imported")
+
+    for name in (
+        "testMissingImportedAndUrgencyDefault",
+        "testUnknownUrgencyIsNormal",
+        "testExportRoundTripPreservesImportedAndUrgency",
+        "testLocalEncodeWritesImportedAndUrgency",
+        "testAddImportedItemsMarksOnlyInboxPath",
+        "testCycleItemUrgencyUrgentNormalLater",
+        "testManualAddAndStaplesAreNotImported",
+        "testImportBackupPreservesImportedAndUrgency",
+    ):
+        if name not in tests:
+            fail(f"tests must cover {name}")
+    print("item imported/urgency: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -2921,6 +3037,7 @@ def main() -> None:
     test_siri_app_intents()
     test_todo_store()
     test_icloud_inbox()
+    test_item_imported_urgency()
     print("ALL OK")
 
 

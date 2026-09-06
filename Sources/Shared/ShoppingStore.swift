@@ -110,15 +110,29 @@ final class ShoppingStore: ObservableObject {
     }
 
     func addItem(_ rawName: String) {
-        appendNewItems([rawName])
+        appendNewItems([rawName], imported: false)
     }
 
     /// Siri / gesprochene Listen: Splitter, dann derselbe Pfad wie getipptes Hinzufügen, ein Persist.
+    /// `imported: true` nur Inbox-Abruf und expliziter Fremd-Datei-Import — nie Siri/Tippen/Stamm.
     @discardableResult
-    func addItems(fromSpeech text: String) -> Int {
+    func addItems(fromSpeech text: String, imported: Bool = false) -> Int {
         let names = SpeechItemSplitter.items(from: SpeechItemSplitter.strippingTriggerPrefix(text))
-        appendNewItems(names)
+        appendNewItems(names, imported: imported)
         return names.count
+    }
+
+    /// Inbox / fremde Datei: dieselben Splitter wie Siri, aber `imported = true`.
+    @discardableResult
+    func addImportedItems(fromSpeech text: String) -> Int {
+        addItems(fromSpeech: text, imported: true)
+    }
+
+    func cycleItemUrgency(_ id: String) {
+        guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
+        state.items[idx].urgency = state.items[idx].urgency.next
+        state.listRevision += 1
+        persistAndSync()
     }
 
     private static func normalizedItemName(_ rawName: String) -> String? {
@@ -127,7 +141,7 @@ final class ShoppingStore: ObservableObject {
         return name.isEmpty ? nil : name
     }
 
-    private func appendNewItems(_ rawNames: [String]) {
+    private func appendNewItems(_ rawNames: [String], imported: Bool) {
         let names = rawNames.compactMap(Self.normalizedItemName)
         guard !names.isEmpty else { return }
         let now = Date.nowEpochMillis
@@ -141,7 +155,8 @@ final class ShoppingStore: ObservableObject {
                     done: false,
                     added: now,
                     ord: ord,
-                    doneChangedAt: now
+                    doneChangedAt: now,
+                    imported: imported
                 )
             )
             ord += 1
@@ -401,6 +416,8 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
+    /// Ersetzt den Stand. `imported` / `urgency` bleiben wie im JSON (fehlend = false / normal).
+    /// Kein Nachstempeln — eigener Backup-Roundtrip und PDF der eigenen Liste markieren nicht.
     func importBackup(_ data: Data) throws {
         var imported = try BackupCodec.decode(data)
         imported.listRevision = max(state.listRevision, imported.listRevision) + 1

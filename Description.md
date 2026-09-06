@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-05 (Build 62, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-06 (Build 63, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) und zur To-Do-PWA [todo](https://supervised-info.github.io/todo/). HTML-Spec Einkauf: Pages `einkauf/Description_index.md`. Brücke Einkauf: Backup-JSON (`kind: "einkauf-backup"`); To-Do: `format: "todo-v3-json"`. Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -8,12 +8,12 @@ Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) u
 
 Zwei Domains in **einer** App **Einkauf** (`TabView` **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`) auf iPhone und Apple Watch:
 
-- **Einkauf:** Liste nach Ladenweg auf **iPhone** (Geh-Modus + Edit inkl. abteilungsübergreifendem Ziehen) und **Watch** (nur Geh-Modus). Dieselbe Liste, Abhaken über WatchConnectivity. Seeds plus eigene Läden, Stamm, gespeicherte Anlass-Listen, lokales Keyword-Wörterbuch, Backup-JSON (`kind: "einkauf-backup"`), Listen-PDF mit **leeren quadratischen** Kästchen.
+- **Einkauf:** Liste nach Ladenweg auf **iPhone** (Geh-Modus + Edit inkl. abteilungsübergreifendem Ziehen) und **Watch** (nur Geh-Modus). Dieselbe Liste, Abhaken über WatchConnectivity. Seeds plus eigene Läden, Stamm, gespeicherte Anlass-Listen, lokales Keyword-Wörterbuch, Backup-JSON (`kind: "einkauf-backup"`), Listen-PDF mit **leeren quadratischen** Kästchen. Je Artikel optionale Felder `imported` (nur Anzeige) und `urgency` (Chip, tippbar) — siehe **Artikel-Modell**.
 - **To-Do:** Aufgaben (Text, Person, Prio A/B, Datum) auf **iPhone** (Liste + Edit) und **Watch** (nur Geh-Modus). Eigener Store und eigene Dateien — siehe **To-Do**.
 
 Sprache nur über **Siri App Intents** für **beide** Domains (kein Watch-Mikro, kein `Speech.framework`): Einkauf **besorgen** + Nachfrage **„o“**; To-Do ein Phrase-Token **Todo**, iPhone **„o“**, Watch ohne `requestValueDialog`. Ein `AppShortcutsProvider` `EinkaufShortcuts`. Siehe **Sprach-Eingabe (Siri)**. Zweit-iPhone (andere Apple-ID, **nur Einkauf**): Artikel per Kurzbefehl in eine geteilte iCloud-Drive-Datei; das Haupt-iPhone holt sie per Tipp — siehe **iCloud-Inbox (Zweitgerät)**.
 
-TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. To-Do (Phasen 1–10), iCloud-Inbox (Phasen 1–3) und kompakter iPhone-Nav sind **geliefert**. **Optional offen:** Inbox Phase 4 (concurrent Append). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Diese Datei beschreibt den gelieferten Stand (Build 62). Inbox-Arbeit nur unter **iCloud-Inbox (Zweitgerät)** — kein `Docs/InboxIntegration.md`.
+TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. To-Do (Phasen 1–10), iCloud-Inbox (Phasen 1–3), kompakter iPhone-Nav und optionale Artikel-Felder `imported`/`urgency` (Build 63, nur Einkauf) sind **geliefert**. **Optional offen:** Inbox Phase 4 (concurrent Append). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Diese Datei beschreibt den gelieferten Stand (Build 63). Inbox-Arbeit nur unter **iCloud-Inbox (Zweitgerät)** — kein `Docs/InboxIntegration.md`. HTML-Site für die neuen Felder ist ein späteres PR.
 
 ## To-Do
 
@@ -130,7 +130,7 @@ Thema und Palette **nicht** in der Toolbar — nur in Einstellungen.
 
 ### Geh-Modus (iPhone + Watch)
 
-Große Checkbox + Name, Durchstreichen wenn `done`. Tippen toggelt. Kein Grip, kein Dept-Select, kein Löschen, Name nicht editierbar. **Kein Swipe-Löschen** (jede Zeile `.deleteDisabled(true)`, kein `.onDelete`, trailing `swipeActions` nur `EmptyView()` gegen das System-Delete). Flache `ForEach`-Zeilen (`WalkListRow` / `WalkLine`): Überschrift dann Artikel. **Keine** SwiftUI-`Section` — die verschluckt die Abteilungsreihenfolge beim Ladenwechsel. Zeilen-IDs enthalten Laden und Position (`storeId|index|…`). List-`.id` `walk|` bzw. `edit|` plus `currentStoreId` + Layout-Join, plus Gruppen-`.id` `einkauf-walk` / `einkauf-edit`, damit Geh-Modus die Edit-Liste (inkl. Swipe-Löschen) nicht wiederverwendet.
+Große Checkbox + Name, Durchstreichen wenn `done`. Tippen auf Checkbox/Name toggelt erledigt. Links optional ein **teal** Import-Streifen (`theme.slate` / `ItemImportedMark`, **nicht** `theme.good` — Grün ist erledigt), nur wenn `imported`; kein Toggle. Rechts ein Dringlichkeits-Chip (`ItemUrgencyChip`, ⚡ / · / ◌ für eilig / normal / später); Tippen auf den Chip: `urgent` → `normal` → `later` → `urgent` (`cycleItemUrgency`, `listRevision`+1). Beide Marker kombinierbar. Kein Grip, kein Dept-Select, kein Löschen, Name nicht editierbar. **Kein Swipe-Löschen** (jede Zeile `.deleteDisabled(true)`, kein `.onDelete`, trailing `swipeActions` nur `EmptyView()` gegen das System-Delete). Flache `ForEach`-Zeilen (`WalkListRow` / `WalkLine`): Überschrift dann Artikel. **Keine** SwiftUI-`Section` — die verschluckt die Abteilungsreihenfolge beim Ladenwechsel. Zeilen-IDs enthalten Laden und Position (`storeId|index|…`). List-`.id` `walk|` bzw. `edit|` plus `currentStoreId` + Layout-Join, plus Gruppen-`.id` `einkauf-walk` / `einkauf-edit`, damit Geh-Modus die Edit-Liste (inkl. Swipe-Löschen) nicht wiederverwendet.
 
 iPhone-Geh-Modus kann Erledigte ausblenden (Auge, `einkauf.iphone.hideCompleted`). Dasselbe Flag gilt für **Liste teilen**. Watch-Geh-Modus hat denselben Toggle mit **eigenem** Flag (`einkauf.watch.hideCompleted`). Die Flags synct nichts, Backup enthält sie nicht. Edit auf dem iPhone filtert nicht — erledigte Artikel bleiben editierbar.
 
@@ -138,7 +138,7 @@ iPhone-Geh-Modus kann Erledigte ausblenden (Auge, `einkauf.iphone.hideCompleted`
 
 Flache Liste mit Überschriften (nicht verschiebbar, nicht löschbar) und Artikeln. `editMode` active.
 
-Je Artikel: Checkbox, Name (Tipp → Rename; leer/Abbrechen = keine Änderung), Dept-`Picker` (alle `Department.allCases`), Ziehen, Swipe-Löschen.
+Je Artikel: optionaler Import-Streifen (nur Anzeige), Checkbox, Name (Tipp → Rename; leer/Abbrechen = keine Änderung), Dringlichkeits-Chip (tippbar, Zyklus wie Geh-Modus), Dept-`Picker` (alle `Department.allCases`), Ziehen, Swipe-Löschen.
 
 **Cross-Dept-Drag** (`ItemEditing.moveRows`): Drop in jede sichtbare Abteilung inkl. `vor`/`nach`. Abteilungswechsel setzt `item.dept` und `mappings[mappingKey(name)]`. Gruppenreihenfolge kommt weiter vom Laden-Layout, nicht von der Drop-Reihenfolge der Überschriften. Überschrift als Quelle = no-op.
 
@@ -157,7 +157,7 @@ Je Artikel: Checkbox, Name (Tipp → Rename; leer/Abbrechen = keine Änderung), 
 11. Divider
 12. Einstellungen
 
-Import: `fileImporter` JSON, ersetzt den Stand (kein Confirm). `onOpenURL` sitzt auf `EinkaufRoot` (nicht `ContentView`): Peek JSON — `todo-v3-json` / To-Do-Shape → `TodoStore` und To-Do-Tab; `kind: "einkauf-backup"` / `looksLikeBackup` → Einkauf wie bisher; sonst Fehler, nie still ins falsche Store. Widget-URL `einkauf://list` bleibt Einkaufs-Tab; `einkauf://todo` öffnet den To-Do-Tab. Unbekannte Felder ignorieren. Fehlende `staples` / `savedLists` → `[]`.
+Import: `fileImporter` JSON, ersetzt den Stand (kein Confirm). `imported` / `urgency` bleiben wie im JSON (fehlend = false / `normal`); Backup-Restore stempelt nicht nach. `onOpenURL` sitzt auf `EinkaufRoot` (nicht `ContentView`): Peek JSON — `todo-v3-json` / To-Do-Shape → `TodoStore` und To-Do-Tab; `kind: "einkauf-backup"` / `looksLikeBackup` → Einkauf wie bisher; sonst Fehler, nie still ins falsche Store. Widget-URL `einkauf://list` bleibt Einkaufs-Tab; `einkauf://todo` öffnet den To-Do-Tab. Unbekannte Felder ignorieren. Fehlende `staples` / `savedLists` → `[]`.
 
 Export: `fileExporter`, Defaultname `einkauf-backup`.
 
@@ -190,7 +190,7 @@ Kein Theme in der Watch-App. Watch-Root: Palette Vintage + System-`colorScheme` 
 
 Navigationsleiste **ausgeblendet** (`.toolbar(.hidden, for: .navigationBar)`): `.navigationTitle("")` reserviert die Bar weiter und lässt eine Lücke unter der Uhr. Die **Systemuhr** bleibt Status und sichtbar. Inhalt direkt darunter (`VStack(spacing: 0)`): zuerst die Augen-Leiste, darunter die Titelzeile **eine Zeile** (`Text(store.state.watchTitle)`): gekürzter Ladenname + zwei Leerzeichen + `Einkauf oo/xx/yy` (`AppState.watchTitle`). Limit 6 Zeichen vor „Einkauf oo/xx/yy“; länger: 5 Zeichen + `…`. Edeka/Aldi/Rewe/Lidl/dm ungekürzt; „Eigenes Layout“ → `Eigen…`. Zähler inkl. `vor`/`nach` (`openCount/doneCount/items.count`). **Nicht** `.navigationTitle(watchTitle)`.
 
-Kein Store-Picker, kein Edit, kein Share, kein Backup, kein Speichern, kein Wörterbuch, kein Löschen von Läden. Digital Crown scrollt die `List`. Leer: „Noch nichts auf der Liste.“ **Kein** In-App-Mikrofon, **kein** Diktat-Panel, **kein** `Speech.framework` / AVFoundation-Speech, **kein** `TextFieldLink` / `presentTextInputController`. Sprache nur über **Siri App Intents** — siehe **Sprach-Eingabe (Siri)**.
+Geh-Zeile: optionaler teal Import-Streifen (`theme.slate`, nur Anzeige, nie editierbar) plus Dringlichkeits-Chip (Tipp wechselt `urgency`, `cycleItemUrgency`). Checkbox/Name tippen bleibt Abhaken. Kein Store-Picker, kein Edit, kein Share, kein Backup, kein Speichern, kein Wörterbuch, kein Löschen von Läden. Digital Crown scrollt die `List`. Leer: „Noch nichts auf der Liste.“ **Kein** In-App-Mikrofon, **kein** Diktat-Panel, **kein** `Speech.framework` / AVFoundation-Speech, **kein** `TextFieldLink` / `presentTextInputController`. Sprache nur über **Siri App Intents** — siehe **Sprach-Eingabe (Siri)**.
 
 Auge **zuerst über der Titelzeile**, links (`HStack { Button…; Spacer() }`, Chrome über `watchTitle` und der `List` — **nicht** in `.topBarLeading`; **nicht** `.topBarTrailing`, die Uhr überdeckt das; **nicht** in der Toolbar, Navigationsleiste ausgeblendet): kleines SF-Symbol `eye` wenn Erledigte sichtbar, `eye.slash` wenn ausgeblendet — **plain Icon**, kein gefüllter runder watchOS-Button. Schrift `.font(.caption)` / ca. 14–16pt, `.imageScale(.small)`, `.buttonStyle(.plain)`. Glyph **grün** (`theme.good`, wie die erledigten Häkchen) wenn Erledigte sichtbar (`eye`); **grau** (`theme.muted`, wie Abteilungsüberschriften) wenn ausgeblendet (`eye.slash`). **Kompakte Zeile ~18–20pt**: **kein** `.frame(minHeight: 44)` / 44pt-Tapziel auf dem Image — das erzeugt leere Bänder zwischen Auge, Titel und erstem Listenartikel. Tap-Fläche eher horizontal über `contentShape`/Padding, ohne vertikale Totfläche. Darunter die Titelzeile kompakt, eine Zeile, lesbar (`theme.ink`). List: Top-`contentMargins` 0, erster Artikel direkt unter der Titelzeile; Leerzustände ohne allseitiges `.padding()`. Accessibility „Erledigte ausblenden“ / „Erledigte einblenden“. Tippen blendet abgehakte Artikel **nur in der Watch-Gehliste** aus; die Artikel bleiben auf der Liste und im Backup. Abteilungen ohne sichtbare Artikel verschwinden. Alles erledigt und ausgeblendet: kurze Zeile „Erledigte ausgeblendet.“ (Auge bleibt oben, Titel darunter). Flag nur auf der Watch (`UserDefaults` / `AppStorage` `einkauf.watch.hideCompleted`), **nicht** im einkauf-backup, **nicht** zum iPhone (das iPhone hat `einkauf.iphone.hideCompleted`). `watchTitle` zeigt weiter `oo/xx/yy` der vollen Liste. Die Complication zeigt nur die offene Anzahl (bei 0 „erledigt“).
 
@@ -283,9 +283,9 @@ Trigger **Todo** (ein Wort, nicht **To Do** mit Leerzeichen, nicht **besorgen**)
 
 ## iCloud-Inbox (Zweitgerät)
 
-**Geliefert (Phasen 1–3).** Haupt-iPhone: **Inbox verbinden…** (Dateien-Picker → Security-scoped Bookmark auf `inbox.txt`). **Inbox abrufen:** Lesen → Auswahl-Sheet (`InboxRetrieveSheet`, alle markiert) → ausgewählte Zeilen `ShoppingStore.addItems(fromSpeech:)` → Datei nur noch Abgewählte (leer, wenn alle übernommen). **Löschen** pro Zeile: Swipe `.onDelete` und Papierkorb, schreibt `inbox.txt` sofort ohne Import; letztes Item schließt das Sheet. Zwei Kurzbefehle auf dem **Zweit-iPhone** — **Einkauf-Inbox eintragen** und **Einkauf-Inbox vorlesen**, Schritt-für-Schritt unter **Kurzbefehl (Phase 3)**. Keine `.shortcut`-Binärdatei im Repo. **Nur Einkauf** — nie To-Do. Transport: eine geteilte **iCloud-Drive**-Datei. Kein Server, kein CloudKit Shared DB, kein Dropbox/kDrive, kein iCloud-Entitlement (Files-Picker + Bookmark). **Optional offen:** Phase 4 (concurrent Append) — kein v1-Ziel.
+**Geliefert (Phasen 1–3).** Haupt-iPhone: **Inbox verbinden…** (Dateien-Picker → Security-scoped Bookmark auf `inbox.txt`). **Inbox abrufen:** Lesen → Auswahl-Sheet (`InboxRetrieveSheet`, alle markiert) → ausgewählte Zeilen `ShoppingStore.addItems(fromSpeech:imported: true)` → Datei nur noch Abgewählte (leer, wenn alle übernommen). **Löschen** pro Zeile: Swipe `.onDelete` und Papierkorb, schreibt `inbox.txt` sofort ohne Import; letztes Item schließt das Sheet. Zwei Kurzbefehle auf dem **Zweit-iPhone** — **Einkauf-Inbox eintragen** und **Einkauf-Inbox vorlesen**, Schritt-für-Schritt unter **Kurzbefehl (Phase 3)**. Keine `.shortcut`-Binärdatei im Repo. **Nur Einkauf** — nie To-Do. Transport: eine geteilte **iCloud-Drive**-Datei. Kein Server, kein CloudKit Shared DB, kein Dropbox/kDrive, kein iCloud-Entitlement (Files-Picker + Bookmark). **Optional offen:** Phase 4 (concurrent Append) — kein v1-Ziel.
 
-Zweit-iPhone spricht Artikel per Kurzbefehl in die Datei. Haupt-iPhone holt sie per Tipp **Inbox abrufen** in `ShoppingStore` — derselbe Pfad wie Siri **besorgen**: `SpeechItemSplitter` + `DepartmentGuesser.guess` / `mappings` (`addItems(fromSpeech:)`). Die Datei enthält **nur noch nicht abgeholte** Zeilen. Nach **Übernehmen** schreibt die App die Datei ohne die übernommenen Zeilen (Abgewählte bleiben; alle übernommen → leer wie `Data()`). **Löschen** im Sheet schreibt die restlichen Zeilen sofort (kein Import, nicht in `ShoppingStore`). Abbrechen / Dismiss verwirft nur unbestätigte Auswahl; bereits geschriebene Löschungen bleiben. Keine Statusfelder `picked` / `pending` in der Datei. Alles in der Datei = noch nicht abgeholt.
+Zweit-iPhone spricht Artikel per Kurzbefehl in die Datei. Haupt-iPhone holt sie per Tipp **Inbox abrufen** in `ShoppingStore` — Splitter und Guesser wie Siri **besorgen** (`SpeechItemSplitter` + `DepartmentGuesser.guess` / `mappings`), aber **`imported: true`** (`addItems(fromSpeech:imported: true)`). Siri **besorgen** bleibt `imported: false`. Die Datei enthält **nur noch nicht abgeholte** Zeilen. Nach **Übernehmen** schreibt die App die Datei ohne die übernommenen Zeilen (Abgewählte bleiben; alle übernommen → leer wie `Data()`). **Löschen** im Sheet schreibt die restlichen Zeilen sofort (kein Import, nicht in `ShoppingStore`). Abbrechen / Dismiss verwirft nur unbestätigte Auswahl; bereits geschriebene Löschungen bleiben. Keine Statusfelder `picked` / `pending` in der Datei. Alles in der Datei = noch nicht abgeholt.
 
 App-Group-Stores bleiben lokal (`einkauf-local.json` / `todo-local.json`, **kein** iCloud für den Store). Inbox ist eine **fremde** Drive-Datei, per Dateien-Picker gebunden.
 
@@ -303,7 +303,7 @@ App-Group-Stores bleiben lokal (`einkauf-local.json` / `todo-local.json`, **kein
 **Ablauf (Phasen 1–3 geliefert; optional offen: Phase 4 concurrent Append):**
 
 1. Kurzbefehl **Einkauf-Inbox eintragen** auf dem Zweit-iPhone: **Text diktieren** + **An Textdatei anhängen** (Modus **Anfügen**, **Neue Zeile** an) hängt die Phrase an dieselbe geteilte `inbox.txt` — Rezept **Kurzbefehl (Phase 3)**. **Einkauf-Inbox vorlesen** spricht denselben Dateiinhalt (noch nicht Abgeholte) und ändert die Datei nicht. Split erst in der App (`InboxParser` + `SpeechItemSplitter`).
-2. Auf dem Haupt-iPhone **Inbox abrufen** (Einkauf-Overflow **…**): kein Bookmark → Alert „Zuerst Inbox verbinden…“. Sonst Bookmark auflösen, Security-Scope **vor dem Lesen** starten und über die Sheet-Lebensdauer halten. Datei lesen. `InboxParser` überspringt Leerzeilen und `# …`-Kommentarzeilen (inkl. optionalem `# einkauf-inbox v1`), trimmt, streift UTF-8-BOM. Leer → „Nichts abzuholen.“, kein Sheet. Sonst Sheet `InboxRetrieveSheet`: alle Zeilen markiert, umschalten per Tipp. **Übernehmen:** ausgewählte Zeilen mit Newline joinen und durch `ShoppingStore.addItems(fromSpeech:)` — Split wie Siri (Komma, Semikolon, ` und `, Zeilenumbruch), Abteilung über `DepartmentGuesser` + `mappings`. Persist + WatchConnectivity wie getipptes Hinzufügen / Siri-iPhone. Nichts markiert → „Nichts ausgewählt.“, Datei unverändert, Sheet bleibt. **Löschen** (Swipe `.onDelete` und Papierkorb): Zeile sofort aus `inbox.txt` entfernen, **ohne** Import / `ShoppingStore`; Sheet-Liste und Auswahl nachrücken; letztes Item → Datei leer, Sheet zu. Abbrechen / Dismiss → nur unbestätigte Auswahl verwerfen; bereits geschriebene Löschungen bleiben; Scope endet.
+2. Auf dem Haupt-iPhone **Inbox abrufen** (Einkauf-Overflow **…**): kein Bookmark → Alert „Zuerst Inbox verbinden…“. Sonst Bookmark auflösen, Security-Scope **vor dem Lesen** starten und über die Sheet-Lebensdauer halten. Datei lesen. `InboxParser` überspringt Leerzeilen und `# …`-Kommentarzeilen (inkl. optionalem `# einkauf-inbox v1`), trimmt, streift UTF-8-BOM. Leer → „Nichts abzuholen.“, kein Sheet. Sonst Sheet `InboxRetrieveSheet`: alle Zeilen markiert, umschalten per Tipp. **Übernehmen:** ausgewählte Zeilen mit Newline joinen und durch `ShoppingStore.addItems(fromSpeech:imported: true)` — Split wie Siri (Komma, Semikolon, ` und `, Zeilenumbruch), Abteilung über `DepartmentGuesser` + `mappings`, neu angelegte Artikel `imported`. Persist + WatchConnectivity wie getipptes Hinzufügen / Siri-iPhone. Nichts markiert → „Nichts ausgewählt.“, Datei unverändert, Sheet bleibt. **Löschen** (Swipe `.onDelete` und Papierkorb): Zeile sofort aus `inbox.txt` entfernen, **ohne** Import / `ShoppingStore`; Sheet-Liste und Auswahl nachrücken; letztes Item → Datei leer, Sheet zu. Abbrechen / Dismiss → nur unbestätigte Auswahl verwerfen; bereits geschriebene Löschungen bleiben; Scope endet.
 3. App schreibt die Datei **ohne die gerade übernommenen Zeilen** zurück (nur Abgewählte, eine Zeile pro Artikel, UTF-8, atomic). Alle übernommen → Datei **leer** (`Data()`). Concurrent Append während des Abrufs ist kein v1-Ziel — neue Zeilen in diesem Fenster können verloren gehen (Phase 4). Optionalen `#`-Header behält v1 nicht. Feedback „N Artikel übernommen.“ Scope nach Schreiben beenden.
 
 ### Nicht-Ziele (v1)
@@ -339,7 +339,7 @@ Ohne Schritt 1–3 funktioniert nichts. Schritt 4 und 5 sind in Build 62 enthalt
 - In der Einkauf-App **Inbox abrufen** tippen.
 - Sheet mit den Zeilen: alle markiert. Einzelne abwählen, dann **Übernehmen** (oder **Abbrechen** / wegwischen — unbestätigte Auswahl verwerfen).
 - **Löschen** (Swipe oder Papierkorb) entfernt die Zeile sofort aus `inbox.txt`, ohne sie zu importieren. Letztes Item schließt das Sheet.
-- Übernommene Artikel landen auf der aktuellen Einkaufsliste (Splitter + Guesser + Wörterbuch wie Siri **besorgen**).
+- Übernommene Artikel landen auf der aktuellen Einkaufsliste (Splitter + Guesser + Wörterbuch wie Siri **besorgen**, aber `imported: true`).
 - Datei enthält danach nur die Abgewählten — leer, wenn alle übernommen oder gelöscht. Bereits gelöschte Zeilen bleiben weg, auch nach **Abbrechen**.
 
 #### Nicht deine Aufgabe / Agent baut
@@ -457,10 +457,17 @@ Default `currentStoreId`: `edeka`. `BackupCodec.mergeBuiltinSeeds`: Seeds fehlen
 ## Artikel-Modell
 
 ```
-{ id, name, dept, done:boolean, added:number, ord:number }
+{ id, name, dept, done:boolean, added:number, ord:number, imported?:boolean, urgency?: "urgent"|"normal"|"later" }
 ```
 
 `id` = `i` + time36 + random. Intern zusätzlich `doneChangedAt` (Sync); **PWA-/Backup-Export lässt es weg**. Sort in Dept: `sortOrd` (`ord` oder `added`), dann `added`, dann de.
+
+Zwei unabhängige optionale Felder **nur Einkauf** (`Item`, nicht To-Do):
+
+- **`imported`** (`Bool`): fehlender Key = `false`. **Setzen** (`true`) nur beim Inbox-Abruf (`addItems(fromSpeech:imported: true)` / `addImportedItems`) und auf demselben expliziten Fremd-Datei-Anhänge-Pfad. **Nie** Siri **besorgen**, getipptes Hinzufügen, Stamm/`applyStaple` / `applyAllStaples`, gespeicherte Listen/`applySavedList`. Backup-**Restore** (`importBackup`) stempelt nicht nach — Werte bleiben wie im JSON. PDF der eigenen Liste (kein Import in v1) darf `imported` **nicht** setzen, außer die Quelle ist klar fremd (Inbox). In der UI nur Anzeige (teal Streifen `theme.slate` / `ItemImportedMark`, **kein** Grün/`theme.good`, kein Toggle).
+- **`urgency`**: `"urgent"` | `"normal"` | `"later"`; fehlender oder unbekannter Key = `"normal"`. Nutzer wechselt per Chip (iPhone Geh+Edit, Watch Geh): `urgent` → `normal` → `later` → `urgent`. Encode schreibt das Feld immer.
+
+Alte Backups ohne die Keys laden weiter. Decode-Defaults wie oben; Encode schreibt beide Felder; unbekannte Keys ignorieren wie bisher. Roundtrip-Backup behält beide Werte.
 
 `AppState`: `currentStoreId`, `stores`, `items`, `mappings`, `walkMode`, `staples`, `savedLists`, intern `listRevision`.
 
@@ -504,7 +511,7 @@ Gleiche Datei wie die PWA, inkl. geteiltem `savedLists`. Export (`BackupCodec.en
   currentStoreId,
   stores: [{ id, name, layout[], builtin }],
   mappings,
-  items: [{ id, name, dept, done, added, ord }],
+  items: [{ id, name, dept, done, added, ord, imported, urgency }],
   walkMode,
   layoutTrip: 1,
   staples: [{ name, dept }],
@@ -512,7 +519,7 @@ Gleiche Datei wie die PWA, inkl. geteiltem `savedLists`. Export (`BackupCodec.en
 }
 ```
 
-Kein `listRevision`, kein `doneChangedAt` im Export. Pretty + sortedKeys. `kind: "einkauf-laeden"` ist **kein** Backup (`BackupError.notABackup`). `v == 1` plus `items`+`stores` Arrays gelten auch ohne `kind`.
+Kein `listRevision`, kein `doneChangedAt` im Export. `imported` und `urgency` werden mitgeschrieben (fehlend beim Lesen = false / `normal`). Pretty + sortedKeys. `kind: "einkauf-laeden"` ist **kein** Backup (`BackupError.notABackup`). `v == 1` plus `items`+`stores` Arrays gelten auch ohne `kind`.
 
 Lokal: `kind: "einkauf-local"` mit internem State (Revision, `doneChangedAt`, `savedLists`).
 
@@ -562,7 +569,7 @@ Native To-Do liefert MD/CSV wie HTML (**volle Liste**) und benannte Listen (`lis
 
 - Bundle-IDs `net.tschelle.einkauf` / `.watchkitapp` / `.watchkitapp.widgets` / `.widgets`
 - Builtin-Laden-IDs und DEPT-IDs
-- Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys, inkl. `savedLists`)
+- Backup-`kind` `einkauf-backup` und Export-Shape (ohne interne Keys, inkl. `savedLists`; Items schreiben optionales `imported`/`urgency`, nicht `doneChangedAt`)
 - `ListGrouping`: `sonstiges` folgt dem Layout; Extra-Depts behalten `item.dept` (geteilt mit HTML, nicht vor `nach` kleben)
 - Guesser: Nutzer-Mapping vor Sonderregeln und Keywords; `KeywordDictionary.source` unverändert; lokal
 - Watch bleibt Geh-Modus ohne Picker/Edit/Share (Auge blendet Erledigte nur an, löscht sie nicht); iPhone-Auge nur Geh-Modus, Edit ungefiltert; Flags geräte-lokal, nicht im Backup
@@ -588,7 +595,8 @@ Native To-Do liefert MD/CSV wie HTML (**volle Liste**) und benannte Listen (`lis
 - [ ] `DepartmentGuesser` + `KeywordDictionary.source` lokal, kein Netz; Nutzer-Mapping vor Sonderregeln/Keywords.
 - [ ] Wörterbuch **Meine Zuordnungen**: View/Edit/Delete von `mappings` (Picker, Swipe-Delete, optional Hinzufügen); mitgelieferte Liste nur lesen; Backup-Feld bleibt `mappings`.
 - [ ] Gespeicherte Listen: Name+Dept-Snapshot, füllen nicht ersetzen, Backup-Feld `savedLists`.
-- [ ] Backup `einkauf-backup` mit stores, items, staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen, respektiert das iPhone-Auge (`einkauf.iphone.hideCompleted`).
+- [ ] Backup `einkauf-backup` mit stores, items (`imported`/`urgency` mitgeschrieben), staples, savedLists, walkMode, …; Backup teilen; Liste teilen PDF mit leeren Quadrat-Kästchen, respektiert das iPhone-Auge (`einkauf.iphone.hideCompleted`). Roundtrip behält `imported` und `urgency`.
+- [ ] Einkauf-Artikel: `imported` nur Inbox-Abruf / expliziter Fremd-Datei-Anhang (nie Siri/Tippen/Stamm/Saved-List; Backup-Restore und eigenes PDF stempeln nicht); UI-Streifen teal/`theme.slate`, read-only. `urgency` Chip ⚡/·/◌, Zyklus eilig→normal→später, iPhone und Watch. Nicht auf To-Do.
 - [ ] Watch-Titel: gekürzter Ladenname + Einkauf oo/xx/yy; Auge blendet Erledigte nur in der Watch-Gehliste aus (`einkauf.watch.hideCompleted`, nicht Backup); iPhone-Geh-Modus hat dasselbe Auge mit `einkauf.iphone.hideCompleted`; Edit ungefiltert; kein Picker/Edit/Share auf der Watch; WatchConnectivity.
 - [ ] Siri / App Intents: Utterance mit genau einem App-Namen + **besorgen** (kein `String`/`$items` in der Phrase; keine Bring-ähnlichen „hinzufügen“-Phrasen); Siri fragt „o“ (`requestValueDialog` „o“); getippte Antwort darf mit `Einkauf:` / `Besorgen:` beginnen; Splitter wie Sprache, Guesser+Mappings; iPhone Persistenz+WatchConnectivity, Watch-Siri schreibt nur eine Pending-Queue in App-Group-`UserDefaults` (`group.net.tschelle.einkauf`, kein `ShoppingStore` / kein volles `AppState`-Encode im Intent; `openAppWhenRun = false`; App übernimmt beim Aktivwerden **und** `onAppear` / `.task` — Watch-App ggf. einmal öffnen); leerer Text = freundliches No-op; kein Watch-Mikro, kein Speech.framework. iOS reserviert „besorgen“ nicht OS-weit (Best Effort vs Bring).
 - [ ] Watch-Complication (WidgetKit, watchOS 10): nur offene Anzahl (`compactCountText`, bei 0 „erledigt“), Ladenname wo Platz, Tap öffnet Geh-Modus; Update aus `einkauf-local.json` / WatchConnectivity; nicht auf dem iPhone.
@@ -600,5 +608,5 @@ Native To-Do liefert MD/CSV wie HTML (**volle Liste**) und benannte Listen (`lis
 - [ ] To-Do-Siri: ein Phrase-Token **Todo** (`shortTitle` **Todo**, `parameterSummary` `Todo \(.$items)`), gesprochen **„Hey Siri, Einkauf Todo“**; iPhone `requestValueDialog` **„o“**; Watch **kein** `requestValueDialog`; ein `AppShortcutsProvider` `EinkaufShortcuts` (nicht „besorgen“); neue Aufgaben in die aktuelle Liste. Nach Update Shortcut löschen/neu und **„Auf Apple Watch anzeigen“** erneut. Zwei-Wort-Cap gelöst über Phrase-Tokens + Watch-`shortTitle`/Dialog (siehe Sprach-Eingabe).
 - [ ] To-Do-MD/CSV auf dem iPhone: `TodoMarkdown` / `TodoCSV`, **volle Liste**, `fileImporter` `.json,.md,.markdown,.csv`. Watch ohne MD/CSV-UI. Kein To-Do-Homescreen-Widget. Benannte Listen `lists`/`listId`.
 - [ ] iPhone-Nav (Einkauf + To-Do): kein Listen-Titel, Toolbar kompakt (`einkaufToolbarChrome`).
-- [ ] iCloud-Inbox Phasen 1–3: Einkauf-**…** **Inbox verbinden…** / **Inbox abrufen** (Sheet, alle markiert, **Übernehmen**, **Löschen** pro Zeile ohne Import); ausgewählte `inbox.txt`-Zeilen → `ShoppingStore.addItems(fromSpeech:)`; Abgewählte bleiben in der Datei; gelöschte nie in `ShoppingStore`; nie To-Do; kein CloudKit / kein iCloud-Entitlement. Rezept **Kurzbefehl (Phase 3)** — zwei Kurzbefehle **Einkauf-Inbox eintragen** / **Einkauf-Inbox vorlesen** auf dem Zweit-iPhone (iOS 26); Anhängen per **An Textdatei anhängen**; Split in der App (`SpeechItemSplitter`); Datei = nur noch nicht Abgeholte.
+- [ ] iCloud-Inbox Phasen 1–3: Einkauf-**…** **Inbox verbinden…** / **Inbox abrufen** (Sheet, alle markiert, **Übernehmen**, **Löschen** pro Zeile ohne Import); ausgewählte `inbox.txt`-Zeilen → `ShoppingStore.addItems(fromSpeech:imported: true)`; Abgewählte bleiben in der Datei; gelöschte nie in `ShoppingStore`; nie To-Do; kein CloudKit / kein iCloud-Entitlement. Rezept **Kurzbefehl (Phase 3)** — zwei Kurzbefehle **Einkauf-Inbox eintragen** / **Einkauf-Inbox vorlesen** auf dem Zweit-iPhone (iOS 26); Anhängen per **An Textdatei anhängen**; Split in der App (`SpeechItemSplitter`); Datei = nur noch nicht Abgeholte.
 - [ ] iCloud-Inbox Phase 4 (optional, nicht v1): concurrent Append während **Inbox abrufen**, Bookmark ungültig.
