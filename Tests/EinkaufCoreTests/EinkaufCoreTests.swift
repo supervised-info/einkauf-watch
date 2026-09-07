@@ -1657,6 +1657,22 @@ final class BackupShareTests: XCTestCase {
             ),
             "20260901_1907-todo-liste.csv"
         )
+        XCTAssertEqual(
+            BackupShare.stampedFilename(
+                stem: BackupShare.einkaufArchiveStem,
+                date: date,
+                timeZone: TimeZone(secondsFromGMT: 0)!
+            ),
+            "20260901_1907-einkauf-archiv.json"
+        )
+        XCTAssertEqual(
+            BackupShare.stampedFilename(
+                stem: BackupShare.todoArchiveStem,
+                date: date,
+                timeZone: TimeZone(secondsFromGMT: 0)!
+            ),
+            "20260901_1907-todo-archiv.json"
+        )
     }
 }
 

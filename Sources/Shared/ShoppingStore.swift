@@ -189,6 +189,7 @@ final class ShoppingStore: ObservableObject {
         let group = groups.first(where: { $0.dept == dept })?.items ?? []
         let ids = Set(offsets.compactMap { group.indices.contains($0) ? group[$0].id : nil })
         guard !ids.isEmpty else { return }
+        archiveCompletedItems(state.items.filter { ids.contains($0.id) })
         state.items.removeAll { ids.contains($0.id) }
         state.listRevision += 1
         persistAndSync()
@@ -197,6 +198,7 @@ final class ShoppingStore: ObservableObject {
     func deleteEditRows(at offsets: IndexSet) {
         let ids = Set(ItemEditing.itemIDs(in: editRows, at: offsets))
         guard !ids.isEmpty else { return }
+        archiveCompletedItems(state.items.filter { ids.contains($0.id) })
         state.items.removeAll { ids.contains($0.id) }
         state.listRevision += 1
         persistAndSync()
@@ -409,9 +411,10 @@ final class ShoppingStore: ObservableObject {
     }
 
     func clearDone() {
-        let before = state.items.count
+        let done = state.items.filter(\.done)
+        guard !done.isEmpty else { return }
+        archiveCompletedItems(done)
         state.items.removeAll { $0.done }
-        guard state.items.count != before else { return }
         state.listRevision += 1
         persistAndSync()
     }
@@ -435,6 +438,10 @@ final class ShoppingStore: ObservableObject {
 
     func exportBackup() throws -> Data {
         try BackupCodec.encodeExport(state)
+    }
+
+    func exportArchive() throws -> Data {
+        try CompletedItemArchive.encodeEinkauf()
     }
 
     func applyRemoteSnapshot(_ incoming: AppState) {
@@ -462,6 +469,10 @@ final class ShoppingStore: ObservableObject {
         return false
     }
 #endif
+
+    private func archiveCompletedItems(_ items: [Item]) {
+        CompletedItemArchive.appendEinkauf(items)
+    }
 
     private func nextOrd() -> Double {
         (state.items.map(\.sortOrd).max() ?? 0) + 1
