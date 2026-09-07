@@ -2,7 +2,7 @@
 
 Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). Zwei Reiter **Einkauf | To-Do** auf iPhone und Apple Watch. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
 
-Produktstand (Build 71): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen.
+Produktstand (Build 72): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen. Gelöschte erledigte Einträge werden nativ in `einkauf-archiv.json` / `todo-archiv.json` angehängt (Teilen in Einstellungen).
 
 Mindestens **Xcode 15**, iOS 17, watchOS 10. Im Apple-Developer-Account ein Team wählen. v1 ist nicht für den App-Store-Submit gedacht.
 
@@ -93,7 +93,7 @@ python3 Scripts/verify_core.py
 |---|---|
 | Bundle ID | `net.tschelle.einkauf` (Watch: `.watchkitapp`, Watch-Widget: `.watchkitapp.widgets`, iPhone-Widget: `.widgets`) |
 | Geteilter Code | `Sources/Shared` in den App-Targets |
-| Persistenz | JSON im App Group `group.net.tschelle.einkauf` (kein iCloud): `einkauf-local.json` und `todo-local.json` |
+| Persistenz | JSON im App Group `group.net.tschelle.einkauf` (kein iCloud): `einkauf-local.json` und `todo-local.json`; Archive `einkauf-archiv.json` / `todo-archiv.json` |
 | Abteilungen / Läden | wie die PWA (`edeka`, `aldi`, `rewe`, `lidl`, `dm`, `eigenes`) |
 
 Stamm-Artikel lassen sich unter **Einstellungen** anlegen, entfernen und einer Abteilung zuordnen. **Stamm → Gesamtliste** setzt alle auf die Einkaufsliste (fehlende ergänzen, erledigte wieder öffnen).

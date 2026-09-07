@@ -111,7 +111,7 @@ EinkaufApp
     Tab 2 „To-Do“   → TodoListView (eigene NavigationStack, kein Nav-Titel)
 ```
 
-Tab-Labels **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`. Beide iPhone-Listen: **kein** Navigationstitel (Tab reicht), Toolbar kompakt (`einkaufToolbarChrome`). Einkaufs-Toolbar, Overflow, Einstellungen, Add-Leiste bleiben **im Einkaufs-Tab**. To-Do hat ein **eigenes** Overflow (Import/Export/Liste teilen), kein gemeinsames „…“ das beide Domains anfasst. **Einstellungen** (`SettingsSheet`, geöffnet vom Einkauf-**…**) hat zusätzlich die Sektion **To-Do Backup**: JSON **Backup importieren…** / **exportieren…** / **teilen** über `TodoStore` (`TodoImport.offer` / `importAny`). MD/CSV bleiben nur im To-Do-**…**. Einkauf-JSON wird dort abgelehnt, nie in `ShoppingStore` geschrieben.
+Tab-Labels **Einkauf | To-Do**, SF-Symbols `basket` / `checklist`. Beide iPhone-Listen: **kein** Navigationstitel (Tab reicht), Toolbar kompakt (`einkaufToolbarChrome`). Einkaufs-Toolbar, Overflow, Einstellungen, Add-Leiste bleiben **im Einkaufs-Tab**. To-Do hat ein **eigenes** Overflow (Import/Export/Liste teilen), kein gemeinsames „…“ das beide Domains anfasst. **Einstellungen** (`SettingsSheet`, geöffnet vom Einkauf-**…**): Sektion **Einkauf Archiv** (**Archiv teilen**, `einkauf-archiv.json`) und **To-Do Backup**: JSON **Backup importieren…** / **exportieren…** / **teilen** über `TodoStore` (`TodoImport.offer` / `importAny`) plus **Archiv teilen** (`todo-archiv.json`). MD/CSV bleiben nur im To-Do-**…**. Einkauf-JSON wird dort abgelehnt, nie in `ShoppingStore` geschrieben.
 
 `onOpenURL` auf `EinkaufRoot` (`IncomingJSON`): Envelope entscheidet (`einkauf-backup` vs `todo-v3-json`). Widget-URL `einkauf://list` = Einkaufs-Tab, `einkauf://todo` = To-Do-Tab.
 
@@ -136,6 +136,7 @@ Eigener Store: `TodoStore` + `TodoState` + `TodoTask`.
 |---|---|---|
 | Store | `ShoppingStore` | `TodoStore` |
 | Datei | `einkauf-local.json` | `todo-local.json` |
+| Archiv | `einkauf-archiv.json` | `todo-archiv.json` (Append erledigter Deletes, native-only) |
 | Ordner | App Group `Einkauf/` | **derselbe** Ordner |
 | Local envelope | `kind: "einkauf-local"` | `kind: "todo-local"` |
 | Backup | `kind: "einkauf-backup"` | `format: "todo-v3-json"` |
@@ -264,6 +265,7 @@ Inbox Phase 4 (concurrent Append) ist **kein** To-Do-Thema — siehe `Descriptio
 Sources/Shared/TodoModels.swift
 Sources/Shared/TodoPersistence.swift
 Sources/Shared/TodoStore.swift
+Sources/Shared/CompletedItemArchive.swift
 Sources/Shared/TodoCodec.swift
 Sources/Shared/TodoMarkdown.swift
 Sources/Shared/TodoCSV.swift
@@ -280,7 +282,7 @@ Fixtures/todo-liste.csv
 Tests/EinkaufCoreTests/TodoStoreTests.swift
 ```
 
-Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen.
+Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen. Archive liegen als eigene Dateien `einkauf-archiv.json` / `todo-archiv.json` im selben Ordner (Append beim Löschen erledigter Einträge; kein WC, kein Import in dieser Version).
 
 ---
 
@@ -292,5 +294,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] iPhone-Nav ohne Listen-Titel, Toolbar kompakt (`einkaufToolbarChrome`).
 - [x] Watch nur Geh-Modus (Filter `todo.currentListId`, kompaktes `#uid`, kein Edit/Reopen/Suche/Listen-UI). Complication Listenname / **Alle**.
 - [x] Siri **Todo** (ein Token, iPhone „o“, Watch ohne `requestValueDialog`), ein `AppShortcutsProvider`.
-- [x] **Einstellungen → To-Do Backup** (JSON); Import-`revision`-Floor analog Einkauf.
+- [x] **Einstellungen → To-Do Backup** (JSON) plus **Archiv teilen**; Import-`revision`-Floor analog Einkauf.
 - [x] Phasen 1–10 und Folgearbeit bis Build 62 gelandet. Kein offener To-Do-Plan.

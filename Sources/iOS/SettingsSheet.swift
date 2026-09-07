@@ -202,6 +202,18 @@ struct SettingsSheet: View {
                 }
 
                 Section {
+                    Button("Archiv teilen") {
+                        shareEinkaufArchive()
+                    }
+                    .einkaufRowChrome()
+                } header: {
+                    Text("Einkauf Archiv")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Gelöschte erledigte Artikel (einkauf-archiv.json). History wird nur angehängt, nie überschrieben.")
+                }
+
+                Section {
                     Button("Backup importieren…") {
                         showTodoImporter = true
                     }
@@ -214,11 +226,15 @@ struct SettingsSheet: View {
                         shareTodoJSON()
                     }
                     .einkaufRowChrome()
+                    Button("Archiv teilen") {
+                        shareTodoArchive()
+                    }
+                    .einkaufRowChrome()
                 } header: {
                     Text("To-Do Backup")
                         .foregroundStyle(theme.muted)
                 } footer: {
-                    Text("JSON-Backup der To-Do-Liste (todo-liste.json). Einkauf-Backups werden abgelehnt.")
+                    Text("JSON-Backup der To-Do-Liste (todo-liste.json). Einkauf-Backups werden abgelehnt. Archiv gelöschter erledigter Aufgaben: todo-archiv.json.")
                 }
             }
             .einkaufListChrome()
@@ -422,11 +438,35 @@ struct SettingsSheet: View {
     }
 
     private func shareTodoJSON() {
+        shareFile(
+            data: { try todos.exportBackup() },
+            stem: BackupShare.todoStem,
+            missing: "Backup-Datei konnte nicht erzeugt werden."
+        )
+    }
+
+    private func shareEinkaufArchive() {
+        shareFile(
+            data: { try store.exportArchive() },
+            stem: BackupShare.einkaufArchiveStem,
+            missing: "Archiv-Datei konnte nicht erzeugt werden."
+        )
+    }
+
+    private func shareTodoArchive() {
+        shareFile(
+            data: { try todos.exportArchive() },
+            stem: BackupShare.todoArchiveStem,
+            missing: "Archiv-Datei konnte nicht erzeugt werden."
+        )
+    }
+
+    private func shareFile(data: () throws -> Data, stem: String, missing: String) {
         do {
-            let data = try todos.exportBackup()
-            let url = try BackupShare.writeTempFile(data: data, stem: BackupShare.todoStem, ext: "json")
+            let payload = try data()
+            let url = try BackupShare.writeTempFile(data: payload, stem: stem, ext: "json")
             guard FileManager.default.fileExists(atPath: url.path) else {
-                todoAlertMessage = "Backup-Datei konnte nicht erzeugt werden."
+                todoAlertMessage = missing
                 return
             }
             todoShareItem = BackupShareItem(url: url)

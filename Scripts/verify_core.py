@@ -498,8 +498,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 71" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 71 / CURRENT_PROJECT_VERSION")
+    if "Build 72" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 72 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -651,11 +651,12 @@ def test_sources() -> None:
         "Stamm-Artikel",
         "Gespeicherte Listen",
         "Wörterbuch",
+        "Einkauf Archiv",
         "To-Do Backup",
     ]
     section_pos = [settings.find(label) for label in section_order]
     if any(p < 0 for p in section_pos) or section_pos != sorted(section_pos):
-        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch, To-Do Backup")
+        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch, Einkauf Archiv, To-Do Backup")
     neuer_idx = settings.find("Neuer Laden")
     ladenweg_idx = settings.find("Ladenweg ·")
     store_list_start = settings.find("ForEach(store.stores)")
@@ -688,6 +689,16 @@ def test_sources() -> None:
         fail("Einstellungen To-Do Backup must offer Backup exportieren…")
     if 'Button("Backup teilen")' not in settings:
         fail("Einstellungen To-Do Backup must offer Backup teilen")
+    if settings.count('Button("Archiv teilen")') != 2:
+        fail("Einstellungen must offer Archiv teilen for Einkauf and To-Do")
+    if "shareEinkaufArchive" not in settings or "shareTodoArchive" not in settings:
+        fail("Einstellungen Archiv teilen must call shareEinkaufArchive / shareTodoArchive")
+    if "BackupShare.einkaufArchiveStem" not in settings or "BackupShare.todoArchiveStem" not in settings:
+        fail("Einstellungen Archiv teilen must stamp einkauf-archiv / todo-archiv filenames")
+    if "store.exportArchive" not in settings or "todos.exportArchive" not in settings:
+        fail("Einstellungen Archiv teilen must export via ShoppingStore/TodoStore exportArchive")
+    if 'Button("Archiv teilen")' in content:
+        fail("Einkauf overflow must not offer Archiv teilen (settings only)")
     if "TodoStore" not in settings or "todos.importAny" not in settings:
         fail("Einstellungen To-Do Backup must inject TodoStore and call importAny")
     if "TodoImport.offer" not in settings:
@@ -1005,10 +1016,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 71" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 71")
-    if "CURRENT_PROJECT_VERSION = 70" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 70 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 72" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 72")
+    if "CURRENT_PROJECT_VERSION = 71" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 71 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 69" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 69 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 68" in pbx:
@@ -1134,10 +1145,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 71" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 71")
-    if "CURRENT_PROJECT_VERSION: 70" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 70 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 72" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 72")
+    if "CURRENT_PROJECT_VERSION: 71" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 71 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 69" in yml:
         fail("stale CURRENT_PROJECT_VERSION 69 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 68" in yml:
@@ -1481,8 +1492,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 71") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 71")
+    if pbx.count("CURRENT_PROJECT_VERSION = 72") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 72")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2343,6 +2354,8 @@ def test_todo_store() -> None:
         fail("To-Do overflow must be ellipsis.circle labeled Mehr")
     if "Erledigte löschen" not in todo_ui:
         fail("To-Do overflow must offer Erledigte löschen")
+    if 'Button("Archiv teilen")' in todo_ui:
+        fail("To-Do overflow must not offer Archiv teilen (settings only)")
     if "func clearCompleted" not in store:
         fail("TodoStore missing clearCompleted")
     if "Geh-Modus" in todo_ui or "Stamm" in todo_ui:
@@ -3282,6 +3295,88 @@ def test_item_imported_urgency() -> None:
     print("item imported/urgency: ok")
 
 
+def test_item_archive() -> None:
+    archive = (ROOT / "Sources/Shared/CompletedItemArchive.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    todo_store = (ROOT / "Sources/Shared/TodoStore.swift").read_text()
+    persist = (ROOT / "Sources/Shared/Persistence.swift").read_text()
+    todo_persist = (ROOT / "Sources/Shared/TodoPersistence.swift").read_text()
+    settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    todo_ui = (ROOT / "Sources/iOS/TodoListView.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/ItemArchiveTests.swift").read_text()
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+    backup_share = (ROOT / "Sources/Shared/BackupShare.swift").read_text()
+
+    if "CompletedItemArchive.swift" not in pbx:
+        fail("pbxproj must compile CompletedItemArchive.swift")
+    if "einkauf-archiv.json" not in archive or "todo-archiv.json" not in archive:
+        fail("CompletedItemArchive must write einkauf-archiv.json and todo-archiv.json")
+    if persist.count("einkauf-local.json") < 1:
+        fail("Persistence must keep einkauf-local.json")
+    if "einkauf-archiv.json" in persist or "todo-archiv.json" in persist:
+        fail("Persistence must not take over archive filenames")
+    if "einkauf-archiv.json" in todo_persist or "todo-archiv.json" in todo_persist:
+        fail("TodoPersistence must not take over archive filenames")
+    if "func appendEinkauf" not in archive or "func appendTodo" not in archive:
+        fail("CompletedItemArchive must expose appendEinkauf / appendTodo")
+    if "archivedAt" not in archive:
+        fail("archive entries must carry archivedAt")
+    if "WatchComplicationReload" in archive or "HomeWidgetReload" in archive:
+        fail("archive writes must not reload Watch complications or Home widgets")
+    if "WCSession" in archive or "broadcast" in archive:
+        fail("archive must not WatchConnectivity-broadcast")
+    if "archiveCompletedItems" not in store or "CompletedItemArchive.appendEinkauf" not in store:
+        fail("ShoppingStore must archive completed items on delete")
+    if "archiveCompletedItems(done)" not in store and "archiveCompletedItems(done)" not in store:
+        fail("ShoppingStore.clearDone must archive completed items")
+    if "func clearDone" in store:
+        clear_done = store[store.find("func clearDone"):store.find("func importBackup")]
+        if "appendEinkauf" not in clear_done and "archiveCompletedItems" not in clear_done:
+            fail("ShoppingStore.clearDone must append to the einkauf archive")
+        if "removeAll { $0.done }" not in clear_done:
+            fail("ShoppingStore.clearDone must still drop done items")
+    delete_rows = store[store.find("func deleteEditRows"):store.find("func moveItems")]
+    if "archiveCompletedItems" not in delete_rows:
+        fail("ShoppingStore.deleteEditRows must archive completed items before removing them")
+    if "archiveCompletedTasks" not in todo_store or "CompletedItemArchive.appendTodo" not in todo_store:
+        fail("TodoStore must archive completed tasks on delete")
+    clear_todo = todo_store[todo_store.find("func clearCompleted"):todo_store.find("func update")]
+    if "archiveCompletedTasks" not in clear_todo:
+        fail("TodoStore.clearCompleted must append to the todo archive")
+    toggle = store[store.find("func toggle(_ id"):store.find("func applyRemoteToggle")]
+    if "appendEinkauf" in toggle or "archiveCompleted" in toggle:
+        fail("ShoppingStore.toggle must not archive (only final deletes)")
+    todo_toggle = todo_store[todo_store.find("func toggle(_ uid"):todo_store.find("func applyRemoteToggle")]
+    if "appendTodo" in todo_toggle or "archiveCompleted" in todo_toggle:
+        fail("TodoStore.toggle must not archive (only final deletes)")
+    if "einkaufArchiveStem" not in backup_share or "todoArchiveStem" not in backup_share:
+        fail("BackupShare must stamp einkauf-archiv and todo-archiv")
+    if "einkauf-archiv.json" not in desc or "todo-archiv.json" not in desc:
+        fail("Description.md must name einkauf-archiv.json and todo-archiv.json")
+    if "Archiv teilen" not in desc:
+        fail("Description.md must document Archiv teilen")
+    if "archivedAt" not in desc:
+        fail("Description.md must document archivedAt")
+    if settings.count('Button("Archiv teilen")') != 2:
+        fail("Settings must have two Archiv teilen buttons")
+    if 'Button("Archiv teilen")' in content or 'Button("Archiv teilen")' in todo_ui:
+        fail("list overflow must not show Archiv teilen")
+    for name in (
+        "testAppendWritesISO8601ArchivedAtAndLocalItemSnapshot",
+        "testAppendNeverOverwritesHistory",
+        "testBulkAppendWritesOneEntryPerItemWithSharedArchivedAt",
+        "testOpenItemsAreNotArchived",
+        "testClearDoneArchivesOnlyCompletedAndLeavesOpen",
+        "testTodoDeleteAndClearCompletedArchiveOnlyDone",
+        "testTodoBulkClearSharesArchivedAt",
+    ):
+        if name not in tests:
+            fail(f"tests must cover {name}")
+    print("item archive: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -3295,6 +3390,7 @@ def main() -> None:
     test_todo_store()
     test_icloud_inbox()
     test_item_imported_urgency()
+    test_item_archive()
     print("ALL OK")
 
 

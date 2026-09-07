@@ -21,6 +21,7 @@
 		E37D9FF51762A609C315F774 /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36199C1187279D1FEB2A27B4 /* TodoListView.swift */; };
 		E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
+		3C3F72DE08A6CC4FCACF97FB /* CompletedItemArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = E398D749F4222BF9BB618DE4 /* CompletedItemArchive.swift */; };
 		6BAFDC654535F8AC7412AE73 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
 		E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
@@ -55,6 +56,7 @@
 		EE414C6DCC8A58566F52EAC1 /* WatchTodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76F20A945F8D1BC1867267A7 /* WatchTodoListView.swift */; };
 		0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142154A18A1BACA0878EF95B /* BackupCodec.swift */; };
 		619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */; };
+		3AAE460E5F70B638706262FA /* CompletedItemArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = E398D749F4222BF9BB618DE4 /* CompletedItemArchive.swift */; };
 		CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84943AB38524794E90ACDCD /* ConnectivitySync.swift */; };
 		E410C3E9DA23BDDB00054634 /* Department.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C1C34BBFDDF520649DD2D1 /* Department.swift */; };
 		55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DB007C89450C8042516356 /* DepartmentGuesser.swift */; };
@@ -213,6 +215,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		3FFA995AB3FFD9B93F5501A0 /* EinkaufWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufWidgets.swift; sourceTree = "<group>"; };
 		142154A18A1BACA0878EF95B /* BackupCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupCodec.swift; sourceTree = "<group>"; };
 		E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupShare.swift; sourceTree = "<group>"; };
+		E398D749F4222BF9BB618DE4 /* CompletedItemArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedItemArchive.swift; sourceTree = "<group>"; };
 		D84943AB38524794E90ACDCD /* ConnectivitySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivitySync.swift; sourceTree = "<group>"; };
 		E0C1C34BBFDDF520649DD2D1 /* Department.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Department.swift; sourceTree = "<group>"; };
 		12DB007C89450C8042516356 /* DepartmentGuesser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartmentGuesser.swift; sourceTree = "<group>"; };
@@ -399,6 +402,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
             			children = (
             				142154A18A1BACA0878EF95B /* BackupCodec.swift */,
 				E778C20EFFC2CA4C0D08F701 /* BackupShare.swift */,
+				E398D749F4222BF9BB618DE4 /* CompletedItemArchive.swift */,
 				D84943AB38524794E90ACDCD /* ConnectivitySync.swift */,
 				E0C1C34BBFDDF520649DD2D1 /* Department.swift */,
 				12DB007C89450C8042516356 /* DepartmentGuesser.swift */,
@@ -632,6 +636,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				E37D9FF51762A609C315F774 /* TodoListView.swift in Sources */,
 				E4B9B8BC3A5A4FE8D3CD55B6 /* BackupCodec.swift in Sources */,
 				F31FE4B4282BF5DDB47AF42F /* BackupShare.swift in Sources */,
+				3C3F72DE08A6CC4FCACF97FB /* CompletedItemArchive.swift in Sources */,
 				6BAFDC654535F8AC7412AE73 /* ConnectivitySync.swift in Sources */,
 				E02A77EF50AE8B8B21487D02 /* Department.swift in Sources */,
 				12C48A3F279D3D88DF8C1972 /* DepartmentGuesser.swift in Sources */,
@@ -673,6 +678,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				EE414C6DCC8A58566F52EAC1 /* WatchTodoListView.swift in Sources */,
 				0736DC086F5074C426E8BEE6 /* BackupCodec.swift in Sources */,
 				619A0C9E4E9B6F89B0D5EC4E /* BackupShare.swift in Sources */,
+				3AAE460E5F70B638706262FA /* CompletedItemArchive.swift in Sources */,
 				CCA7721C1AAD5682303C7925 /* ConnectivitySync.swift in Sources */,
 				E410C3E9DA23BDDB00054634 /* Department.swift in Sources */,
 				55C2960196BB91E3A939EEE3 /* DepartmentGuesser.swift in Sources */,
@@ -884,7 +890,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -919,7 +925,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -954,7 +960,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -986,7 +992,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1019,7 +1025,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1049,7 +1055,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1080,7 +1086,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1111,7 +1117,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 71;
+				CURRENT_PROJECT_VERSION = 72;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;

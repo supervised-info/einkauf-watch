@@ -177,17 +177,18 @@ final class TodoStore: ObservableObject {
     func snapshotForPeer() -> TodoState { state }
 
     func delete(_ uid: Int64) {
-        let before = state.tasks.count
+        guard let task = state.tasks.first(where: { $0.uid == uid }) else { return }
+        archiveCompletedTasks([task])
         state.tasks.removeAll { $0.uid == uid }
-        guard state.tasks.count != before else { return }
         state.revision += 1
         persistAndSync()
     }
 
     func clearCompleted() {
-        let before = state.tasks.count
+        let done = state.tasks.filter(\.completed)
+        guard !done.isEmpty else { return }
+        archiveCompletedTasks(done)
         state.tasks.removeAll { $0.completed }
-        guard state.tasks.count != before else { return }
         state.revision += 1
         persistAndSync()
     }
@@ -299,6 +300,10 @@ final class TodoStore: ObservableObject {
         try TodoCodec.encodeBackup(state)
     }
 
+    func exportArchive() throws -> Data {
+        try CompletedItemArchive.encodeTodo()
+    }
+
     func exportMarkdown(exportedAt: Date = Date(), timeZone: TimeZone = .current) throws -> Data {
         try TodoMarkdown.encode(state, exportedAt: exportedAt, timeZone: timeZone)
     }
@@ -339,6 +344,10 @@ final class TodoStore: ObservableObject {
         // Floor über lokal + Incoming, sonst gewinnt der Peer mit alter, höherer revision.
         state.revision = max(previousLocalRevision, incoming.revision, state.revision) + 1
         persistAndSync()
+    }
+
+    private func archiveCompletedTasks(_ tasks: [TodoTask]) {
+        CompletedItemArchive.appendTodo(tasks)
     }
 
     private func takeUid() -> Int64 {

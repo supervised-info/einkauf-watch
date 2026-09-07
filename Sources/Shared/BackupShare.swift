@@ -3,9 +3,11 @@ import Foundation
 enum BackupShare {
     static let einkaufStem = "einkauf-backup"
     static let todoStem = "todo-liste"
+    static let einkaufArchiveStem = "einkauf-archiv"
+    static let todoArchiveStem = "todo-archiv"
 
     /// Wie HTML `stampedFilename`: `yyyyMMdd_HHmm-{stem}.json`.
-    /// Einkauf-Default `einkauf-backup`; To-Do `todo-liste`.
+    /// Einkauf-Default `einkauf-backup`; To-Do `todo-liste`; Archive `einkauf-archiv` / `todo-archiv`.
     static func stampedFilename(
         stem: String = einkaufStem,
         ext: String = "json",
