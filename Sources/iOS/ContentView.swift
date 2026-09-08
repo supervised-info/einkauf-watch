@@ -521,20 +521,22 @@ struct ContentView: View {
             alertMessage = "Zuerst Inbox verbinden…"
             return
         }
-        do {
-            let session = try InboxBookmarkStore.beginRetrieve()
-            guard !session.items.isEmpty else {
-                session.stopAccess()
-                alertMessage = InboxParser.retrieveConfirmation(addedCount: 0)
-                return
+        Task {
+            do {
+                let session = try await InboxBookmarkStore.beginRetrieve()
+                guard !session.items.isEmpty else {
+                    session.stopAccess()
+                    alertMessage = InboxParser.retrieveConfirmation(addedCount: 0)
+                    return
+                }
+                inboxRetrieve = session
+            } catch {
+                if let inboxError = error as? InboxBookmarkError, inboxError == .stale {
+                    InboxBookmarkStore.clear()
+                    inboxDisplayName = nil
+                }
+                alertMessage = error.localizedDescription
             }
-            inboxRetrieve = session
-        } catch {
-            if let inboxError = error as? InboxBookmarkError, inboxError == .stale {
-                InboxBookmarkStore.clear()
-                inboxDisplayName = nil
-            }
-            alertMessage = error.localizedDescription
         }
     }
 
