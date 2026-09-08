@@ -35,11 +35,11 @@ enum InboxBookmarkStore {
 
     /// Scope vor dem Lesen starten und über die Auswahl-Sheet-Lebensdauer halten.
     /// `stopAccess()` nach Schreiben (Übernehmen) oder beim Abbrechen / Dismiss.
-    static func beginRetrieve() throws -> InboxRetrieveSession {
+    static func beginRetrieve() async throws -> InboxRetrieveSession {
         let url = try resolvedURL()
         let scoped = url.startAccessingSecurityScopedResource()
         do {
-            let items = try readItems(from: url)
+            let items = try await readItems(from: url)
             return InboxRetrieveSession(url: url, items: items, didStartAccess: scoped)
         } catch {
             if scoped { url.stopAccessingSecurityScopedResource() }
@@ -47,7 +47,8 @@ enum InboxBookmarkStore {
         }
     }
 
-    static func readItems(from url: URL) throws -> [String] {
+    static func readItems(from url: URL) async throws -> [String] {
+        await InboxCloudDownload.ensureLocal(at: url)
         let data: Data
         do {
             data = try Data(contentsOf: url)

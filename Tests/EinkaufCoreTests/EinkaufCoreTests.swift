@@ -2163,3 +2163,16 @@ final class InboxParserTests: XCTestCase {
         XCTAssertEqual(InboxParser.shiftingSelection([0], removing: [0]), [])
     }
 }
+
+final class InboxCloudDownloadTests: XCTestCase {
+    func testEnsureLocalSkipsNonUbiquitousWithoutPolling() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("inbox-\(UUID().uuidString).txt")
+        try Data("Milch\n".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let start = ContinuousClock.now
+        await InboxCloudDownload.ensureLocal(at: url)
+        let elapsed = ContinuousClock.now - start
+        XCTAssertTrue(elapsed < .seconds(1), "non-ubiquitous URL must not wait for iCloud poll")
+    }
+}

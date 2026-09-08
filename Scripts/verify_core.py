@@ -332,6 +332,7 @@ def test_sources() -> None:
         "Sources/Watch/WatchListView.swift",
         "Sources/Watch/WatchComplicationReload.swift",
         "Sources/Shared/InboxParser.swift",
+        "Sources/Shared/InboxCloudDownload.swift",
         "Sources/iOS/InboxBookmarkStore.swift",
         "Sources/iOS/InboxRetrieveSheet.swift",
         "Sources/iOS/HomeWidgetReload.swift",
@@ -498,8 +499,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 72" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 72 / CURRENT_PROJECT_VERSION")
+    if "Build 73" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 73 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1016,8 +1017,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 72" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 72")
+    if "CURRENT_PROJECT_VERSION = 73" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 73")
+    if "CURRENT_PROJECT_VERSION = 72" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 72 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 71" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 71 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 69" in pbx:
@@ -1145,8 +1148,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 72" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 72")
+    if "CURRENT_PROJECT_VERSION: 73" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 73")
+    if "CURRENT_PROJECT_VERSION: 72" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 72 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 71" in yml:
         fail("stale CURRENT_PROJECT_VERSION 71 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 69" in yml:
@@ -1492,8 +1497,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 72") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 72")
+    if pbx.count("CURRENT_PROJECT_VERSION = 73") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 73")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2992,6 +2997,60 @@ def test_icloud_inbox() -> None:
         fail("InboxRetrieveSession must rewrite remaining inbox lines while the sheet scope is held")
     if "Zuerst Inbox verbinden…" not in bookmark:
         fail("missing bookmark must alert Zuerst Inbox verbinden…")
+    download = (ROOT / "Sources/Shared/InboxCloudDownload.swift").read_text()
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+    if "enum InboxCloudDownload" not in download:
+        fail("InboxCloudDownload helper missing")
+    if "startDownloadingUbiquitousItem" not in download:
+        fail("Inbox retrieve must call startDownloadingUbiquitousItem")
+    if "isUbiquitousItem" not in download:
+        fail("Inbox download must only start for ubiquitous URLs")
+    if "Task.sleep" not in download:
+        fail("Inbox download poll must use Task.sleep")
+    if "Thread.sleep" in download or "Thread.sleep" in bookmark or "Thread.sleep" in content:
+        fail("Inbox download must not block the main thread with Thread.sleep")
+    if "NSMetadataQuery" in download or "NSMetadataQuery" in bookmark:
+        fail("Inbox must not add a persistent NSMetadataQuery listener")
+    if "import CloudKit" in download or "CKContainer" in download:
+        fail("InboxCloudDownload must not use CloudKit")
+    if "InboxCloudDownload.swift" not in pbx:
+        fail("pbxproj must compile InboxCloudDownload.swift")
+    read_idx = bookmark.find("static func readItems")
+    if read_idx < 0:
+        fail("InboxBookmarkStore.readItems missing")
+    read_fn = extract_braced(bookmark, read_idx, "readItems")
+    if "InboxCloudDownload.ensureLocal" not in read_fn:
+        fail("readItems must force iCloud download before Data(contentsOf:)")
+    download_call = read_fn.find("InboxCloudDownload.ensureLocal")
+    data_call = read_fn.find("Data(contentsOf:")
+    if download_call < 0 or data_call < 0 or download_call > data_call:
+        fail("download must run before Data(contentsOf:)")
+    if "async" not in bookmark[read_idx : read_idx + 80]:
+        fail("readItems must be async so Task.sleep does not block the main thread")
+    begin_idx = bookmark.find("static func beginRetrieve")
+    if begin_idx < 0:
+        fail("InboxBookmarkStore.beginRetrieve missing")
+    begin_fn = extract_braced(bookmark, begin_idx, "beginRetrieve")
+    if "async" not in bookmark[begin_idx : begin_idx + 80]:
+        fail("beginRetrieve must be async so download poll does not block the main thread")
+    access_pos = begin_fn.find("startAccessingSecurityScopedResource")
+    read_pos = begin_fn.find("readItems")
+    if access_pos < 0 or read_pos < 0 or access_pos > read_pos:
+        fail("beginRetrieve must start security scope before readItems")
+    if "withResolvedURL" not in bookmark or "startAccessingSecurityScopedResource" not in bookmark:
+        fail("withResolvedURL / beginRetrieve must keep security scope")
+    if "await InboxBookmarkStore.beginRetrieve" not in content:
+        fail("ContentView.retrieveInbox must await beginRetrieve")
+    retrieve_idx = content.find("private func retrieveInbox")
+    if retrieve_idx < 0:
+        fail("ContentView.retrieveInbox missing")
+    retrieve_fn = extract_braced(content, retrieve_idx, "retrieveInbox")
+    if "Task {" not in retrieve_fn and "Task{" not in retrieve_fn:
+        fail("ContentView.retrieveInbox must use Task so download poll is async")
+    if "class InboxCloudDownloadTests" not in tests:
+        fail("unit tests must cover InboxCloudDownload for local files")
+    if "testEnsureLocalSkipsNonUbiquitousWithoutPolling" not in tests:
+        fail("InboxCloudDownload tests must skip poll for non-ubiquitous URLs")
     if "CKContainer" in bookmark or "import CloudKit" in bookmark or "NSUbiquitous" in bookmark:
         fail("Inbox bookmark must not use CloudKit / ubiquity container")
     if "icloud" in ios_ent.lower():
@@ -3037,6 +3096,12 @@ def test_icloud_inbox() -> None:
         fail("Description.md iCloud-Inbox must name retrieve selection Build 60")
     if "Build 61" not in inbox_sec:
         fail("Description.md iCloud-Inbox must name per-item Löschen Build 61")
+    if "Build 73" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must name download-before-read Build 73")
+    if "startDownloadingUbiquitousItem" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must document startDownloadingUbiquitousItem")
+    if "Task.sleep" not in inbox_sec:
+        fail("Description.md iCloud-Inbox must document Task.sleep poll")
     if "Auswahl" not in inbox_sec or "Abgewählte" not in inbox_sec:
         fail("Description.md iCloud-Inbox must document retrieve Auswahl; deselected stay in file")
     if "Löschen" not in inbox_sec:

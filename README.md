@@ -2,7 +2,7 @@
 
 Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). Zwei Reiter **Einkauf | To-Do** auf iPhone und Apple Watch. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
 
-Produktstand (Build 72): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen. Gelöschte erledigte Einträge werden nativ in `einkauf-archiv.json` / `todo-archiv.json` angehängt (Teilen in Einstellungen).
+Produktstand (Build 73): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen. Gelöschte erledigte Einträge werden nativ in `einkauf-archiv.json` / `todo-archiv.json` angehängt (Teilen in Einstellungen).
 
 Mindestens **Xcode 15**, iOS 17, watchOS 10. Im Apple-Developer-Account ein Team wählen. v1 ist nicht für den App-Store-Submit gedacht.
 
@@ -69,7 +69,7 @@ Zwei Reiter **Einkauf | To-Do** (`TabView`). Getrennte Stores, Dateien und Backu
 
 **iPhone-Widget:** Homescreen klein (zwei gestapelte Blöcke: Label in eigener Zeile, darunter `oo/xx/yy`; `Einkaufsliste`/`Einkauf` und `To Do (<Liste>)`, Caption + Headline), mittel/groß als Mini-Tabelle Offen / Erledigt / Gesamt. To-Do nur die aktuelle Liste (`Alle` wenn leer). Klein öffnet die Einkaufsliste; mittel/groß hat getrennte Taps `einkauf://list` / `einkauf://todo`. Scheme **Einkauf** aufs iPhone; Widget über den Homescreen-Widget-Picker hinzufügen. App Group `group.net.tschelle.einkauf` für App und Widget aktivieren, falls Xcode danach fragt.
 
-**iCloud-Inbox (nur Einkauf):** **…** → **Inbox verbinden…** (einmal geteilte `Einkauf-Inbox/inbox.txt` in iCloud Drive) und **Inbox abrufen** (Auswahl-Sheet; **Löschen** entfernt Zeilen ohne Import). Zweit-iPhone: Kurzbefehle **Einkauf-Inbox eintragen** / **Einkauf-Inbox vorlesen**. Details: `Description.md` → **iCloud-Inbox (Zweitgerät)**. Concurrent Append während des Abrufs ist **optional offen** (Phase 4).
+**iCloud-Inbox (nur Einkauf):** **…** → **Inbox verbinden…** (einmal geteilte `Einkauf-Inbox/inbox.txt` in iCloud Drive) und **Inbox abrufen** (iCloud-Download vor dem Lesen, dann Auswahl-Sheet; **Löschen** entfernt Zeilen ohne Import). Zweit-iPhone: Kurzbefehle **Einkauf-Inbox eintragen** / **Einkauf-Inbox vorlesen**. Details: `Description.md` → **iCloud-Inbox (Zweitgerät)**. Concurrent Append während des Abrufs ist **optional offen** (Phase 4).
 
 **Sync:** Jede Änderung speichert lokal und schickt den Stand per WatchConnectivity (`updateApplicationContext`, bei Erreichbarkeit `sendMessage`, sonst `transferUserInfo`). Abhaken mergen nach Zeitstempel; neue Artikel/Import folgen der höheren Listenrevision. iPhone und Watch müssen sich einmal sehen (typisch: Bluetooth, Apps im Vordergrund oder kurz aktiv).
 
