@@ -27,6 +27,7 @@ struct EinkaufApp: App {
 private enum RootTab: Hashable {
     case einkauf
     case todo
+    case settings
 }
 
 struct EinkaufRoot: View {
@@ -53,6 +54,11 @@ struct EinkaufRoot: View {
                     Label("To-Do", systemImage: "checklist")
                 }
                 .tag(RootTab.todo)
+            SettingsSheet()
+                .tabItem {
+                    Label("Einstellungen", systemImage: "gearshape")
+                }
+                .tag(RootTab.settings)
         }
         .environment(\.einkaufTheme, theme)
         .preferredColorScheme(appearance.preferredColorScheme)

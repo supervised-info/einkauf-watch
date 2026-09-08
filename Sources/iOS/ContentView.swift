@@ -14,7 +14,6 @@ struct ContentView: View {
     @State private var exportDocument = BackupFileDocument(data: Data())
     @State private var shareItem: BackupShareItem?
     @State private var alertMessage: String?
-    @State private var showSettings = false
     @State private var showSaveListPrompt = false
     @State private var saveListName = ""
     @State private var renamingID: String?
@@ -82,14 +81,6 @@ struct ContentView: View {
                 if value.count > SavedList.nameMax {
                     saveListName = String(value.prefix(SavedList.nameMax))
                 }
-            }
-            .sheet(isPresented: $showSettings) {
-                SettingsSheet()
-                    .environmentObject(store)
-                    .environmentObject(appearance)
-                    .environment(\.einkaufTheme, theme)
-                    .preferredColorScheme(appearance.preferredColorScheme)
-                    .einkaufScreen(theme)
             }
             .sheet(item: $shareItem) { item in
                 ShareSheet(url: item.url)
@@ -397,10 +388,6 @@ struct ContentView: View {
                 if let name = inboxDisplayName {
                     Text(name)
                         .foregroundStyle(.secondary)
-                }
-                Divider()
-                Button("Einstellungen", systemImage: "gearshape") {
-                    showSettings = true
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
