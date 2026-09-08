@@ -43,6 +43,27 @@ def extract_some_view(src: str, name: str) -> str:
     return extract_braced(src, m.start(), f"Watch widget {name} view")
 
 
+def markdown_heading_pos(src: str, heading: str) -> int:
+    """Index of an ATX heading at line start, e.g. ``## Watch`` not ``### Watch-To-Do``.
+
+    ``heading`` is the exact prefix plus title token (``## Watch``, ``### Watch-Complication``).
+    Matches ``^(#{1,6} Title)\\b`` so a substring ``str.find("## Watch")`` cannot steal
+    ``### Watch-To-Do``.
+    """
+    m = re.search(rf"(?m)^{re.escape(heading)}\b", src)
+    if not m:
+        fail(f"Description.md missing heading {heading!r} at line start")
+    return m.start()
+
+
+def markdown_section(src: str, start_heading: str, end_heading: str) -> str:
+    start = markdown_heading_pos(src, start_heading)
+    end = markdown_heading_pos(src, end_heading)
+    if end <= start:
+        fail(f"Description.md heading {end_heading!r} must follow {start_heading!r}")
+    return src[start:end]
+
+
 def extract_watch_eye_bar(watch: str) -> str:
     """Watch hide-completed chrome above the title (HStack + Spacer, not toolbar)."""
     if re.search(r"ToolbarItem\(placement:\s*\.topBarLeading\)", watch) or "topBarLeading" in watch:
@@ -360,8 +381,8 @@ def test_sources() -> None:
         fail("einkauf://todo must select the To-Do tab")
     if ".onOpenURL" in content:
         fail("onOpenURL must live on EinkaufRoot, not ContentView")
-    if "Einstellungen" not in content:
-        fail("Einstellungen menu missing")
+    if 'Button("Einstellungen"' in content or "showSettings" in content or "SettingsSheet" in content:
+        fail("ContentView overflow must not open Einstellungen as a sheet")
     if "Geh-Modus" not in content or '"Edit"' not in content:
         fail("walk/edit toggle labels missing")
     if "moveItems(in:" in content:
@@ -452,16 +473,13 @@ def test_sources() -> None:
         fail("overflow menu missing Inbox abrufen")
     connect_btn = content.find('Button("Inbox verbinden…"')
     retrieve_btn = content.find('Button("Inbox abrufen"')
-    settings_btn = content.find('Button("Einstellungen"')
-    if connect_btn < 0 or retrieve_btn < 0 or settings_btn < 0:
+    if connect_btn < 0 or retrieve_btn < 0:
         fail("Inbox overflow buttons must use German labels Inbox verbinden… / Inbox abrufen")
     if retrieve_btn < connect_btn:
         fail("Inbox abrufen must come after Inbox verbinden…")
-    if settings_btn < retrieve_btn:
-        fail("Inbox actions must sit before Einstellungen")
     erledigt_btn = content.find('Button("Erledigte löschen"')
     if erledigt_btn < 0 or connect_btn < erledigt_btn:
-        fail("Inbox actions must sit after Erledigte löschen / near Backup, before Einstellungen")
+        fail("Inbox actions must sit after Erledigte löschen / near Backup")
     if "Zuerst Inbox verbinden…" not in content:
         fail("Inbox abrufen without bookmark must alert Zuerst Inbox verbinden…")
     if "Nichts abzuholen." not in content and "retrieveConfirmation" not in content:
@@ -499,14 +517,22 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 73" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 73 / CURRENT_PROJECT_VERSION")
+    if "Build 74" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 74 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
         fail("Description.md must not document To-Do as iPhone nav title")
     if "einkaufToolbarChrome" not in desc:
         fail("Description.md must document compact einkaufToolbarChrome")
+    if "gearshape" not in desc:
+        fail("Description.md must document iPhone Einstellungen tab gearshape")
+    if "(nur iPhone, Sheet)" in desc:
+        fail("Description.md Einstellungen must be a Tab, not a Sheet")
+    if "12. Einstellungen" in desc:
+        fail("Description.md overflow must not list Einstellungen as sheet entry")
+    if "Allgemein" not in desc:
+        fail("Description.md must document Einstellungen section Allgemein")
     if "To-Do Backup" not in desc:
         fail("Description.md must document Einstellungen To-Do Backup")
     if "einkauf.watch.hideCompleted" not in desc or "einkauf.iphone.hideCompleted" not in desc:
@@ -522,7 +548,7 @@ def test_sources() -> None:
         fail("Description.md must document the Watch eye.slash glyph")
     if re.search(r"Auge \*\*eine Zeile unter dem Titel\*\*", desc):
         fail("Description.md still places the Watch eye under the navigation title")
-    watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
+    watch_sec = markdown_section(desc, "## Watch", "### Watch-Complication")
     if "links" not in watch_sec:
         fail("Description.md must left-align the Watch eye")
     if "Text(store.state.watchTitle)" not in watch_sec:
@@ -609,11 +635,13 @@ def test_sources() -> None:
     if "Text(\"Hell\")" in content or "Text(\"Creme\")" in content:
         fail("theme/palette controls must not be in the list toolbar (ContentView)")
     settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
-    for needle in ("Hell", "Dunkel", "System", "Creme", "Blau", "Darstellung"):
+    for needle in ("Hell", "Dunkel", "System", "Creme", "Blau", "Allgemein"):
         if needle not in settings:
             fail(f"Einstellungen missing {needle}")
     if "iPhone-Einstellung" not in settings:
-        fail("Darstellung hint should mention iPhone-Einstellung for System")
+        fail("Allgemein hint should mention iPhone-Einstellung for System")
+    if 'Text("Darstellung")' in settings:
+        fail("Einstellungen appearance section is Allgemein, not Darstellung")
     if "Aktueller Laden" not in settings:
         fail("Einstellungen missing Aktueller Laden")
     if re.search(r'Picker\(\s*"Aktueller Laden"', settings):
@@ -643,7 +671,8 @@ def test_sources() -> None:
     if 'if !store.state.currentStore.builtin' in settings:
         fail("standalone Laden löschen section must be removed; swipe on the list instead")
     section_order = [
-        "Darstellung",
+        'Text("Allgemein")',
+        'Text("Einkauf")',
         "Aktueller Laden",
         "Neuer Laden",
         "Ladenweg ·",
@@ -652,12 +681,11 @@ def test_sources() -> None:
         "Stamm-Artikel",
         "Gespeicherte Listen",
         "Wörterbuch",
-        "Einkauf Archiv",
-        "To-Do Backup",
+        'Text("To-Do")',
     ]
     section_pos = [settings.find(label) for label in section_order]
     if any(p < 0 for p in section_pos) or section_pos != sorted(section_pos):
-        fail("Einstellungen section order must be Darstellung, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch, Einkauf Archiv, To-Do Backup")
+        fail("Einstellungen section order must be Allgemein, Einkauf, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch, To-Do")
     neuer_idx = settings.find("Neuer Laden")
     ladenweg_idx = settings.find("Ladenweg ·")
     store_list_start = settings.find("ForEach(store.stores)")
@@ -682,14 +710,14 @@ def test_sources() -> None:
         fail("Einstellungen saved list rows must applySavedList")
     if "Wörterbuch" not in settings:
         fail("Einstellungen missing Wörterbuch")
-    if "To-Do Backup" not in settings:
-        fail("Einstellungen missing To-Do Backup")
-    if 'Button("Backup importieren…")' not in settings:
-        fail("Einstellungen To-Do Backup must offer Backup importieren…")
-    if 'Button("Backup exportieren…")' not in settings:
-        fail("Einstellungen To-Do Backup must offer Backup exportieren…")
-    if 'Button("Backup teilen")' not in settings:
-        fail("Einstellungen To-Do Backup must offer Backup teilen")
+    if "To-Do" not in settings:
+        fail("Einstellungen missing To-Do section")
+    if settings.count('Button("Backup importieren…")') != 2:
+        fail("Einstellungen must offer Backup importieren… for Einkauf and To-Do")
+    if settings.count('Button("Backup exportieren…")') != 2:
+        fail("Einstellungen must offer Backup exportieren… for Einkauf and To-Do")
+    if settings.count('Button("Backup teilen")') < 2:
+        fail("Einstellungen must offer Backup teilen for Einkauf and To-Do")
     if settings.count('Button("Archiv teilen")') != 2:
         fail("Einstellungen must offer Archiv teilen for Einkauf and To-Do")
     if "shareEinkaufArchive" not in settings or "shareTodoArchive" not in settings:
@@ -708,12 +736,28 @@ def test_sources() -> None:
         fail("Einstellungen To-Do import must offer Anhängen vs Ersetzen")
     if 'defaultFilename: "todo-liste"' not in settings:
         fail("Einstellungen To-Do export default filename must be todo-liste")
+    if 'defaultFilename: "einkauf-backup"' not in settings:
+        fail("Einstellungen Einkauf export default filename must be einkauf-backup")
     if "allowedContentTypes: [.json]" not in settings:
         fail("Einstellungen To-Do import must be JSON-only")
     if "MD exportieren" in settings or "CSV exportieren" in settings:
         fail("Einstellungen must not grow To-Do MD/CSV export")
-    if "store.importBackup" in settings or "BackupCodec" in settings:
+    if "BackupCodec" in settings:
+        fail("Einstellungen must not call BackupCodec directly")
+    if "store.importBackup(from:" not in settings:
+        fail("Einstellungen Einkauf Backup must import via store.importBackup")
+    todo_import_m = re.search(r"private func handleTodoImport\(", settings)
+    if not todo_import_m:
+        fail("missing handleTodoImport")
+    todo_import_fn = extract_braced(settings, todo_import_m.start(), "handleTodoImport")
+    if "store.importBackup" in todo_import_fn or "BackupCodec" in todo_import_fn:
         fail("Einstellungen To-Do import must never write into ShoppingStore / BackupCodec")
+    if "Inbox verbinden…" not in settings or "Inbox abrufen" not in settings:
+        fail("Einstellungen Einkauf must offer Inbox verbinden… / Inbox abrufen")
+    if "await InboxBookmarkStore.beginRetrieve" not in settings:
+        fail("Einstellungen Inbox abrufen must await beginRetrieve")
+    if 'Button("Fertig")' in settings:
+        fail("Einstellungen tab must not dismiss with Fertig (not a sheet)")
     if "KeywordDictionaryView" not in settings:
         fail("Einstellungen Wörterbuch row must open KeywordDictionaryView")
     if "NavigationLink" not in settings:
@@ -1017,8 +1061,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 73" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 73")
+    if "CURRENT_PROJECT_VERSION = 74" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 74")
+    if "CURRENT_PROJECT_VERSION = 73" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 73 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 72" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 72 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 71" in pbx:
@@ -1148,8 +1194,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 73" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 73")
+    if "CURRENT_PROJECT_VERSION: 74" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 74")
+    if "CURRENT_PROJECT_VERSION: 73" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 73 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 72" in yml:
         fail("stale CURRENT_PROJECT_VERSION 72 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 71" in yml:
@@ -1460,7 +1508,7 @@ def test_watch_complication() -> None:
         fail("ComplicationSnapshot compactCountText must use erledigt when open is 0")
     if "Watch-Complication" not in desc or "accessoryCircular" not in desc:
         fail("Description.md must document the Watch complication families")
-    comp_sec = desc[desc.find("### Watch-Complication"):desc.find("### iPhone-Widget")]
+    comp_sec = markdown_section(desc, "### Watch-Complication", "### iPhone-Widget")
     if "compactCountText" not in comp_sec:
         fail("Description.md complication must name compactCountText")
     if "titleLabel" not in comp_sec or "Einkauf" not in comp_sec:
@@ -1497,8 +1545,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 73") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 73")
+    if pbx.count("CURRENT_PROJECT_VERSION = 74") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 74")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -1730,7 +1778,7 @@ def test_iphone_widget() -> None:
         fail("Description.md must document the iPhone widget families")
     if "systemLarge" not in desc:
         fail("Description.md must document systemLarge for the iPhone widget")
-    iphone_sec = desc[desc.find("### iPhone-Widget"):desc.find("## Sprach-Eingabe")]
+    iphone_sec = markdown_section(desc, "### iPhone-Widget", "## Sprach-Eingabe")
     if "Caption" not in iphone_sec or "Headline" not in iphone_sec:
         fail("Description.md must document Small widget Caption + Headline")
     if "gestapelte Blöcke" not in iphone_sec and "gestapelten Blöcke" not in iphone_sec:
@@ -2236,11 +2284,20 @@ def test_todo_store() -> None:
     if "WCSession" in store:
         fail("TodoStore must not talk to WCSession directly")
     if "TabView" not in einkauf_app:
-        fail("iPhone root must use TabView for Einkauf | To-Do")
+        fail("iPhone root must use TabView for Einkauf | To-Do | Einstellungen")
     if 'Label("Einkauf", systemImage: "basket")' not in einkauf_app:
         fail("Einkauf tab must use basket SF Symbol")
     if 'Label("To-Do", systemImage: "checklist")' not in einkauf_app:
         fail("To-Do tab must use checklist SF Symbol")
+    if 'Label("Einstellungen", systemImage: "gearshape")' not in einkauf_app:
+        fail("iPhone third tab must be Einstellungen with gearshape")
+    if "SettingsSheet" not in einkauf_app:
+        fail("iPhone TabView must host SettingsSheet")
+    einkauf_tab = einkauf_app.find('Label("Einkauf", systemImage: "basket")')
+    todo_tab = einkauf_app.find('Label("To-Do", systemImage: "checklist")')
+    settings_tab = einkauf_app.find('Label("Einstellungen", systemImage: "gearshape")')
+    if einkauf_tab < 0 or todo_tab < 0 or settings_tab < 0 or not (einkauf_tab < todo_tab < settings_tab):
+        fail("iPhone tabs must be Einkauf, To-Do, Einstellungen")
     if "TodoStore()" not in einkauf_app or "environmentObject(todos)" not in einkauf_app:
         fail("EinkaufApp must own TodoStore and inject environmentObject")
     if "ShoppingStore()" not in einkauf_app:
@@ -2265,6 +2322,8 @@ def test_todo_store() -> None:
         fail("Watch Einkauf tab must use basket SF Symbol")
     if 'Label("To-Do", systemImage: "checklist")' not in watch_app:
         fail("Watch To-Do tab must use checklist SF Symbol")
+    if "gearshape" in watch_app or "Einstellungen" in watch_app or "SettingsSheet" in watch_app:
+        fail("Watch must not have an Einstellungen tab")
     if "TodoListView" in watch or "TodoStore" in watch:
         fail("WatchListView must not host Todo UI")
     if "fileImporter" not in todo_ui or "fileExporter" not in todo_ui:
@@ -3089,7 +3148,7 @@ def test_icloud_inbox() -> None:
         fail("Watch must not offer Inbox")
     if "NSUbiquitous" in persist or "CKContainer" in persist:
         fail("Persistence must stay local (no iCloud store)")
-    inbox_sec = desc[desc.find("## iCloud-Inbox"):desc.find("## Abteilungen")]
+    inbox_sec = markdown_section(desc, "## iCloud-Inbox", "## Abteilungen")
     if "Build 59" not in inbox_sec:
         fail("Description.md iCloud-Inbox must name Phase 2 Build 59")
     if "Build 60" not in inbox_sec:
@@ -3288,7 +3347,7 @@ def test_item_imported_urgency() -> None:
         fail("Description.md must document imported and urgency")
     if "theme.slate" not in desc:
         fail("Description.md must document teal import mark via theme.slate")
-    geh = desc[desc.find("### Geh-Modus"):desc.find("### Edit")]
+    geh = markdown_section(desc, "### Geh-Modus", "### Edit")
     if "führend" not in geh and "kein führender" not in geh and "Links nur Checkbox" not in geh:
         fail("Description.md Geh-Modus must say import mark is not leading")
     if "rechts" not in geh.lower():
@@ -3297,7 +3356,7 @@ def test_item_imported_urgency() -> None:
         fail("Description.md Geh-Modus must put import mark rightmost after the urgency chip")
     if "urgent" not in desc or "later" not in desc:
         fail("Description.md must name urgency values")
-    artikel = desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]
+    artikel = markdown_section(desc, "## Artikel-Modell", "## DepartmentGuesser")
     if "↓" not in desc or "↔" not in artikel:
         fail("Description.md must document urgency icons ⚡ / ↔ / ↓")
     if "U+2194" not in artikel:
@@ -3314,14 +3373,14 @@ def test_item_imported_urgency() -> None:
         fail("Description.md must say the normal chip is compact like ⚡/↓")
     if "nur iPhone" not in artikel:
         fail("Description.md Artikel-Modell must limit urgency cycling to iPhone")
-    geh = desc[desc.find("### Geh-Modus"):desc.find("### Edit")]
+    geh = markdown_section(desc, "### Geh-Modus", "### Edit")
     if "kompakt" not in geh:
         fail("Description.md Geh-Modus must say the normal chip is compact")
     if "↔" not in geh:
         fail("Description.md Geh-Modus must show ↔ for normal")
     if "nur iPhone" not in geh:
         fail("Description.md Geh-Modus must limit chip tap to iPhone")
-    watch_sec = desc[desc.find("## Watch"):desc.find("### Watch-Complication")]
+    watch_sec = markdown_section(desc, "## Watch", "### Watch-Complication")
     if "Tipp wechselt" in watch_sec:
         fail("Description.md Watch must not say tap cycles urgency")
     if "nur Anzeige" not in watch_sec:
@@ -3342,7 +3401,7 @@ def test_item_imported_urgency() -> None:
         fail("tests must not expect an empty normal symbol")
     if "imported: true" not in desc:
         fail("Description.md must document Inbox imported: true")
-    if "Siri" not in desc[desc.find("## Artikel-Modell"):desc.find("## DepartmentGuesser")]:
+    if "Siri" not in markdown_section(desc, "## Artikel-Modell", "## DepartmentGuesser"):
         fail("Description.md Artikel-Modell must say Siri never sets imported")
 
     for name in (
@@ -3442,6 +3501,19 @@ def test_item_archive() -> None:
     print("item archive: ok")
 
 
+def test_heading_slicer() -> None:
+    src = Path(__file__).read_text()
+    if re.search(r"desc\.find\(\s*[\"']## Watch", src):
+        fail("verify_core must slice ## Watch via markdown_heading_pos, never desc.find")
+    sample = "### Watch-To-Do (nur Geh-Modus)\n\n## Watch\nbody\n"
+    pos = markdown_heading_pos(sample, "## Watch")
+    if pos == sample.find("## Watch"):
+        fail("markdown_heading_pos must not match ### Watch-To-Do via str.find semantics")
+    if not sample.startswith("## Watch", pos):
+        fail("markdown_heading_pos must land on the ## Watch line")
+    print("heading slicer: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -3456,6 +3528,7 @@ def main() -> None:
     test_icloud_inbox()
     test_item_imported_urgency()
     test_item_archive()
+    test_heading_slicer()
     print("ALL OK")
 
 

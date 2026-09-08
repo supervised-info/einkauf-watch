@@ -1,8 +1,8 @@
 # Einkauf für iPhone und Apple Watch
 
-Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). Zwei Reiter **Einkauf | To-Do** auf iPhone und Apple Watch. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
+Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). iPhone: drei Reiter **Einkauf | To-Do | Einstellungen**. Watch: zwei Reiter **Einkauf | To-Do**. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
 
-Produktstand (Build 73): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen. Gelöschte erledigte Einträge werden nativ in `einkauf-archiv.json` / `todo-archiv.json` angehängt (Teilen in Einstellungen).
+Produktstand (Build 74): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen. Gelöschte erledigte Einträge werden nativ in `einkauf-archiv.json` / `todo-archiv.json` angehängt (Teilen in Einstellungen).
 
 Mindestens **Xcode 15**, iOS 17, watchOS 10. Im Apple-Developer-Account ein Team wählen. v1 ist nicht für den App-Store-Submit gedacht.
 
@@ -51,15 +51,15 @@ Beispiel-Dateien im Repo:
 - `Fixtures/einkauf-backup-ohne-staples.json` — ohne `staples`
 - `Fixtures/todo-v3-json.json` — To-Do-Backup (`format: "todo-v3-json"`), nicht Einkauf
 
-To-Do-Backup importiert man im **To-Do**-Tab (**…**) oder unter **Einstellungen → To-Do Backup** (nur JSON), nicht über das Einkaufs-Overflow.
+To-Do-Backup importiert man im **To-Do**-Tab (**…**) oder unter **Einstellungen → To-Do** (To-Do Backup, nur JSON), nicht über das Einkaufs-Overflow.
 
 PWA-Export: in der Website Backup speichern/teilen, Datei aufs iPhone legen, hier importieren. Die Watch zeigt die Liste in Laden-/Abteilungsreihenfolge (`vor` zuerst, `nach` zuletzt).
 
 ## Bedienung
 
-Zwei Reiter **Einkauf | To-Do** (`TabView`). Getrennte Stores, Dateien und Backups — Einkauf ändert nicht `todo-local.json` und umgekehrt.
+Zwei Reiter **Einkauf | To-Do** auf der Watch; auf dem iPhone drei Reiter **Einkauf | To-Do | Einstellungen** (`TabView`, `gearshape`). Getrennte Stores, Dateien und Backups — Einkauf ändert nicht `todo-local.json` und umgekehrt.
 
-**iPhone Einkauf:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen, **kein** Swipe-Löschen) und **Edit** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Swipe-Löschen). Importierte Artikel (Inbox) zeigen ganz rechts einen teal Streifen nach dem Dringlichkeits-Chip (⚡ / ↔ / ↓); links nur Checkbox + Name. Kein Navigationstitel „Einkaufsliste“ (Tab reicht). Toolbar kompakt (Laden, Auge, **Edit** / **Geh-Modus**, **…**; nicht „Bearbeiten“); `walkMode` bleibt im Backup. Auge blendet Erledigte im Geh-Modus und in **Liste teilen** (PDF) aus; Edit zeigt weiter alle. Plus Artikel hinzufügen, **Ladenwahl** (eingebaute Seeds plus eigene Läden unter Einstellungen), Stamm, Einstellungen (Hell/Dunkel/System, Creme/Blau), Import/Export/Teilen.
+**iPhone Einkauf:** **Geh-Modus** (große Checkbox + Name, ohne Ziehen, **kein** Swipe-Löschen) und **Edit** (Ziehen auch in andere Abteilungen, Umbenennen, Abteilungs-Picker, Swipe-Löschen). Importierte Artikel (Inbox) zeigen ganz rechts einen teal Streifen nach dem Dringlichkeits-Chip (⚡ / ↔ / ↓); links nur Checkbox + Name. Kein Navigationstitel „Einkaufsliste“ (Tab reicht). Toolbar kompakt (Laden, Auge, **Edit** / **Geh-Modus**, **…**; nicht „Bearbeiten“); `walkMode` bleibt im Backup. Auge blendet Erledigte im Geh-Modus und in **Liste teilen** (PDF) aus; Edit zeigt weiter alle. Plus Artikel hinzufügen, **Ladenwahl** (eingebaute Seeds plus eigene Läden unter Einstellungen), Stamm, Import/Export/Teilen. Erscheinungsbild (Hell/Dunkel/System, Creme/Blau) nur im Tab **Einstellungen**.
 
 **iPhone To-Do:** Text, Person, Prio A/B, Datum, benannte Listen (`todo.iphone.currentListId`, leer = **Alle**). Kein Navigationstitel „To-Do“ (Tab reicht). Toolbar kompakt (Lupe, Liste, Auge, **Edit** / **Fertig**, Sort, **…**). Auge blendet Abgeschlossene (`todo.iphone.showCompleted`). Swipe-Löschen **nur** im Edit-Modus; Listen-Modus öffnet `TodoEditSheet` per Text oder Swipe **Edit**. Wieder öffnen, Sort, Suche (**Person oder Text …**), eigenes Backup `todo-v3-json` inkl. `lists`, MD/CSV (volle Liste), **Liste teilen** (PDF folgt Liste + Auge).
 

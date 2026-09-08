@@ -6,13 +6,15 @@ struct SettingsSheet: View {
     @EnvironmentObject private var todos: TodoStore
     @EnvironmentObject private var appearance: AppearanceSettings
     @Environment(\.einkaufTheme) private var theme
-    @Environment(\.dismiss) private var dismiss
     @State private var newStapleName = ""
     @State private var newStoreName = ""
     @State private var confirmDeleteStore = false
     @State private var pendingDeleteStoreId: String?
     @State private var confirmDeleteSavedList = false
     @State private var pendingDeleteSavedListId: String?
+    @State private var showEinkaufImporter = false
+    @State private var showEinkaufExporter = false
+    @State private var einkaufExportDocument = BackupFileDocument(data: Data())
     @State private var showTodoImporter = false
     @State private var showTodoExporter = false
     @State private var todoExportDocument = BackupFileDocument(data: Data())
@@ -21,6 +23,9 @@ struct SettingsSheet: View {
     @State private var pendingTodoImport: Data?
     @State private var showTodoImportChoice = false
     @State private var todoImportSummary = ""
+    @State private var showInboxImporter = false
+    @State private var inboxDisplayName = InboxBookmarkStore.displayName
+    @State private var inboxRetrieve: InboxRetrieveSession?
 
     private var layout: [String] {
         StoreLayout.sanitized(store.state.currentStore.layout)
@@ -47,10 +52,47 @@ struct SettingsSheet: View {
                     .accessibilityLabel("Creme oder Blau")
                     .einkaufRowChrome()
                 } header: {
-                    Text("Darstellung")
+                    Text("Allgemein")
                         .foregroundStyle(theme.muted)
                 } footer: {
                     Text("Creme ist das Vintage-Papier, Blau die Navy-Palette. System folgt der iPhone-Einstellung für Hell und Dunkel.")
+                }
+
+                Section {
+                    Button("Backup importieren…") {
+                        showEinkaufImporter = true
+                    }
+                    .einkaufRowChrome()
+                    Button("Backup exportieren…") {
+                        exportEinkaufJSON()
+                    }
+                    .einkaufRowChrome()
+                    Button("Backup teilen") {
+                        shareEinkaufBackup()
+                    }
+                    .einkaufRowChrome()
+                    Button("Archiv teilen") {
+                        shareEinkaufArchive()
+                    }
+                    .einkaufRowChrome()
+                    Button("Inbox verbinden…") {
+                        showInboxImporter = true
+                    }
+                    .einkaufRowChrome()
+                    Button("Inbox abrufen") {
+                        retrieveInbox()
+                    }
+                    .einkaufRowChrome()
+                    if let name = inboxDisplayName {
+                        Text(name)
+                            .foregroundStyle(theme.muted)
+                            .einkaufRowChrome()
+                    }
+                } header: {
+                    Text("Einkauf")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Backup-JSON (einkauf-backup). Archiv gelöschter erledigter Artikel (einkauf-archiv.json). Inbox verbinden und abrufen. History wird nur angehängt, nie überschrieben.")
                 }
 
                 Section {
@@ -202,18 +244,6 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    Button("Archiv teilen") {
-                        shareEinkaufArchive()
-                    }
-                    .einkaufRowChrome()
-                } header: {
-                    Text("Einkauf Archiv")
-                        .foregroundStyle(theme.muted)
-                } footer: {
-                    Text("Gelöschte erledigte Artikel (einkauf-archiv.json). History wird nur angehängt, nie überschrieben.")
-                }
-
-                Section {
                     Button("Backup importieren…") {
                         showTodoImporter = true
                     }
@@ -231,7 +261,7 @@ struct SettingsSheet: View {
                     }
                     .einkaufRowChrome()
                 } header: {
-                    Text("To-Do Backup")
+                    Text("To-Do")
                         .foregroundStyle(theme.muted)
                 } footer: {
                     Text("JSON-Backup der To-Do-Liste (todo-liste.json). Einkauf-Backups werden abgelehnt. Archiv gelöschter erledigter Aufgaben: todo-archiv.json.")
@@ -240,11 +270,6 @@ struct SettingsSheet: View {
             .einkaufListChrome()
             .navigationTitle("Einstellungen")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") { dismiss() }
-                }
-            }
             .confirmationDialog(
                 "Laden „\(pendingDeleteStoreName)“ wirklich löschen?",
                 isPresented: $confirmDeleteStore,
@@ -276,25 +301,72 @@ struct SettingsSheet: View {
                 }
             }
             .fileImporter(
-                isPresented: $showTodoImporter,
+                isPresented: $showEinkaufImporter,
                 allowedContentTypes: [.json],
                 allowsMultipleSelection: false
             ) { result in
-                handleTodoImport(result)
+                handleEinkaufImport(result)
+            }
+            .background {
+                Color.clear
+                    .fileImporter(
+                        isPresented: $showTodoImporter,
+                        allowedContentTypes: [.json],
+                        allowsMultipleSelection: false
+                    ) { result in
+                        handleTodoImport(result)
+                    }
+            }
+            .background {
+                Color.clear
+                    .fileImporter(
+                        isPresented: $showInboxImporter,
+                        allowedContentTypes: Self.inboxContentTypes,
+                        allowsMultipleSelection: false
+                    ) { result in
+                        handleInboxConnect(result)
+                    }
             }
             .fileExporter(
-                isPresented: $showTodoExporter,
-                document: todoExportDocument,
+                isPresented: $showEinkaufExporter,
+                document: einkaufExportDocument,
                 contentType: .json,
-                defaultFilename: "todo-liste"
+                defaultFilename: "einkauf-backup"
             ) { result in
                 if case .failure(let error) = result {
                     todoAlertMessage = error.localizedDescription
                 }
             }
+            .background {
+                Color.clear
+                    .fileExporter(
+                        isPresented: $showTodoExporter,
+                        document: todoExportDocument,
+                        contentType: .json,
+                        defaultFilename: "todo-liste"
+                    ) { result in
+                        if case .failure(let error) = result {
+                            todoAlertMessage = error.localizedDescription
+                        }
+                    }
+            }
             .sheet(item: $todoShareItem) { item in
                 ShareSheet(url: item.url)
                     .ignoresSafeArea()
+            }
+            .sheet(item: $inboxRetrieve) { session in
+                InboxRetrieveSheet(
+                    items: session.items,
+                    onConfirm: { selected in
+                        confirmInboxRetrieve(session: session, selectedOffsets: selected)
+                    },
+                    onDeleteRemaining: { remaining in
+                        rewriteInboxRetrieve(session: session, remainingItems: remaining)
+                    }
+                )
+                .environment(\.einkaufTheme, theme)
+                .preferredColorScheme(appearance.preferredColorScheme)
+                .einkaufScreen(theme)
             }
             .alert("Hinweis", isPresented: Binding(
                 get: { todoAlertMessage != nil },
@@ -312,6 +384,9 @@ struct SettingsSheet: View {
                 Text(todoImportSummary)
             }
             .onChange(of: todos.lastError) { _, new in
+                if let new { todoAlertMessage = new }
+            }
+            .onChange(of: store.lastError) { _, new in
                 if let new { todoAlertMessage = new }
             }
         }
@@ -428,6 +503,15 @@ struct SettingsSheet: View {
         confirmDeleteSavedList = true
     }
 
+    private func exportEinkaufJSON() {
+        do {
+            einkaufExportDocument = BackupFileDocument(data: try store.exportBackup())
+            showEinkaufExporter = true
+        } catch {
+            todoAlertMessage = error.localizedDescription
+        }
+    }
+
     private func exportTodoJSON() {
         do {
             todoExportDocument = BackupFileDocument(data: try todos.exportBackup())
@@ -435,6 +519,14 @@ struct SettingsSheet: View {
         } catch {
             todoAlertMessage = error.localizedDescription
         }
+    }
+
+    private func shareEinkaufBackup() {
+        shareFile(
+            data: { try store.exportBackup() },
+            stem: BackupShare.einkaufStem,
+            missing: "Backup-Datei konnte nicht erzeugt werden."
+        )
     }
 
     private func shareTodoJSON() {
@@ -475,6 +567,20 @@ struct SettingsSheet: View {
         }
     }
 
+    private func handleEinkaufImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            todoAlertMessage = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            do {
+                try store.importBackup(from: url)
+            } catch {
+                todoAlertMessage = error.localizedDescription
+            }
+        }
+    }
+
     private func handleTodoImport(_ result: Result<[URL], Error>) {
         switch result {
         case .failure(let error):
@@ -505,6 +611,89 @@ struct SettingsSheet: View {
             try todos.importAny(data, append: append)
         } catch {
             todoAlertMessage = error.localizedDescription
+        }
+    }
+
+    private static let inboxContentTypes: [UTType] = {
+        var types: [UTType] = [.plainText, .text]
+        if let txt = UTType(filenameExtension: "txt") {
+            types.append(txt)
+        }
+        return types
+    }()
+
+    private func handleInboxConnect(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            todoAlertMessage = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            do {
+                try InboxBookmarkStore.connect(url: url)
+                inboxDisplayName = InboxBookmarkStore.displayName
+                todoAlertMessage = "Inbox verbunden."
+            } catch {
+                InboxBookmarkStore.clear()
+                inboxDisplayName = nil
+                todoAlertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func retrieveInbox() {
+        guard InboxBookmarkStore.hasBookmark else {
+            todoAlertMessage = "Zuerst Inbox verbinden…"
+            return
+        }
+        Task {
+            do {
+                let session = try await InboxBookmarkStore.beginRetrieve()
+                guard !session.items.isEmpty else {
+                    session.stopAccess()
+                    todoAlertMessage = InboxParser.retrieveConfirmation(addedCount: 0)
+                    return
+                }
+                inboxRetrieve = session
+            } catch {
+                if let inboxError = error as? InboxBookmarkError, inboxError == .stale {
+                    InboxBookmarkStore.clear()
+                    inboxDisplayName = nil
+                }
+                todoAlertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private func confirmInboxRetrieve(session: InboxRetrieveSession, selectedOffsets: Set<Int>) {
+        let partition = InboxParser.partition(items: session.items, selectedOffsets: selectedOffsets)
+        guard !partition.selected.isEmpty else {
+            todoAlertMessage = InboxParser.noneSelectedMessage()
+            return
+        }
+        do {
+            let added = store.addItems(fromSpeech: InboxParser.speechText(from: partition.selected), imported: true)
+            try session.rewriteRemaining(partition.remainder)
+            session.stopAccess()
+            inboxRetrieve = nil
+            todoAlertMessage = InboxParser.retrieveConfirmation(addedCount: added)
+        } catch {
+            session.stopAccess()
+            inboxRetrieve = nil
+            todoAlertMessage = error.localizedDescription
+        }
+    }
+
+    /// Löschen im Sheet: Datei sofort auf die restlichen Zeilen kürzen, ohne Import.
+    private func rewriteInboxRetrieve(session: InboxRetrieveSession, remainingItems: [String]) -> String? {
+        do {
+            try session.rewriteRemaining(remainingItems)
+            if remainingItems.isEmpty {
+                session.stopAccess()
+                inboxRetrieve = nil
+            }
+            return nil
+        } catch {
+            return error.localizedDescription
         }
     }
 }
