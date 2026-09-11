@@ -223,14 +223,27 @@ struct SettingsSheet: View {
                             .deleteDisabled(true)
                     } else {
                         ForEach(store.savedLists) { list in
-                            Button {
-                                store.applySavedList(list)
-                            } label: {
-                                Text(list.name)
-                                    .foregroundStyle(theme.ink)
+                            HStack {
+                                NavigationLink {
+                                    SavedListEditView(listId: list.id)
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(list.name)
+                                            .foregroundStyle(theme.ink)
+                                        Text(savedListItemCountLabel(list.items.count))
+                                            .font(.footnote)
+                                            .foregroundStyle(theme.muted)
+                                    }
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .accessibilityLabel("\(list.name) bearbeiten")
+                                Button("Übernehmen") {
+                                    store.applySavedList(list)
+                                }
+                                .buttonStyle(.borderless)
+                                .foregroundStyle(theme.oxide)
+                                .accessibilityLabel("„\(list.name)“ übernehmen")
                             }
-                            .accessibilityLabel(list.name)
                             .einkaufRowChrome()
                         }
                         .onDelete(perform: requestDeleteSavedLists)
@@ -239,7 +252,7 @@ struct SettingsSheet: View {
                     Text("Gespeicherte Listen")
                         .foregroundStyle(theme.muted)
                 } footer: {
-                    Text("Anlass-Listen wie Grillen oder Drogerie. Tippen füllt die aktuelle Liste auf, ohne sie zu ersetzen. Wischen zum Löschen.")
+                    Text("Anlass-Listen wie Grillen oder Drogerie. Tippen öffnet Liste bearbeiten. Übernehmen füllt die aktuelle Liste auf, ohne sie zu ersetzen. Wischen zum Löschen.")
                 }
 
                 Section {
@@ -531,6 +544,10 @@ struct SettingsSheet: View {
     private var pendingDeleteSavedListName: String {
         guard let id = pendingDeleteSavedListId else { return "" }
         return store.savedLists.first(where: { $0.id == id })?.name ?? ""
+    }
+
+    private func savedListItemCountLabel(_ count: Int) -> String {
+        count == 1 ? "1 Artikel" : "\(count) Artikel"
     }
 
     private func requestDeleteSavedLists(at offsets: IndexSet) {

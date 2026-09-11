@@ -308,6 +308,79 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
+    /// Name der Anlass-Liste. Leer/ungültig = no-op; Duplikat-Namen bleiben erlaubt.
+    @discardableResult
+    func renameSavedList(id: String, name: String) -> Bool {
+        guard let trimmed = SavedList.sanitizedName(name) else { return false }
+        return mutateSavedList(id: id) { list in
+            guard list.name != trimmed else { return false }
+            list.name = trimmed
+            return true
+        }
+    }
+
+    /// Artikelname in der Vorlage. Leer = keine Änderung (wie Rename auf der Einkaufsliste).
+    @discardableResult
+    func renameSavedListItem(id: String, at index: Int, to rawName: String) -> Bool {
+        let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return false }
+        return mutateSavedList(id: id) { list in
+            guard list.items.indices.contains(index) else { return false }
+            guard list.items[index].name != name else { return false }
+            list.items[index].name = name
+            state.mappings[DepartmentGuesser.mappingKey(name)] = Department.resolved(list.items[index].dept)
+            return true
+        }
+    }
+
+    /// Abteilung eines Vorlagen-Artikels; schreibt `mappings` wie Stamm.
+    @discardableResult
+    func setSavedListItemDept(id: String, at index: Int, dept: String) -> Bool {
+        guard Department.isKnown(dept) else { return false }
+        return mutateSavedList(id: id) { list in
+            guard list.items.indices.contains(index) else { return false }
+            guard list.items[index].dept != dept else { return false }
+            list.items[index].dept = dept
+            state.mappings[DepartmentGuesser.mappingKey(list.items[index].name)] = dept
+            return true
+        }
+    }
+
+    @discardableResult
+    func removeSavedListItem(id: String, at index: Int) -> Bool {
+        mutateSavedList(id: id) { list in
+            guard list.items.indices.contains(index) else { return false }
+            list.items.remove(at: index)
+            return true
+        }
+    }
+
+    /// Neuen Vorlagen-Artikel anlegen. Abteilung per Guesser; leerer Name = no-op.
+    @discardableResult
+    func addSavedListItem(id: String, name rawName: String) -> Bool {
+        let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return false }
+        let dept = DepartmentGuesser.guess(name, mappings: state.mappings)
+        return mutateSavedList(id: id) { list in
+            list.items.append(Staple(name: name, dept: dept))
+            return true
+        }
+    }
+
+    /// Mutiert eine gespeicherte Liste; `false` = keine Persistenz.
+    @discardableResult
+    private func mutateSavedList(id: String, _ body: (inout SavedList) -> Bool) -> Bool {
+        guard let idx = state.savedLists.firstIndex(where: { $0.id == id }) else { return false }
+        var list = state.savedLists[idx]
+        guard body(&list) else { return false }
+        state.savedLists[idx] = list
+        state.listRevision += 1
+        persistAndSync()
+        return true
+    }
+
     func createStaple(_ rawName: String) {
         let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
