@@ -55,11 +55,11 @@ extension KeywordDictionary {
     }
 
     /// `mappings` nach Key (de) sortiert; unbekannte Depts raus; Suche wie bei den mitgelieferten Wörtern.
-    static func learnedMappings(from mappings: [String: String], matching query: String = "") -> [LearnedMapping] {
+    static func learnedMappings(from mappings: [String: String], matching query: String = "", customs: [CustomDepartment] = []) -> [LearnedMapping] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         var rows: [LearnedMapping] = []
         for (key, dept) in mappings {
-            guard !key.isEmpty, Department.isKnown(dept) else { continue }
+            guard !key.isEmpty, DepartmentCatalog.isKnown(dept, customs: customs) else { continue }
             if !needle.isEmpty {
                 let hit = key.range(
                     of: needle,

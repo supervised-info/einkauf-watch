@@ -13,7 +13,7 @@ struct KeywordDictionaryView: View {
     }
 
     private var learned: [KeywordDictionary.LearnedMapping] {
-        KeywordDictionary.learnedMappings(from: store.state.mappings, matching: query)
+        KeywordDictionary.learnedMappings(from: store.state.mappings, matching: query, customs: store.state.customDepartments)
     }
 
     var body: some View {
@@ -35,12 +35,11 @@ struct KeywordDictionaryView: View {
                         .textInputAutocapitalization(.sentences)
                         .submitLabel(.done)
                         .onSubmit(submitMapping)
-                    Picker("Abteilung", selection: $newDept) {
-                        ForEach(Department.allCases) { dept in
-                            Text(dept.title).tag(dept.rawValue)
-                        }
-                    }
-                    .pickerStyle(.menu)
+                    DepartmentIdPicker(
+                        label: "Abteilung",
+                        selection: $newDept,
+                        customs: store.state.customDepartments
+                    )
                     .labelsHidden()
                     .accessibilityLabel("Abteilung für neue Zuordnung")
                     Button("Hinzufügen", action: submitMapping)
@@ -79,15 +78,14 @@ struct KeywordDictionaryView: View {
         HStack {
             Text(row.key)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Picker("Abteilung", selection: Binding(
-                get: { Department.resolved(row.dept) },
-                set: { store.setMapping(row.key, dept: $0) }
-            )) {
-                ForEach(Department.allCases) { dept in
-                    Text(dept.title).tag(dept.rawValue)
-                }
-            }
-            .pickerStyle(.menu)
+            DepartmentIdPicker(
+                label: "Abteilung",
+                selection: Binding(
+                    get: { store.state.resolveDept(row.dept) },
+                    set: { store.setMapping(row.key, dept: $0) }
+                ),
+                customs: store.state.customDepartments
+            )
             .labelsHidden()
             .fixedSize()
             .accessibilityLabel("Abteilung für \(row.key)")

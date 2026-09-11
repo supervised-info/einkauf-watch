@@ -41,13 +41,13 @@ struct WatchListView: View {
                             ForEach(visibleWalkRows) { row in
                                 switch row.line {
                                 case .header(_, let dept):
-                                    Text(Department.title(for: dept))
+                                    Text(store.departmentTitle(dept))
                                         .foregroundStyle(theme.muted)
                                         .textCase(.uppercase)
                                         .listRowBackground(Color.clear)
                                         .listRowInsets(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
                                         .accessibilityAddTraits(.isHeader)
-                                        .accessibilityLabel(Department.title(for: dept))
+                                        .accessibilityLabel(store.departmentTitle(dept))
                                 case .item(_, let item):
                                     HStack(alignment: .center, spacing: 8) {
                                         Button {

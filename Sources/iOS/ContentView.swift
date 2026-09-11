@@ -146,7 +146,7 @@ struct ContentView: View {
             ForEach(store.editRows) { row in
                 switch row {
                 case .header(_, let dept):
-                    Text(Department.title(for: dept))
+                    Text(store.departmentTitle(dept))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.muted)
                         .textCase(.uppercase)
@@ -157,7 +157,7 @@ struct ContentView: View {
                         .moveDisabled(true)
                         .deleteDisabled(true)
                         .accessibilityAddTraits(.isHeader)
-                        .accessibilityLabel(Department.title(for: dept))
+                        .accessibilityLabel(store.departmentTitle(dept))
                 case .item(_, let item):
                     editRow(item)
                 }
@@ -172,7 +172,7 @@ struct ContentView: View {
     }
 
     private func walkHeader(_ dept: String) -> some View {
-        Text(Department.title(for: dept))
+        Text(store.departmentTitle(dept))
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(theme.muted)
             .textCase(.uppercase)
@@ -185,7 +185,7 @@ struct ContentView: View {
                 EmptyView()
             }
             .accessibilityAddTraits(.isHeader)
-            .accessibilityLabel(Department.title(for: dept))
+            .accessibilityLabel(store.departmentTitle(dept))
     }
 
     private func walkRow(_ item: Item) -> some View {
@@ -254,15 +254,14 @@ struct ContentView: View {
                 .accessibilityLabel("Umbenennen: \(item.name)")
             }
 
-            Picker("Abteilung", selection: Binding(
-                get: { Department.resolved(item.dept) },
-                set: { store.setItemDept(item.id, dept: $0) }
-            )) {
-                ForEach(Department.allCases) { dept in
-                    Text(dept.title).tag(dept.rawValue)
-                }
-            }
-            .pickerStyle(.menu)
+            DepartmentIdPicker(
+                label: "Abteilung",
+                selection: Binding(
+                    get: { store.state.resolveDept(item.dept) },
+                    set: { store.setItemDept(item.id, dept: $0) }
+                ),
+                customs: store.state.customDepartments
+            )
             .labelsHidden()
             .fixedSize()
             .accessibilityLabel("Abteilung für \(item.name)")

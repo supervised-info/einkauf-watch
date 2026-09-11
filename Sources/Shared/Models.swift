@@ -46,12 +46,12 @@ struct SavedList: Identifiable, Equatable, Codable, Sendable {
     }
 
     /// Aktuelle Artikel inkl. erledigter — nur Name und Abteilung, damit Apply wieder öffnet.
-    static func snapshot(from items: [Item]) -> [Staple] {
+    static func snapshot(from items: [Item], customs: [CustomDepartment] = []) -> [Staple] {
         items.compactMap { item in
             let name = item.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty else { return nil }
-            return Staple(name: name, dept: Department.resolved(item.dept))
+            return Staple(name: name, dept: DepartmentCatalog.resolved(item.dept, customs: customs))
         }
     }
 }
@@ -142,7 +142,8 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         name = try c.decode(String.self, forKey: .name)
         id = try c.decodeIfPresent(String.self, forKey: .id) ?? Item.makeID()
         let rawDept = try c.decodeIfPresent(String.self, forKey: .dept) ?? Department.sonstiges.rawValue
-        dept = Department.resolved(rawDept)
+        let trimmedDept = rawDept.trimmingCharacters(in: .whitespacesAndNewlines)
+        dept = trimmedDept.isEmpty ? Department.sonstiges.rawValue : trimmedDept
         done = try c.decodeIfPresent(Bool.self, forKey: .done) ?? false
         added = try Self.decodeNumber(c, key: .added) ?? Date.nowEpochMillis
         ord = try Self.decodeNumber(c, key: .ord) ?? added
@@ -191,14 +192,16 @@ struct AppState: Equatable, Codable, Sendable {
     var walkMode: Bool
     var staples: [Staple]
     var savedLists: [SavedList]
+    /// Eigene Abteilungen (`{ id, title }`). Alte Stände ohne Feld → `[]`.
+    var customDepartments: [CustomDepartment]
     /// Intern: Strukturänderungen (Import, Hinzufügen, Ladenwechsel).
     var listRevision: UInt64
 
     enum CodingKeys: String, CodingKey {
-        case currentStoreId, stores, items, mappings, walkMode, staples, savedLists, listRevision
+        case currentStoreId, stores, items, mappings, walkMode, staples, savedLists, customDepartments, listRevision
     }
 
-    init(currentStoreId: String, stores: [Store], items: [Item], mappings: [String: String], walkMode: Bool, staples: [Staple], listRevision: UInt64, savedLists: [SavedList] = []) {
+    init(currentStoreId: String, stores: [Store], items: [Item], mappings: [String: String], walkMode: Bool, staples: [Staple], listRevision: UInt64, savedLists: [SavedList] = [], customDepartments: [CustomDepartment] = []) {
         self.currentStoreId = currentStoreId
         self.stores = stores
         self.items = items
@@ -206,6 +209,7 @@ struct AppState: Equatable, Codable, Sendable {
         self.walkMode = walkMode
         self.staples = staples
         self.savedLists = savedLists
+        self.customDepartments = customDepartments
         self.listRevision = listRevision
     }
 
@@ -218,6 +222,7 @@ struct AppState: Equatable, Codable, Sendable {
         walkMode = try c.decodeIfPresent(Bool.self, forKey: .walkMode) ?? false
         staples = try c.decodeIfPresent([Staple].self, forKey: .staples) ?? []
         savedLists = try c.decodeIfPresent([SavedList].self, forKey: .savedLists) ?? []
+        customDepartments = try c.decodeIfPresent([CustomDepartment].self, forKey: .customDepartments) ?? []
         listRevision = try c.decodeIfPresent(UInt64.self, forKey: .listRevision) ?? 0
     }
 
@@ -230,8 +235,21 @@ struct AppState: Equatable, Codable, Sendable {
             walkMode: false,
             staples: [],
             listRevision: 0,
-            savedLists: []
+            savedLists: [],
+            customDepartments: []
         )
+    }
+
+    func departmentTitle(_ id: String) -> String {
+        DepartmentCatalog.title(for: id, customs: customDepartments)
+    }
+
+    func resolveDept(_ id: String) -> String {
+        DepartmentCatalog.resolved(id, customs: customDepartments)
+    }
+
+    var pickerDepartmentIds: [String] {
+        DepartmentCatalog.knownIds(customs: customDepartments)
     }
 
     var currentStore: Store {
@@ -261,7 +279,7 @@ struct AppState: Equatable, Codable, Sendable {
     }
 
     func grouped() -> [DeptGroup] {
-        ListGrouping.groups(items: items, store: currentStore)
+        ListGrouping.groups(items: items, store: currentStore, customs: customDepartments)
     }
 }
 
@@ -416,13 +434,14 @@ struct DeptGroup: Identifiable, Equatable, Sendable {
     /// Abteilungs-ID (`obst`, `kuehlung`, …) — nicht `id` verwenden, das enthält den Laden.
     var dept: String
     var items: [Item]
-    var title: String { Department.title(for: dept) }
+    var title: String
 
-    init(storeId: String, dept: String, items: [Item]) {
+    init(storeId: String, dept: String, items: [Item], customs: [CustomDepartment] = []) {
         self.id = "\(storeId)|\(dept)"
         self.storeId = storeId
         self.dept = dept
         self.items = items
+        self.title = DepartmentCatalog.title(for: dept, customs: customs)
     }
 }
 
@@ -465,13 +484,13 @@ struct WalkListRow: Identifiable, Equatable, Sendable {
 enum ListGrouping {
     /// `vor` zuerst, `nach` zuletzt; `sonstiges` bleibt an der Position im Ladenweg.
     /// Extra-Abteilungen mit Artikeln, die nicht im Layout stehen, danach (vor `nach`). `item.dept` bleibt unverändert.
-    static func groups(items: [Item], store: Store) -> [DeptGroup] {
-        let layout = StoreLayout.sanitized(store.layout)
+    static func groups(items: [Item], store: Store, customs: [CustomDepartment] = []) -> [DeptGroup] {
+        let layout = StoreLayout.sanitized(store.layout, customs: customs)
         let inLayout = Set(layout)
 
         var byDept: [String: [Item]] = [:]
         for item in items {
-            let dept = Department.resolved(item.dept)
+            let dept = DepartmentCatalog.resolved(item.dept, customs: customs)
             byDept[dept, default: []].append(item)
         }
         for key in byDept.keys {
@@ -482,15 +501,15 @@ enum ListGrouping {
         var used = Set<String>()
         func push(_ dept: String) {
             guard !used.contains(dept), let arr = byDept[dept], !arr.isEmpty else { return }
-            groups.append(DeptGroup(storeId: store.id, dept: dept, items: arr))
+            groups.append(DeptGroup(storeId: store.id, dept: dept, items: arr, customs: customs))
             used.insert(dept)
         }
 
         for dept in layout where dept != Department.nach.rawValue {
             push(dept)
         }
-        for dept in Department.allCases where !inLayout.contains(dept.rawValue) {
-            push(dept.rawValue)
+        for dept in DepartmentCatalog.knownIds(customs: customs) where !inLayout.contains(dept) {
+            push(dept)
         }
         push(Department.nach.rawValue)
         return groups
@@ -527,7 +546,9 @@ enum ListGrouping {
         return groups.compactMap { group in
             let open = group.items.filter { !$0.done }
             guard !open.isEmpty else { return nil }
-            return DeptGroup(storeId: group.storeId, dept: group.dept, items: open)
+            var next = group
+            next.items = open
+            return next
         }
     }
 

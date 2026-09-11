@@ -26,22 +26,23 @@ enum BackupCodec {
         guard looksLikeBackup(dict) else { throw BackupError.notABackup }
 
         let currentStoreId = string(dict["currentStoreId"]) ?? "edeka"
-        let stores = mergeBuiltinSeeds(sanitizeStores(dict["stores"]))
-        let items = sanitizeItems(dict["items"])
-        let mappings = sanitizeMappings(dict["mappings"])
+        let customs = sanitizeCustomDepartments(dict["customDepartments"])
+        let stores = mergeBuiltinSeeds(sanitizeStores(dict["stores"], customs: customs))
+        let items = sanitizeItems(dict["items"], customs: customs)
+        let mappings = sanitizeMappings(dict["mappings"], customs: customs)
         let walkMode = dict["walkMode"] as? Bool ?? false
         let staples: [Staple]
         if dict["staples"] == nil {
             staples = []
         } else {
-            staples = sanitizeStaples(dict["staples"], mappings: mappings)
+            staples = sanitizeStaples(dict["staples"], mappings: mappings, customs: customs)
         }
         let listRevision = uint64(dict["listRevision"]) ?? 0
         let savedLists: [SavedList]
         if dict["savedLists"] == nil {
             savedLists = []
         } else {
-            savedLists = sanitizeSavedLists(dict["savedLists"], mappings: mappings)
+            savedLists = sanitizeSavedLists(dict["savedLists"], mappings: mappings, customs: customs)
         }
 
         var current = currentStoreId
@@ -57,7 +58,8 @@ enum BackupCodec {
             walkMode: walkMode,
             staples: staples,
             listRevision: listRevision,
-            savedLists: savedLists
+            savedLists: savedLists,
+            customDepartments: customs
         )
     }
 
@@ -96,6 +98,9 @@ enum BackupCodec {
                     "name": list.name,
                     "items": list.items.map { ["name": $0.name, "dept": $0.dept] }
                 ] as [String: Any]
+            },
+            "customDepartments": state.customDepartments.map { dept in
+                ["id": dept.id, "title": dept.title] as [String: Any]
             }
         ]
         return try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
@@ -123,10 +128,11 @@ enum BackupCodec {
 
     static func normalized(_ state: AppState) -> AppState {
         var next = state
-        next.stores = mergeBuiltinSeeds(sanitizeStoreModels(state.stores))
+        next.customDepartments = sanitizeCustomDepartmentModels(state.customDepartments)
+        next.stores = mergeBuiltinSeeds(sanitizeStoreModels(state.stores, customs: next.customDepartments))
         next.items = state.items.enumerated().map { idx, item in
             var it = item
-            it.dept = Department.resolved(it.dept)
+            it.dept = DepartmentCatalog.resolved(it.dept, customs: next.customDepartments)
             if !it.ord.isFinite { it.ord = Double(idx + 1) }
             return it
         }
@@ -134,33 +140,60 @@ enum BackupCodec {
             next.currentStoreId = next.stores.first?.id ?? "edeka"
         }
         var maps: [String: String] = [:]
-        for (k, v) in state.mappings where Department.isKnown(v) {
+        for (k, v) in state.mappings where DepartmentCatalog.isKnown(v, customs: next.customDepartments) {
             maps[k] = v
         }
         next.mappings = maps
-        next.savedLists = sanitizeSavedListModels(state.savedLists, mappings: maps)
+        next.savedLists = sanitizeSavedListModels(state.savedLists, mappings: maps, customs: next.customDepartments)
+        next.staples = state.staples.map { staple in
+            Staple(name: staple.name, dept: DepartmentCatalog.resolved(staple.dept, customs: next.customDepartments))
+        }
         return next
     }
 
     // MARK: - Sanitize
 
-    static func sanitizeStores(_ raw: Any?) -> [Store] {
+    static func sanitizeCustomDepartments(_ raw: Any?) -> [CustomDepartment] {
+        guard let arr = raw as? [Any] else { return [] }
+        return sanitizeCustomDepartmentModels(
+            arr.compactMap { entry in
+                guard let obj = entry as? [String: Any] else { return nil }
+                guard let id = string(obj["id"]), let title = string(obj["title"]) else { return nil }
+                return CustomDepartment(id: id, title: title)
+            }
+        )
+    }
+
+    static func sanitizeCustomDepartmentModels(_ list: [CustomDepartment]) -> [CustomDepartment] {
+        var seen = Set<String>()
+        var out: [CustomDepartment] = []
+        for raw in list {
+            guard let title = CustomDepartment.sanitizedTitle(raw.title) else { continue }
+            let id = raw.id.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !id.isEmpty, !Department.isKnown(id), !seen.contains(id) else { continue }
+            seen.insert(id)
+            out.append(CustomDepartment(id: id, title: title))
+        }
+        return out
+    }
+
+    static func sanitizeStores(_ raw: Any?, customs: [CustomDepartment] = []) -> [Store] {
         guard let arr = raw as? [Any] else { return [] }
         return arr.compactMap { entry in
             guard let s = entry as? [String: Any] else { return nil }
             guard let id = string(s["id"]), let name = string(s["name"]), !id.isEmpty, !name.isEmpty else { return nil }
-            return Store(id: id, name: name, layout: sanitizeLayout(s["layout"]), builtin: s["builtin"] as? Bool ?? false)
+            return Store(id: id, name: name, layout: sanitizeLayout(s["layout"], customs: customs), builtin: s["builtin"] as? Bool ?? false)
         }
     }
 
-    static func sanitizeStoreModels(_ stores: [Store]) -> [Store] {
+    static func sanitizeStoreModels(_ stores: [Store], customs: [CustomDepartment] = []) -> [Store] {
         stores.compactMap { s in
             guard !s.id.isEmpty, !s.name.isEmpty else { return nil }
-            return Store(id: s.id, name: s.name, layout: sanitizeLayout(s.layout), builtin: s.builtin)
+            return Store(id: s.id, name: s.name, layout: sanitizeLayout(s.layout, customs: customs), builtin: s.builtin)
         }
     }
 
-    static func sanitizeLayout(_ raw: Any?) -> [String] {
+    static func sanitizeLayout(_ raw: Any?, customs: [CustomDepartment] = []) -> [String] {
         let ids: [String]
         if let arr = raw as? [String] {
             ids = arr
@@ -169,13 +202,13 @@ enum BackupCodec {
         } else {
             ids = []
         }
-        return sanitizeLayout(ids)
+        return sanitizeLayout(ids, customs: customs)
     }
 
-    static func sanitizeLayout(_ ids: [String]) -> [String] {
+    static func sanitizeLayout(_ ids: [String], customs: [CustomDepartment] = []) -> [String] {
         var seen = Set<String>()
         var out: [String] = []
-        for id in ids where Department.isKnown(id) && !seen.contains(id) {
+        for id in ids where DepartmentCatalog.isKnown(id, customs: customs) && !seen.contains(id) {
             seen.insert(id)
             out.append(id)
         }
@@ -185,7 +218,7 @@ enum BackupCodec {
         return out
     }
 
-    static func sanitizeItems(_ raw: Any?) -> [Item] {
+    static func sanitizeItems(_ raw: Any?, customs: [CustomDepartment] = []) -> [Item] {
         guard let arr = raw as? [Any] else { return [] }
         var items: [Item] = []
         for entry in arr {
@@ -198,7 +231,7 @@ enum BackupCodec {
                 Item(
                     id: string(s["id"]) ?? Item.makeID(),
                     name: trimmed,
-                    dept: Department.resolved(string(s["dept"]) ?? ""),
+                    dept: DepartmentCatalog.resolved(string(s["dept"]) ?? "", customs: customs),
                     done: s["done"] as? Bool ?? false,
                     added: added,
                     ord: ord ?? added,
@@ -214,18 +247,18 @@ enum BackupCodec {
         return items
     }
 
-    static func sanitizeMappings(_ raw: Any?) -> [String: String] {
+    static func sanitizeMappings(_ raw: Any?, customs: [CustomDepartment] = []) -> [String: String] {
         guard let dict = raw as? [String: Any] else { return [:] }
         var out: [String: String] = [:]
         for (k, v) in dict {
-            if let dept = v as? String, Department.isKnown(dept) {
+            if let dept = v as? String, DepartmentCatalog.isKnown(dept, customs: customs) {
                 out[k] = dept
             }
         }
         return out
     }
 
-    static func sanitizeStaples(_ raw: Any?, mappings: [String: String]) -> [Staple] {
+    static func sanitizeStaples(_ raw: Any?, mappings: [String: String], customs: [CustomDepartment] = []) -> [Staple] {
         guard let arr = raw as? [Any] else { return [] }
         var seen = Set<String>()
         var out: [Staple] = []
@@ -247,34 +280,35 @@ enum BackupCodec {
             let key = DepartmentGuesser.mappingKey(n)
             guard !key.isEmpty, !seen.contains(key) else { continue }
             seen.insert(key)
-            if !Department.isKnown(dept) {
-                dept = DepartmentGuesser.guess(n, mappings: mappings)
+            if !DepartmentCatalog.isKnown(dept, customs: customs) {
+                dept = DepartmentGuesser.guess(n, mappings: mappings, customs: customs)
             }
             out.append(Staple(name: n, dept: dept))
         }
         return out
     }
 
-    static func sanitizeSavedLists(_ raw: Any?, mappings: [String: String]) -> [SavedList] {
+    static func sanitizeSavedLists(_ raw: Any?, mappings: [String: String], customs: [CustomDepartment] = []) -> [SavedList] {
         guard let arr = raw as? [Any] else { return [] }
         return sanitizeSavedListModels(
             arr.compactMap { entry in
                 guard let obj = entry as? [String: Any] else { return nil }
                 let name = string(obj["name"]) ?? ""
                 let id = string(obj["id"]) ?? ""
-                let items = sanitizeSavedListItems(obj["items"], mappings: mappings)
+                let items = sanitizeSavedListItems(obj["items"], mappings: mappings, customs: customs)
                 return SavedList(id: id, name: name, items: items)
             },
-            mappings: mappings
+            mappings: mappings,
+            customs: customs
         )
     }
 
-    static func sanitizeSavedListModels(_ lists: [SavedList], mappings: [String: String]) -> [SavedList] {
+    static func sanitizeSavedListModels(_ lists: [SavedList], mappings: [String: String], customs: [CustomDepartment] = []) -> [SavedList] {
         var seenIds = Set<String>()
         var out: [SavedList] = []
         for list in lists {
             guard let name = SavedList.sanitizedName(list.name) else { continue }
-            let items = sanitizeSavedListItems(list.items, mappings: mappings)
+            let items = sanitizeSavedListItems(list.items, mappings: mappings, customs: customs)
             guard !items.isEmpty else { continue }
             var id = list.id.trimmingCharacters(in: .whitespacesAndNewlines)
             if id.isEmpty || seenIds.contains(id) {
@@ -286,7 +320,7 @@ enum BackupCodec {
         return out
     }
 
-    static func sanitizeSavedListItems(_ raw: Any?, mappings: [String: String]) -> [Staple] {
+    static func sanitizeSavedListItems(_ raw: Any?, mappings: [String: String], customs: [CustomDepartment] = []) -> [Staple] {
         guard let arr = raw as? [Any] else { return [] }
         var out: [Staple] = []
         for entry in arr {
@@ -304,22 +338,22 @@ enum BackupCodec {
             n = n.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             guard !n.isEmpty else { continue }
-            if !Department.isKnown(dept) {
-                dept = DepartmentGuesser.guess(n, mappings: mappings)
+            if !DepartmentCatalog.isKnown(dept, customs: customs) {
+                dept = DepartmentGuesser.guess(n, mappings: mappings, customs: customs)
             }
             out.append(Staple(name: n, dept: dept))
         }
         return out
     }
 
-    static func sanitizeSavedListItems(_ items: [Staple], mappings: [String: String]) -> [Staple] {
+    static func sanitizeSavedListItems(_ items: [Staple], mappings: [String: String], customs: [CustomDepartment] = []) -> [Staple] {
         items.compactMap { staple in
             let n = staple.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             guard !n.isEmpty else { return nil }
             var dept = staple.dept
-            if !Department.isKnown(dept) {
-                dept = DepartmentGuesser.guess(n, mappings: mappings)
+            if !DepartmentCatalog.isKnown(dept, customs: customs) {
+                dept = DepartmentGuesser.guess(n, mappings: mappings, customs: customs)
             }
             return Staple(name: n, dept: dept)
         }

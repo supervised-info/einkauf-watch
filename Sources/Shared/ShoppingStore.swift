@@ -76,7 +76,12 @@ final class ShoppingStore: ObservableObject {
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
     var savedLists: [SavedList] { state.savedLists }
+    var customDepartments: [CustomDepartment] { state.customDepartments }
     var walkMode: Bool { state.walkMode }
+
+    func departmentTitle(_ id: String) -> String {
+        state.departmentTitle(id)
+    }
 
     func setWalkMode(_ on: Bool) {
         guard state.walkMode != on else { return }
@@ -151,7 +156,7 @@ final class ShoppingStore: ObservableObject {
                 Item(
                     id: Item.makeID(),
                     name: name,
-                    dept: DepartmentGuesser.guess(name, mappings: state.mappings),
+                    dept: DepartmentGuesser.guess(name, mappings: state.mappings, customs: state.customDepartments),
                     done: false,
                     added: now,
                     ord: ord,
@@ -167,7 +172,7 @@ final class ShoppingStore: ObservableObject {
 
     func renameItem(_ id: String, to rawName: String) {
         guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
-        guard let result = ItemEditing.rename(state.items[idx], to: rawName, mappings: state.mappings) else { return }
+        guard let result = ItemEditing.rename(state.items[idx], to: rawName, mappings: state.mappings, customs: state.customDepartments) else { return }
         guard result.0 != state.items[idx] || result.1 != state.mappings else { return }
         state.items[idx] = result.0
         state.mappings = result.1
@@ -177,7 +182,7 @@ final class ShoppingStore: ObservableObject {
 
     func setItemDept(_ id: String, dept: String) {
         guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
-        guard let result = ItemEditing.setDept(state.items[idx], dept: dept, mappings: state.mappings) else { return }
+        guard let result = ItemEditing.setDept(state.items[idx], dept: dept, mappings: state.mappings, customs: state.customDepartments) else { return }
         guard result.0 != state.items[idx] || result.1 != state.mappings else { return }
         state.items[idx] = result.0
         state.mappings = result.1
@@ -205,7 +210,7 @@ final class ShoppingStore: ObservableObject {
     }
 
     func moveItems(in dept: String, from source: IndexSet, to destination: Int) {
-        let next = ItemEditing.move(allItems: state.items, dept: dept, from: source, to: destination)
+        let next = ItemEditing.move(allItems: state.items, dept: dept, from: source, to: destination, customs: state.customDepartments)
         guard next != state.items else { return }
         state.items = next
         state.listRevision += 1
@@ -218,7 +223,8 @@ final class ShoppingStore: ObservableObject {
             store: state.currentStore,
             from: source,
             to: destination,
-            mappings: state.mappings
+            mappings: state.mappings,
+            customs: state.customDepartments
         ) else { return }
         guard result.items != state.items || result.mappings != state.mappings else { return }
         state.items = result.items
@@ -238,7 +244,8 @@ final class ShoppingStore: ObservableObject {
             staple,
             items: state.items,
             mappings: state.mappings,
-            nextOrd: nextOrd()
+            nextOrd: nextOrd(),
+            customs: state.customDepartments
         )
         guard result.didChange else { return result }
         state.items = result.items
@@ -255,7 +262,8 @@ final class ShoppingStore: ObservableObject {
             state.staples,
             items: state.items,
             mappings: state.mappings,
-            nextOrd: nextOrd()
+            nextOrd: nextOrd(),
+            customs: state.customDepartments
         )
         guard result.didChange else { return result }
         state.items = result.items
@@ -275,7 +283,7 @@ final class ShoppingStore: ObservableObject {
     @discardableResult
     func saveCurrentList(name: String) -> SaveListOutcome {
         guard let trimmed = SavedList.sanitizedName(name) else { return .invalidName }
-        let snapshot = SavedList.snapshot(from: state.items)
+        let snapshot = SavedList.snapshot(from: state.items, customs: state.customDepartments)
         guard !snapshot.isEmpty else { return .emptyList }
         state.savedLists.append(SavedList(id: SavedList.makeID(), name: trimmed, items: snapshot))
         state.listRevision += 1
@@ -290,7 +298,8 @@ final class ShoppingStore: ObservableObject {
             list.items,
             items: state.items,
             mappings: state.mappings,
-            nextOrd: nextOrd()
+            nextOrd: nextOrd(),
+            customs: state.customDepartments
         )
         guard result.didChange else { return result }
         state.items = result.items
@@ -329,7 +338,10 @@ final class ShoppingStore: ObservableObject {
             guard list.items.indices.contains(index) else { return false }
             guard list.items[index].name != name else { return false }
             list.items[index].name = name
-            state.mappings[DepartmentGuesser.mappingKey(name)] = Department.resolved(list.items[index].dept)
+            state.mappings[DepartmentGuesser.mappingKey(name)] = DepartmentCatalog.resolved(
+                list.items[index].dept,
+                customs: state.customDepartments
+            )
             return true
         }
     }
@@ -337,7 +349,7 @@ final class ShoppingStore: ObservableObject {
     /// Abteilung eines Vorlagen-Artikels; schreibt `mappings` wie Stamm.
     @discardableResult
     func setSavedListItemDept(id: String, at index: Int, dept: String) -> Bool {
-        guard Department.isKnown(dept) else { return false }
+        guard DepartmentCatalog.isKnown(dept, customs: state.customDepartments) else { return false }
         return mutateSavedList(id: id) { list in
             guard list.items.indices.contains(index) else { return false }
             guard list.items[index].dept != dept else { return false }
@@ -362,7 +374,7 @@ final class ShoppingStore: ObservableObject {
         let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return false }
-        let dept = DepartmentGuesser.guess(name, mappings: state.mappings)
+        let dept = DepartmentGuesser.guess(name, mappings: state.mappings, customs: state.customDepartments)
         return mutateSavedList(id: id) { list in
             list.items.append(Staple(name: name, dept: dept))
             return true
@@ -389,7 +401,7 @@ final class ShoppingStore: ObservableObject {
         if state.staples.contains(where: { DepartmentGuesser.mappingKey($0.name) == key }) {
             return
         }
-        let dept = DepartmentGuesser.guess(name, mappings: state.mappings)
+        let dept = DepartmentGuesser.guess(name, mappings: state.mappings, customs: state.customDepartments)
         state.staples.append(Staple(name: name, dept: dept))
         state.listRevision += 1
         persistAndSync()
@@ -403,7 +415,7 @@ final class ShoppingStore: ObservableObject {
     }
 
     func setStapleDept(at index: Int, dept: String) {
-        guard state.staples.indices.contains(index), Department.isKnown(dept) else { return }
+        guard state.staples.indices.contains(index), DepartmentCatalog.isKnown(dept, customs: state.customDepartments) else { return }
         state.staples[index].dept = dept
         state.mappings[DepartmentGuesser.mappingKey(state.staples[index].name)] = dept
         state.listRevision += 1
@@ -436,7 +448,7 @@ final class ShoppingStore: ObservableObject {
     /// Schreibt `mappings[mappingKey(key)]` — dasselbe Backup-Feld wie die PWA, kein zweites Dictionary.
     func setMapping(_ key: String, dept: String) {
         let mapped = DepartmentGuesser.mappingKey(key)
-        guard !mapped.isEmpty, Department.isKnown(dept) else { return }
+        guard !mapped.isEmpty, DepartmentCatalog.isKnown(dept, customs: state.customDepartments) else { return }
         guard state.mappings[mapped] != dept else { return }
         state.mappings[mapped] = dept
         state.listRevision += 1
@@ -451,27 +463,64 @@ final class ShoppingStore: ObservableObject {
     }
 
     func moveLayoutDept(_ id: String, by: Int) {
-        mutateCurrentStoreLayout { StoreLayout.move($0, id: id, by: by) }
+        mutateCurrentStoreLayout { StoreLayout.move($0, id: id, by: by, customs: state.customDepartments) }
     }
 
     func moveLayoutDepts(from source: IndexSet, to destination: Int) {
-        mutateCurrentStoreLayout { StoreLayout.moving($0, from: source, to: destination) }
+        mutateCurrentStoreLayout { StoreLayout.moving($0, from: source, to: destination, customs: state.customDepartments) }
     }
 
     func addLayoutDept(_ id: String) {
-        mutateCurrentStoreLayout { StoreLayout.adding(id, to: $0) }
+        mutateCurrentStoreLayout { StoreLayout.adding(id, to: $0, customs: state.customDepartments) }
     }
 
     func removeLayoutDept(_ id: String) {
-        mutateCurrentStoreLayout { StoreLayout.removing(id, from: $0) }
+        mutateCurrentStoreLayout { StoreLayout.removing(id, from: $0, customs: state.customDepartments) }
     }
 
     func resetLayout() {
-        mutateCurrentStoreLayout { StoreLayout.reset(storeId: state.currentStoreId, current: $0) }
+        mutateCurrentStoreLayout { StoreLayout.reset(storeId: state.currentStoreId, current: $0, customs: state.customDepartments) }
+    }
+
+    func createCustomDepartment(_ raw: String) {
+        guard let created = DepartmentCatalog.create(title: raw, existing: state.customDepartments) else { return }
+        state.customDepartments.append(created)
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func renameCustomDepartment(id: String, title: String) {
+        guard let next = DepartmentCatalog.rename(id: id, title: title, in: state.customDepartments) else { return }
+        guard next != state.customDepartments else { return }
+        state.customDepartments = next
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func deleteCustomDepartment(id: String) {
+        guard state.customDepartments.contains(where: { $0.id == id }) else { return }
+        let remaining = state.customDepartments.filter { $0.id != id }
+        let remapped = DepartmentCatalog.remappingDeletion(
+            id,
+            items: state.items,
+            staples: state.staples,
+            savedLists: state.savedLists,
+            mappings: state.mappings,
+            stores: state.stores,
+            remainingCustoms: remaining
+        )
+        state.customDepartments = remaining
+        state.items = remapped.items
+        state.staples = remapped.staples
+        state.savedLists = remapped.savedLists
+        state.mappings = remapped.mappings
+        state.stores = remapped.stores
+        state.listRevision += 1
+        persistAndSync()
     }
 
     func createStore(_ rawName: String) {
-        guard let created = StoreCatalog.create(name: rawName, copying: state.currentStore) else { return }
+        guard let created = StoreCatalog.create(name: rawName, copying: state.currentStore, customs: state.customDepartments) else { return }
         state.stores.append(created)
         state.stores = BackupCodec.mergeBuiltinSeeds(state.stores)
         state.currentStoreId = created.id
@@ -554,7 +603,7 @@ final class ShoppingStore: ObservableObject {
             Item(
                 id: newId,
                 name: name,
-                dept: Department.resolved(snapshot.dept),
+                dept: DepartmentCatalog.resolved(snapshot.dept, customs: state.customDepartments),
                 done: false,
                 added: now,
                 ord: nextOrd(),
