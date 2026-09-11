@@ -327,6 +327,7 @@ def test_sources() -> None:
         "Sources/Shared/ListShare.swift",
         "Sources/iOS/ContentView.swift",
         "Sources/iOS/SettingsSheet.swift",
+        "Sources/iOS/SavedListEditView.swift",
         "Sources/iOS/KeywordDictionaryView.swift",
         "Sources/iOS/ShareSheet.swift",
         "Sources/iOS/ListPDF.swift",
@@ -517,8 +518,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 78" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 78 / CURRENT_PROJECT_VERSION")
+    if "Build 79" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 79 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -707,7 +708,13 @@ def test_sources() -> None:
     if "removeSavedList" not in settings:
         fail("Einstellungen must delete saved lists via removeSavedList")
     if "applySavedList" not in settings:
-        fail("Einstellungen saved list rows must applySavedList")
+        fail("Einstellungen must keep applySavedList (Übernehmen)")
+    if 'Button("Übernehmen")' not in settings:
+        fail("Gespeicherte Listen must offer Übernehmen separate from edit")
+    if "SavedListEditView" not in settings:
+        fail("Gespeicherte Listen rows must navigate to SavedListEditView")
+    if re.search(r"ForEach\(store\.savedLists\)\s*\{ list in\s*Button \{", settings):
+        fail("saved list row tap must not applySavedList; NavigationLink + Übernehmen")
     if "Wörterbuch" not in settings:
         fail("Einstellungen missing Wörterbuch")
     if "To-Do" not in settings:
@@ -1067,8 +1074,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 78" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 78")
+    if "CURRENT_PROJECT_VERSION = 79" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 79")
+    if "CURRENT_PROJECT_VERSION = 78" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 78 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 77" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 77 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 76" in pbx:
@@ -1208,8 +1217,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 78" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 78")
+    if "CURRENT_PROJECT_VERSION: 79" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 79")
+    if "CURRENT_PROJECT_VERSION: 78" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 78 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 77" in yml:
         fail("stale CURRENT_PROJECT_VERSION 77 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 76" in yml:
@@ -1567,8 +1578,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 78") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 78")
+    if pbx.count("CURRENT_PROJECT_VERSION = 79") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 79")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3714,6 +3725,97 @@ def test_staple_order() -> None:
     print("staple order: ok")
 
 
+def test_saved_list_edit() -> None:
+    settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
+    edit = (ROOT / "Sources/iOS/SavedListEditView.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    pbx = (ROOT / "Einkauf.xcodeproj/project.pbxproj").read_text()
+
+    if "SavedListEditView.swift" not in pbx:
+        fail("pbxproj must compile SavedListEditView.swift")
+    if "struct SavedListEditView" not in edit:
+        fail("SavedListEditView.swift must define SavedListEditView")
+    if 'navigationTitle("Liste bearbeiten")' not in edit:
+        fail("SavedListEditView title must be Liste bearbeiten")
+    if "renameSavedList" not in edit or "renameSavedListItem" not in edit:
+        fail("SavedListEditView must rename list and items")
+    if "setSavedListItemDept" not in edit:
+        fail("SavedListEditView must change item departments")
+    if "removeSavedListItem" not in edit or "addSavedListItem" not in edit:
+        fail("SavedListEditView must delete and add template items")
+    if "applySavedList" not in edit or 'Button("Übernehmen")' not in edit:
+        fail("SavedListEditView must offer Übernehmen = applySavedList")
+    if "imported" in edit.split("struct SavedListEditView", 1)[-1][:800] and "urgency" in edit:
+        # imported/urgency must not become template fields
+        pass
+    if "ItemUrgency" in edit or "item.imported" in edit:
+        fail("saved list editor must not edit imported/urgency (snapshot is name+dept)")
+
+    if "func renameSavedList(id:" not in store:
+        fail("ShoppingStore must expose renameSavedList")
+    if "func renameSavedListItem(id:" not in store:
+        fail("ShoppingStore must expose renameSavedListItem")
+    if "func setSavedListItemDept(id:" not in store:
+        fail("ShoppingStore must expose setSavedListItemDept")
+    if "func removeSavedListItem(id:" not in store:
+        fail("ShoppingStore must expose removeSavedListItem")
+    if "func addSavedListItem(id:" not in store:
+        fail("ShoppingStore must expose addSavedListItem")
+    for fn_name, nxt in (
+        ("func renameSavedList(id:", "func renameSavedListItem"),
+        ("func renameSavedListItem(id:", "func setSavedListItemDept"),
+        ("func setSavedListItemDept(id:", "func removeSavedListItem"),
+        ("func removeSavedListItem(id:", "func addSavedListItem"),
+        ("func addSavedListItem(id:", "func createStaple"),
+    ):
+        start = store.find(fn_name)
+        end = store.find(nxt, start + 1) if nxt != "func createStaple" else store.find("func createStaple")
+        if start < 0 or end < 0 or end <= start:
+            fail(f"could not slice {fn_name}")
+        body = store[start:end]
+        if "persistAndSync" not in body and "mutateSavedList" not in body:
+            fail(f"{fn_name} must persist via mutateSavedList / persistAndSync")
+
+    if "SavedListEditView(listId:" not in settings:
+        fail("Einstellungen must NavigationLink to SavedListEditView")
+    if 'Button("Übernehmen")' not in settings:
+        fail("Einstellungen saved lists must have Übernehmen")
+    if "pendingDeleteSavedListId" not in settings or "removeSavedList" not in settings:
+        fail("Einstellungen must keep swipe-delete with confirmation")
+    if re.search(r"ForEach\(store\.savedLists\)\s*\{ list in\s*Button \{", settings):
+        fail("saved list row must not apply on tap")
+
+    saved_menu = content.find('Menu("Gespeicherte Listen"')
+    if saved_menu < 0 or "applySavedList" not in content[saved_menu : saved_menu + 400]:
+        fail("overflow Gespeicherte Listen must still applySavedList on tap")
+    if "SavedListEditView" in content:
+        fail("Einkauf overflow must not host SavedListEditView")
+    if "SavedListEditView" in watch or "Liste bearbeiten" in watch:
+        fail("Watch must not have saved-list editor UI")
+
+    if "Liste bearbeiten" not in desc or "Übernehmen" not in desc:
+        fail("Description.md must document Liste bearbeiten / Übernehmen")
+    if "renameSavedList" not in desc or "SavedListEditView" not in desc:
+        fail("Description.md must name SavedListEditView / renameSavedList")
+    for name in (
+        "testRenameSavedList",
+        "testRenameSavedListInvalidNameIsNoOp",
+        "testRenameSavedListItem",
+        "testSetSavedListItemDeptWritesMapping",
+        "testRemoveSavedListItemKeepsListWhenEmpty",
+        "testAddSavedListItemGuessesDept",
+        "testEditSavedListDoesNotApplyToCurrentItems",
+        "testBackupRoundTripAfterRenameAndItemEdit",
+    ):
+        if name not in tests:
+            fail(f"tests must cover {name}")
+    print("saved list edit: ok")
+
+
 def test_heading_slicer() -> None:
     src = Path(__file__).read_text()
     if re.search(r"desc\.find\(\s*[\"']## Watch", src):
@@ -3742,6 +3844,7 @@ def main() -> None:
     test_item_imported_urgency()
     test_item_archive()
     test_staple_order()
+    test_saved_list_edit()
     test_heading_slicer()
     print("ALL OK")
 

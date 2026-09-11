@@ -1013,6 +1013,118 @@ final class SavedListTests: XCTestCase {
         XCTAssertTrue(store.savedLists.isEmpty)
     }
 
+    func testRenameSavedList() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        let revision = store.state.listRevision
+        XCTAssertTrue(store.renameSavedList(id: id, name: "  Grillabend  "))
+        XCTAssertEqual(store.savedLists[0].name, "Grillabend")
+        XCTAssertEqual(store.state.listRevision, revision + 1)
+        XCTAssertFalse(store.renameSavedList(id: id, name: "Grillabend"))
+        XCTAssertEqual(store.state.listRevision, revision + 1)
+    }
+
+    func testRenameSavedListInvalidNameIsNoOp() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        let revision = store.state.listRevision
+        XCTAssertFalse(store.renameSavedList(id: id, name: "   "))
+        XCTAssertEqual(store.savedLists[0].name, "Grillen")
+        XCTAssertEqual(store.state.listRevision, revision)
+        XCTAssertFalse(store.renameSavedList(id: "missing", name: "Drogerie"))
+        XCTAssertEqual(store.savedLists[0].name, "Grillen")
+    }
+
+    func testRenameSavedListTruncatesToNameMax() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        let long = String(repeating: "a", count: SavedList.nameMax + 8)
+        XCTAssertTrue(store.renameSavedList(id: id, name: long))
+        XCTAssertEqual(store.savedLists[0].name.count, SavedList.nameMax)
+    }
+
+    func testRenameSavedListItem() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        XCTAssertTrue(store.renameSavedListItem(id: id, at: 0, to: " Vollmilch "))
+        XCTAssertEqual(store.savedLists[0].items[0].name, "Vollmilch")
+        XCTAssertEqual(store.savedLists[0].items[0].dept, "kuehlung")
+        XCTAssertFalse(store.renameSavedListItem(id: id, at: 0, to: "  "))
+        XCTAssertEqual(store.savedLists[0].items[0].name, "Vollmilch")
+        XCTAssertFalse(store.renameSavedListItem(id: id, at: 99, to: "Käse"))
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch", "Butter", "Grillkohle"])
+    }
+
+    func testSetSavedListItemDeptWritesMapping() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        XCTAssertTrue(store.setSavedListItemDept(id: id, at: 2, dept: "trocken"))
+        XCTAssertEqual(store.savedLists[0].items[2].dept, "trocken")
+        XCTAssertEqual(store.state.mappings[DepartmentGuesser.mappingKey("Grillkohle")], "trocken")
+        XCTAssertFalse(store.setSavedListItemDept(id: id, at: 2, dept: "trocken"))
+        XCTAssertFalse(store.setSavedListItemDept(id: id, at: 2, dept: "nope"))
+        XCTAssertEqual(store.state.items.first { $0.name == "Grillkohle" }?.dept, "sonstiges")
+    }
+
+    func testRemoveSavedListItemKeepsListWhenEmpty() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        XCTAssertTrue(store.removeSavedListItem(id: id, at: 2))
+        XCTAssertTrue(store.removeSavedListItem(id: id, at: 1))
+        XCTAssertTrue(store.removeSavedListItem(id: id, at: 0))
+        XCTAssertEqual(store.savedLists.count, 1)
+        XCTAssertTrue(store.savedLists[0].items.isEmpty)
+        XCTAssertFalse(store.removeSavedListItem(id: id, at: 0))
+        XCTAssertEqual(store.state.items.count, 3)
+    }
+
+    func testAddSavedListItemGuessesDept() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        XCTAssertTrue(store.addSavedListItem(id: id, name: "  Klopapier  "))
+        XCTAssertEqual(store.savedLists[0].items.last?.name, "Klopapier")
+        XCTAssertEqual(store.savedLists[0].items.last?.dept, "drogerie")
+        XCTAssertFalse(store.addSavedListItem(id: id, name: "  "))
+        XCTAssertEqual(store.savedLists[0].items.count, 4)
+        XCTAssertFalse(store.addSavedListItem(id: "missing", name: "Eier"))
+    }
+
+    func testEditSavedListDoesNotApplyToCurrentItems() {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        let before = store.state.items
+        store.renameSavedList(id: id, name: "Grillabend")
+        store.renameSavedListItem(id: id, at: 0, to: "H-Milch")
+        store.setSavedListItemDept(id: id, at: 1, dept: "obst")
+        store.removeSavedListItem(id: id, at: 2)
+        store.addSavedListItem(id: id, name: "Senf")
+        XCTAssertEqual(store.state.items, before)
+        XCTAssertEqual(store.savedLists[0].name, "Grillabend")
+        XCTAssertEqual(store.savedLists[0].items.map(\.name), ["H-Milch", "Butter", "Senf"])
+    }
+
+    func testBackupRoundTripAfterRenameAndItemEdit() throws {
+        let store = storeWithGrillList()
+        let id = store.savedLists[0].id
+        store.renameSavedList(id: id, name: "Grillabend")
+        store.removeSavedListItem(id: id, at: 1)
+        store.setSavedListItemDept(id: id, at: 1, dept: "trocken")
+        let exported = try BackupCodec.encodeExport(store.state)
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.savedLists.count, 1)
+        XCTAssertEqual(again.savedLists[0].name, "Grillabend")
+        XCTAssertEqual(again.savedLists[0].items.map(\.name), ["Milch", "Grillkohle"])
+        XCTAssertEqual(again.savedLists[0].items.map(\.dept), ["kuehlung", "trocken"])
+    }
+
+    private func storeWithGrillList() -> ShoppingStore {
+        var seed = AppState.seed
+        seed.items = threeItemsOneDone()
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .saved)
+        return store
+    }
+
     private func loadFixture(_ name: String) throws -> Data {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
