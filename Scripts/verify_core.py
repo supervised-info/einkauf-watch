@@ -517,8 +517,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 75" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 75 / CURRENT_PROJECT_VERSION")
+    if "Build 76" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 76 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1067,8 +1067,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 75" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 75")
+    if "CURRENT_PROJECT_VERSION = 76" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 76")
+    if "CURRENT_PROJECT_VERSION = 75" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 75 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 74" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 74 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 73" in pbx:
@@ -1202,8 +1204,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 75" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 75")
+    if "CURRENT_PROJECT_VERSION: 76" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 76")
+    if "CURRENT_PROJECT_VERSION: 75" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 75 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 74" in yml:
         fail("stale CURRENT_PROJECT_VERSION 74 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 73" in yml:
@@ -1555,8 +1559,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 75") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 75")
+    if pbx.count("CURRENT_PROJECT_VERSION = 76") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 76")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3524,6 +3528,26 @@ def test_item_archive() -> None:
         fail("archive list must support swipe-to-delete and trash")
     if "deleteEinkauf" not in list_view or "deleteTodo" not in list_view:
         fail("archive list must delete via CompletedItemArchive.deleteEinkauf / deleteTodo")
+    if 'Button("Zurückspielen")' not in list_view:
+        fail("archive list must offer Zurückspielen on each row")
+    if "Dauerhaft löschen" not in list_view:
+        fail("archive trash must be labeled Dauerhaft löschen")
+    if "restoreFromArchive" not in list_view:
+        fail("archive Zurückspielen must call store restoreFromArchive")
+    if "func restoreFromArchive" not in store or "func restoreFromArchive" not in todo_store:
+        fail("ShoppingStore and TodoStore must restoreFromArchive")
+    einkauf_restore = store[store.find("func restoreFromArchive"):store.find("func applyRemoteSnapshot")]
+    if "done: false" not in einkauf_restore or "Item.makeID()" not in einkauf_restore:
+        fail("Einkauf restore must mint a new id and set done = false")
+    if "CompletedItemArchive" in einkauf_restore:
+        fail("Einkauf restore must not touch the archive file")
+    todo_restore = todo_store[todo_store.find("func restoreFromArchive"):todo_store.find("func exportMarkdown")]
+    if "completed: false" not in todo_restore or "takeUid()" not in todo_restore:
+        fail("To-Do restore must mint a new uid and set completed = false")
+    if "CompletedItemArchive" in todo_restore:
+        fail("To-Do restore must not touch the archive file")
+    if "Zurückspielen" not in desc:
+        fail("Description.md must document Zurückspielen")
     if "Archiv…" in content or "Archiv…" in todo_ui:
         fail("list overflow must not show Archiv…")
     if "ArchiveListView" not in pbx:
@@ -3543,6 +3567,9 @@ def test_item_archive() -> None:
         "testDeleteDisplayedNewestMapsToLastFileIndex",
         "testDeleteTodoEntryPersists",
         "testDeleteLastEntryWritesEmptyArchiveNotClearAllAPI",
+        "testRestoreEinkaufCopiesOpenItemKeepsArchive",
+        "testRestoreEinkaufTwiceCreatesTwoOpenCopiesArchiveUnchanged",
+        "testRestoreTodoCopiesOpenTaskKeepsArchive",
     ):
         if name not in tests:
             fail(f"tests must cover {name}")

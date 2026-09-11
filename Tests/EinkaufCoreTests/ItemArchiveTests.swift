@@ -450,6 +450,101 @@ final class ItemArchiveStoreTests: XCTestCase {
             }
         }
     }
+
+    func testRestoreEinkaufCopiesOpenItemKeepsArchive() throws {
+        withIsolatedArchiveFiles {
+            isolateLocalFiles {
+                let store = ShoppingStore(state: .seed, enableSync: false)
+                store.addItem("Milch")
+                store.cycleItemUrgency(store.state.items[0].id)
+                store.toggle(store.state.items[0].id)
+                store.clearDone()
+                XCTAssertTrue(store.state.items.isEmpty)
+                let archived = CompletedItemArchive.loadEinkauf()
+                XCTAssertEqual(archived.entries.map(\.item.name), ["Milch"])
+                let oldId = archived.entries[0].item.id
+                let snapshotDept = archived.entries[0].item.dept
+                let snapshotUrgency = archived.entries[0].item.urgency
+                let newId = store.restoreFromArchive(archived.entries[0].item)
+                XCTAssertEqual(newId, store.state.items.last?.id)
+                XCTAssertNotEqual(newId, oldId)
+                XCTAssertEqual(store.state.items.count, 1)
+                XCTAssertEqual(store.state.items[0].name, "Milch")
+                XCTAssertFalse(store.state.items[0].done)
+                XCTAssertEqual(store.state.items[0].dept, snapshotDept)
+                XCTAssertEqual(store.state.items[0].urgency, snapshotUrgency)
+                XCTAssertFalse(store.state.items[0].imported)
+                XCTAssertEqual(CompletedItemArchive.loadEinkauf().entries.map(\.item.id), [oldId])
+                XCTAssertTrue(CompletedItemArchive.loadEinkauf().entries[0].item.done)
+            }
+        }
+    }
+
+    func testRestoreEinkaufTwiceCreatesTwoOpenCopiesArchiveUnchanged() throws {
+        withIsolatedArchiveFiles {
+            isolateLocalFiles {
+                let store = ShoppingStore(state: .seed, enableSync: false)
+                store.addItem("Butter")
+                store.toggle(store.state.items[0].id)
+                store.clearDone()
+                let snapshot = CompletedItemArchive.loadEinkauf().entries[0].item
+                let first = try XCTUnwrap(store.restoreFromArchive(snapshot))
+                let second = try XCTUnwrap(store.restoreFromArchive(snapshot))
+                XCTAssertNotEqual(first, second)
+                XCTAssertEqual(store.state.items.map(\.name), ["Butter", "Butter"])
+                XCTAssertTrue(store.state.items.allSatisfy { !$0.done })
+                XCTAssertEqual(CompletedItemArchive.loadEinkauf().entries.count, 1)
+            }
+        }
+    }
+
+    func testRestoreEinkaufEmptyNameIsNoOp() {
+        withIsolatedArchiveFiles {
+            isolateLocalFiles {
+                let store = ShoppingStore(state: .seed, enableSync: false)
+                XCTAssertNil(store.restoreFromArchive(
+                    Item(id: "x", name: "   ", dept: "obst", done: true, added: 1, ord: 1)
+                ))
+                XCTAssertTrue(store.state.items.isEmpty)
+                XCTAssertTrue(CompletedItemArchive.loadEinkauf().entries.isEmpty)
+            }
+        }
+    }
+
+    func testRestoreTodoCopiesOpenTaskKeepsArchive() throws {
+        withIsolatedArchiveFiles {
+            isolateTodoLocal {
+                let store = TodoStore(state: .empty, enableSync: false)
+                let uid = try XCTUnwrap(store.add(
+                    "Anrufen",
+                    person: "NA",
+                    prioA: "A",
+                    prioB: "1",
+                    dueDate: "2026-09-08",
+                    listId: "list-1"
+                ))
+                store.toggle(uid)
+                store.clearCompleted()
+                XCTAssertTrue(store.state.tasks.isEmpty)
+                let archived = CompletedItemArchive.loadTodo()
+                XCTAssertEqual(archived.entries.map(\.item.text), ["Anrufen"])
+                let oldUid = archived.entries[0].item.uid
+                let newUid = try XCTUnwrap(store.restoreFromArchive(archived.entries[0].item))
+                XCTAssertNotEqual(newUid, oldUid)
+                XCTAssertEqual(store.state.tasks.count, 1)
+                XCTAssertEqual(store.state.tasks[0].text, "Anrufen")
+                XCTAssertFalse(store.state.tasks[0].completed)
+                XCTAssertEqual(store.state.tasks[0].person, "NA")
+                XCTAssertEqual(store.state.tasks[0].prioA, "A")
+                XCTAssertEqual(store.state.tasks[0].prioB, "1")
+                XCTAssertEqual(store.state.tasks[0].dueDate, "2026-09-08")
+                XCTAssertEqual(store.state.tasks[0].listId, "list-1")
+                XCTAssertTrue(store.state.tasks[0].completedDate.isEmpty)
+                XCTAssertEqual(CompletedItemArchive.loadTodo().entries.map(\.item.uid), [oldUid])
+                XCTAssertTrue(CompletedItemArchive.loadTodo().entries[0].item.completed)
+            }
+        }
+    }
 }
 
 private func isolateLocalFiles(_ body: () throws -> Void) rethrows {

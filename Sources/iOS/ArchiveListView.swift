@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// Archiv-Einträge in **Einstellungen** (neueste zuerst). Wischen oder Papierkorb löscht einzeln.
+/// Archiv-Einträge in **Einstellungen** (neueste zuerst).
+/// **Zurückspielen** kopiert offen auf die Live-Liste (Archiv bleibt).
+/// Wischen oder Papierkorb löscht **einen** Eintrag dauerhaft. Kein Clear-All.
 struct ArchiveListView: View {
     enum Kind {
         case einkauf
@@ -8,6 +10,8 @@ struct ArchiveListView: View {
     }
 
     let kind: Kind
+    @EnvironmentObject private var store: ShoppingStore
+    @EnvironmentObject private var todos: TodoStore
     @Environment(\.einkaufTheme) private var theme
     @State private var rows: [ArchiveDisplayRow] = []
 
@@ -48,13 +52,19 @@ struct ArchiveListView: View {
                     .foregroundStyle(theme.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Zurückspielen") {
+                restore(at: row.fileIndex)
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(theme.oxide)
+            .accessibilityLabel("Zurückspielen")
             Button(role: .destructive) {
                 deleteFileIndices(IndexSet(integer: row.fileIndex))
             } label: {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel("Archiv-Eintrag löschen")
+            .accessibilityLabel("Dauerhaft löschen")
         }
         .einkaufRowChrome()
         .accessibilityLabel("\(row.title), \(row.archivedAt)")
@@ -68,6 +78,19 @@ struct ArchiveListView: View {
         case .todo:
             let file = CompletedItemArchive.loadTodo()
             rows = CompletedItemArchive.displayRows(file.entries, title: { $0.text })
+        }
+    }
+
+    private func restore(at fileIndex: Int) {
+        switch kind {
+        case .einkauf:
+            let file = CompletedItemArchive.loadEinkauf()
+            guard file.entries.indices.contains(fileIndex) else { return }
+            store.restoreFromArchive(file.entries[fileIndex].item)
+        case .todo:
+            let file = CompletedItemArchive.loadTodo()
+            guard file.entries.indices.contains(fileIndex) else { return }
+            todos.restoreFromArchive(file.entries[fileIndex].item)
         }
     }
 
