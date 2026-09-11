@@ -121,7 +121,7 @@ enum CompletedItemArchive {
     }
 
     /// Neueste zuerst; `fileIndex` entspricht `entries` in der Datei.
-    static func displayRows<Snapshot>(
+    static func displayRows<Snapshot: Codable & Equatable & Sendable>(
         _ entries: [ItemArchiveEntry<Snapshot>],
         title: (Snapshot) -> String
     ) -> [ArchiveDisplayRow] {

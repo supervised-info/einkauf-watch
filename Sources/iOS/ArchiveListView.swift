@@ -57,7 +57,6 @@ struct ArchiveListView: View {
             .accessibilityLabel("Archiv-Eintrag löschen")
         }
         .einkaufRowChrome()
-        .accessibilityElement(children: .combine)
         .accessibilityLabel("\(row.title), \(row.archivedAt)")
     }
 

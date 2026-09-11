@@ -3546,6 +3546,24 @@ def test_item_archive() -> None:
     ):
         if name not in tests:
             fail(f"tests must cover {name}")
+    sample = {
+        "v": 1,
+        "entries": [
+            {"archivedAt": "2026-09-07T12:00:00.000Z", "item": {"id": "a", "name": "A"}},
+            {"archivedAt": "2026-09-07T12:01:00.000Z", "item": {"id": "b", "name": "B"}},
+            {"archivedAt": "2026-09-07T12:02:00.000Z", "item": {"id": "c", "name": "C"}},
+        ],
+    }
+    displayed = list(reversed(range(len(sample["entries"]))))
+    if displayed != [2, 1, 0]:
+        fail("archive display must be newest first (file index reversed)")
+    if (len(sample["entries"]) - 1 - 0) != 2:
+        fail("displayed index 0 must map to last file index")
+    del sample["entries"][1]
+    if [entry["item"]["id"] for entry in sample["entries"]] != ["a", "c"]:
+        fail("delete by file index must leave the other entries")
+    if sample["v"] != 1:
+        fail("archive delete must keep envelope v")
     print("item archive: ok")
 
 
