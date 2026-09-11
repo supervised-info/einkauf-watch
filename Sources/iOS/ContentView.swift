@@ -193,26 +193,24 @@ struct ContentView: View {
             Button {
                 store.toggle(item.id)
             } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                        .font(.title2)
-                        .foregroundStyle(item.done ? theme.good : theme.muted)
-                    Text(item.name)
-                        .foregroundStyle(theme.ink)
-                        .strikethrough(item.done, color: theme.muted)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(.vertical, 4)
-                .contentShape(Rectangle())
+                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(item.done ? theme.good : theme.muted)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(item.name)
-            .accessibilityValue(item.done ? "erledigt" : "offen")
+            .buttonStyle(.borderless)
+            .accessibilityLabel(item.done ? "Erledigt: \(item.name)" : "Offen: \(item.name)")
+
+            Text(item.name)
+                .foregroundStyle(theme.ink)
+                .strikethrough(item.done, color: theme.muted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
             ItemUrgencyChip(urgency: item.urgency, theme: theme) {
                 store.cycleItemUrgency(item.id)
             }
             ItemImportedMark(imported: item.imported, theme: theme)
         }
+        .padding(.vertical, 4)
         .einkaufRowChrome()
         .deleteDisabled(true)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
