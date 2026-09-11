@@ -304,6 +304,34 @@ final class TodoStore: ObservableObject {
         try CompletedItemArchive.encodeTodo()
     }
 
+    /// Offene Kopie auf die Live-Liste. Neue `uid`; Archiv bleibt unangetastet.
+    @discardableResult
+    func restoreFromArchive(_ snapshot: TodoTask) -> Int64? {
+        let text = snapshot.text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        let now = TodoTime.nowIso()
+        let uid = takeUid()
+        state.tasks.append(
+            TodoTask(
+                uid: uid,
+                text: text,
+                completed: false,
+                prioA: TodoJSON.prioA(snapshot.prioA),
+                prioB: TodoJSON.prioB(snapshot.prioB),
+                dueDate: TodoJSON.isoDate(snapshot.dueDate),
+                person: snapshot.person.trimmingCharacters(in: .whitespacesAndNewlines),
+                createdAt: now,
+                updatedAt: now,
+                changedBy: TodoAuthor.app,
+                listId: snapshot.listId
+            )
+        )
+        state.revision += 1
+        persistAndSync()
+        return uid
+    }
+
     func exportMarkdown(exportedAt: Date = Date(), timeZone: TimeZone = .current) throws -> Data {
         try TodoMarkdown.encode(state, exportedAt: exportedAt, timeZone: timeZone)
     }

@@ -517,8 +517,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 74" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 74 / CURRENT_PROJECT_VERSION")
+    if "Build 76" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 76 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -726,6 +726,12 @@ def test_sources() -> None:
         fail("Einstellungen Archiv teilen must stamp einkauf-archiv / todo-archiv filenames")
     if "store.exportArchive" not in settings or "todos.exportArchive" not in settings:
         fail("Einstellungen Archiv teilen must export via ShoppingStore/TodoStore exportArchive")
+    if settings.count('Text("Archiv…")') != 2:
+        fail("Einstellungen must offer Archiv… for Einkauf and To-Do")
+    if "ArchiveListView(kind: .einkauf)" not in settings or "ArchiveListView(kind: .todo)" not in settings:
+        fail("Einstellungen Archiv… must open ArchiveListView for einkauf and todo")
+    if "Archiv leeren" in settings or "Clear-All" in settings or "clearAll" in settings:
+        fail("Einstellungen must not offer Archiv leeren / clear-all")
     if 'Button("Archiv teilen")' in content:
         fail("Einkauf overflow must not offer Archiv teilen (settings only)")
     if "TodoStore" not in settings or "todos.importAny" not in settings:
@@ -1061,8 +1067,12 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 74" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 74")
+    if "CURRENT_PROJECT_VERSION = 76" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 76")
+    if "CURRENT_PROJECT_VERSION = 75" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 75 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 74" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 74 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 73" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 73 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 72" in pbx:
@@ -1194,8 +1204,12 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 74" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 74")
+    if "CURRENT_PROJECT_VERSION: 76" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 76")
+    if "CURRENT_PROJECT_VERSION: 75" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 75 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 74" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 74 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 73" in yml:
         fail("stale CURRENT_PROJECT_VERSION 73 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 72" in yml:
@@ -1545,8 +1559,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 74") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 74")
+    if pbx.count("CURRENT_PROJECT_VERSION = 76") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 76")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3426,6 +3440,7 @@ def test_item_archive() -> None:
     persist = (ROOT / "Sources/Shared/Persistence.swift").read_text()
     todo_persist = (ROOT / "Sources/Shared/TodoPersistence.swift").read_text()
     settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
+    list_view = (ROOT / "Sources/iOS/ArchiveListView.swift").read_text()
     content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
     todo_ui = (ROOT / "Sources/iOS/TodoListView.swift").read_text()
     desc = (ROOT / "Description.md").read_text()
@@ -3445,8 +3460,20 @@ def test_item_archive() -> None:
         fail("TodoPersistence must not take over archive filenames")
     if "func appendEinkauf" not in archive or "func appendTodo" not in archive:
         fail("CompletedItemArchive must expose appendEinkauf / appendTodo")
+    if "func deleteEinkauf" not in archive or "func deleteTodo" not in archive:
+        fail("CompletedItemArchive must expose deleteEinkauf / deleteTodo by index")
+    if "func clearEinkauf" in archive or "func clearTodo" in archive:
+        fail("CompletedItemArchive must not expose a clear-all API")
+    if "func clearAll" in archive or "func clearArchive" in archive or "func emptyArchive" in archive:
+        fail("CompletedItemArchive must not expose clearArchive / emptyArchive")
+    if "entries.removeAll" in archive:
+        fail("CompletedItemArchive must not clear all entries in one shot")
+    if "Archiv leeren" in archive:
+        fail("CompletedItemArchive must not mention Archiv leeren")
     if "archivedAt" not in archive:
         fail("archive entries must carry archivedAt")
+    if "displayRows" not in archive or "fileIndices(fromDisplayed" not in archive:
+        fail("CompletedItemArchive must map newest-first display rows to file indices")
     if "WatchComplicationReload" in archive or "HomeWidgetReload" in archive:
         fail("archive writes must not reload Watch complications or Home widgets")
     if "WCSession" in archive or "broadcast" in archive:
@@ -3481,10 +3508,50 @@ def test_item_archive() -> None:
         fail("Description.md must name einkauf-archiv.json and todo-archiv.json")
     if "Archiv teilen" not in desc:
         fail("Description.md must document Archiv teilen")
+    if "Archiv…" not in desc:
+        fail("Description.md must document Archiv… list in Einstellungen")
+    if "Archiv leeren" not in desc:
+        fail("Description.md must explicitly forbid Archiv leeren")
     if "archivedAt" not in desc:
         fail("Description.md must document archivedAt")
     if settings.count('Button("Archiv teilen")') != 2:
         fail("Settings must have two Archiv teilen buttons")
+    if settings.count('Text("Archiv…")') != 2:
+        fail("Settings must have two Archiv… navigation links")
+    if "Archiv leeren" in settings or "Archiv leeren" in list_view:
+        fail("Settings / archive list must not offer Archiv leeren")
+    if "ArchiveListView" not in list_view:
+        fail("ArchiveListView.swift must define the settings archive list")
+    if "Noch keine Archiv-Einträge." not in list_view:
+        fail("empty archive must show a short hint")
+    if ".onDelete" not in list_view or 'Image(systemName: "trash")' not in list_view:
+        fail("archive list must support swipe-to-delete and trash")
+    if "deleteEinkauf" not in list_view or "deleteTodo" not in list_view:
+        fail("archive list must delete via CompletedItemArchive.deleteEinkauf / deleteTodo")
+    if 'Button("Zurückspielen")' not in list_view:
+        fail("archive list must offer Zurückspielen on each row")
+    if "Dauerhaft löschen" not in list_view:
+        fail("archive trash must be labeled Dauerhaft löschen")
+    if "restoreFromArchive" not in list_view:
+        fail("archive Zurückspielen must call store restoreFromArchive")
+    if "func restoreFromArchive" not in store or "func restoreFromArchive" not in todo_store:
+        fail("ShoppingStore and TodoStore must restoreFromArchive")
+    einkauf_restore = store[store.find("func restoreFromArchive"):store.find("func applyRemoteSnapshot")]
+    if "done: false" not in einkauf_restore or "Item.makeID()" not in einkauf_restore:
+        fail("Einkauf restore must mint a new id and set done = false")
+    if "CompletedItemArchive" in einkauf_restore:
+        fail("Einkauf restore must not touch the archive file")
+    todo_restore = todo_store[todo_store.find("func restoreFromArchive"):todo_store.find("func exportMarkdown")]
+    if "completed: false" not in todo_restore or "takeUid()" not in todo_restore:
+        fail("To-Do restore must mint a new uid and set completed = false")
+    if "CompletedItemArchive" in todo_restore:
+        fail("To-Do restore must not touch the archive file")
+    if "Zurückspielen" not in desc:
+        fail("Description.md must document Zurückspielen")
+    if "Archiv…" in content or "Archiv…" in todo_ui:
+        fail("list overflow must not show Archiv…")
+    if "ArchiveListView" not in pbx:
+        fail("pbxproj must compile ArchiveListView.swift")
     if 'Button("Archiv teilen")' in content or 'Button("Archiv teilen")' in todo_ui:
         fail("list overflow must not show Archiv teilen")
     for name in (
@@ -3495,9 +3562,35 @@ def test_item_archive() -> None:
         "testClearDoneArchivesOnlyCompletedAndLeavesOpen",
         "testTodoDeleteAndClearCompletedArchiveOnlyDone",
         "testTodoBulkClearSharesArchivedAt",
+        "testDeleteSingleEntryPersistsAndLeavesOthers",
+        "testDeletedEntryDoesNotReturnOnLaterAppend",
+        "testDeleteDisplayedNewestMapsToLastFileIndex",
+        "testDeleteTodoEntryPersists",
+        "testDeleteLastEntryWritesEmptyArchiveNotClearAllAPI",
+        "testRestoreEinkaufCopiesOpenItemKeepsArchive",
+        "testRestoreEinkaufTwiceCreatesTwoOpenCopiesArchiveUnchanged",
+        "testRestoreTodoCopiesOpenTaskKeepsArchive",
     ):
         if name not in tests:
             fail(f"tests must cover {name}")
+    sample = {
+        "v": 1,
+        "entries": [
+            {"archivedAt": "2026-09-07T12:00:00.000Z", "item": {"id": "a", "name": "A"}},
+            {"archivedAt": "2026-09-07T12:01:00.000Z", "item": {"id": "b", "name": "B"}},
+            {"archivedAt": "2026-09-07T12:02:00.000Z", "item": {"id": "c", "name": "C"}},
+        ],
+    }
+    displayed = list(reversed(range(len(sample["entries"]))))
+    if displayed != [2, 1, 0]:
+        fail("archive display must be newest first (file index reversed)")
+    if (len(sample["entries"]) - 1 - 0) != 2:
+        fail("displayed index 0 must map to last file index")
+    del sample["entries"][1]
+    if [entry["item"]["id"] for entry in sample["entries"]] != ["a", "c"]:
+        fail("delete by file index must leave the other entries")
+    if sample["v"] != 1:
+        fail("archive delete must keep envelope v")
     print("item archive: ok")
 
 

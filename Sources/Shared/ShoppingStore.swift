@@ -444,6 +444,34 @@ final class ShoppingStore: ObservableObject {
         try CompletedItemArchive.encodeEinkauf()
     }
 
+    /// Offene Kopie auf die Live-Liste. Neue `id`; Archiv bleibt unangetastet.
+    @discardableResult
+    func restoreFromArchive(_ snapshot: Item) -> String? {
+        let name = snapshot.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        let now = Date.nowEpochMillis
+        let used = Set(state.items.map(\.id))
+        var newId = Item.makeID()
+        while used.contains(newId) { newId = Item.makeID() }
+        state.items.append(
+            Item(
+                id: newId,
+                name: name,
+                dept: Department.resolved(snapshot.dept),
+                done: false,
+                added: now,
+                ord: nextOrd(),
+                doneChangedAt: now,
+                imported: false,
+                urgency: snapshot.urgency
+            )
+        )
+        state.listRevision += 1
+        persistAndSync()
+        return newId
+    }
+
     func applyRemoteSnapshot(_ incoming: AppState) {
         let merged = StateMerge.merge(local: state, remote: incoming)
         guard merged != state else { return }

@@ -1,0 +1,114 @@
+import SwiftUI
+
+/// Archiv-Einträge in **Einstellungen** (neueste zuerst).
+/// **Zurückspielen** kopiert offen auf die Live-Liste (Archiv bleibt).
+/// Wischen oder Papierkorb löscht **einen** Eintrag dauerhaft. Kein Clear-All.
+struct ArchiveListView: View {
+    enum Kind {
+        case einkauf
+        case todo
+    }
+
+    let kind: Kind
+    @EnvironmentObject private var store: ShoppingStore
+    @EnvironmentObject private var todos: TodoStore
+    @Environment(\.einkaufTheme) private var theme
+    @State private var rows: [ArchiveDisplayRow] = []
+
+    private var navigationTitle: String {
+        switch kind {
+        case .einkauf: return "Einkauf-Archiv"
+        case .todo: return "To-Do-Archiv"
+        }
+    }
+
+    var body: some View {
+        List {
+            if rows.isEmpty {
+                Text("Noch keine Archiv-Einträge.")
+                    .foregroundStyle(theme.muted)
+                    .einkaufRowChrome()
+                    .deleteDisabled(true)
+            } else {
+                ForEach(rows) { row in
+                    archiveRow(row)
+                }
+                .onDelete(perform: deleteDisplayed)
+            }
+        }
+        .einkaufListChrome()
+        .navigationTitle(navigationTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear(perform: reload)
+    }
+
+    private func archiveRow(_ row: ArchiveDisplayRow) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(row.title)
+                    .foregroundStyle(theme.ink)
+                Text(row.archivedAt)
+                    .font(.footnote)
+                    .foregroundStyle(theme.muted)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Zurückspielen") {
+                restore(at: row.fileIndex)
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(theme.oxide)
+            .accessibilityLabel("Zurückspielen")
+            Button(role: .destructive) {
+                deleteFileIndices(IndexSet(integer: row.fileIndex))
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Dauerhaft löschen")
+        }
+        .einkaufRowChrome()
+        .accessibilityLabel("\(row.title), \(row.archivedAt)")
+    }
+
+    private func reload() {
+        switch kind {
+        case .einkauf:
+            let file = CompletedItemArchive.loadEinkauf()
+            rows = CompletedItemArchive.displayRows(file.entries, title: { $0.name })
+        case .todo:
+            let file = CompletedItemArchive.loadTodo()
+            rows = CompletedItemArchive.displayRows(file.entries, title: { $0.text })
+        }
+    }
+
+    private func restore(at fileIndex: Int) {
+        switch kind {
+        case .einkauf:
+            let file = CompletedItemArchive.loadEinkauf()
+            guard file.entries.indices.contains(fileIndex) else { return }
+            store.restoreFromArchive(file.entries[fileIndex].item)
+        case .todo:
+            let file = CompletedItemArchive.loadTodo()
+            guard file.entries.indices.contains(fileIndex) else { return }
+            todos.restoreFromArchive(file.entries[fileIndex].item)
+        }
+    }
+
+    private func deleteDisplayed(at offsets: IndexSet) {
+        let fileIndices = CompletedItemArchive.fileIndices(
+            fromDisplayed: offsets,
+            entryCount: rows.count
+        )
+        deleteFileIndices(fileIndices)
+    }
+
+    private func deleteFileIndices(_ indices: IndexSet) {
+        switch kind {
+        case .einkauf:
+            CompletedItemArchive.deleteEinkauf(at: indices)
+        case .todo:
+            CompletedItemArchive.deleteTodo(at: indices)
+        }
+        reload()
+    }
+}
