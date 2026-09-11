@@ -2,7 +2,7 @@
 
 Native Begleit-App zur [Einkaufs-PWA](https://supervised-info.github.io/einkauf/) und zur [To-Do-PWA](https://supervised-info.github.io/todo/). iPhone: drei Reiter **Einkauf | To-Do | Einstellungen**. Watch: zwei Reiter **Einkauf | To-Do**. Einkauf: dieselbe Liste, Abhaken über **WatchConnectivity**. To-Do: eigener Store, Datei `todo-local.json`, Backup `todo-v3-json`. Brücke zur jeweiligen PWA ist JSON — die App scrapt die Website nicht.
 
-Produktstand (Build 74): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen. Gelöschte erledigte Einträge werden nativ in `einkauf-archiv.json` / `todo-archiv.json` angehängt (Teilen in Einstellungen).
+Produktstand (Build 75): [`Description.md`](Description.md). To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). **Optional offen:** Inbox Phase 4 (concurrent Append). Einkauf-Artikel können optional `imported` (nur Inbox/Fremd-Datei, Anzeige teal) und `urgency` (eilig/normal/später, Chip ⚡ / ↔ / ↓; iPhone tippbar, Watch nur Anzeige) tragen. Gelöschte erledigte Einträge werden nativ in `einkauf-archiv.json` / `todo-archiv.json` angehängt; in **Einstellungen** lassen sich Archiv-Einträge einzeln löschen (**Archiv…**, kein Clear-All) und teilen.
 
 Mindestens **Xcode 15**, iOS 17, watchOS 10. Im Apple-Developer-Account ein Team wählen. v1 ist nicht für den App-Store-Submit gedacht.
 

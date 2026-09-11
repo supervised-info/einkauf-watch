@@ -71,6 +71,12 @@ struct SettingsSheet: View {
                         shareEinkaufBackup()
                     }
                     .einkaufRowChrome()
+                    NavigationLink {
+                        ArchiveListView(kind: .einkauf)
+                    } label: {
+                        Text("Archiv…")
+                    }
+                    .einkaufRowChrome()
                     Button("Archiv teilen") {
                         shareEinkaufArchive()
                     }
@@ -92,7 +98,7 @@ struct SettingsSheet: View {
                     Text("Einkauf")
                         .foregroundStyle(theme.muted)
                 } footer: {
-                    Text("Backup-JSON (einkauf-backup). Archiv gelöschter erledigter Artikel (einkauf-archiv.json). Inbox verbinden und abrufen. History wird nur angehängt, nie überschrieben.")
+                    Text("Backup-JSON (einkauf-backup). Archiv gelöschter erledigter Artikel (einkauf-archiv.json), einzeln löschen. Inbox verbinden und abrufen. History wird nur angehängt, nie überschrieben.")
                 }
 
                 Section {
@@ -256,6 +262,12 @@ struct SettingsSheet: View {
                         shareTodoJSON()
                     }
                     .einkaufRowChrome()
+                    NavigationLink {
+                        ArchiveListView(kind: .todo)
+                    } label: {
+                        Text("Archiv…")
+                    }
+                    .einkaufRowChrome()
                     Button("Archiv teilen") {
                         shareTodoArchive()
                     }
@@ -264,7 +276,7 @@ struct SettingsSheet: View {
                     Text("To-Do")
                         .foregroundStyle(theme.muted)
                 } footer: {
-                    Text("JSON-Backup der To-Do-Liste (todo-liste.json). Einkauf-Backups werden abgelehnt. Archiv gelöschter erledigter Aufgaben: todo-archiv.json.")
+                    Text("JSON-Backup der To-Do-Liste (todo-liste.json). Einkauf-Backups werden abgelehnt. Archiv gelöschter erledigter Aufgaben: todo-archiv.json, einzeln löschen.")
                 }
             }
             .einkaufListChrome()

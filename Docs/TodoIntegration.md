@@ -111,7 +111,7 @@ EinkaufApp
     Tab 2 „To-Do“   → TodoListView (eigene NavigationStack, kein Nav-Titel)
 ```
 
-Tab-Labels **Einkauf | To-Do | Einstellungen** auf dem iPhone (`basket` / `checklist` / `gearshape`); Watch nur **Einkauf | To-Do**. Beide iPhone-Listen: **kein** Navigationstitel (Tab reicht), Toolbar kompakt (`einkaufToolbarChrome`). Einkaufs-Toolbar, Overflow, Add-Leiste bleiben **im Einkaufs-Tab**. To-Do hat ein **eigenes** Overflow (Import/Export/Liste teilen), kein gemeinsames „…“ das beide Domains anfasst. **Einstellungen** (`SettingsSheet`, dritter iPhone-Tab, kein Sheet aus den Listen-**…**): Sektion **Einkauf** (Backup, **Archiv teilen** `einkauf-archiv.json`, Inbox) und **To-Do** (To-Do Backup: JSON **Backup importieren…** / **exportieren…** / **teilen** über `TodoStore` (`TodoImport.offer` / `importAny`) plus **Archiv teilen** (`todo-archiv.json`)). MD/CSV bleiben nur im To-Do-**…**. Einkauf-JSON wird dort abgelehnt, nie in `ShoppingStore` geschrieben.
+Tab-Labels **Einkauf | To-Do | Einstellungen** auf dem iPhone (`basket` / `checklist` / `gearshape`); Watch nur **Einkauf | To-Do**. Beide iPhone-Listen: **kein** Navigationstitel (Tab reicht), Toolbar kompakt (`einkaufToolbarChrome`). Einkaufs-Toolbar, Overflow, Add-Leiste bleiben **im Einkaufs-Tab**. To-Do hat ein **eigenes** Overflow (Import/Export/Liste teilen), kein gemeinsames „…“ das beide Domains anfasst. **Einstellungen** (`SettingsSheet`, dritter iPhone-Tab, kein Sheet aus den Listen-**…**): Sektion **Einkauf** (Backup, **Archiv…** / **Archiv teilen** `einkauf-archiv.json`, Inbox) und **To-Do** (To-Do Backup: JSON **Backup importieren…** / **exportieren…** / **teilen** über `TodoStore` (`TodoImport.offer` / `importAny`) plus **Archiv…** / **Archiv teilen** (`todo-archiv.json`)). MD/CSV bleiben nur im To-Do-**…**. Einkauf-JSON wird dort abgelehnt, nie in `ShoppingStore` geschrieben.
 
 `onOpenURL` auf `EinkaufRoot` (`IncomingJSON`): Envelope entscheidet (`einkauf-backup` vs `todo-v3-json`). Widget-URL `einkauf://list` = Einkaufs-Tab, `einkauf://todo` = To-Do-Tab.
 
@@ -136,7 +136,7 @@ Eigener Store: `TodoStore` + `TodoState` + `TodoTask`.
 |---|---|---|
 | Store | `ShoppingStore` | `TodoStore` |
 | Datei | `einkauf-local.json` | `todo-local.json` |
-| Archiv | `einkauf-archiv.json` | `todo-archiv.json` (Append erledigter Deletes, native-only) |
+| Archiv | `einkauf-archiv.json` | `todo-archiv.json` (Append erledigter Deletes, Einzel-Löschen in Einstellungen, native-only) |
 | Ordner | App Group `Einkauf/` | **derselbe** Ordner |
 | Local envelope | `kind: "einkauf-local"` | `kind: "todo-local"` |
 | Backup | `kind: "einkauf-backup"` | `format: "todo-v3-json"` |
@@ -282,7 +282,7 @@ Fixtures/todo-liste.csv
 Tests/EinkaufCoreTests/TodoStoreTests.swift
 ```
 
-Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen. Archive liegen als eigene Dateien `einkauf-archiv.json` / `todo-archiv.json` im selben Ordner (Append beim Löschen erledigter Einträge; kein WC, kein Import in dieser Version).
+Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen. Archive liegen als eigene Dateien `einkauf-archiv.json` / `todo-archiv.json` im selben Ordner (Append beim Löschen erledigter Einträge; Einzel-Löschen in Einstellungen; kein Clear-All, kein WC, kein Import in dieser Version).
 
 ---
 
@@ -294,5 +294,5 @@ Trennung von `ShoppingStore` / `BackupCodec` / `einkauf-*.json` nicht aufweichen
 - [x] iPhone-Nav ohne Listen-Titel, Toolbar kompakt (`einkaufToolbarChrome`).
 - [x] Watch nur Geh-Modus (Filter `todo.currentListId`, kompaktes `#uid`, kein Edit/Reopen/Suche/Listen-UI). Complication Listenname / **Alle**.
 - [x] Siri **Todo** (ein Token, iPhone „o“, Watch ohne `requestValueDialog`), ein `AppShortcutsProvider`.
-- [x] **Einstellungen → To-Do Backup** (JSON) plus **Archiv teilen**; Import-`revision`-Floor analog Einkauf.
+- [x] **Einstellungen → To-Do Backup** (JSON) plus **Archiv…** / **Archiv teilen**; Import-`revision`-Floor analog Einkauf.
 - [x] Phasen 1–10 und Folgearbeit bis Build 62 gelandet. Kein offener To-Do-Plan.

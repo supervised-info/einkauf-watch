@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0F37D65CA49E42F77966B30C /* AppearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BEC967DFB7A0070174933F /* AppearanceSettings.swift */; };
+		F23492847CA5385299931537 /* ArchiveListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB87850976F2222A88A35F5C /* ArchiveListView.swift */; };
 		D2E5181B0EE3B2B6DF332844 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B54211927DDC48EEBB30B70 /* ContentView.swift */; };
 		41907324178F605BC264F97B /* EinkaufApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2804963C38E068C930E5F599 /* EinkaufApp.swift */; };
 		545ABC9E8A46A84EF54BDA47 /* HomeWidgetReload.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56C79F458F6BC409426D743 /* HomeWidgetReload.swift */; };
@@ -197,6 +198,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		77C32A2ADBD924DE72664400 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		7AACC2D184DE98204B4438BE /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 		80BEC967DFB7A0070174933F /* AppearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettings.swift; sourceTree = "<group>"; };
+		CB87850976F2222A88A35F5C /* ArchiveListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveListView.swift; sourceTree = "<group>"; };
 		7B54211927DDC48EEBB30B70 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		2804963C38E068C930E5F599 /* EinkaufApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EinkaufApp.swift; sourceTree = "<group>"; };
 		B56C79F458F6BC409426D743 /* HomeWidgetReload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWidgetReload.swift; sourceTree = "<group>"; };
@@ -343,6 +345,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
             			isa = PBXGroup;
             			children = (
             				80BEC967DFB7A0070174933F /* AppearanceSettings.swift */,
+				CB87850976F2222A88A35F5C /* ArchiveListView.swift */,
 				7B54211927DDC48EEBB30B70 /* ContentView.swift */,
 				2804963C38E068C930E5F599 /* EinkaufApp.swift */,
 				B56C79F458F6BC409426D743 /* HomeWidgetReload.swift */,
@@ -627,6 +630,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 			buildActionMask = 2147483647;
 			files = (
 				0F37D65CA49E42F77966B30C /* AppearanceSettings.swift in Sources */,
+				F23492847CA5385299931537 /* ArchiveListView.swift in Sources */,
 				D2E5181B0EE3B2B6DF332844 /* ContentView.swift in Sources */,
 				41907324178F605BC264F97B /* EinkaufApp.swift in Sources */,
 				545ABC9E8A46A84EF54BDA47 /* HomeWidgetReload.swift in Sources */,
@@ -896,7 +900,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -931,7 +935,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -966,7 +970,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -998,7 +1002,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1031,7 +1035,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1061,7 +1065,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1092,7 +1096,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1123,7 +1127,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 74;
+				CURRENT_PROJECT_VERSION = 75;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
