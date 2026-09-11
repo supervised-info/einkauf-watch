@@ -517,8 +517,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 77" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 77 / CURRENT_PROJECT_VERSION")
+    if "Build 78" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 78 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1067,8 +1067,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 77" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 77")
+    if "CURRENT_PROJECT_VERSION = 78" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 78")
+    if "CURRENT_PROJECT_VERSION = 77" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 77 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 76" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 76 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 75" in pbx:
@@ -1203,11 +1205,13 @@ def test_sources() -> None:
         fail("stale CURRENT_PROJECT_VERSION 10 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 9" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 9 still in pbxproj")
-    if "CURRENT_PROJECT_VERSION = 8" in pbx:
+    if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 77" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 77")
+    if "CURRENT_PROJECT_VERSION: 78" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 78")
+    if "CURRENT_PROJECT_VERSION: 77" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 77 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 76" in yml:
         fail("stale CURRENT_PROJECT_VERSION 76 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 75" in yml:
@@ -1342,7 +1346,7 @@ def test_sources() -> None:
         fail("stale CURRENT_PROJECT_VERSION 10 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 9" in yml:
         fail("stale CURRENT_PROJECT_VERSION 9 still in project.yml")
-    if "CURRENT_PROJECT_VERSION: 8" in yml:
+    if re.search(r"CURRENT_PROJECT_VERSION: 8$", yml, re.M):
         fail("stale CURRENT_PROJECT_VERSION 8 still in project.yml")
     title_has_store = "currentStore.name" in watch or (
         "watchTitle" in watch and "var watchTitle" in models and "currentStore.name" in models
@@ -1563,8 +1567,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 77") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 77")
+    if pbx.count("CURRENT_PROJECT_VERSION = 78") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 78")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -2405,6 +2409,18 @@ def test_todo_store() -> None:
         fail("TodoListView browsingList/editingList must have distinct .id")
     if "todos.toggle" not in todo_ui:
         fail("TodoListView must toggle completed")
+    todo_row = todo_ui[todo_ui.find("private func row"):todo_ui.find("private func metaLine")]
+    todo_toggle = todo_row[todo_row.find("todos.toggle"):todo_row.find(".buttonStyle")]
+    if "Text(task.text)" in todo_toggle:
+        fail("iPhone To-Do name must not sit inside the toggle Button")
+    if "HStack" in todo_toggle:
+        fail("iPhone To-Do toggle label must be the circle only, not an HStack")
+    if "Image(systemName:" not in todo_toggle:
+        fail("iPhone To-Do toggle label must be the circle Image")
+    if ".buttonStyle(.borderless)" not in todo_row:
+        fail("iPhone To-Do circle must use .buttonStyle(.borderless) like Einkauf editRow")
+    if 'accessibilityLabel("Edit: Aufgabe' not in todo_row:
+        fail("iPhone To-Do name/row must stay an Edit control, not a toggle")
     if "todos.update" not in todo_ui:
         fail("TodoListView must rename via todos.update")
     if "todo.iphone.showCompleted" not in todo_ui:
@@ -2706,6 +2722,15 @@ def test_todo_store() -> None:
         fail("TodoListView must not keep the old chainHint caption under the title")
     if "#uid" not in desc or "reopen-Pills" not in desc:
         fail("Description.md must document #uid Badge + reopen-Pills")
+    if "nur** der Kreis" not in desc and "nur der Kreis" not in desc:
+        fail("Description.md To-Do must say toggle is circle-only")
+    if "Name/ganze Zeile" not in desc:
+        fail("Description.md To-Do must say name/whole row does not toggle done")
+    watch_todo_blob = desc[desc.find("`WatchTodoListView`"):desc.find("### Complication")]
+    if "Tippen toggelt `completed`" in watch_todo_blob:
+        fail("Description.md Watch-To-Do must not say tapping the whole row toggles completed")
+    if "Checkbox" not in watch_todo_blob or "Anzeige" not in watch_todo_blob:
+        fail("Description.md Watch-To-Do must say only the checkbox toggles")
     if "Aufgabe #\\(task.uid) bleibt abgeschlossen" not in todo_ui:
         fail("Wieder öffnen confirm copy must stay")
     if "todo.iphone.sortKey" not in todo_ui:
@@ -2739,6 +2764,17 @@ def test_todo_store() -> None:
         fail("Watch To-Do must not reuse einkauf.watch.hideCompleted or todo.iphone.showCompleted")
     if "todos.toggle" not in watch_todo:
         fail("Watch To-Do rows must toggle completed")
+    if re.search(
+        r"Button\s*\{\s*todos\.toggle\(task\.uid\)\s*\}\s*label:\s*\{\s*HStack",
+        watch_todo,
+    ):
+        fail("Watch To-Do toggle must not wrap circle+text in one HStack Button")
+    watch_toggle_at = watch_todo.find("todos.toggle")
+    watch_toggle = watch_todo[watch_toggle_at:watch_todo.find(".buttonStyle", watch_toggle_at)]
+    if "Text(task.text)" in watch_toggle:
+        fail("Watch To-Do name must not sit inside the toggle Button")
+    if "Image(systemName:" not in watch_toggle:
+        fail("Watch To-Do toggle label must be the circle Image")
     if "fileImporter" in watch_todo or "TextField" in watch_todo or re.search(r"\bPicker\s*\(", watch_todo):
         fail("Watch To-Do must not offer edit/import/search")
     if "reopenedFromUid" in watch_todo or "Wieder öffnen" in watch_todo:
@@ -3334,6 +3370,23 @@ def test_item_imported_urgency() -> None:
         if fn == "editRow" and blob.rfind("Picker") > blob.rfind("ItemUrgencyChip"):
             fail("iPhone editRow dept picker must sit before urgency chip and import mark")
 
+    walk = ios[ios.find("func walkRow"):ios.find("func editRow")]
+    toggle_chunk = walk[walk.find("store.toggle"):walk.find(".buttonStyle")]
+    if "Text(item.name)" in toggle_chunk:
+        fail("iPhone walkRow name must not sit inside the toggle Button")
+    if "HStack" in toggle_chunk:
+        fail("iPhone walkRow toggle label must be the circle only, not an HStack")
+    if "Image(systemName:" not in toggle_chunk:
+        fail("iPhone walkRow toggle label must be the circle Image")
+    if "contentShape(Rectangle())" in walk:
+        fail("iPhone walkRow must not stretch the toggle hit target across the name")
+    if ".buttonStyle(.borderless)" not in walk:
+        fail("iPhone walkRow circle must use .buttonStyle(.borderless) like editRow")
+    if "Text(item.name)" not in walk:
+        fail("iPhone walkRow must still show the item name")
+    if "ItemUrgencyChip" not in walk or "ItemImportedMark" not in walk:
+        fail("iPhone walkRow must keep urgency chip and import mark")
+
     if "ItemImportedMark" not in watch or "ItemUrgencyChip" not in watch:
         fail("Watch walk mode must show import mark and urgency chip")
     if "store.cycleItemUrgency" in watch or "cycleItemUrgency(" in watch:
@@ -3368,6 +3421,12 @@ def test_item_imported_urgency() -> None:
     geh = markdown_section(desc, "### Geh-Modus", "### Edit")
     if "führend" not in geh and "kein führender" not in geh and "Links nur Checkbox" not in geh:
         fail("Description.md Geh-Modus must say import mark is not leading")
+    if "Checkbox/Name toggelt" in geh:
+        fail("Description.md iPhone Geh-Modus must not say tapping the name toggles done")
+    if "nur" not in geh or "Checkbox" not in geh:
+        fail("Description.md Geh-Modus must say iPhone toggle is checkbox-only")
+    if "Name ist nur Anzeige" not in geh and "Name nur Anzeige" not in geh:
+        fail("Description.md Geh-Modus must say the iPhone name is display-only")
     if "rechts" not in geh.lower():
         fail("Description.md Geh-Modus must place import mark on the right")
     if "äußerster" not in geh and "rechtester" not in geh and "ganz außen" not in geh and "ganz rechts" not in geh:

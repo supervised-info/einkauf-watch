@@ -578,21 +578,16 @@ struct TodoListView: View {
                     : "Offen: Aufgabe \(task.uid), \(task.text)"
             )
 
-            VStack(alignment: .leading, spacing: 4) {
+            Button {
+                editingTask = task
+            } label: {
                 HStack(alignment: .top, spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         TodoTaskTitleChrome(
                             task: task,
-                            onEdit: { editingTask = task },
                             onReveal: revealAndScroll
                         )
-                        Button {
-                            editingTask = task
-                        } label: {
-                            metaLine(task)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Edit: Aufgabe \(task.uid), \(task.text)")
+                        metaLine(task)
                     }
                     if isEditing {
                         Image(systemName: "chevron.right")
@@ -602,7 +597,12 @@ struct TodoListView: View {
                             .accessibilityHidden(true)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .multilineTextAlignment(.leading)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Edit: Aufgabe \(task.uid), \(task.text)")
         }
         .padding(.vertical, 2)
         .einkaufRowChrome()
@@ -1032,22 +1032,17 @@ private struct TodoChainLinkBadge: View {
 /// Titelblock wie HTML: `#uid` + Text + `von #` / `reopen #` inline.
 private struct TodoTaskTitleChrome: View {
     let task: TodoTask
-    var onEdit: () -> Void
     var onReveal: (Int64) -> Void
     @Environment(\.einkaufTheme) private var theme
 
     var body: some View {
         TodoWrapHStack(spacing: 6, lineSpacing: 4) {
             TodoUidBadge(uid: task.uid)
-            Button(action: onEdit) {
-                Text(task.text)
-                    .foregroundStyle(theme.ink)
-                    .strikethrough(task.completed, color: theme.muted)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Edit: Aufgabe \(task.uid), \(task.text)")
+            Text(task.text)
+                .foregroundStyle(theme.ink)
+                .strikethrough(task.completed, color: theme.muted)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
             if let from = task.reopenedFromUid {
                 TodoChainLinkBadge(
                     title: "von #\(from)",
