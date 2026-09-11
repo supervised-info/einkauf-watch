@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Geh-Modus: kompaktes `#uid` + Text (+ Person/Prio/Datum/Abgeschlossen), Tippen toggelt `completed`.
+/// Geh-Modus: kompaktes `#uid` + Text (+ Person/Prio/Datum/Abgeschlossen).
+/// Abhaken nur am Kreis; der Name ist Anzeige.
 /// Filtert auf die vom iPhone gesyncte aktuelle Liste (`todo.currentListId`).
 /// Kein Edit, kein Prio-Picker, keine reopen-Pills, kein Import/Export, keine Suche, keine Listen-Verwaltung.
 struct WatchTodoListView: View {
@@ -62,44 +63,44 @@ struct WatchTodoListView: View {
                     } else {
                         List {
                             ForEach(visibleTasks) { task in
-                                Button {
-                                    todos.toggle(task.uid)
-                                } label: {
-                                    HStack(alignment: .center, spacing: 10) {
+                                HStack(alignment: .center, spacing: 10) {
+                                    Button {
+                                        todos.toggle(task.uid)
+                                    } label: {
                                         Image(systemName: task.completed ? "checkmark.circle.fill" : "circle")
                                             .font(.title)
                                             .foregroundStyle(task.completed ? theme.good : theme.muted)
                                             .frame(width: 36, height: 36)
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                                Text("#\(task.uid)")
-                                                    .font(.caption2.weight(.bold))
-                                                    .foregroundStyle(theme.muted)
-                                                    .padding(.horizontal, 4)
-                                                    .padding(.vertical, 1)
-                                                    .background(theme.paper3, in: Capsule())
-                                                    .lineLimit(1)
-                                                    .fixedSize()
-                                                    .accessibilityHidden(true)
-                                                Text(task.text)
-                                                    .font(.headline)
-                                                    .foregroundStyle(theme.ink)
-                                                    .strikethrough(task.completed, color: theme.muted)
-                                                    .lineLimit(3)
-                                                    .multilineTextAlignment(.leading)
-                                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                            }
-                                            metaLine(task)
-                                        }
                                     }
-                                    .padding(.vertical, 4)
-                                    .contentShape(Rectangle())
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel("Aufgabe \(task.uid), \(task.text)")
+                                    .accessibilityValue(rowAccessibilityValue(task))
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                            Text("#\(task.uid)")
+                                                .font(.caption2.weight(.bold))
+                                                .foregroundStyle(theme.muted)
+                                                .padding(.horizontal, 4)
+                                                .padding(.vertical, 1)
+                                                .background(theme.paper3, in: Capsule())
+                                                .lineLimit(1)
+                                                .fixedSize()
+                                                .accessibilityHidden(true)
+                                            Text(task.text)
+                                                .font(.headline)
+                                                .foregroundStyle(theme.ink)
+                                                .strikethrough(task.completed, color: theme.muted)
+                                                .lineLimit(3)
+                                                .multilineTextAlignment(.leading)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+                                        metaLine(task)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .buttonStyle(.plain)
+                                .padding(.vertical, 4)
                                 .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
                                 .listRowBackground(theme.paper2)
-                                .accessibilityLabel("Aufgabe \(task.uid), \(task.text)")
-                                .accessibilityValue(rowAccessibilityValue(task))
                             }
                         }
                         .einkaufListChrome()

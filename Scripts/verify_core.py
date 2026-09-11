@@ -2409,6 +2409,18 @@ def test_todo_store() -> None:
         fail("TodoListView browsingList/editingList must have distinct .id")
     if "todos.toggle" not in todo_ui:
         fail("TodoListView must toggle completed")
+    todo_row = todo_ui[todo_ui.find("private func row"):todo_ui.find("private func metaLine")]
+    todo_toggle = todo_row[todo_row.find("todos.toggle"):todo_row.find(".buttonStyle")]
+    if "Text(task.text)" in todo_toggle:
+        fail("iPhone To-Do name must not sit inside the toggle Button")
+    if "HStack" in todo_toggle:
+        fail("iPhone To-Do toggle label must be the circle only, not an HStack")
+    if "Image(systemName:" not in todo_toggle:
+        fail("iPhone To-Do toggle label must be the circle Image")
+    if ".buttonStyle(.borderless)" not in todo_row:
+        fail("iPhone To-Do circle must use .buttonStyle(.borderless) like Einkauf editRow")
+    if 'accessibilityLabel("Edit: Aufgabe' not in todo_row:
+        fail("iPhone To-Do name/row must stay an Edit control, not a toggle")
     if "todos.update" not in todo_ui:
         fail("TodoListView must rename via todos.update")
     if "todo.iphone.showCompleted" not in todo_ui:
@@ -2710,6 +2722,15 @@ def test_todo_store() -> None:
         fail("TodoListView must not keep the old chainHint caption under the title")
     if "#uid" not in desc or "reopen-Pills" not in desc:
         fail("Description.md must document #uid Badge + reopen-Pills")
+    if "nur** der Kreis" not in desc and "nur der Kreis" not in desc:
+        fail("Description.md To-Do must say toggle is circle-only")
+    if "Name/ganze Zeile" not in desc:
+        fail("Description.md To-Do must say name/whole row does not toggle done")
+    watch_todo_blob = desc[desc.find("`WatchTodoListView`"):desc.find("### Complication")]
+    if "Tippen toggelt `completed`" in watch_todo_blob:
+        fail("Description.md Watch-To-Do must not say tapping the whole row toggles completed")
+    if "Checkbox" not in watch_todo_blob or "Anzeige" not in watch_todo_blob:
+        fail("Description.md Watch-To-Do must say only the checkbox toggles")
     if "Aufgabe #\\(task.uid) bleibt abgeschlossen" not in todo_ui:
         fail("Wieder öffnen confirm copy must stay")
     if "todo.iphone.sortKey" not in todo_ui:
@@ -2743,6 +2764,17 @@ def test_todo_store() -> None:
         fail("Watch To-Do must not reuse einkauf.watch.hideCompleted or todo.iphone.showCompleted")
     if "todos.toggle" not in watch_todo:
         fail("Watch To-Do rows must toggle completed")
+    if re.search(
+        r"Button\s*\{\s*todos\.toggle\(task\.uid\)\s*\}\s*label:\s*\{\s*HStack",
+        watch_todo,
+    ):
+        fail("Watch To-Do toggle must not wrap circle+text in one HStack Button")
+    watch_toggle_at = watch_todo.find("todos.toggle")
+    watch_toggle = watch_todo[watch_toggle_at:watch_todo.find(".buttonStyle", watch_toggle_at)]
+    if "Text(task.text)" in watch_toggle:
+        fail("Watch To-Do name must not sit inside the toggle Button")
+    if "Image(systemName:" not in watch_toggle:
+        fail("Watch To-Do toggle label must be the circle Image")
     if "fileImporter" in watch_todo or "TextField" in watch_todo or re.search(r"\bPicker\s*\(", watch_todo):
         fail("Watch To-Do must not offer edit/import/search")
     if "reopenedFromUid" in watch_todo or "Wieder öffnen" in watch_todo:
