@@ -8,7 +8,10 @@ struct SettingsSheet: View {
     @Environment(\.einkaufTheme) private var theme
     @State private var newStapleName = ""
     @State private var newStoreName = ""
+    @State private var newDepartmentTitle = ""
     @State private var confirmDeleteStore = false
+    @State private var confirmDeleteDepartment = false
+    @State private var pendingDeleteDepartmentId: String?
     @State private var pendingDeleteStoreId: String?
     @State private var confirmDeleteSavedList = false
     @State private var pendingDeleteSavedListId: String?
@@ -28,7 +31,7 @@ struct SettingsSheet: View {
     @State private var inboxRetrieve: InboxRetrieveSession?
 
     private var layout: [String] {
-        StoreLayout.sanitized(store.state.currentStore.layout)
+        StoreLayout.sanitized(store.state.currentStore.layout, customs: store.state.customDepartments)
     }
 
     var body: some View {
@@ -166,14 +169,54 @@ struct SettingsSheet: View {
                 .environment(\.editMode, .constant(.active))
 
                 Section {
-                    let unused = StoreLayout.unused(in: layout)
+                    if store.customDepartments.isEmpty {
+                        Text("Noch keine eigenen Abteilungen.")
+                            .foregroundStyle(theme.muted)
+                            .einkaufRowChrome()
+                            .deleteDisabled(true)
+                    } else {
+                        ForEach(store.customDepartments) { dept in
+                            NavigationLink {
+                                CustomDepartmentEditView(dept: dept)
+                            } label: {
+                                Text(dept.title)
+                                    .foregroundStyle(theme.ink)
+                            }
+                            .einkaufRowChrome()
+                        }
+                        .onDelete(perform: requestDeleteDepartments)
+                    }
+                    HStack {
+                        TextField("Name der Abteilung", text: $newDepartmentTitle)
+                            .textInputAutocapitalization(.words)
+                            .submitLabel(.done)
+                            .onSubmit(submitDepartment)
+                            .onChange(of: newDepartmentTitle) { _, value in
+                                if value.count > CustomDepartment.titleMax {
+                                    newDepartmentTitle = String(value.prefix(CustomDepartment.titleMax))
+                                }
+                            }
+                        Button("Anlegen", action: submitDepartment)
+                            .disabled(newDepartmentTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .einkaufRowChrome()
+                    .deleteDisabled(true)
+                } header: {
+                    Text("Eigene Abteilungen")
+                        .foregroundStyle(theme.muted)
+                } footer: {
+                    Text("Löschen verschiebt Artikel, Stamm und Einträge in gespeicherten Listen nach Sonstiges und entfernt die Abteilung aus allen Ladenwegen.")
+                }
+
+                Section {
+                    let unused = StoreLayout.unused(in: layout, customs: store.state.customDepartments)
                     if unused.isEmpty {
                         Text("Alle Abteilungen sind im Layout.")
                             .foregroundStyle(theme.muted)
                             .einkaufRowChrome()
                     } else {
                         ForEach(unused, id: \.self) { id in
-                            Button(Department.title(for: id)) {
+                            Button(store.departmentTitle(id)) {
                                 store.addLayoutDept(id)
                             }
                             .foregroundStyle(theme.oxide)
@@ -313,6 +356,21 @@ struct SettingsSheet: View {
                 }
             }
             .confirmationDialog(
+                "Abteilung „\(pendingDeleteDepartmentTitle)“ wirklich löschen?",
+                isPresented: $confirmDeleteDepartment,
+                titleVisibility: .visible
+            ) {
+                Button("Abteilung löschen", role: .destructive) {
+                    if let id = pendingDeleteDepartmentId {
+                        store.deleteCustomDepartment(id: id)
+                    }
+                    pendingDeleteDepartmentId = nil
+                }
+                Button("Abbrechen", role: .cancel) {
+                    pendingDeleteDepartmentId = nil
+                }
+            }
+            .confirmationDialog(
                 "Gespeicherte Liste „\(pendingDeleteSavedListName)“ wirklich löschen?",
                 isPresented: $confirmDeleteSavedList,
                 titleVisibility: .visible
@@ -423,7 +481,7 @@ struct SettingsSheet: View {
     private func layoutRow(_ id: String) -> some View {
         let locked = StoreLayout.isLocked(id)
         HStack(spacing: 8) {
-            Text(Department.title(for: id))
+            Text(store.departmentTitle(id))
                 .frame(maxWidth: .infinity, alignment: .leading)
             if !locked {
                 Button {
@@ -488,15 +546,14 @@ struct SettingsSheet: View {
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Stamm-Artikel löschen")
             }
-            Picker("Abteilung", selection: Binding(
-                get: { Department.resolved(staple.dept) },
-                set: { store.setStapleDept(at: idx, dept: $0) }
-            )) {
-                ForEach(Department.allCases) { dept in
-                    Text(dept.title).tag(dept.rawValue)
-                }
-            }
-            .pickerStyle(.menu)
+            DepartmentIdPicker(
+                label: "Abteilung",
+                selection: Binding(
+                    get: { store.state.resolveDept(staple.dept) },
+                    set: { store.setStapleDept(at: idx, dept: $0) }
+                ),
+                customs: store.state.customDepartments
+            )
             .accessibilityLabel("Abteilung für \(staple.name)")
         }
         .padding(.vertical, 2)
@@ -513,6 +570,22 @@ struct SettingsSheet: View {
         let j = idx + by
         guard layout.indices.contains(j) else { return false }
         return !StoreLayout.isLocked(layout[j])
+    }
+
+    private var pendingDeleteDepartmentTitle: String {
+        guard let id = pendingDeleteDepartmentId else { return "" }
+        return store.customDepartments.first(where: { $0.id == id })?.title ?? ""
+    }
+
+    private func requestDeleteDepartments(at offsets: IndexSet) {
+        guard let idx = offsets.first, store.customDepartments.indices.contains(idx) else { return }
+        pendingDeleteDepartmentId = store.customDepartments[idx].id
+        confirmDeleteDepartment = true
+    }
+
+    private func submitDepartment() {
+        store.createCustomDepartment(newDepartmentTitle)
+        newDepartmentTitle = ""
     }
 
     private func submitStaple() {
@@ -748,6 +821,84 @@ struct SettingsSheet: View {
         } catch {
             return error.localizedDescription
         }
+    }
+}
+
+struct CustomDepartmentEditView: View {
+    let dept: CustomDepartment
+    @EnvironmentObject private var store: ShoppingStore
+    @Environment(\.einkaufTheme) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @State private var title: String
+    @State private var confirmDelete = false
+
+    init(dept: CustomDepartment) {
+        self.dept = dept
+        _title = State(initialValue: dept.title)
+    }
+
+    var body: some View {
+        List {
+            Section {
+                TextField("Name der Abteilung", text: $title)
+                    .textInputAutocapitalization(.words)
+                    .submitLabel(.done)
+                    .onSubmit(commitRename)
+                    .onChange(of: title) { _, value in
+                        if value.count > CustomDepartment.titleMax {
+                            title = String(value.prefix(CustomDepartment.titleMax))
+                        }
+                    }
+                    .einkaufRowChrome()
+                Button("Speichern", action: commitRename)
+                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .einkaufRowChrome()
+            } header: {
+                Text("Umbenennen")
+                    .foregroundStyle(theme.muted)
+            }
+            Section {
+                Button("Abteilung löschen", role: .destructive) {
+                    confirmDelete = true
+                }
+                .einkaufRowChrome()
+            } footer: {
+                Text("Artikel, Stamm und Einträge in gespeicherten Listen landen in Sonstiges. Die Abteilung verschwindet aus allen Ladenwegen.")
+            }
+        }
+        .einkaufListChrome()
+        .navigationTitle("Abteilung bearbeiten")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "Abteilung „\(dept.title)“ wirklich löschen?",
+            isPresented: $confirmDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Abteilung löschen", role: .destructive) {
+                store.deleteCustomDepartment(id: dept.id)
+                dismiss()
+            }
+            Button("Abbrechen", role: .cancel) {}
+        }
+    }
+
+    private func commitRename() {
+        store.renameCustomDepartment(id: dept.id, title: title)
+    }
+}
+
+struct DepartmentIdPicker: View {
+    var label: String
+    var selection: Binding<String>
+    var customs: [CustomDepartment]
+
+    var body: some View {
+        Picker(label, selection: selection) {
+            ForEach(DepartmentCatalog.knownIds(customs: customs), id: \.self) { id in
+                Text(DepartmentCatalog.title(for: id, customs: customs)).tag(id)
+            }
+        }
+        .pickerStyle(.menu)
     }
 }
 

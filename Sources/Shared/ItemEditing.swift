@@ -23,7 +23,8 @@ enum ItemEditing {
     static func rename(
         _ item: Item,
         to raw: String,
-        mappings: [String: String]
+        mappings: [String: String],
+        customs: [CustomDepartment] = []
     ) -> (Item, [String: String])? {
         let name = raw.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -33,15 +34,15 @@ enum ItemEditing {
         item.name = name
         let newKey = DepartmentGuesser.mappingKey(item.name)
         if newKey != oldKey {
-            item.dept = DepartmentGuesser.guess(name, mappings: mappings)
+            item.dept = DepartmentGuesser.guess(name, mappings: mappings, customs: customs)
         }
         var mappings = mappings
         mappings[newKey] = item.dept
         return (item, mappings)
     }
 
-    static func setDept(_ item: Item, dept: String, mappings: [String: String]) -> (Item, [String: String])? {
-        guard Department.isKnown(dept) else { return nil }
+    static func setDept(_ item: Item, dept: String, mappings: [String: String], customs: [CustomDepartment] = []) -> (Item, [String: String])? {
+        guard DepartmentCatalog.isKnown(dept, customs: customs) else { return nil }
         var item = item
         item.dept = dept
         var mappings = mappings
@@ -60,8 +61,8 @@ enum ItemEditing {
         return rows
     }
 
-    static func rows(items: [Item], store: Store) -> [Row] {
-        rows(from: ListGrouping.groups(items: items, store: store))
+    static func rows(items: [Item], store: Store, customs: [CustomDepartment] = []) -> [Row] {
+        rows(from: ListGrouping.groups(items: items, store: store, customs: customs))
     }
 
     static func itemIDs(in rows: [Row], at offsets: IndexSet) -> [String] {
@@ -76,9 +77,10 @@ enum ItemEditing {
         allItems: [Item],
         dept: String,
         from source: IndexSet,
-        to destination: Int
+        to destination: Int,
+        customs: [CustomDepartment] = []
     ) -> [Item] {
-        var group = allItems.filter { Department.resolved($0.dept) == dept }
+        var group = allItems.filter { DepartmentCatalog.resolved($0.dept, customs: customs) == dept }
         group.sort(by: ListGrouping.sortItems)
         guard !source.isEmpty, source.allSatisfy({ group.indices.contains($0) }) else { return allItems }
         let dest = max(0, min(destination, group.count))
@@ -100,9 +102,10 @@ enum ItemEditing {
         store: Store,
         from source: IndexSet,
         to destination: Int,
-        mappings: [String: String]
+        mappings: [String: String],
+        customs: [CustomDepartment] = []
     ) -> (items: [Item], mappings: [String: String])? {
-        let rows = rows(items: allItems, store: store)
+        let rows = rows(items: allItems, store: store, customs: customs)
         let moving = source.sorted().compactMap { idx -> Item? in
             guard rows.indices.contains(idx), case .item(_, let item) = rows[idx] else { return nil }
             return item
@@ -114,10 +117,10 @@ enum ItemEditing {
             return row
         }
         let dest = max(0, min(destination, remaining.count))
-        guard let slot = dropSlot(remaining: remaining, destination: dest) else { return nil }
-        guard Department.isKnown(slot.dept) else { return nil }
+        guard let slot = dropSlot(remaining: remaining, destination: dest, customs: customs) else { return nil }
+        guard DepartmentCatalog.isKnown(slot.dept, customs: customs) else { return nil }
 
-        if isNoOp(moving: moving, destDept: slot.dept, beforeId: slot.beforeId, allItems: allItems, store: store) {
+        if isNoOp(moving: moving, destDept: slot.dept, beforeId: slot.beforeId, allItems: allItems, store: store, customs: customs) {
             return nil
         }
 
@@ -127,14 +130,15 @@ enum ItemEditing {
             destDept: slot.dept,
             beforeId: slot.beforeId,
             mappings: mappings,
-            store: store
+            store: store,
+            customs: customs
         )
     }
 
     /// Drop-Ziel nach Entfernen der Quelle, analog `Array.move` / SwiftUI `onMove`.
     /// Einfügen vor einer Überschrift = ans Ende der vorherigen Abteilung;
     /// Einfügen vor einem Artikel = diese Abteilung, vor diesem Artikel.
-    static func dropSlot(remaining: [Row], destination: Int) -> (dept: String, beforeId: String?)? {
+    static func dropSlot(remaining: [Row], destination: Int, customs: [CustomDepartment] = []) -> (dept: String, beforeId: String?)? {
         guard !remaining.isEmpty else { return nil }
         let dest = max(0, min(destination, remaining.count))
 
@@ -165,7 +169,7 @@ enum ItemEditing {
             }
             return (dept, firstItemID(afterHeaderAt: dest))
         case .item(_, let item):
-            let dept = header(before: dest) ?? Department.resolved(item.dept)
+            let dept = header(before: dest) ?? DepartmentCatalog.resolved(item.dept, customs: customs)
             return (dept, item.id)
         }
     }
@@ -175,11 +179,12 @@ enum ItemEditing {
         destDept: String,
         beforeId: String?,
         allItems: [Item],
-        store: Store
+        store: Store,
+        customs: [CustomDepartment] = []
     ) -> Bool {
         guard moving.count == 1, let item = moving.first else { return false }
-        guard Department.resolved(item.dept) == destDept else { return false }
-        let group = ListGrouping.groups(items: allItems, store: store).first { $0.dept == destDept }
+        guard DepartmentCatalog.resolved(item.dept, customs: customs) == destDept else { return false }
+        let group = ListGrouping.groups(items: allItems, store: store, customs: customs).first { $0.dept == destDept }
         guard let ids = group?.items.map(\.id), let idx = ids.firstIndex(of: item.id) else { return false }
         if let beforeId {
             if beforeId == item.id { return true }
@@ -194,13 +199,14 @@ enum ItemEditing {
         destDept: String,
         beforeId: String?,
         mappings: [String: String],
-        store: Store
+        store: Store,
+        customs: [CustomDepartment] = []
     ) -> (items: [Item], mappings: [String: String]) {
         var mappings = mappings
         let movingIDs = Set(moving.map(\.id))
         let placed = moving.map { item -> Item in
             var item = item
-            if Department.resolved(item.dept) != destDept {
+            if DepartmentCatalog.resolved(item.dept, customs: customs) != destDept {
                 item.dept = destDept
                 mappings[DepartmentGuesser.mappingKey(item.name)] = destDept
             } else {
@@ -215,7 +221,7 @@ enum ItemEditing {
         }
 
         let othersDest = allItems
-            .filter { !movingIDs.contains($0.id) && Department.resolved($0.dept) == destDept }
+            .filter { !movingIDs.contains($0.id) && DepartmentCatalog.resolved($0.dept, customs: customs) == destDept }
             .sorted(by: ListGrouping.sortItems)
 
         var destList: [Item] = []
@@ -242,7 +248,7 @@ enum ItemEditing {
         }
 
         var result = allItems.map { byId[$0.id]! }
-        let groups = ListGrouping.groups(items: result, store: store)
+        let groups = ListGrouping.groups(items: result, store: store, customs: customs)
         var n = 0.0
         for group in groups {
             for item in group.items {

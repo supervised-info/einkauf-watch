@@ -122,11 +122,12 @@ def assert_corner_count_larger_than_label(corner: str) -> None:
         fail("corner widgetLabel must be smaller than compactCountText")
 
 
-def sanitized_layout(layout: list[str]) -> list[str]:
+def sanitized_layout(layout: list[str], extra_ids: list[str] | None = None) -> list[str]:
+    known = set(DEPTS) | set(extra_ids or [])
     seen: set[str] = set()
     middle: list[str] = []
     for d in layout:
-        if d not in DEPTS or d in seen:
+        if d not in known or d in seen:
             continue
         seen.add(d)
         if d in ("vor", "nach"):
@@ -135,12 +136,15 @@ def sanitized_layout(layout: list[str]) -> list[str]:
     return ["vor"] + middle + ["nach"]
 
 
-def groups(items: list[dict], layout: list[str]) -> list[str]:
-    layout = sanitized_layout(layout)
+def groups(items: list[dict], layout: list[str], extra_ids: list[str] | None = None) -> list[str]:
+    extra = list(extra_ids or [])
+    known = set(DEPTS) | set(extra)
+    layout = sanitized_layout(layout, extra)
     in_layout = set(layout)
     by: dict[str, list[dict]] = {}
     for it in items:
-        d = it.get("dept") if it.get("dept") in DEPTS else "sonstiges"
+        raw = it.get("dept")
+        d = raw if raw in known else "sonstiges"
         by.setdefault(d, []).append(it)
     for d in by:
         by[d].sort(key=lambda it: (it.get("ord") if isinstance(it.get("ord"), (int, float)) else 0, it.get("added") or 0, it.get("name") or ""))
@@ -156,7 +160,7 @@ def groups(items: list[dict], layout: list[str]) -> list[str]:
     for d in layout:
         if d != "nach":
             push(d)
-    for d in DEPTS:
+    for d in DEPTS + extra:
         if d not in in_layout:
             push(d)
     push("nach")
@@ -183,6 +187,30 @@ def test_store_switch_changes_group_order() -> None:
     if dm_ids != ["drogerie", "obst", "kuehlung"]:
         fail(f"dm groups {dm_ids}")
     print("store switch groups: ok")
+
+
+def test_custom_dept_grouping() -> None:
+    items = [
+        {"name": "Äpfel", "dept": "obst", "ord": 1, "added": 1},
+        {"name": "Tofu", "dept": "d-bio", "ord": 1, "added": 1},
+        {"name": "Pfand", "dept": "nach", "ord": 1, "added": 1},
+    ]
+    layout = ["vor", "obst", "d-bio", "sonstiges", "nach"]
+    ids = groups(items, layout, extra_ids=["d-bio"])
+    if ids != ["obst", "d-bio", "nach"]:
+        fail(f"custom dept in layout should keep position, got {ids}")
+    extra_layout = ["vor", "obst", "sonstiges", "nach"]
+    extra_ids = groups(items, extra_layout, extra_ids=["d-bio"])
+    if extra_ids != ["obst", "d-bio", "nach"]:
+        fail(f"custom dept extra should sit before nach, got {extra_ids}")
+    collapsed = groups(
+        [{"name": "X", "dept": "ghost", "ord": 1, "added": 1}],
+        ["vor", "sonstiges", "nach"],
+        extra_ids=["d-bio"],
+    )
+    if collapsed != ["sonstiges"]:
+        fail(f"unknown dept without custom must collapse to sonstiges, got {collapsed}")
+    print("custom dept groups: ok")
 
 
 def test_walk_lines_screenshot_items() -> None:
@@ -304,6 +332,8 @@ def test_sources() -> None:
     codec = (ROOT / "Sources/Shared/BackupCodec.swift").read_text()
     if "savedLists" not in codec:
         fail("backup codec must mention savedLists")
+    if "customDepartments" not in codec:
+        fail("backup codec must round-trip customDepartments")
     if '"mappings": state.mappings' not in codec:
         fail("backup export must keep the mappings field")
     if '"learnedMappings"' in codec or '"userMappings"' in codec or '"meineZuordnungen"' in codec:
@@ -518,8 +548,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 79" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 79 / CURRENT_PROJECT_VERSION")
+    if "Build 80" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 80 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -677,16 +707,17 @@ def test_sources() -> None:
         "Aktueller Laden",
         "Neuer Laden",
         "Ladenweg ·",
+        "Eigene Abteilungen",
         "Abteilungen hinzufügen",
         "Layout zurücksetzen",
-        "Stamm-Artikel",
+        'Text("Stamm-Artikel")',
         "Gespeicherte Listen",
         "Wörterbuch",
         'Text("To-Do")',
     ]
     section_pos = [settings.find(label) for label in section_order]
     if any(p < 0 for p in section_pos) or section_pos != sorted(section_pos):
-        fail("Einstellungen section order must be Allgemein, Einkauf, Aktueller Laden, Neuer Laden, Ladenweg, Stamm-Artikel, Gespeicherte Listen, Wörterbuch, To-Do")
+        fail("Einstellungen section order must be Allgemein, Einkauf, Aktueller Laden, Neuer Laden, Ladenweg, Eigene Abteilungen, Stamm-Artikel, Gespeicherte Listen, Wörterbuch, To-Do")
     neuer_idx = settings.find("Neuer Laden")
     ladenweg_idx = settings.find("Ladenweg ·")
     store_list_start = settings.find("ForEach(store.stores)")
@@ -795,8 +826,10 @@ def test_sources() -> None:
         fail("Wörterbuch must edit/delete via setMapping/removeMapping")
     if ".onDelete" not in dict_view:
         fail("Meine Zuordnungen must swipe-delete")
-    if "Picker" not in dict_view or "Department.allCases" not in dict_view:
+    if "Picker" not in dict_view and "DepartmentIdPicker" not in dict_view:
         fail("Meine Zuordnungen rows need a Department Picker")
+    if "DepartmentCatalog.knownIds" not in dict_view and "DepartmentIdPicker" not in dict_view:
+        fail("Meine Zuordnungen picker must include catalog IDs (builtins + customs)")
     if "learnedMappings" not in dict_view or "matching: query" not in dict_view:
         fail("search query must filter Meine Zuordnungen")
     if "groups(from: KeywordDictionary.source, matching: query)" not in dict_view:
@@ -861,7 +894,7 @@ def test_sources() -> None:
     setmap = extract_braced(store_src, setmap_idx, "setMapping")
     if "mappingKey" not in setmap:
         fail("setMapping must write DepartmentGuesser.mappingKey")
-    if "Department.isKnown" not in setmap:
+    if "DepartmentCatalog.isKnown" not in setmap and "Department.isKnown" not in setmap:
         fail("setMapping must reject unknown depts")
     if "persistAndSync" not in setmap:
         fail("setMapping must persistAndSync like other state changes")
@@ -987,6 +1020,8 @@ def test_sources() -> None:
         fail("DeptGroup.id must include storeId and dept")
     if re.search(r"var title: String \{ Department\.title\(for: id\) \}", models):
         fail("DeptGroup.title must use dept, not id")
+    if "DepartmentCatalog.title(for: dept" not in models and "var title: String { Department.title(for: dept) }" in models:
+        fail("DeptGroup.title must use DepartmentCatalog when customs exist")
     if ".header(group.id)" in editing:
         fail("ItemEditing must not treat group.id as a dept")
     if ".header(storeId: group.storeId, dept: group.dept)" not in editing:
@@ -1070,12 +1105,14 @@ def test_sources() -> None:
         fail("tests must use layouts with sonstiges before vs after obst")
     if 'layout.removeAll { $0 == "vor" || $0 == "nach" || $0 == "sonstiges" }' in models:
         fail("ListGrouping.groups must not strip sonstiges from the layout")
-    if "StoreLayout.sanitized(store.layout)" not in models:
+    if "StoreLayout.sanitized(store.layout" not in models:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 79" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 79")
+    if "CURRENT_PROJECT_VERSION = 80" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 80")
+    if "CURRENT_PROJECT_VERSION = 79" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 79 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 78" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 78 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 77" in pbx:
@@ -1217,8 +1254,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 79" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 79")
+    if "CURRENT_PROJECT_VERSION: 80" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 80")
+    if "CURRENT_PROJECT_VERSION: 79" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 79 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 78" in yml:
         fail("stale CURRENT_PROJECT_VERSION 78 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 77" in yml:
@@ -1578,8 +1617,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 79") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 79")
+    if pbx.count("CURRENT_PROJECT_VERSION = 80") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 80")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3816,6 +3855,69 @@ def test_saved_list_edit() -> None:
     print("saved list edit: ok")
 
 
+def test_custom_departments() -> None:
+    dept = (ROOT / "Sources/Shared/Department.swift").read_text()
+    models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    codec = (ROOT / "Sources/Shared/BackupCodec.swift").read_text()
+    layout = (ROOT / "Sources/Shared/StoreLayout.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/CustomDepartmentTests.swift").read_text()
+
+    if "enum DepartmentCatalog" not in dept:
+        fail("DepartmentCatalog missing")
+    if "func resolved(_ id: String, customs:" not in dept:
+        fail("DepartmentCatalog.resolved must accept customs")
+    if "func knownIds(customs:" not in dept:
+        fail("DepartmentCatalog.knownIds missing")
+    if "struct CustomDepartment" not in dept:
+        fail("CustomDepartment missing")
+    if "customDepartments" not in models:
+        fail("AppState must persist customDepartments")
+    if "Department.resolved(rawDept)" in models:
+        fail("Item decoder must not remap unknown depts before customs are known")
+    if "customs: customDepartments" not in models:
+        fail("ListGrouping.groups must receive customDepartments")
+    if "customDepartments" not in codec or "sanitizeCustomDepartments" not in codec:
+        fail("BackupCodec must sanitize and export customDepartments")
+    if "DepartmentCatalog.isKnown" not in layout:
+        fail("StoreLayout.sanitized must keep custom IDs")
+    if "func createCustomDepartment" not in store or "func renameCustomDepartment" not in store:
+        fail("ShoppingStore missing create/rename custom department")
+    if "func deleteCustomDepartment" not in store or "remappingDeletion" not in store:
+        fail("ShoppingStore.deleteCustomDepartment must remap via remappingDeletion")
+    if "Eigene Abteilungen" not in settings or "createCustomDepartment" not in settings:
+        fail("Einstellungen must list Eigene Abteilungen and Anlegen")
+    if "Abteilung löschen" not in settings:
+        fail("custom department delete must confirm")
+    if "DepartmentIdPicker" not in content or "DepartmentIdPicker" not in settings:
+        fail("Item and staple pickers must include catalog IDs")
+    if "departmentTitle" not in watch:
+        fail("Watch headers must use catalog titles")
+    if "Department.title(for: dept)" in watch:
+        fail("Watch must not title headers with builtin-only Department.title")
+    if "customDepartments" not in desc or "Eigene Abteilungen" not in desc:
+        fail("Description.md must document customDepartments / Eigene Abteilungen")
+    if "HTML" not in desc or "eigene abteilungen" not in desc.lower():
+        fail("Description.md must say HTML department UI is later")
+    if "PWA-UI kommt nicht in diesem PR" not in desc and "kein HTML-UI" not in desc:
+        fail("Description.md must say HTML department UI is out of this PR")
+    for name in (
+        "testResolvedKeepsCustomIdsAndMapsUnknownToSonstiges",
+        "testDeleteRemapsItemsStaplesSavedListsMappingsAndLayouts",
+        "testCustomDeptInLayoutKeepsPositionAndTitle",
+        "testCustomDeptNotInLayoutIsExtraBeforeNach",
+        "testExportRoundTripKeepsCustomsAndOldBackupIsEmpty",
+        "testLocalRoundTripKeepsCustomDeptOnItems",
+    ):
+        if name not in tests:
+            fail(f"tests must cover {name}")
+    print("custom departments: ok")
+
+
 def test_heading_slicer() -> None:
     src = Path(__file__).read_text()
     if re.search(r"desc\.find\(\s*[\"']## Watch", src):
@@ -3832,6 +3934,7 @@ def test_heading_slicer() -> None:
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
+    test_custom_dept_grouping()
     test_walk_lines_screenshot_items()
     test_sonstiges_follows_layout_position()
     test_backup_codec_python()
@@ -3845,6 +3948,7 @@ def main() -> None:
     test_item_archive()
     test_staple_order()
     test_saved_list_edit()
+    test_custom_departments()
     test_heading_slicer()
     print("ALL OK")
 

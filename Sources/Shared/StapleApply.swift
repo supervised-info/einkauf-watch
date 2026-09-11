@@ -17,7 +17,8 @@ enum StapleApply {
         items: [Item],
         mappings: [String: String],
         nextOrd: Double,
-        now: Double = Date.nowEpochMillis
+        now: Double = Date.nowEpochMillis,
+        customs: [CustomDepartment] = []
     ) -> Outcome {
         let name = staple.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -25,8 +26,8 @@ enum StapleApply {
             return Outcome(items: items, mappings: mappings, added: 0, reopened: 0, already: 0)
         }
         var dept = staple.dept
-        if !Department.isKnown(dept) {
-            dept = DepartmentGuesser.guess(name, mappings: mappings)
+        if !DepartmentCatalog.isKnown(dept, customs: customs) {
+            dept = DepartmentGuesser.guess(name, mappings: mappings, customs: customs)
         }
         let key = DepartmentGuesser.mappingKey(name)
         var items = items
@@ -61,7 +62,8 @@ enum StapleApply {
         items: [Item],
         mappings: [String: String],
         nextOrd: Double,
-        now: Double = Date.nowEpochMillis
+        now: Double = Date.nowEpochMillis,
+        customs: [CustomDepartment] = []
     ) -> Outcome {
         var items = items
         var mappings = mappings
@@ -70,7 +72,7 @@ enum StapleApply {
         var reopened = 0
         var already = 0
         for staple in staples {
-            let r = apply(staple, items: items, mappings: mappings, nextOrd: ord, now: now)
+            let r = apply(staple, items: items, mappings: mappings, nextOrd: ord, now: now, customs: customs)
             items = r.items
             mappings = r.mappings
             added += r.added

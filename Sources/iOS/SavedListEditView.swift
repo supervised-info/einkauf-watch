@@ -96,15 +96,14 @@ struct SavedListEditView: View {
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Artikel löschen")
             }
-            Picker("Abteilung", selection: Binding(
-                get: { Department.resolved(item.dept) },
-                set: { store.setSavedListItemDept(id: listId, at: idx, dept: $0) }
-            )) {
-                ForEach(Department.allCases) { dept in
-                    Text(dept.title).tag(dept.rawValue)
-                }
-            }
-            .pickerStyle(.menu)
+            DepartmentIdPicker(
+                label: "Abteilung",
+                selection: Binding(
+                    get: { store.state.resolveDept(item.dept) },
+                    set: { store.setSavedListItemDept(id: listId, at: idx, dept: $0) }
+                ),
+                customs: store.state.customDepartments
+            )
             .accessibilityLabel("Abteilung für \(item.name)")
         }
         .padding(.vertical, 2)

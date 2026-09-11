@@ -44,14 +44,14 @@ enum DepartmentGuesser {
         return s.isEmpty ? c : s
     }
 
-    static func guess(_ name: String, mappings: [String: String] = [:]) -> String {
+    static func guess(_ name: String, mappings: [String: String] = [:], customs: [CustomDepartment] = []) -> String {
         let folded = canon(name)
         let stripped = stripQty(folded)
         let search = stripped.isEmpty ? folded.trimmingCharacters(in: .whitespaces) : stripped
         if search.isEmpty { return Department.sonstiges.rawValue }
 
         let mk = mappingKey(name)
-        if let mapped = mappings[mk], Department.isKnown(mapped) { return mapped }
+        if let mapped = mappings[mk], DepartmentCatalog.isKnown(mapped, customs: customs) { return mapped }
 
         if search.contains("tiefkuhl") || matchesTK(folded) || matchesTK(search) {
             return Department.tiefkuehl.rawValue
