@@ -517,8 +517,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 76" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 76 / CURRENT_PROJECT_VERSION")
+    if "Build 77" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 77 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1067,8 +1067,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 76" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 76")
+    if "CURRENT_PROJECT_VERSION = 77" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 77")
+    if "CURRENT_PROJECT_VERSION = 76" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 76 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 75" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 75 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 74" in pbx:
@@ -1204,8 +1206,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 76" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 76")
+    if "CURRENT_PROJECT_VERSION: 77" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 77")
+    if "CURRENT_PROJECT_VERSION: 76" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 76 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 75" in yml:
         fail("stale CURRENT_PROJECT_VERSION 75 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 74" in yml:
@@ -1559,8 +1563,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 76") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 76")
+    if pbx.count("CURRENT_PROJECT_VERSION = 77") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 77")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3594,6 +3598,63 @@ def test_item_archive() -> None:
     print("item archive: ok")
 
 
+def test_staple_order() -> None:
+    settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+
+    if "func moveStaples(from source: IndexSet, to destination: Int)" not in store:
+        fail("ShoppingStore must expose moveStaples for Settings onMove")
+    if "func moveStaple(at index: Int, by: Int)" not in store:
+        fail("ShoppingStore must expose moveStaple for up/down")
+    move_fn = store[store.find("func moveStaples"):store.find("func moveStaple(at")]
+    if "persistAndSync" not in move_fn:
+        fail("moveStaples must persistAndSync like createStaple")
+    if "state.staples = staples" not in move_fn and "state.staples.move" not in move_fn:
+        fail("moveStaples must reorder the existing staples array")
+    if "sorted(" in move_fn or "localizedStandardCompare" in move_fn:
+        fail("moveStaples must not alphabetically sort staples")
+
+    if "moveStaples" not in settings:
+        fail("Stamm-Artikel section must onMove via store.moveStaples")
+    if ".onMove { store.moveStaples" not in settings and "store.moveStaples(from:" not in settings:
+        fail("Stamm-Artikel ForEach must call store.moveStaples")
+    row_m = re.search(r"private func stapleRow\b", settings)
+    if not row_m:
+        fail("SettingsSheet missing stapleRow")
+    row = extract_braced(settings, row_m.start(), "stapleRow")
+    if "removeStaple" not in row:
+        fail("Stamm-Artikel must keep delete")
+    if "setStapleDept" not in row:
+        fail("Stamm-Artikel must keep dept picker")
+    if "chevron.up" not in row or "chevron.down" not in row:
+        fail("Stamm-Artikel must offer Nach oben / Nach unten")
+    if "moveStaple(at:" not in row:
+        fail("Stamm-Artikel arrows must call moveStaple")
+    if "createStaple" not in settings or "Milch, Butter" not in settings:
+        fail("Stamm-Artikel must keep Anlegen")
+    if "Kein Hoch/Runter der Stamm-Zeilen" in desc:
+        fail("Description.md must no longer forbid Stamm Hoch/Runter")
+    if "Nutzer-Reihenfolge" not in desc or "onMove" not in desc:
+        fail("Description.md must document Stamm Nutzer-Reihenfolge / onMove")
+    if "Kein erzwungenes ABC" not in desc and "kein Auto-ABC" not in desc:
+        fail("Description.md must say user order wins over ABC")
+    if "store.staples" not in content or "applyAllStaples" not in content:
+        fail("Stamm menu and Gesamtliste must iterate store.staples")
+    for name in (
+        "testMoveStaplesOnMoveReordersAndBumpsRevision",
+        "testMoveStapleBySwapsNeighbor",
+        "testMoveStapleOutOfBoundsIsNoOp",
+        "testApplyAllFollowsStapleArrayOrder",
+        "testBackupRoundTripPreservesStapleOrder",
+    ):
+        if name not in tests:
+            fail(f"tests must cover {name}")
+    print("staple order: ok")
+
+
 def test_heading_slicer() -> None:
     src = Path(__file__).read_text()
     if re.search(r"desc\.find\(\s*[\"']## Watch", src):
@@ -3621,6 +3682,7 @@ def main() -> None:
     test_icloud_inbox()
     test_item_imported_urgency()
     test_item_archive()
+    test_staple_order()
     test_heading_slicer()
     print("ALL OK")
 

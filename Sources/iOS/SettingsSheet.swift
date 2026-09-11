@@ -194,9 +194,11 @@ struct SettingsSheet: View {
                 }
 
                 Section {
-                    ForEach(Array(store.staples.enumerated()), id: \.offset) { idx, staple in
+                    ForEach(Array(store.staples.enumerated()), id: \.element.name) { idx, staple in
                         stapleRow(idx: idx, staple: staple)
                     }
+                    .onMove { store.moveStaples(from: $0, to: $1) }
+                    .environment(\.editMode, .constant(.active))
                     HStack {
                         TextField("Milch, Butter…", text: $newStapleName)
                             .textInputAutocapitalization(.sentences)
@@ -210,7 +212,7 @@ struct SettingsSheet: View {
                     Text("Stamm-Artikel")
                         .foregroundStyle(theme.muted)
                 } footer: {
-                    Text("Stamm-Artikel erscheinen im Menü Stamm und können mit Gesamtliste auf einmal auf die Liste.")
+                    Text("Stamm-Artikel erscheinen im Menü Stamm in dieser Reihenfolge und können mit Gesamtliste auf einmal auf die Liste. Ziehen oder Pfeile ändern die Reihenfolge.")
                 }
 
                 Section {
@@ -447,6 +449,24 @@ struct SettingsSheet: View {
             HStack {
                 Text(staple.name)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                Button {
+                    store.moveStaple(at: idx, by: -1)
+                } label: {
+                    Image(systemName: "chevron.up")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Nach oben")
+                .disabled(!canMoveStaple(at: idx, by: -1))
+
+                Button {
+                    store.moveStaple(at: idx, by: 1)
+                } label: {
+                    Image(systemName: "chevron.down")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Nach unten")
+                .disabled(!canMoveStaple(at: idx, by: 1))
+
                 Button(role: .destructive) {
                     store.removeStaple(at: idx)
                 } label: {
@@ -468,6 +488,10 @@ struct SettingsSheet: View {
         }
         .padding(.vertical, 2)
         .einkaufRowChrome()
+    }
+
+    private func canMoveStaple(at idx: Int, by: Int) -> Bool {
+        store.staples.indices.contains(idx + by)
     }
 
     private func canMove(_ id: String, by: Int) -> Bool {
