@@ -741,6 +741,84 @@ final class StapleApplyTests: XCTestCase {
 }
 
 @MainActor
+final class ShoppingStoreStapleOrderTests: XCTestCase {
+    private func storeWithStaples() -> ShoppingStore {
+        var seed = AppState.seed
+        seed.staples = [
+            Staple(name: "Milch", dept: "kuehlung"),
+            Staple(name: "Butter", dept: "kuehlung"),
+            Staple(name: "Klopapier", dept: "drogerie")
+        ]
+        return ShoppingStore(state: seed, enableSync: false)
+    }
+
+    func testMoveStaplesOnMoveReordersAndBumpsRevision() {
+        let store = storeWithStaples()
+        let rev = store.state.listRevision
+        store.moveStaples(from: IndexSet(integer: 0), to: 3)
+        XCTAssertEqual(store.staples.map(\.name), ["Butter", "Klopapier", "Milch"])
+        XCTAssertEqual(store.state.listRevision, rev + 1)
+    }
+
+    func testMoveStapleBySwapsNeighbor() {
+        let store = storeWithStaples()
+        store.moveStaple(at: 1, by: -1)
+        XCTAssertEqual(store.staples.map(\.name), ["Butter", "Milch", "Klopapier"])
+        store.moveStaple(at: 1, by: 1)
+        XCTAssertEqual(store.staples.map(\.name), ["Butter", "Klopapier", "Milch"])
+    }
+
+    func testMoveStapleOutOfBoundsIsNoOp() {
+        let store = storeWithStaples()
+        let before = store.state
+        store.moveStaple(at: 0, by: -1)
+        store.moveStaple(at: 2, by: 1)
+        store.moveStaples(from: IndexSet(integer: 9), to: 0)
+        store.moveStaples(from: IndexSet(), to: 0)
+        XCTAssertEqual(store.state.staples, before.staples)
+        XCTAssertEqual(store.state.listRevision, before.listRevision)
+    }
+
+    func testSameOrderMoveDoesNotBumpRevision() {
+        let store = storeWithStaples()
+        let rev = store.state.listRevision
+        store.moveStaples(from: IndexSet(integer: 1), to: 1)
+        XCTAssertEqual(store.staples.map(\.name), ["Milch", "Butter", "Klopapier"])
+        XCTAssertEqual(store.state.listRevision, rev)
+    }
+
+    func testApplyAllFollowsStapleArrayOrder() {
+        let store = storeWithStaples()
+        store.moveStaples(from: IndexSet(integer: 2), to: 0)
+        XCTAssertEqual(store.staples.map(\.name), ["Klopapier", "Milch", "Butter"])
+        let result = store.applyAllStaples()
+        XCTAssertEqual(result.added, 3)
+        XCTAssertEqual(store.state.items.map(\.name), ["Klopapier", "Milch", "Butter"])
+    }
+
+    func testBackupRoundTripPreservesStapleOrder() throws {
+        let store = storeWithStaples()
+        store.moveStaples(from: IndexSet(integer: 0), to: 3)
+        let data = try BackupCodec.encodeExport(store.state)
+        let again = try BackupCodec.decode(data)
+        XCTAssertEqual(again.staples.map(\.name), ["Butter", "Klopapier", "Milch"])
+        XCTAssertEqual(again.staples.map(\.dept), ["kuehlung", "drogerie", "kuehlung"])
+    }
+
+    func testCreateStapleAppendsAtEnd() {
+        let store = storeWithStaples()
+        store.createStaple("Äpfel")
+        XCTAssertEqual(store.staples.map(\.name), ["Milch", "Butter", "Klopapier", "Äpfel"])
+    }
+
+    func testRemoveStapleKeepsRemainingOrder() {
+        let store = storeWithStaples()
+        store.removeStaple(at: 1)
+        XCTAssertEqual(store.staples.map(\.name), ["Milch", "Klopapier"])
+    }
+}
+
+@MainActor
 final class SavedListTests: XCTestCase {
     private func threeItemsOneDone() -> [Item] {
         [

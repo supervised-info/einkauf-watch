@@ -337,6 +337,29 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
+    /// SwiftUI-`onMove`: Nutzer-Reihenfolge im `staples`-Array, kein Auto-ABC.
+    func moveStaples(from source: IndexSet, to destination: Int) {
+        var staples = state.staples
+        guard !source.isEmpty else { return }
+        for idx in source {
+            guard staples.indices.contains(idx) else { return }
+        }
+        staples.move(fromOffsets: source, toOffset: destination)
+        guard staples != state.staples else { return }
+        state.staples = staples
+        state.listRevision += 1
+        persistAndSync()
+    }
+
+    func moveStaple(at index: Int, by: Int) {
+        guard state.staples.indices.contains(index) else { return }
+        let j = index + by
+        guard state.staples.indices.contains(j) else { return }
+        state.staples.swapAt(index, j)
+        state.listRevision += 1
+        persistAndSync()
+    }
+
     /// Schreibt `mappings[mappingKey(key)]` — dasselbe Backup-Feld wie die PWA, kein zweites Dictionary.
     func setMapping(_ key: String, dept: String) {
         let mapped = DepartmentGuesser.mappingKey(key)
