@@ -393,8 +393,8 @@ def test_sources() -> None:
         "Sources/WatchWidgets/EinkaufWatchWidgets.swift",
         "Sources/WatchWidgets/Info.plist",
         "Sources/WatchWidgets/EinkaufWatchWidgets.entitlements",
-        "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
-        "Sources/Watch/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+        "Sources/iOS/Assets.xcassets/AppIcon.appiconset/AppIcon2 1.png",
+        "Sources/Watch/Assets.xcassets/AppIcon.appiconset/AppIcon2 1.png",
         "Fixtures/todo-v3-json.json",
         "Fixtures/todo-liste.md",
         "Fixtures/todo-liste.csv",
@@ -548,8 +548,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 80" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 80 / CURRENT_PROJECT_VERSION")
+    if "Build 82" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 82 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1109,8 +1109,12 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 80" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 80")
+    if "CURRENT_PROJECT_VERSION = 82" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 82")
+    if "CURRENT_PROJECT_VERSION = 81" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 81 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 80" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 80 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 79" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 79 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 78" in pbx:
@@ -1254,8 +1258,12 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 80" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 80")
+    if "CURRENT_PROJECT_VERSION: 82" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 82")
+    if "CURRENT_PROJECT_VERSION: 81" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 81 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 80" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 80 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 79" in yml:
         fail("stale CURRENT_PROJECT_VERSION 79 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 78" in yml:
@@ -1617,8 +1625,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 80") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 80")
+    if pbx.count("CURRENT_PROJECT_VERSION = 82") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 82")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3419,6 +3427,27 @@ def test_item_imported_urgency() -> None:
             fail(f"iPhone {fn} trailing order must be urgency chip then import mark (rightmost)")
         if fn == "editRow" and blob.rfind("Picker") > blob.rfind("ItemUrgencyChip"):
             fail("iPhone editRow dept picker must sit before urgency chip and import mark")
+        if fn == "editRow":
+            if "VStack" not in blob:
+                fail("iPhone editRow must stack name and department picker on two lines")
+            if ".fixedSize()" in blob:
+                fail("iPhone editRow dept picker must not use fixedSize (crushes the name)")
+            name_pos = blob.find("Text(item.name)")
+            picker_pos = blob.find("DepartmentIdPicker")
+            vstack_pos = blob.find("VStack")
+            if vstack_pos < 0 or name_pos < 0 or picker_pos < 0:
+                fail("iPhone editRow must keep name, VStack, and DepartmentIdPicker")
+            if not (vstack_pos < name_pos < picker_pos):
+                fail("iPhone editRow must put name above department picker in a VStack")
+            if blob.find("DepartmentIdPicker") > blob.find("ItemUrgencyChip"):
+                fail("iPhone editRow dept picker must stay in the name stack, before trailing chips")
+
+    if "zwei Zeilen" not in desc and "zweizeilig" not in desc:
+        fail("Description.md must document two-line iPhone edit row")
+    if "Drogerie & Haushalt" not in desc:
+        fail("Description.md must name the long department that must not crush the item")
+    if ".fixedSize" not in desc:
+        fail("Description.md must say the edit-row dept picker has no fixedSize")
 
     walk = ios[ios.find("func walkRow"):ios.find("func editRow")]
     toggle_chunk = walk[walk.find("store.toggle"):walk.find(".buttonStyle")]
@@ -3436,6 +3465,10 @@ def test_item_imported_urgency() -> None:
         fail("iPhone walkRow must still show the item name")
     if "ItemUrgencyChip" not in walk or "ItemImportedMark" not in walk:
         fail("iPhone walkRow must keep urgency chip and import mark")
+    if "DepartmentIdPicker" in walk or "Picker(" in walk:
+        fail("iPhone walkRow (Geh-Modus) must not show a department picker")
+    if "VStack" in walk:
+        fail("iPhone walkRow must stay a single line (no VStack)")
 
     if "ItemImportedMark" not in watch or "ItemUrgencyChip" not in watch:
         fail("Watch walk mode must show import mark and urgency chip")

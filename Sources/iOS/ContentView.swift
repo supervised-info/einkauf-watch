@@ -230,41 +230,45 @@ struct ContentView: View {
             .buttonStyle(.borderless)
             .accessibilityLabel(item.done ? "Erledigt: \(item.name)" : "Offen: \(item.name)")
 
-            if renamingID == item.id {
-                TextField("Name", text: $renameDraft)
-                    .textFieldStyle(.plain)
-                    .focused($renameFocused)
-                    .submitLabel(.done)
-                    .onSubmit(commitRename)
-                    .onChange(of: renameFocused) { _, focused in
-                        if !focused { commitRename() }
-                    }
-                    .strikethrough(item.done, color: theme.muted)
-            } else {
-                Button {
-                    beginRename(item)
-                } label: {
-                    Text(item.name)
-                        .foregroundStyle(theme.ink)
+            VStack(alignment: .leading, spacing: 6) {
+                if renamingID == item.id {
+                    TextField("Name", text: $renameDraft)
+                        .textFieldStyle(.plain)
+                        .focused($renameFocused)
+                        .submitLabel(.done)
+                        .onSubmit(commitRename)
+                        .onChange(of: renameFocused) { _, focused in
+                            if !focused { commitRename() }
+                        }
                         .strikethrough(item.done, color: theme.muted)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .multilineTextAlignment(.leading)
+                } else {
+                    Button {
+                        beginRename(item)
+                    } label: {
+                        Text(item.name)
+                            .foregroundStyle(theme.ink)
+                            .strikethrough(item.done, color: theme.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Umbenennen: \(item.name)")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Umbenennen: \(item.name)")
-            }
 
-            DepartmentIdPicker(
-                label: "Abteilung",
-                selection: Binding(
-                    get: { store.state.resolveDept(item.dept) },
-                    set: { store.setItemDept(item.id, dept: $0) }
-                ),
-                customs: store.state.customDepartments
-            )
-            .labelsHidden()
-            .fixedSize()
-            .accessibilityLabel("Abteilung für \(item.name)")
+                DepartmentIdPicker(
+                    label: "Abteilung",
+                    selection: Binding(
+                        get: { store.state.resolveDept(item.dept) },
+                        set: { store.setItemDept(item.id, dept: $0) }
+                    ),
+                    customs: store.state.customDepartments
+                )
+                .labelsHidden()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel("Abteilung für \(item.name)")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             ItemUrgencyChip(urgency: item.urgency, theme: theme) {
                 store.cycleItemUrgency(item.id)
