@@ -37,6 +37,7 @@
 		85750B81A16C320440D48527 /* ListShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2093A5043F58D61ED95149A /* ListShare.swift */; };
 		1E2E30863C1CC0EF68250ACE /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
 		3DD640118A2CA67D5ABC6DFA /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
+		8C5D36C6FA3EC6A45583A0AB /* ShoppingListImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26D13F9EDC948DC106375F3A /* ShoppingListImport.swift */; };
 		30E871B023784F7EA0892B37 /* ShoppingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */; };
 		2F2C5AD28F3C42BC624A4D61 /* SiriPendingAdds.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11FBEA43674EDACBEA5842B /* SiriPendingAdds.swift */; };
 		D0C64AA6CD4E2318CDBEBDC4 /* SpeechItemSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A13C2CBD06472D7C3E84 /* SpeechItemSplitter.swift */; };
@@ -73,6 +74,7 @@
 		F10732928F46FDC4B9AB9DA4 /* ListShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2093A5043F58D61ED95149A /* ListShare.swift */; };
 		8015BEAA3E4A968A615E3843 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1576966105F98F0A51DBA185 /* Models.swift */; };
 		26246BA3D4001BC572F04EB2 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */; };
+		AD0FF39BFDF0FF35C81570C7 /* ShoppingListImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26D13F9EDC948DC106375F3A /* ShoppingListImport.swift */; };
 		F77609148593B38AF721ACEB /* ShoppingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */; };
 		273201B6B5082341507CF093 /* SiriPendingAdds.swift in Sources */ = {isa = PBXBuildFile; fileRef = E11FBEA43674EDACBEA5842B /* SiriPendingAdds.swift */; };
 		13ED64E859D6647AF224B748 /* SpeechItemSplitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA1A13C2CBD06472D7C3E84 /* SpeechItemSplitter.swift */; };
@@ -235,6 +237,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 		C2093A5043F58D61ED95149A /* ListShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListShare.swift; sourceTree = "<group>"; };
 		1576966105F98F0A51DBA185 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		26D13F9EDC948DC106375F3A /* ShoppingListImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListImport.swift; sourceTree = "<group>"; };
 		5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingStore.swift; sourceTree = "<group>"; };
 		E11FBEA43674EDACBEA5842B /* SiriPendingAdds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriPendingAdds.swift; sourceTree = "<group>"; };
 		DEA1A13C2CBD06472D7C3E84 /* SpeechItemSplitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechItemSplitter.swift; sourceTree = "<group>"; };
@@ -425,6 +428,7 @@ F995D58A1318CF456CBF95DF /* PBXContainerItemProxy */ = {
 				C2093A5043F58D61ED95149A /* ListShare.swift */,
 				1576966105F98F0A51DBA185 /* Models.swift */,
 				2078E6ACF7F5ADBEDB9993ED /* Persistence.swift */,
+				26D13F9EDC948DC106375F3A /* ShoppingListImport.swift */,
 				5213C9D3D44D195F3EB3A789 /* ShoppingStore.swift */,
 				E11FBEA43674EDACBEA5842B /* SiriPendingAdds.swift */,
 				DEA1A13C2CBD06472D7C3E84 /* SpeechItemSplitter.swift */,
@@ -662,6 +666,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				85750B81A16C320440D48527 /* ListShare.swift in Sources */,
 				1E2E30863C1CC0EF68250ACE /* Models.swift in Sources */,
 				3DD640118A2CA67D5ABC6DFA /* Persistence.swift in Sources */,
+				8C5D36C6FA3EC6A45583A0AB /* ShoppingListImport.swift in Sources */,
 				30E871B023784F7EA0892B37 /* ShoppingStore.swift in Sources */,
 				2F2C5AD28F3C42BC624A4D61 /* SiriPendingAdds.swift in Sources */,
 				D0C64AA6CD4E2318CDBEBDC4 /* SpeechItemSplitter.swift in Sources */,
@@ -705,6 +710,7 @@ B2B650B35625E216913DF7A1 /* Resources */ = {
 				F10732928F46FDC4B9AB9DA4 /* ListShare.swift in Sources */,
 				8015BEAA3E4A968A615E3843 /* Models.swift in Sources */,
 				26246BA3D4001BC572F04EB2 /* Persistence.swift in Sources */,
+				AD0FF39BFDF0FF35C81570C7 /* ShoppingListImport.swift in Sources */,
 				F77609148593B38AF721ACEB /* ShoppingStore.swift in Sources */,
 				273201B6B5082341507CF093 /* SiriPendingAdds.swift in Sources */,
 				13ED64E859D6647AF224B748 /* SpeechItemSplitter.swift in Sources */,
@@ -904,7 +910,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -939,7 +945,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOS/Einkauf.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -974,7 +980,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1006,7 +1012,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Sources/Watch/EinkaufWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1039,7 +1045,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1069,7 +1075,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/WatchWidgets/EinkaufWatchWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/WatchWidgets/Info.plist;
@@ -1100,7 +1106,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;
@@ -1131,7 +1137,7 @@ A3689843C6EC6132C8E37B88 /* PBXTargetDependency */ = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Sources/iOSWidgets/EinkaufWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_TEAM = WV26CSTDDR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/iOSWidgets/Info.plist;

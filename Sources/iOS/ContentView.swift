@@ -7,6 +7,7 @@ struct ContentView: View {
     @Environment(\.einkaufTheme) private var theme
     @State private var draft = ""
     @State private var showImporter = false
+    @State private var showListFileImporter = false
     @State private var showInboxImporter = false
     @State private var inboxDisplayName = InboxBookmarkStore.displayName
     @State private var inboxRetrieve: InboxRetrieveSession?
@@ -55,6 +56,16 @@ struct ContentView: View {
                         allowsMultipleSelection: false
                     ) { result in
                         handleInboxConnect(result)
+                    }
+            }
+            .background {
+                Color.clear
+                    .fileImporter(
+                        isPresented: $showListFileImporter,
+                        allowedContentTypes: Self.listFileContentTypes,
+                        allowsMultipleSelection: false
+                    ) { result in
+                        handleListFileImport(result)
                     }
             }
             .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .json, defaultFilename: "einkauf-backup") { result in
@@ -336,6 +347,9 @@ struct ContentView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
+                Button("Liste hinzufügen", systemImage: "doc.badge.plus") {
+                    showListFileImporter = true
+                }
                 Button("Backup importieren…", systemImage: "square.and.arrow.down") {
                     showImporter = true
                 }
@@ -485,6 +499,49 @@ struct ContentView: View {
         }
         return types
     }()
+
+    /// System-Picker: `.txt` und `.md`. Endung wird danach noch geprüft.
+    private static let listFileContentTypes: [UTType] = {
+        var types: [UTType] = []
+        if let txt = UTType(filenameExtension: "txt") {
+            types.append(txt)
+        } else {
+            types.append(.plainText)
+        }
+        if let md = UTType(filenameExtension: "md") {
+            types.append(md)
+        }
+        return types.isEmpty ? [.plainText] : types
+    }()
+
+    private func handleListFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            if Self.isUserCancellation(error) { return }
+            alertMessage = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            guard ShoppingListImport.allowedPathExtension(url.pathExtension) else {
+                alertMessage = "Nur .txt- und .md-Dateien."
+                return
+            }
+            do {
+                let outcome = try store.appendItems(fromListFileAt: url)
+                alertMessage = ShoppingListImport.confirmation(
+                    added: outcome.added,
+                    skippedDuplicates: outcome.skippedDuplicates
+                )
+            } catch {
+                alertMessage = error.localizedDescription
+            }
+        }
+    }
+
+    private static func isUserCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        let ns = error as NSError
+        return ns.domain == NSCocoaErrorDomain && ns.code == NSUserCancelledError
+    }
 
     private func handleInboxConnect(_ result: Result<[URL], Error>) {
         switch result {

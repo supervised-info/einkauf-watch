@@ -1,6 +1,6 @@
 # Regenerationsspec: native Einkauf (iPhone + Watch)
 
-Stand der nativen App: 2026-09-19 (Build 82, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
+Stand der nativen App: 2026-09-26 (Build 83, `CURRENT_PROJECT_VERSION`). Nur **diese eine** Spec-Datei im Repo-Root (`Description.md`, kein zweites `Description_index.md`). Swift-Quellen sind die Wahrheit: bei Widerspruch den Code prüfen, nichts erfinden, die Website nicht scrapen.
 
 Begleit-App zur HTML-PWA [einkauf](https://supervised-info.github.io/einkauf/) und zur To-Do-PWA [todo](https://supervised-info.github.io/todo/). HTML-Spec Einkauf: Pages `einkauf/Description_index.md`. Brücke Einkauf: Backup-JSON (`kind: "einkauf-backup"`); To-Do: `format: "todo-v3-json"`. Kein Live-localStorage-Sync, kein Netz für Wörterbuch oder Liste.
 
@@ -13,7 +13,7 @@ Zwei Domains in **einer** App **Einkauf**. iPhone-`TabView` **Einkauf | To-Do | 
 
 Sprache nur über **Siri App Intents** für **beide** Domains (kein Watch-Mikro, kein `Speech.framework`): Einkauf **besorgen** + Nachfrage **„o“**; To-Do ein Phrase-Token **Todo**, iPhone **„o“**, Watch ohne `requestValueDialog`. Ein `AppShortcutsProvider` `EinkaufShortcuts`. Siehe **Sprach-Eingabe (Siri)**. Zweit-iPhone (andere Apple-ID, **nur Einkauf**): Artikel per Kurzbefehl in eine geteilte iCloud-Drive-Datei; das Haupt-iPhone holt sie per Tipp — siehe **iCloud-Inbox (Zweitgerät)**.
 
-TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. To-Do (Phasen 1–10), iCloud-Inbox (Phasen 1–3), kompakter iPhone-Nav, optionale Artikel-Felder `imported`/`urgency` (Build 63, Chip-UX Build 64–65, `normal` = ↔ U+2194 Build 66, nur Einkauf), das kombinierte iPhone-Homescreen-Widget Einkauf + To-Do (Build 67), die vereinheitlichte Small-Widget-Typografie (Build 68), die gestapelten Small-Blöcke (Build 69), der Widget-Reload-Debounce / Hang-Fix (Build 70), die Watch-Complication-Titel **Einkauf** / aktueller To-Do-Listenname (Build 71), das Archiv gelöschter erledigter Einträge (Build 72, `einkauf-archiv.json` / `todo-archiv.json`), der Inbox-Abruf mit iCloud-Download vor dem Lesen (Build 73), der iPhone-Tab **Einstellungen** (Build 74), das Einzel-Löschen von Archiv-Einträgen in Einstellungen (Build 75), **Zurückspielen** aus dem Archiv (Build 76), die manuelle Stamm-Reihenfolge in Einstellungen (Build 77), Abhaken nur am Kreis (iPhone-Geh-Modus und To-Do, Build 78), das Bearbeiten gespeicherter Einkaufs-Listen in Einstellungen (Build 79), **eigene Abteilungen** (anlegen / umbenennen / löschen, Build 80), das App-Icon (Build 81) und die **zweizeilige iPhone-Edit-Zeile** (Name volle Breite, darunter Abteilungs-Picker, Build 82) sind **geliefert**. **Optional offen:** Inbox Phase 4 (concurrent Append); HTML-UI für eigene Abteilungen. To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Diese Datei beschreibt den gelieferten Stand (Build 82). Inbox-Arbeit nur unter **iCloud-Inbox (Zweitgerät)** — kein `Docs/InboxIntegration.md`. HTML-Site für die neuen Felder ist ein späteres PR.
+TestFlight ist nicht Voraussetzung. v1 ist nicht für den App-Store-Submit gedacht. To-Do (Phasen 1–10), iCloud-Inbox (Phasen 1–3), kompakter iPhone-Nav, optionale Artikel-Felder `imported`/`urgency` (Build 63, Chip-UX Build 64–65, `normal` = ↔ U+2194 Build 66, nur Einkauf), das kombinierte iPhone-Homescreen-Widget Einkauf + To-Do (Build 67), die vereinheitlichte Small-Widget-Typografie (Build 68), die gestapelten Small-Blöcke (Build 69), der Widget-Reload-Debounce / Hang-Fix (Build 70), die Watch-Complication-Titel **Einkauf** / aktueller To-Do-Listenname (Build 71), das Archiv gelöschter erledigter Einträge (Build 72, `einkauf-archiv.json` / `todo-archiv.json`), der Inbox-Abruf mit iCloud-Download vor dem Lesen (Build 73), der iPhone-Tab **Einstellungen** (Build 74), das Einzel-Löschen von Archiv-Einträgen in Einstellungen (Build 75), **Zurückspielen** aus dem Archiv (Build 76), die manuelle Stamm-Reihenfolge in Einstellungen (Build 77), Abhaken nur am Kreis (iPhone-Geh-Modus und To-Do, Build 78), das Bearbeiten gespeicherter Einkaufs-Listen in Einstellungen (Build 79), **eigene Abteilungen** (anlegen / umbenennen / löschen, Build 80), das App-Icon (Build 81), die **zweizeilige iPhone-Edit-Zeile** (Name volle Breite, darunter Abteilungs-Picker, Build 82) und **Liste hinzufügen** im Einkauf-Overflow (`.txt`/`.md`, Build 83) sind **geliefert**. **Optional offen:** Inbox Phase 4 (concurrent Append); HTML-UI für eigene Abteilungen. To-Do-Architektur: [`Docs/TodoIntegration.md`](Docs/TodoIntegration.md). Diese Datei beschreibt den gelieferten Stand (Build 83). Inbox-Arbeit nur unter **iCloud-Inbox (Zweitgerät)** — kein `Docs/InboxIntegration.md`. HTML-Site für die neuen Felder ist ein späteres PR.
 
 ## To-Do
 
@@ -147,16 +147,17 @@ Je Artikel: Checkbox, dann **zwei Zeilen** — oben Name (Tipp → Rename; leer/
 
 ## Overflow-Menü (Reihenfolge)
 
-1. Backup importieren…
-2. Backup exportieren…
-3. Backup teilen
-4. Liste teilen
-5. Einkaufsliste speichern
-6. Untermenü **Gespeicherte Listen** (leer: disabled „Keine gespeicherten Listen“; sonst Tippen = `applySavedList`, auffüllen nicht ersetzen)
-7. Untermenü **Stamm** — erstes Item immer **Gesamtliste** (`applyAllStaples`); danach ein Eintrag pro Stamm-Artikel (`applyStaple`) in der Nutzer-Reihenfolge aus `staples`
-8. Erledigte löschen
-9. Inbox verbinden…
-10. Inbox abrufen (kein Bookmark → „Zuerst Inbox verbinden…“; iCloud-Download vor dem Lesen; leer → „Nichts abzuholen.“, kein Sheet; sonst Auswahl-Sheet, alle markiert; **Übernehmen** → „N Artikel übernommen.“; Abgewählte bleiben in der Datei; **Löschen** pro Zeile entfernt sie sofort aus `inbox.txt` ohne Import; letztes Item → Sheet zu, Datei leer; nichts gewählt → „Nichts ausgewählt.“; Abbrechen/Dismiss verwirft nur unbestätigte Auswahl, bereits geschriebene Löschungen bleiben). Optional gemuteter Dateiname, wenn verbunden.
+1. **Liste hinzufügen** — `fileImporter` nur `.txt` und `.md` (andere Endung → „Nur .txt- und .md-Dateien.“). Eine Zeile = ein Artikel; Mehrwortnamen bleiben, z. B. „Milch 1,5 %“; **kein** `SpeechItemSplitter`. Leer- und Whitespace-Zeilen weg. Anhängen an die aktuelle Liste, nicht ersetzen. Duplikat = derselbe Name nach Trim und Whitespace-Normalisierung wie `addItem`, Vergleich ohne Groß/Kleinschreibung (auch doppelt in der Datei; erledigte zählen, kein Wiederöffnen). Abteilung wie getipptes Hinzufügen (`DepartmentGuesser.guess` inkl. `mappings` / eigener Abteilungen). `imported = true`. Danach Alert „Hinweis“: „N Artikel hinzugefügt.“ und bei Duplikaten „M bereits vorhanden.“; nichts Neues → „Nichts hinzugefügt.“
+2. Backup importieren…
+3. Backup exportieren…
+4. Backup teilen
+5. Liste teilen
+6. Einkaufsliste speichern
+7. Untermenü **Gespeicherte Listen** (leer: disabled „Keine gespeicherten Listen“; sonst Tippen = `applySavedList`, auffüllen nicht ersetzen)
+8. Untermenü **Stamm** — erstes Item immer **Gesamtliste** (`applyAllStaples`); danach ein Eintrag pro Stamm-Artikel (`applyStaple`) in der Nutzer-Reihenfolge aus `staples`
+9. Erledigte löschen
+10. Inbox verbinden…
+11. Inbox abrufen (kein Bookmark → „Zuerst Inbox verbinden…“; iCloud-Download vor dem Lesen; leer → „Nichts abzuholen.“, kein Sheet; sonst Auswahl-Sheet, alle markiert; **Übernehmen** → „N Artikel übernommen.“; Abgewählte bleiben in der Datei; **Löschen** pro Zeile entfernt sie sofort aus `inbox.txt` ohne Import; letztes Item → Sheet zu, Datei leer; nichts gewählt → „Nichts ausgewählt.“; Abbrechen/Dismiss verwirft nur unbestätigte Auswahl, bereits geschriebene Löschungen bleiben). Optional gemuteter Dateiname, wenn verbunden.
 
 Kein Sheet-Einstieg **Einstellungen** im Overflow — der dritte iPhone-Tab `gearshape` öffnet `SettingsSheet`. Listennahe Aktionen (Backup, Liste teilen, Speichern, Stamm, Inbox) bleiben im **…**.
 
@@ -475,7 +476,7 @@ Default `currentStoreId`: `edeka`. `BackupCodec.mergeBuiltinSeeds`: Seeds fehlen
 
 Zwei unabhängige optionale Felder **nur Einkauf** (`Item`, nicht To-Do):
 
-- **`imported`** (`Bool`): fehlender Key = `false`. **Setzen** (`true`) nur beim Inbox-Abruf (`addItems(fromSpeech:imported: true)` / `addImportedItems`) und auf demselben expliziten Fremd-Datei-Anhänge-Pfad. **Nie** Siri **besorgen**, getipptes Hinzufügen, Stamm/`applyStaple` / `applyAllStaples`, gespeicherte Listen/`applySavedList`. Backup-**Restore** (`importBackup`) stempelt nicht nach — Werte bleiben wie im JSON. PDF der eigenen Liste (kein Import in v1) darf `imported` **nicht** setzen, außer die Quelle ist klar fremd (Inbox). In der UI nur Anzeige (teal Streifen `theme.slate` / `ItemImportedMark`, **kein** Grün/`theme.good`, kein Toggle) — **ganz rechts** nach dem Urgency-Chip (äußerster Trailing-Slot); links nur Checkbox + Name.
+- **`imported`** (`Bool`): fehlender Key = `false`. **Setzen** (`true`) nur beim Inbox-Abruf (`addItems(fromSpeech:imported: true)` / `addImportedItems`) und beim Overflow **Liste hinzufügen** (`appendItems(fromListFile:)`, `.txt`/`.md`) — expliziter Fremd-Datei-Anhang. **Nie** Siri **besorgen**, getipptes Hinzufügen, Stamm/`applyStaple` / `applyAllStaples`, gespeicherte Listen/`applySavedList`. Backup-**Restore** (`importBackup`) stempelt nicht nach — Werte bleiben wie im JSON. PDF der eigenen Liste (kein Import in v1) darf `imported` **nicht** setzen, außer die Quelle ist klar fremd (Inbox). In der UI nur Anzeige (teal Streifen `theme.slate` / `ItemImportedMark`, **kein** Grün/`theme.good`, kein Toggle) — **ganz rechts** nach dem Urgency-Chip (äußerster Trailing-Slot); links nur Checkbox + Name.
 - **`urgency`**: `"urgent"` | `"normal"` | `"later"`; fehlender oder unbekannter Key = `"normal"`. Nutzer wechselt per Chip **nur iPhone** (Geh+Edit): `urgent` → `normal` → `later` → `urgent`. Watch zeigt **denselben Chip in allen drei Zuständen** (⚡ / ↔ / ↓; `normal` **nicht** ausblenden), nur Anzeige (kein Tap, kein `cycleItemUrgency`). Icons: eilig ⚡, normal **↔** (U+2194; nicht leerer Rahmen, nicht `<->`, nicht ○ und nicht –; **dieselbe kompakte Kapsel** wie ⚡/↓ auf iPhone und Watch; auf dem iPhone tippbar), später ↓ (U+2193). Encode schreibt das Feld immer.
 
 Alte Backups ohne die Keys laden weiter. Decode-Defaults wie oben; Encode schreibt beide Felder; unbekannte Keys ignorieren wie bisher. Roundtrip-Backup behält beide Werte.
