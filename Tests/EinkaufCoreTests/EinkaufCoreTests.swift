@@ -2354,6 +2354,191 @@ final class InboxParserTests: XCTestCase {
     }
 }
 
+@MainActor
+final class ShoppingListImportTests: XCTestCase {
+    func testLinesSkipBlankKeepCommaAndMultiWord() {
+        let text = "\n  Milch 1,5 %  \n\n\t\nButter und Eier\n  \nÄpfel\n"
+        XCTAssertEqual(
+            ShoppingListImport.lines(from: text),
+            ["Milch 1,5 %", "Butter und Eier", "Äpfel"]
+        )
+        XCTAssertEqual(
+            ShoppingListImport.lines(from: "  Milch  1,5 %  \n"),
+            ["Milch  1,5 %"]
+        )
+    }
+
+    func testKeepsHashAndMarkdownMarkers() {
+        XCTAssertEqual(
+            ShoppingListImport.lines(from: "# Milch\n- Butter\n"),
+            ["# Milch", "- Butter"]
+        )
+    }
+
+    func testBOMAndCRLF() {
+        XCTAssertEqual(
+            ShoppingListImport.lines(from: "\u{FEFF}Milch\r\n\r\nÄpfel\r\n"),
+            ["Milch", "Äpfel"]
+        )
+        let data = Data([0xEF, 0xBB, 0xBF]) + Data("Käse\n\nBrot\n".utf8)
+        XCTAssertEqual(ShoppingListImport.lines(from: data), ["Käse", "Brot"])
+        XCTAssertEqual(ShoppingListImport.lines(from: Data()), [])
+        XCTAssertEqual(ShoppingListImport.lines(from: "   \n\n  \t  "), [])
+    }
+
+    func testAllowedExtensions() {
+        XCTAssertTrue(ShoppingListImport.allowedPathExtension("txt"))
+        XCTAssertTrue(ShoppingListImport.allowedPathExtension("TXT"))
+        XCTAssertTrue(ShoppingListImport.allowedPathExtension("md"))
+        XCTAssertTrue(ShoppingListImport.allowedPathExtension("MD"))
+        XCTAssertFalse(ShoppingListImport.allowedPathExtension("markdown"))
+        XCTAssertFalse(ShoppingListImport.allowedPathExtension("json"))
+        XCTAssertFalse(ShoppingListImport.allowedPathExtension(""))
+    }
+
+    func testConfirmationCopy() {
+        XCTAssertEqual(ShoppingListImport.confirmation(added: 0, skippedDuplicates: 0), "Nichts hinzugefügt.")
+        XCTAssertEqual(ShoppingListImport.confirmation(added: 1, skippedDuplicates: 0), "1 Artikel hinzugefügt.")
+        XCTAssertEqual(ShoppingListImport.confirmation(added: 3, skippedDuplicates: 0), "3 Artikel hinzugefügt.")
+        XCTAssertEqual(
+            ShoppingListImport.confirmation(added: 1, skippedDuplicates: 1),
+            "1 Artikel hinzugefügt. 1 bereits vorhanden."
+        )
+        XCTAssertEqual(
+            ShoppingListImport.confirmation(added: 3, skippedDuplicates: 2),
+            "3 Artikel hinzugefügt. 2 bereits vorhanden."
+        )
+        XCTAssertEqual(
+            ShoppingListImport.confirmation(added: 0, skippedDuplicates: 2),
+            "Nichts hinzugefügt. 2 bereits vorhanden."
+        )
+    }
+
+    func testSelectSkipsCaseWhitespaceAndWithinFileDuplicates() {
+        let selected = ShoppingListImport.select(
+            lines: ["  milch  ", "", "   ", "Milch  1,5 %", "milch 1,5 %", "Butter und Eier"],
+            existingNames: ["Milch"]
+        )
+        XCTAssertEqual(selected.names, ["Milch 1,5 %", "Butter und Eier"])
+        XCTAssertEqual(selected.skippedDuplicates, 2)
+        let done = ShoppingListImport.select(lines: ["MILCH"], existingNames: ["Milch"])
+        XCTAssertEqual(done.names, [])
+        XCTAssertEqual(done.skippedDuplicates, 1)
+        let blanks = ShoppingListImport.select(lines: ["  ", "", "\t"], existingNames: [])
+        XCTAssertEqual(blanks.names, [])
+        XCTAssertEqual(blanks.skippedDuplicates, 0)
+    }
+
+    func testAppendSkipsDuplicatesAndDoesNotReplace() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.addItem("Milch")
+        let existingID = store.state.items[0].id
+        let outcome = store.appendListLines([
+            "  milch  ",
+            "",
+            "   ",
+            "  Milch 1,5 %  ",
+            "Milch",
+            "Butter und Eier",
+            "butter und eier"
+        ])
+        XCTAssertEqual(outcome.added, 2)
+        XCTAssertEqual(outcome.skippedDuplicates, 2)
+        XCTAssertEqual(store.state.items[0].id, existingID)
+        XCTAssertEqual(store.state.items[0].name, "Milch")
+        XCTAssertFalse(store.state.items[0].imported)
+        XCTAssertEqual(
+            store.state.items.map(\.name),
+            ["Milch", "Milch 1,5 %", "Butter und Eier"]
+        )
+        XCTAssertEqual(store.state.items.dropFirst().map(\.imported), [true, true])
+        XCTAssertEqual(store.state.items.map(\.urgency), [.normal, .normal, .normal])
+        XCTAssertEqual(store.state.listRevision, 2)
+    }
+
+    func testDoesNotSplitOnCommaOrUnd() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        let outcome = store.appendItems(fromListFile: Data("Milch 1,5 %\nButter und Eier\n".utf8))
+        XCTAssertEqual(outcome.added, 2)
+        XCTAssertEqual(outcome.skippedDuplicates, 0)
+        XCTAssertEqual(store.state.items.map(\.name), ["Milch 1,5 %", "Butter und Eier"])
+        XCTAssertEqual(store.state.listRevision, 1)
+    }
+
+    func testDepartmentMatchesTypedAddIncludingMapping() {
+        let plainFile = ShoppingStore(state: .seed, enableSync: false)
+        let plainTyped = ShoppingStore(state: .seed, enableSync: false)
+        _ = plainFile.appendListLines(["Milch"])
+        plainTyped.addItem("Milch")
+        XCTAssertEqual(plainFile.state.items[0].dept, plainTyped.state.items[0].dept)
+        XCTAssertEqual(plainFile.state.items[0].dept, "kuehlung")
+
+        var state = AppState.seed
+        let name = "Milch 1,5 %"
+        state.mappings[DepartmentGuesser.mappingKey(name)] = "drogerie"
+        let file = ShoppingStore(state: state, enableSync: false)
+        let typed = ShoppingStore(state: state, enableSync: false)
+        _ = file.appendListLines(["  \(name)  ", "  \t  "])
+        typed.addItem("  \(name)  ")
+        XCTAssertEqual(file.state.items.map(\.name), typed.state.items.map(\.name))
+        XCTAssertEqual(file.state.items.map(\.name), ["Milch 1,5 %"])
+        XCTAssertEqual(file.state.items.map(\.dept), typed.state.items.map(\.dept))
+        XCTAssertEqual(file.state.items[0].dept, "drogerie")
+        XCTAssertTrue(file.state.items[0].imported)
+        XCTAssertFalse(typed.state.items[0].imported)
+    }
+
+    func testCollapsedWhitespaceIsDuplicate() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.addItem("Milch  1,5 %")
+        XCTAssertEqual(store.state.items[0].name, "Milch 1,5 %")
+        let outcome = store.appendListLines(["milch 1,5 %"])
+        XCTAssertEqual(outcome.added, 0)
+        XCTAssertEqual(outcome.skippedDuplicates, 1)
+        XCTAssertEqual(store.state.items.count, 1)
+        XCTAssertEqual(store.state.listRevision, 1)
+    }
+
+    func testDoneItemIsDuplicateAndStaysDone() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "i1", name: "Milch", dept: "kuehlung", done: true, added: 1, ord: 1)
+        ]
+        let store = ShoppingStore(state: state, enableSync: false)
+        let outcome = store.appendListLines(["MILCH"])
+        XCTAssertEqual(outcome.added, 0)
+        XCTAssertEqual(outcome.skippedDuplicates, 1)
+        XCTAssertEqual(store.state.items.count, 1)
+        XCTAssertTrue(store.state.items[0].done)
+        XCTAssertEqual(store.state.listRevision, 0)
+    }
+
+    func testEmptyFileDoesNotBumpRevision() {
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        let outcome = store.appendListLines(["  ", "", "\t"])
+        XCTAssertEqual(outcome.added, 0)
+        XCTAssertEqual(outcome.skippedDuplicates, 0)
+        XCTAssertTrue(store.state.items.isEmpty)
+        XCTAssertEqual(store.state.listRevision, 0)
+    }
+
+    func testFileURLAppendsAndSkipsExisting() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("einkauf-liste-\(UUID().uuidString).md")
+        try Data("Milch\n\nmilch\nBrot\n".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let store = ShoppingStore(state: .seed, enableSync: false)
+        store.addItem("Brot")
+        let outcome = try store.appendItems(fromListFileAt: url)
+        XCTAssertEqual(outcome.added, 1)
+        XCTAssertEqual(outcome.skippedDuplicates, 1)
+        XCTAssertEqual(store.state.items.map(\.name), ["Brot", "Milch"])
+        XCTAssertFalse(store.state.items[0].imported)
+        XCTAssertTrue(store.state.items[1].imported)
+        XCTAssertEqual(store.state.items[1].dept, "kuehlung")
+    }
+}
+
 final class InboxCloudDownloadTests: XCTestCase {
     func testEnsureLocalSkipsNonUbiquitousWithoutPolling() async throws {
         let url = FileManager.default.temporaryDirectory

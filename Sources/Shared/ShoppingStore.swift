@@ -133,6 +133,32 @@ final class ShoppingStore: ObservableObject {
         addItems(fromSpeech: text, imported: true)
     }
 
+    /// `.txt`/`.md` aus **Liste hinzufügen**: anhängen, nicht ersetzen.
+    /// Name und Abteilung wie `addItem` (`normalizedItemName` + `DepartmentGuesser.guess`).
+    /// Getipptes Hinzufügen prüft keine Duplikate; hier gilt derselbe normalisierte Name
+    /// ohne Groß-/Kleinschreibung. `imported`, weil explizite Fremd-Datei.
+    @discardableResult
+    func appendItems(fromListFile data: Data) -> ShoppingListImport.Outcome {
+        appendListLines(ShoppingListImport.lines(from: data))
+    }
+
+    @discardableResult
+    func appendItems(fromListFileAt url: URL) throws -> ShoppingListImport.Outcome {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        let data = try Data(contentsOf: url)
+        return appendItems(fromListFile: data)
+    }
+
+    @discardableResult
+    func appendListLines(_ rawLines: [String]) -> ShoppingListImport.Outcome {
+        let selected = ShoppingListImport.select(lines: rawLines, existingNames: state.items.map(\.name))
+        if !selected.names.isEmpty {
+            appendNewItems(selected.names, imported: true)
+        }
+        return ShoppingListImport.Outcome(added: selected.names.count, skippedDuplicates: selected.skippedDuplicates)
+    }
+
     func cycleItemUrgency(_ id: String) {
         guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
         state.items[idx].urgency = state.items[idx].urgency.next
@@ -141,9 +167,7 @@ final class ShoppingStore: ObservableObject {
     }
 
     private static func normalizedItemName(_ rawName: String) -> String? {
-        let name = rawName.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return name.isEmpty ? nil : name
+        ShoppingListImport.normalizedName(rawName)
     }
 
     private func appendNewItems(_ rawNames: [String], imported: Bool) {

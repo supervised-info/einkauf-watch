@@ -548,8 +548,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 82" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 82 / CURRENT_PROJECT_VERSION")
+    if "Build 83" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 83 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -628,7 +628,7 @@ def test_sources() -> None:
         fail("Description.md must document Meine Zuordnungen")
     if "Backup als `mappings`" not in desc and "Backup-Feld `mappings`" not in desc:
         fail("Description.md must say eigene Zuordnungen use backup field mappings")
-    if "5. Einkaufsliste speichern" not in desc:
+    if "6. Einkaufsliste speichern" not in desc:
         fail("Description.md overflow menu must list Einkaufsliste speichern")
     if "Alert „Einkaufsliste speichern“" not in desc:
         fail("Description.md must document Einkaufsliste speichern alert title")
@@ -1109,8 +1109,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 82" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 82")
+    if "CURRENT_PROJECT_VERSION = 83" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 83")
+    if "CURRENT_PROJECT_VERSION = 82" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 82 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 81" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 81 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 80" in pbx:
@@ -1258,8 +1260,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 82" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 82")
+    if "CURRENT_PROJECT_VERSION: 83" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 83")
+    if "CURRENT_PROJECT_VERSION: 82" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 82 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 81" in yml:
         fail("stale CURRENT_PROJECT_VERSION 81 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 80" in yml:
@@ -1625,8 +1629,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 82") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 82")
+    if pbx.count("CURRENT_PROJECT_VERSION = 83") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 83")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3303,7 +3307,7 @@ def test_icloud_inbox() -> None:
         fail("Description.md iCloud-Inbox must keep German Inbox labels")
     if "v1" not in inbox_sec.lower() and "leer" not in inbox_sec:
         fail("Description.md must document v1 rewrite-empty after retrieve")
-    if "9. Inbox verbinden…" not in desc or "10. Inbox abrufen" not in desc:
+    if "10. Inbox verbinden…" not in desc or "11. Inbox abrufen" not in desc:
         fail("Description.md overflow menu must list Inbox verbinden… and Inbox abrufen")
     if "class InboxParserTests" not in tests:
         fail("unit tests must cover InboxParser")
@@ -3964,6 +3968,78 @@ def test_heading_slicer() -> None:
     print("heading slicer: ok")
 
 
+def test_list_file_import() -> None:
+    content = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    parser = (ROOT / "Sources/Shared/ShoppingListImport.swift").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    todo = (ROOT / "Sources/iOS/TodoListView.swift").read_text()
+    settings = (ROOT / "Sources/iOS/SettingsSheet.swift").read_text()
+
+    if 'Button("Liste hinzufügen", systemImage: "doc.badge.plus")' not in content:
+        fail("Einkauf overflow must offer Liste hinzufügen with doc.badge.plus")
+    ellipsis = content.find('Image(systemName: "ellipsis.circle")')
+    menu_start = content.rfind("Menu {", 0, ellipsis)
+    chunk = content[menu_start:ellipsis]
+    first_button = chunk.find("Button(")
+    if first_button < 0 or "Liste hinzufügen" not in chunk[first_button:first_button + 40]:
+        fail("Liste hinzufügen must be the first Einkauf overflow entry")
+    backup = chunk.find('Button("Backup importieren…"')
+    added = chunk.find('Button("Liste hinzufügen"')
+    if added < 0 or backup < 0 or added > backup:
+        fail("Liste hinzufügen must sit above Backup importieren")
+    if "showListFileImporter" not in content:
+        fail("Liste hinzufügen must use its own fileImporter")
+    if "appendItems(fromListFileAt:" not in content:
+        fail("Liste hinzufügen must append via ShoppingStore, not replace the list")
+    if "importBackup" not in content:
+        fail("Backup importieren must stay")
+    if "Nur .txt- und .md-Dateien." not in content:
+        fail("Liste hinzufügen must reject extensions other than txt and md")
+    if "ShoppingListImport.confirmation" not in content:
+        fail("Liste hinzufügen must show the German confirmation alert")
+    if "allowedContentTypes: [.json]" not in content:
+        fail("Backup import fileImporter must stay JSON")
+
+    if "enum ShoppingListImport" not in parser:
+        fail("ShoppingListImport missing")
+    if "SpeechItemSplitter.items" in parser or "SpeechItemSplitter.stripping" in parser:
+        fail("list file import must not split lines with SpeechItemSplitter")
+    if "Nichts hinzugefügt." not in parser or "bereits vorhanden." not in parser:
+        fail("ShoppingListImport confirmation copy missing")
+    if 'case "txt", "md"' not in parser:
+        fail("ShoppingListImport must allow only txt and md")
+
+    if "func appendItems(fromListFile" not in store or "func appendListLines" not in store:
+        fail("ShoppingStore must append list-file lines")
+    if "appendNewItems(selected.names, imported: true)" not in store:
+        fail("list file import must mark imported and reuse appendNewItems")
+    if "ShoppingListImport.select" not in store:
+        fail("list file import must select new names before appendNewItems")
+    if "DepartmentGuesser.guess" not in store:
+        fail("append path must still guess departments")
+    if "func importBackup" not in store:
+        fail("importBackup must stay")
+
+    if "class ShoppingListImportTests" not in tests:
+        fail("tests must cover ShoppingListImport")
+    if "testDoesNotSplitOnCommaOrUnd" not in tests or "testDepartmentMatchesTypedAddIncludingMapping" not in tests:
+        fail("tests must cover comma lines and the typed-add department path")
+    if "testDoneItemIsDuplicateAndStaysDone" not in tests or "testAppendSkipsDuplicatesAndDoesNotReplace" not in tests:
+        fail("tests must cover duplicate skip without replacing the list")
+
+    if "1. **Liste hinzufügen**" not in desc:
+        fail("Description.md overflow must list Liste hinzufügen first")
+    if "6. Einkaufsliste speichern" not in desc or "11. Inbox abrufen" not in desc:
+        fail("Description.md overflow numbering must keep later entries")
+
+    if "Liste hinzufügen" in watch or "Liste hinzufügen" in todo or "Liste hinzufügen" in settings:
+        fail("Liste hinzufügen belongs only on the iPhone Einkauf overflow")
+    print("list file import: ok")
+
+
 def main() -> None:
     test_fixtures()
     test_store_switch_changes_group_order()
@@ -3982,6 +4058,7 @@ def main() -> None:
     test_staple_order()
     test_saved_list_edit()
     test_custom_departments()
+    test_list_file_import()
     test_heading_slicer()
     print("ALL OK")
 
