@@ -9,14 +9,14 @@ struct EinkaufWidgets: WidgetBundle {
 }
 
 /// Homescreen-Widget (iOS 17, nicht Watch, nicht Sperrbildschirm).
-/// Klein: zwei gestapelte Blöcke (Einkauf `kurz/lang`, To-Do `oo/xx/yy`). Mittel/Groß: Mini-Tabelle.
+/// Klein: zwei gestapelte Blöcke (Einkauf `kurz (lang)`, To-Do `oo/xx/yy`). Mittel/Groß: Mini-Tabelle.
 struct EinkaufHomeWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: HomeWidgetSnapshot.widgetKind, provider: EinkaufHomeTimelineProvider()) { entry in
             EinkaufHomeWidgetView(entry: entry)
         }
         .configurationDisplayName("Einkauf")
-        .description("Einkauf: kurzfristig/langfristig. To-Do: offen, erledigt, gesamt.")
+        .description("Einkauf: kurzfristig (langfristig). To-Do: offen, erledigt, gesamt.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -77,7 +77,7 @@ struct EinkaufHomeWidgetView: View {
     }
 
     /// Klein: `Einkaufsliste` (sonst `Einkauf`) und `To Do (<Liste>)` als gestapelte Blöcke.
-    /// Pro Domain Label in eigener Zeile, darunter der Zähler. Einkauf: `kurz/lang`. To-Do: `oo/xx/yy`.
+    /// Pro Domain Label in eigener Zeile, darunter der Zähler. Einkauf: `kurz (lang)`. To-Do: `oo/xx/yy`.
     private var small: some View {
         VStack(alignment: .leading, spacing: 12) {
             stackedBlock {
@@ -99,7 +99,7 @@ struct EinkaufHomeWidgetView: View {
     /// Eine Label-Schrift für beide Small-Blöcke.
     private var smallLabelFont: Font { .caption }
 
-    /// Eine Zähler-Schrift für beide Small-Blöcke (Einkauf `kurz/lang`, To-Do `oo/xx/yy`).
+    /// Eine Zähler-Schrift für beide Small-Blöcke (Einkauf `kurz (lang)`, To-Do `oo/xx/yy`).
     private var smallCountsFont: Font { .system(.headline, design: .rounded).weight(.semibold) }
 
     /// Mittel/Groß: dieselben zwei Domains, Spalten Offen | Erledigt | Gesamt.
