@@ -527,7 +527,8 @@ struct ContentView: View {
                 groups: groups,
                 storeName: store.state.currentStore.name,
                 progressLabel: ListGrouping.progressLabel(groups: groups),
-                colors: ThemeRGB.tokens(palette: appearance.palette, dark: false)
+                colors: ThemeRGB.tokens(palette: appearance.palette, dark: false),
+                langfr: langfrFilter
             )
             let url = try ListShare.writeTempFile(data: data, storeName: store.state.currentStore.name)
             guard FileManager.default.fileExists(atPath: url.path) else {

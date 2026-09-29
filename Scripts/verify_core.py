@@ -550,8 +550,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 87" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 87 / CURRENT_PROJECT_VERSION")
+    if "Build 88" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 88 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -575,6 +575,10 @@ def test_sources() -> None:
         fail("Description.md Liste teilen must document the eye filter via visibleGroups")
     if "einkauf.iphone.langfrFilter" not in list_share_sec or "LangfrFilter" not in list_share_sec:
         fail("Description.md Liste teilen must document the current LangfrFilter")
+    if "Einkaufsliste (langfristig)" not in list_share_sec or "Einkaufsliste (kurzfristig)" not in list_share_sec:
+        fail("Description.md Liste teilen must document the LangfrFilter PDF title")
+    if "ohne Klammern" not in list_share_sec:
+        fail("Description.md Liste teilen must keep Alle title without parentheses")
     if "n/0/n" not in list_share_sec:
         fail("Description.md Liste teilen must document n/0/n when only open items print")
     if "Erledigte ausgeblendet" not in desc:
@@ -667,6 +671,9 @@ def test_sources() -> None:
         fail("Liste teilen must follow the iPhone eye hideCompleted flag")
     if "langfr: langfrFilter" not in share_fn:
         fail("Liste teilen must follow the current iPhone LangfrFilter")
+    render_at = share_fn.find("ListPDF.render")
+    if render_at < 0 or "langfr: langfrFilter" not in share_fn[render_at:]:
+        fail("ListPDF.render must receive the current LangfrFilter for the PDF title")
     if "list.bullet.rectangle" not in content:
         fail("Liste teilen should use a distinct SF Symbol")
     if "Text(\"Hell\")" in content or "Text(\"Creme\")" in content:
@@ -1115,10 +1122,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 87" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 87")
-    if "CURRENT_PROJECT_VERSION = 86" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 86 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 88" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 88")
+    if "CURRENT_PROJECT_VERSION = 87" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 87 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 83" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 83 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 82" in pbx:
@@ -1270,10 +1277,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 87" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 87")
-    if "CURRENT_PROJECT_VERSION: 86" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 86 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 88" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 88")
+    if "CURRENT_PROJECT_VERSION: 87" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 87 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 83" in yml:
         fail("stale CURRENT_PROJECT_VERSION 83 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 82" in yml:
@@ -1462,9 +1469,25 @@ def test_sources() -> None:
     list_share = (ROOT / "Sources/Shared/ListShare.swift").read_text()
     if "yyyyMMdd_HHmm" not in list_share or "-einkauf-" not in list_share or ".pdf" not in list_share:
         fail("ListShare missing stamped PDF filename")
+    if 'return "Einkaufsliste \\(storeName)"' not in list_share:
+        fail("Alle PDF document title must stay Einkaufsliste {store} without parentheses")
+    if 'return "Einkaufsliste  \\(storeName)"' not in list_share:
+        fail("Alle PDF page title must keep the two spaces before the store name")
+    if '"Einkaufsliste (langfristig) \\(storeName)"' not in list_share:
+        fail("langfristig PDF title must be Einkaufsliste (langfristig) {store}")
+    if '"Einkaufsliste (kurzfristig) \\(storeName)"' not in list_share:
+        fail("kurzfristig PDF title must be Einkaufsliste (kurzfristig) {store}")
+    if "langfristig/kurzfristig" in list_share:
+        fail("PDF title must not literally contain langfristig/kurzfristig")
     pdf = (ROOT / "Sources/iOS/ListPDF.swift").read_text()
     if "UIGraphicsPDFRenderer" not in pdf:
         fail("ListPDF must use UIGraphicsPDFRenderer")
+    if "langfr: LangfrFilter" not in pdf:
+        fail("ListPDF.render must take LangfrFilter")
+    if "ListShare.pdfDocumentTitle" not in pdf or "ListShare.pdfPageTitle" not in pdf:
+        fail("ListPDF titles must follow LangfrFilter")
+    if "Einkaufsliste \\(storeName)" in pdf:
+        fail("ListPDF must not hardcode the unfiltered title")
     if "Noch nichts auf der Liste." not in pdf:
         fail("ListPDF missing empty-list copy")
     if "checkmark.circle.fill" in pdf:
@@ -1660,8 +1683,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 87") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 87")
+    if pbx.count("CURRENT_PROJECT_VERSION = 88") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 88")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
