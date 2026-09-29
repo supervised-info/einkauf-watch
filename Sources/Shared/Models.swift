@@ -19,9 +19,35 @@ struct Store: Identifiable, Equatable, Codable, Sendable {
 struct Staple: Equatable, Codable, Sendable {
     var name: String
     var dept: String
+    /// Fehlender Key = false. Gespeicherte Listen übernehmen den Wert; Stamm bleibt default false.
+    var langfr: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case name, dept, langfr
+    }
+
+    init(name: String, dept: String, langfr: Bool = false) {
+        self.name = name
+        self.dept = dept
+        self.langfr = langfr
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decode(String.self, forKey: .name)
+        dept = try c.decodeIfPresent(String.self, forKey: .dept) ?? ""
+        langfr = try c.decodeIfPresent(Bool.self, forKey: .langfr) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(name, forKey: .name)
+        try c.encode(dept, forKey: .dept)
+        try c.encode(langfr, forKey: .langfr)
+    }
 }
 
-/// Benannte Anlass-Liste (Grillen, Drogerie). Snapshot nur `name` + `dept`, ohne Häkchen.
+/// Benannte Anlass-Liste (Grillen, Drogerie). Snapshot `name` + `dept` + `langfr`, ohne Häkchen.
 struct SavedList: Identifiable, Equatable, Codable, Sendable {
     static let nameMax = 60
 
@@ -45,13 +71,65 @@ struct SavedList: Identifiable, Equatable, Codable, Sendable {
         return name
     }
 
-    /// Aktuelle Artikel inkl. erledigter — nur Name und Abteilung, damit Apply wieder öffnet.
+    /// Aktuelle Artikel inkl. erledigter — Name, Abteilung und `langfr`, damit Apply wieder öffnet.
     static func snapshot(from items: [Item], customs: [CustomDepartment] = []) -> [Staple] {
         items.compactMap { item in
             let name = item.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty else { return nil }
-            return Staple(name: name, dept: DepartmentCatalog.resolved(item.dept, customs: customs))
+            return Staple(
+                name: name,
+                dept: DepartmentCatalog.resolved(item.dept, customs: customs),
+                langfr: item.langfr
+            )
+        }
+    }
+}
+
+/// Drei-Zustands-Filter für `Item.langfr`. Nur lokale Anzeige (AppStorage), nicht im Backup.
+enum LangfrFilter: String, Equatable, CaseIterable, Sendable {
+    case alle
+    case langfristig
+    case kurzfristig
+
+    var next: LangfrFilter {
+        switch self {
+        case .alle: return .langfristig
+        case .langfristig: return .kurzfristig
+        case .kurzfristig: return .alle
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .alle: return "hourglass"
+        case .langfristig: return "hourglass.tophalf.filled"
+        case .kurzfristig: return "hourglass.bottomhalf.filled"
+        }
+    }
+
+    /// VoiceOver benennt den aktuellen Modus.
+    var accessibilityLabel: String {
+        switch self {
+        case .alle: return "Alle"
+        case .langfristig: return "langfristig"
+        case .kurzfristig: return "kurzfristig"
+        }
+    }
+
+    var emptyTitle: String {
+        switch self {
+        case .alle: return "Keine Artikel."
+        case .langfristig: return "Keine langfristigen Artikel."
+        case .kurzfristig: return "Keine kurzfristigen Artikel."
+        }
+    }
+
+    func matches(_ item: Item) -> Bool {
+        switch self {
+        case .alle: return true
+        case .langfristig: return item.langfr
+        case .kurzfristig: return !item.langfr
         }
     }
 }
@@ -110,9 +188,11 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
     var imported: Bool
     /// Fehlender / unbekannter Key = `normal`.
     var urgency: ItemUrgency
+    /// Langfristig. Fehlender Key = false. Orthogonal zu `urgency`.
+    var langfr: Bool
 
     enum CodingKeys: String, CodingKey {
-        case id, name, dept, done, added, ord, doneChangedAt, imported, urgency
+        case id, name, dept, done, added, ord, doneChangedAt, imported, urgency, langfr
     }
 
     init(
@@ -124,7 +204,8 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         ord: Double,
         doneChangedAt: Double? = nil,
         imported: Bool = false,
-        urgency: ItemUrgency = .normal
+        urgency: ItemUrgency = .normal,
+        langfr: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -135,6 +216,7 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         self.doneChangedAt = doneChangedAt
         self.imported = imported
         self.urgency = urgency
+        self.langfr = langfr
     }
 
     init(from decoder: Decoder) throws {
@@ -150,6 +232,7 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         doneChangedAt = try Self.decodeNumber(c, key: .doneChangedAt)
         imported = try c.decodeIfPresent(Bool.self, forKey: .imported) ?? false
         urgency = ItemUrgency.parse(try c.decodeIfPresent(String.self, forKey: .urgency))
+        langfr = try c.decodeIfPresent(Bool.self, forKey: .langfr) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -162,6 +245,7 @@ struct Item: Identifiable, Equatable, Codable, Sendable {
         try c.encode(ord, forKey: .ord)
         try c.encode(imported, forKey: .imported)
         try c.encode(urgency.rawValue, forKey: .urgency)
+        try c.encode(langfr, forKey: .langfr)
         if encoder.userInfo[BackupCodec.includeInternalKeys] as? Bool == true, let doneChangedAt {
             try c.encode(doneChangedAt, forKey: .doneChangedAt)
         }
@@ -260,6 +344,12 @@ struct AppState: Equatable, Codable, Sendable {
     var doneCount: Int { items.filter(\.done).count }
     /// Kompakter Fortschritt: offen/erledigt/gesamt, inkl. vor/nach. Leer: `0/0/0`.
     var progressLabel: String { "\(openCount)/\(doneCount)/\(items.count)" }
+    /// Offene kurzfristige Artikel (`langfr == false`). Erledigte zählen nicht.
+    var openKurzfristigCount: Int { items.filter { !$0.done && !$0.langfr }.count }
+    /// Offene langfristige Artikel (`langfr == true`). Erledigte zählen nicht.
+    var openLangfristigCount: Int { items.filter { !$0.done && $0.langfr }.count }
+    /// Complication und iPhone-Small-Einkauf: `<kurzfristig> (<langfristig>)`. Leer: `0 (0)`.
+    var langfrCountLabel: String { "\(openKurzfristigCount) (\(openLangfristigCount))" }
     /// Eine Zeile für die Watch-Nav: Laden links, dann Einkauf oo/xx/yy. Lange Namen
     /// kürzen, damit der Zähler auf 41mm nicht vom Systemtitel abgeschnitten wird.
     var watchTitle: String {
@@ -284,7 +374,7 @@ struct AppState: Equatable, Codable, Sendable {
 }
 
 /// Anzeige für die Watch-Complication. `progressLabel` bleibt `oo/xx/yy` (wie `watchTitle`);
-/// der sichtbare Zähler ist `compactCountText` (nur offene Anzahl, bei 0 „erledigt“).
+/// der sichtbare Zähler ist `compactCountText` (`kurz (lang)`, nur offene Artikel, kein Schrägstrich).
 /// Titel fest **Einkauf** (nicht Ladenname, nicht „Einkaufsliste“ — zu lang für Corner/Inline).
 struct ComplicationSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufProgress"
@@ -298,12 +388,18 @@ struct ComplicationSnapshot: Equatable, Sendable {
     var isEmpty: Bool
     /// Gauge 0…1 (erledigt/gesamt); leere Liste ist 0.
     var progress: Double = 0
+    /// Offene kurzfristige Artikel (`!done && !langfr`).
+    var kurzfristigOpen: Int = 0
+    /// Offene langfristige Artikel (`!done && langfr`).
+    var langfristigOpen: Int = 0
 
     static let placeholder = ComplicationSnapshot(
         progressLabel: "5/2/7",
         storeName: titleLabel,
         isEmpty: false,
-        progress: 2.0 / 7.0
+        progress: 2.0 / 7.0,
+        kurzfristigOpen: 3,
+        langfristigOpen: 2
     )
 
     static func make(from state: AppState) -> ComplicationSnapshot {
@@ -312,7 +408,9 @@ struct ComplicationSnapshot: Equatable, Sendable {
             progressLabel: state.progressLabel,
             storeName: titleLabel,
             isEmpty: state.items.isEmpty,
-            progress: total == 0 ? 0 : Double(state.doneCount) / Double(total)
+            progress: total == 0 ? 0 : Double(state.doneCount) / Double(total),
+            kurzfristigOpen: state.openKurzfristigCount,
+            langfristigOpen: state.openLangfristigCount
         )
     }
 
@@ -326,12 +424,12 @@ struct ComplicationSnapshot: Equatable, Sendable {
     var totalText: String { progressParts.indices.contains(2) ? progressParts[2] : "" }
     var openCount: Int { Int(openText) ?? 0 }
 
-    /// Sichtbarer Complication-Zähler: `"\(openCount)"`, bei 0 das Wort „erledigt“.
+    /// Sichtbarer Complication-Zähler: offene kurzfristig (offene langfristig). Leer und alles abgehakt: `0 (0)`.
     var compactCountText: String {
-        openCount == 0 ? "erledigt" : openText
+        "\(kurzfristigOpen) (\(langfristigOpen))"
     }
 
-    /// Inline: fester Titel **Einkauf** und kompakter Zähler (0 → „erledigt“).
+    /// Inline: fester Titel **Einkauf** und kompakter Zähler (`k (l)`).
     var inlineText: String {
         let name = storeName.trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty { return compactCountText }
@@ -340,10 +438,7 @@ struct ComplicationSnapshot: Equatable, Sendable {
 
     var accessibilityLabel: String {
         let title = storeName.isEmpty ? Self.titleLabel : storeName
-        if openCount == 0 {
-            return "\(title), Liste erledigt"
-        }
-        return "\(title), \(openCount) offen"
+        return "\(title), \(kurzfristigOpen) kurzfristig, \(langfristigOpen) langfristig"
     }
 }
 
@@ -366,7 +461,8 @@ struct HomeWidgetCounts: Equatable, Sendable {
     }
 }
 
-/// Homescreen-Widget (iPhone): Einkauf + To-Do der **aktuellen Liste**, beide `oo/xx/yy`.
+/// Homescreen-Widget (iPhone): Einkauf + To-Do der **aktuellen Liste**.
+/// Small-Einkauf: `kurz (lang)`. To-Do und die Tabelle: `oo/xx/yy`.
 struct HomeWidgetSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufHome"
     static let openURL = URL(string: "einkauf://list")!
@@ -380,11 +476,17 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
     var todo: HomeWidgetCounts
     /// Listenname für `To Do (…)` — **Alle** bei leerer oder unbekannter ID.
     var todoListName: String
+    /// Offene kurzfristige Einkaufsartikel. Small-Widget, nicht die Tabelle.
+    var kurzfristigOpen: Int = 0
+    /// Offene langfristige Einkaufsartikel. Small-Widget, nicht die Tabelle.
+    var langfristigOpen: Int = 0
 
     static let placeholder = HomeWidgetSnapshot(
         einkauf: HomeWidgetCounts(open: 5, done: 2, total: 7),
         todo: HomeWidgetCounts(open: 3, done: 1, total: 4),
-        todoListName: "Haus"
+        todoListName: "Haus",
+        kurzfristigOpen: 3,
+        langfristigOpen: 2
     )
 
     static func make(
@@ -397,12 +499,17 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
         return HomeWidgetSnapshot(
             einkauf: .shopping(state),
             todo: .todo(tasks),
-            todoListName: TodoListFilter.title(lists: todoState.lists, currentListId: listId)
+            todoListName: TodoListFilter.title(lists: todoState.lists, currentListId: listId),
+            kurzfristigOpen: state.openKurzfristigCount,
+            langfristigOpen: state.openLangfristigCount
         )
     }
 
-    /// Einkauf-Zähler, gleiche Form wie `AppState.progressLabel`.
+    /// Einkauf-Zähler der Tabelle, gleiche Form wie `AppState.progressLabel`.
     var progressLabel: String { einkauf.progressLabel }
+
+    /// Small-Widget Einkauf: offene kurzfristig (offene langfristig). Leer: `0 (0)`.
+    var einkaufLangfrLabel: String { "\(kurzfristigOpen) (\(langfristigOpen))" }
 
     var todoProgressLabel: String { todo.progressLabel }
 
@@ -410,7 +517,7 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
 
     func compactEinkaufLine(short: Bool) -> String {
         let name = short ? Self.einkaufLabelCompact : Self.einkaufLabel
-        return "\(name): \(einkauf.progressLabel)"
+        return "\(name): \(einkaufLangfrLabel)"
     }
 
     var compactTodoLine: String {
@@ -418,7 +525,13 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
     }
 
     var accessibilityLabel: String {
-        "\(Self.einkaufLabel) \(spoken(einkauf)), \(todoRowLabel) \(spoken(todo))"
+        "\(Self.einkaufLabel) \(spokenEinkauf()), \(todoRowLabel) \(spoken(todo))"
+    }
+
+    private func spokenEinkauf() -> String {
+        let split = "\(kurzfristigOpen) kurzfristig, \(langfristigOpen) langfristig"
+        if einkauf.isEmpty { return "\(split), Liste leer" }
+        return "\(split), \(einkauf.open) offen, \(einkauf.done) erledigt, \(einkauf.total) gesamt"
     }
 
     private func spoken(_ counts: HomeWidgetCounts) -> String {
@@ -540,14 +653,22 @@ enum ListGrouping {
     }
 
     /// Gleiche Abteilungsreihenfolge wie `groups`. Bei `hidingCompleted` nur offene Artikel;
-    /// Abteilungen ohne offene Artikel fallen weg. Artikel bleiben in der Liste.
-    static func visibleGroups(_ groups: [DeptGroup], hidingCompleted: Bool) -> [DeptGroup] {
-        guard hidingCompleted else { return groups }
+    /// `langfr` filtert zusätzlich Alle / langfristig / kurzfristig.
+    /// Abteilungen ohne sichtbare Artikel fallen weg. Artikel bleiben in der Liste.
+    static func visibleGroups(
+        _ groups: [DeptGroup],
+        hidingCompleted: Bool,
+        langfr: LangfrFilter = .alle
+    ) -> [DeptGroup] {
+        guard hidingCompleted || langfr != .alle else { return groups }
         return groups.compactMap { group in
-            let open = group.items.filter { !$0.done }
-            guard !open.isEmpty else { return nil }
+            let shown = group.items.filter { item in
+                if hidingCompleted && item.done { return false }
+                return langfr.matches(item)
+            }
+            guard !shown.isEmpty else { return nil }
             var next = group
-            next.items = open
+            next.items = shown
             return next
         }
     }
@@ -561,8 +682,13 @@ enum ListGrouping {
 
     /// `id` enthält Laden und Listenposition, nicht nur die Abteilungs-ID.
     /// `hidingCompleted` filtert nur die Anzeige (Geh-Liste / PDF); Artikel bleiben in der Liste.
-    static func walkListRows(groups: [DeptGroup], storeId: String, hidingCompleted: Bool = false) -> [WalkListRow] {
-        let visible = visibleGroups(groups, hidingCompleted: hidingCompleted)
+    static func walkListRows(
+        groups: [DeptGroup],
+        storeId: String,
+        hidingCompleted: Bool = false,
+        langfr: LangfrFilter = .alle
+    ) -> [WalkListRow] {
+        let visible = visibleGroups(groups, hidingCompleted: hidingCompleted, langfr: langfr)
         return walkLines(groups: visible, storeId: storeId).enumerated().map { index, line in
             WalkListRow(id: "\(storeId)|\(index)|\(line.id)", line: line)
         }

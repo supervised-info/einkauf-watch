@@ -36,7 +36,8 @@ final class ItemArchiveCodecTests: XCTestCase {
                 ord: 1,
                 doneChangedAt: 20,
                 imported: true,
-                urgency: .later
+                urgency: .later,
+                langfr: true
             )
             CompletedItemArchive.appendEinkauf([item], at: date)
             let file = CompletedItemArchive.loadEinkauf()
@@ -50,6 +51,7 @@ final class ItemArchiveCodecTests: XCTestCase {
             XCTAssertEqual(file.entries[0].item.doneChangedAt, 20)
             XCTAssertTrue(file.entries[0].item.imported)
             XCTAssertEqual(file.entries[0].item.urgency, .later)
+            XCTAssertTrue(file.entries[0].item.langfr)
 
             let raw = try Data(contentsOf: CompletedItemArchive.einkaufFileURL)
             let obj = try JSONSerialization.jsonObject(with: raw) as! [String: Any]
@@ -64,6 +66,7 @@ final class ItemArchiveCodecTests: XCTestCase {
             XCTAssertEqual((snapshot["doneChangedAt"] as? NSNumber)?.doubleValue, 20)
             XCTAssertEqual(snapshot["imported"] as? Bool, true)
             XCTAssertEqual(snapshot["urgency"] as? String, "later")
+            XCTAssertEqual(snapshot["langfr"] as? Bool, true)
         }
     }
 
@@ -457,6 +460,7 @@ final class ItemArchiveStoreTests: XCTestCase {
                 let store = ShoppingStore(state: .seed, enableSync: false)
                 store.addItem("Milch")
                 store.cycleItemUrgency(store.state.items[0].id)
+                store.toggleItemLangfr(store.state.items[0].id)
                 store.toggle(store.state.items[0].id)
                 store.clearDone()
                 XCTAssertTrue(store.state.items.isEmpty)
@@ -473,6 +477,7 @@ final class ItemArchiveStoreTests: XCTestCase {
                 XCTAssertFalse(store.state.items[0].done)
                 XCTAssertEqual(store.state.items[0].dept, snapshotDept)
                 XCTAssertEqual(store.state.items[0].urgency, snapshotUrgency)
+                XCTAssertTrue(store.state.items[0].langfr)
                 XCTAssertFalse(store.state.items[0].imported)
                 XCTAssertEqual(CompletedItemArchive.loadEinkauf().entries.map(\.item.id), [oldId])
                 XCTAssertTrue(CompletedItemArchive.loadEinkauf().entries[0].item.done)

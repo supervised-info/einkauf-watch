@@ -7,9 +7,21 @@ struct WatchListView: View {
     @Environment(\.einkaufTheme) private var theme
     /// Nur Watch-UserDefaults — nicht im Backup, nicht zum iPhone.
     @AppStorage("einkauf.watch.hideCompleted") private var hideCompleted = false
+    /// Drei-Zustands-Filter `langfr`. Eigener Watch-Key, nicht im Backup, nicht zum iPhone.
+    @AppStorage("einkauf.watch.langfrFilter") private var langfrFilterRaw = LangfrFilter.alle.rawValue
+
+    private var langfrFilter: LangfrFilter {
+        LangfrFilter(rawValue: langfrFilterRaw) ?? .alle
+    }
 
     private var visibleWalkRows: [WalkListRow] {
-        store.walkListRows(hidingCompleted: hideCompleted)
+        store.walkListRows(hidingCompleted: hideCompleted, langfr: langfrFilter)
+    }
+
+    private var walkEmptyBecauseCompleted: Bool {
+        hideCompleted
+            && visibleWalkRows.isEmpty
+            && !store.walkListRows(hidingCompleted: false, langfr: langfrFilter).isEmpty
     }
 
     var body: some View {
@@ -31,7 +43,7 @@ struct WatchListView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     } else if visibleWalkRows.isEmpty {
-                        Text("Erledigte ausgeblendet.")
+                        Text(walkEmptyBecauseCompleted ? "Erledigte ausgeblendet." : langfrFilter.emptyTitle)
                             .font(.headline)
                             .foregroundStyle(theme.ink)
                             .multilineTextAlignment(.center)
@@ -75,6 +87,9 @@ struct WatchListView: View {
                                         // Alle drei Zustände wie iPhone (⚡ / ↔ / ↓),
                                         // auch bei normal — nicht ausblenden. Nur Anzeige, kein Urgency-Zyklus.
                                         ItemUrgencyChip(urgency: item.urgency, theme: theme, compact: true)
+                                        ItemLangfrChip(langfr: item.langfr, theme: theme, compact: true) {
+                                            store.toggleItemLangfr(item.id)
+                                        }
                                         ItemImportedMark(imported: item.imported, theme: theme)
                                     }
                                     .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
@@ -114,6 +129,18 @@ struct WatchListView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
+            Button {
+                langfrFilterRaw = langfrFilter.next.rawValue
+            } label: {
+                Image(systemName: langfrFilter.systemImage)
+                    .font(.caption)
+                    .imageScale(.small)
+                    .foregroundStyle(langfrFilter == .alle ? theme.muted : theme.oxide)
+                    .padding(.horizontal, 8)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(langfrFilter.accessibilityLabel)
             Spacer()
         }
         .frame(height: 20)

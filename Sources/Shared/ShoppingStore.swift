@@ -67,11 +67,19 @@ final class ShoppingStore: ObservableObject {
         }
     }
 
-    var editRows: [ItemEditing.Row] { ItemEditing.rows(from: groups) }
+    var editRows: [ItemEditing.Row] { editRows(langfr: .alle) }
+    func editRows(langfr: LangfrFilter) -> [ItemEditing.Row] {
+        ItemEditing.rows(from: ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: langfr))
+    }
     var walkLines: [WalkLine] { ListGrouping.walkLines(groups: groups, storeId: state.currentStoreId) }
     var walkListRows: [WalkListRow] { ListGrouping.walkListRows(groups: groups, storeId: state.currentStoreId) }
-    func walkListRows(hidingCompleted: Bool) -> [WalkListRow] {
-        ListGrouping.walkListRows(groups: groups, storeId: state.currentStoreId, hidingCompleted: hidingCompleted)
+    func walkListRows(hidingCompleted: Bool, langfr: LangfrFilter = .alle) -> [WalkListRow] {
+        ListGrouping.walkListRows(
+            groups: groups,
+            storeId: state.currentStoreId,
+            hidingCompleted: hidingCompleted,
+            langfr: langfr
+        )
     }
     var stores: [Store] { state.stores }
     var staples: [Staple] { state.staples }
@@ -166,6 +174,13 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
+    func toggleItemLangfr(_ id: String) {
+        guard let idx = state.items.firstIndex(where: { $0.id == id }) else { return }
+        state.items[idx].langfr.toggle()
+        state.listRevision += 1
+        persistAndSync()
+    }
+
     private static func normalizedItemName(_ rawName: String) -> String? {
         ShoppingListImport.normalizedName(rawName)
     }
@@ -224,8 +239,8 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
-    func deleteEditRows(at offsets: IndexSet) {
-        let ids = Set(ItemEditing.itemIDs(in: editRows, at: offsets))
+    func deleteEditRows(at offsets: IndexSet, langfr: LangfrFilter = .alle) {
+        let ids = Set(ItemEditing.itemIDs(in: editRows(langfr: langfr), at: offsets))
         guard !ids.isEmpty else { return }
         archiveCompletedItems(state.items.filter { ids.contains($0.id) })
         state.items.removeAll { ids.contains($0.id) }
@@ -303,7 +318,7 @@ final class ShoppingStore: ObservableObject {
         case invalidName
     }
 
-    /// Snapshot der aktuellen Artikel (Name + Abteilung, ohne Häkchen). Leere Liste wird nicht gespeichert.
+    /// Snapshot der aktuellen Artikel (Name, Abteilung, `langfr`, ohne Häkchen). Leere Liste wird nicht gespeichert.
     @discardableResult
     func saveCurrentList(name: String) -> SaveListOutcome {
         guard let trimmed = SavedList.sanitizedName(name) else { return .invalidName }
@@ -315,7 +330,9 @@ final class ShoppingStore: ObservableObject {
         return .saved
     }
 
-    /// Wie Gesamtliste / `StapleApply`: fehlend anlegen, erledigt wieder öffnen, offen überspringen. Ersetzt die Liste nicht.
+    /// Wie Gesamtliste / `StapleApply`: fehlend anlegen, erledigt wieder öffnen, offen überspringen.
+    /// `langfr` aus dem Snapshot wird auf neue, wieder geöffnete und schon offene Treffer geschrieben.
+    /// Ersetzt die Liste nicht.
     @discardableResult
     func applySavedList(_ list: SavedList) -> StapleApply.Outcome {
         let result = StapleApply.applyAll(
@@ -323,7 +340,8 @@ final class ShoppingStore: ObservableObject {
             items: state.items,
             mappings: state.mappings,
             nextOrd: nextOrd(),
-            customs: state.customDepartments
+            customs: state.customDepartments,
+            applyLangfr: true
         )
         guard result.didChange else { return result }
         state.items = result.items
@@ -588,7 +606,7 @@ final class ShoppingStore: ObservableObject {
         persistAndSync()
     }
 
-    /// Ersetzt den Stand. `imported` / `urgency` bleiben wie im JSON (fehlend = false / normal).
+    /// Ersetzt den Stand. `imported` / `urgency` / `langfr` bleiben wie im JSON (fehlend = false / normal / false).
     /// Kein Nachstempeln — eigener Backup-Roundtrip und PDF der eigenen Liste markieren nicht.
     func importBackup(_ data: Data) throws {
         var imported = try BackupCodec.decode(data)
@@ -633,7 +651,8 @@ final class ShoppingStore: ObservableObject {
                 ord: nextOrd(),
                 doneChangedAt: now,
                 imported: false,
-                urgency: snapshot.urgency
+                urgency: snapshot.urgency,
+                langfr: snapshot.langfr
             )
         )
         state.listRevision += 1
