@@ -45,7 +45,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "703A698638259F0A8FDBBA56"
             BuildableName = "EinkaufWatch.app"
-            BlueprintName = "EinkaufWatch"
             ReferencedContainer = "container:Einkauf.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,7 +61,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "703A698638259F0A8FDBBA56"
             BuildableName = "EinkaufWatch.app"
-            BlueprintName = "EinkaufWatch"
             ReferencedContainer = "container:Einkauf.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
