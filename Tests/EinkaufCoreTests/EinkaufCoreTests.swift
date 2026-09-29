@@ -32,6 +32,7 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(state.items[0].name, "Milch")
         XCTAssertFalse(state.items[0].imported)
         XCTAssertEqual(state.items[0].urgency, .normal)
+        XCTAssertFalse(state.items[0].langfr)
     }
 
     func testMissingImportedAndUrgencyDefault() throws {
@@ -42,6 +43,7 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(state.items.count, 1)
         XCTAssertFalse(state.items[0].imported)
         XCTAssertEqual(state.items[0].urgency, .normal)
+        XCTAssertFalse(state.items[0].langfr)
     }
 
     func testUnknownUrgencyIsNormal() throws {
@@ -56,36 +58,41 @@ final class BackupCodecTests: XCTestCase {
     func testExportRoundTripPreservesImportedAndUrgency() throws {
         var original = AppState.seed
         original.items = [
-            Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .urgent),
-            Item(id: "i2", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 2, imported: false, urgency: .later)
+            Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .urgent, langfr: true),
+            Item(id: "i2", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 2, imported: false, urgency: .later, langfr: false)
         ]
         let exported = try BackupCodec.encodeExport(original)
         let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
         let rawItems = obj["items"] as! [[String: Any]]
         XCTAssertEqual(rawItems[0]["imported"] as? Bool, true)
         XCTAssertEqual(rawItems[0]["urgency"] as? String, "urgent")
+        XCTAssertEqual(rawItems[0]["langfr"] as? Bool, true)
         XCTAssertEqual(rawItems[1]["imported"] as? Bool, false)
         XCTAssertEqual(rawItems[1]["urgency"] as? String, "later")
+        XCTAssertEqual(rawItems[1]["langfr"] as? Bool, false)
         XCTAssertNil(rawItems[0]["doneChangedAt"])
         let again = try BackupCodec.decode(exported)
         XCTAssertEqual(again.items.map(\.imported), [true, false])
         XCTAssertEqual(again.items.map(\.urgency), [.urgent, .later])
+        XCTAssertEqual(again.items.map(\.langfr), [true, false])
     }
 
     func testLocalEncodeWritesImportedAndUrgency() throws {
         var state = AppState.seed
         state.items = [
-            Item(id: "i1", name: "Butter", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .later)
+            Item(id: "i1", name: "Butter", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .later, langfr: true)
         ]
         let data = try BackupCodec.encodeLocal(state)
         let again = try BackupCodec.decodeLocal(data)
         XCTAssertEqual(again.items[0].imported, true)
         XCTAssertEqual(again.items[0].urgency, .later)
+        XCTAssertTrue(again.items[0].langfr)
         let obj = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         let nested = obj["state"] as! [String: Any]
         let items = nested["items"] as! [[String: Any]]
         XCTAssertEqual(items[0]["imported"] as? Bool, true)
         XCTAssertEqual(items[0]["urgency"] as? String, "later")
+        XCTAssertEqual(items[0]["langfr"] as? Bool, true)
     }
 
     func testExportRoundTrip() throws {
@@ -339,6 +346,33 @@ final class GroupingTests: XCTestCase {
         XCTAssertTrue(hidden.isEmpty)
         XCTAssertEqual(ListGrouping.progressLabel(groups: hidden), "0/0/0")
         XCTAssertEqual(ListGrouping.progressLabel(groups: groups), "0/2/2")
+    }
+
+    func testLangfrFilterKeepsItemsAndDropsEmptyDepartments() {
+        let items = [
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, langfr: true),
+            Item(id: "b", name: "Brot", dept: "brot", done: true, added: 2, ord: 1, langfr: false),
+            Item(id: "k", name: "Käse", dept: "kuehlung", done: false, added: 3, ord: 2, langfr: false)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+        XCTAssertEqual(LangfrFilter.alle.next, .langfristig)
+        XCTAssertEqual(LangfrFilter.langfristig.next, .kurzfristig)
+        XCTAssertEqual(LangfrFilter.kurzfristig.next, .alle)
+        XCTAssertEqual(LangfrFilter.alle.systemImage, "hourglass")
+        XCTAssertEqual(LangfrFilter.langfristig.systemImage, "hourglass.tophalf.filled")
+        XCTAssertEqual(LangfrFilter.kurzfristig.systemImage, "hourglass.bottomhalf.filled")
+        XCTAssertEqual(LangfrFilter.alle.accessibilityLabel, "Alle")
+        XCTAssertEqual(LangfrFilter.langfristig.accessibilityLabel, "langfristig")
+        XCTAssertEqual(LangfrFilter.kurzfristig.accessibilityLabel, "kurzfristig")
+
+        XCTAssertEqual(ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .alle), groups)
+        let long = ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .langfristig)
+        XCTAssertEqual(long.map(\.dept), ["kuehlung"])
+        XCTAssertEqual(long.flatMap(\.items).map(\.id), ["m"])
+        let short = ListGrouping.walkListRows(groups: groups, storeId: "edeka", hidingCompleted: true, langfr: .kurzfristig)
+        XCTAssertEqual(short.compactMap(\.line.itemId), ["k"])
+        XCTAssertEqual(groups.flatMap(\.items).map(\.id), ["b", "m", "k"])
     }
 
     private func loadFixture(_ name: String) throws -> Data {
@@ -1001,6 +1035,50 @@ final class SavedListTests: XCTestCase {
         XCTAssertEqual(Set(state.stores.map(\.id)), Set(Store.seeds.map(\.id)))
         XCTAssertTrue(state.stores.allSatisfy(\.builtin))
         XCTAssertTrue(state.staples.isEmpty)
+        XCTAssertEqual(state.savedLists[0].items.map(\.langfr), [false])
+    }
+
+    func testSaveSnapshotRoundTripsLangfrAndApplyWritesIt() throws {
+        var seed = AppState.seed
+        seed.items = [
+            Item(id: "a", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, langfr: true),
+            Item(id: "b", name: "Butter", dept: "kuehlung", done: true, added: 2, ord: 2, doneChangedAt: 2, langfr: false)
+        ]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .saved)
+        XCTAssertEqual(store.savedLists[0].items.map(\.langfr), [true, false])
+
+        let exported = try BackupCodec.encodeExport(store.state)
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.savedLists[0].items.map(\.langfr), [true, false])
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        let saved = (obj["savedLists"] as! [[String: Any]])[0]["items"] as! [[String: Any]]
+        XCTAssertEqual(saved.map { $0["langfr"] as? Bool }, [true, false])
+        XCTAssertTrue(saved.allSatisfy { $0["done"] == nil })
+
+        let empty = ShoppingStore(state: .seed, enableSync: false)
+        let added = empty.applySavedList(again.savedLists[0])
+        XCTAssertEqual(added.added, 2)
+        XCTAssertEqual(empty.state.items.map(\.langfr), [true, false])
+        XCTAssertTrue(empty.state.items.allSatisfy { !$0.done })
+
+        empty.toggleItemLangfr(empty.state.items[0].id)
+        XCTAssertFalse(empty.state.items[0].langfr)
+        let updated = empty.applySavedList(again.savedLists[0])
+        XCTAssertEqual(updated.langfrApplied, 1)
+        XCTAssertEqual(updated.already, 1)
+        XCTAssertTrue(empty.state.items[0].langfr)
+        XCTAssertFalse(empty.state.items[1].langfr)
+    }
+
+    func testApplyStapleDoesNotOverwriteOpenLangfr() {
+        var seed = AppState.seed
+        seed.items = [Item(id: "a", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, langfr: true)]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        let result = store.applyStaple(Staple(name: "Milch", dept: "kuehlung"))
+        XCTAssertEqual(result.already, 1)
+        XCTAssertFalse(result.didChange)
+        XCTAssertTrue(store.state.items[0].langfr)
     }
 
     func testRemoveSavedList() {
@@ -2094,6 +2172,7 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
         XCTAssertEqual(store.state.items.map(\.imported), [false, false, false])
         XCTAssertEqual(store.state.items.map(\.urgency), [.normal, .normal, .normal])
+        XCTAssertEqual(store.state.items.map(\.langfr), [false, false, false])
         XCTAssertEqual(store.state.listRevision, 1)
     }
 
@@ -2119,7 +2198,22 @@ final class SpeechAddItemsTests: XCTestCase {
         store.cycleItemUrgency("i1")
         XCTAssertEqual(store.state.items[0].urgency, .normal)
         XCTAssertTrue(store.state.items[0].imported)
+        XCTAssertFalse(store.state.items[0].langfr)
         XCTAssertEqual(store.state.listRevision, 3)
+    }
+
+    func testToggleItemLangfr() {
+        var seed = AppState.seed
+        seed.items = [Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        store.toggleItemLangfr("i1")
+        XCTAssertTrue(store.state.items[0].langfr)
+        XCTAssertEqual(store.state.items[0].urgency, .normal)
+        store.toggleItemLangfr("i1")
+        XCTAssertFalse(store.state.items[0].langfr)
+        XCTAssertEqual(store.state.listRevision, 2)
+        store.toggleItemLangfr("missing")
+        XCTAssertEqual(store.state.listRevision, 2)
     }
 
     func testUrgencyChipSymbols() {
@@ -2142,6 +2236,7 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.state.items.count, 2)
         XCTAssertTrue(store.state.items.allSatisfy { !$0.imported })
         XCTAssertTrue(store.state.items.allSatisfy { $0.urgency == .normal })
+        XCTAssertTrue(store.state.items.allSatisfy { !$0.langfr })
     }
 
     func testImportBackupPreservesImportedAndUrgency() throws {

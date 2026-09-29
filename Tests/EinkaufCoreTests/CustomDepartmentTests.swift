@@ -42,8 +42,8 @@ final class DepartmentCatalogTests: XCTestCase {
             Item(id: "i1", name: "Tofu", dept: "d-bio", done: false, added: 1, ord: 1),
             Item(id: "i2", name: "Milch", dept: "kuehlung", done: false, added: 2, ord: 2)
         ]
-        let staples = [Staple(name: "Tofu", dept: "d-bio"), Staple(name: "Butter", dept: "kuehlung")]
-        let saved = [SavedList(id: "l1", name: "Asia", items: [Staple(name: "Tofu", dept: "d-bio")])]
+        let staples = [Staple(name: "Tofu", dept: "d-bio", langfr: true), Staple(name: "Butter", dept: "kuehlung")]
+        let saved = [SavedList(id: "l1", name: "Asia", items: [Staple(name: "Tofu", dept: "d-bio", langfr: true)])]
         let mappings = ["tofu": "d-bio", "milch": "kuehlung"]
         let stores = [
             Store(id: "edeka", name: "Edeka", layout: ["vor", "obst", "d-bio", "sonstiges", "nach"], builtin: true)
@@ -59,7 +59,9 @@ final class DepartmentCatalogTests: XCTestCase {
         )
         XCTAssertEqual(remapped.items.map(\.dept), ["sonstiges", "kuehlung"])
         XCTAssertEqual(remapped.staples.map(\.dept), ["sonstiges", "kuehlung"])
+        XCTAssertEqual(remapped.staples.map(\.langfr), [true, false])
         XCTAssertEqual(remapped.savedLists[0].items.map(\.dept), ["sonstiges"])
+        XCTAssertEqual(remapped.savedLists[0].items.map(\.langfr), [true])
         XCTAssertEqual(remapped.mappings["tofu"], "sonstiges")
         XCTAssertEqual(remapped.mappings["milch"], "kuehlung")
         XCTAssertFalse(remapped.stores[0].layout.contains("d-bio"))

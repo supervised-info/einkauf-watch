@@ -428,8 +428,10 @@ def test_sources() -> None:
         fail("iPhone Geh-Modus must use walkListRows(hidingCompleted:) so done items can be filtered")
     if "ForEach(visibleWalkRows)" not in content and "ForEach(store.walkListRows" not in content:
         fail("ContentView walkList must ForEach walk list rows (flat store+position ids)")
-    if "ForEach(store.editRows)" not in content:
-        fail("Bearbeiten must ForEach the full editRows list")
+    if "ForEach(store.editRows" not in content:
+        fail("Bearbeiten must ForEach editRows")
+    if "editRows(hidingCompleted" in content:
+        fail("Edit must not hide completed items")
     if "AppStorage" not in content or "einkauf.iphone.hideCompleted" not in content:
         fail("iPhone hide-completed must persist via AppStorage einkauf.iphone.hideCompleted")
     if "einkauf.watch.hideCompleted" in content:
@@ -548,8 +550,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 83" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 83 / CURRENT_PROJECT_VERSION")
+    if "Build 84" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 84 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1069,8 +1071,8 @@ def test_sources() -> None:
         fail("ListGrouping missing visibleGroups for Geh-Modus and Liste teilen")
     if "func progressLabel(groups:" not in models:
         fail("ListGrouping missing progressLabel(groups:) for printed PDF rows")
-    if "ForEach(store.editRows)" not in content:
-        fail("iPhone Bearbeiten must still ForEach the full editRows")
+    if "ForEach(store.editRows" not in content:
+        fail("iPhone Bearbeiten must still ForEach editRows")
     if "einkauf.iphone.hideCompleted" not in content:
         fail("iPhone Geh-Modus must persist hideCompleted separately from Watch")
     if "testUserMappingBeatsKeyword" not in tests or "testUserMappingBeatsSpecialRules" not in tests:
@@ -1109,8 +1111,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 83" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 83")
+    if "CURRENT_PROJECT_VERSION = 84" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 84")
+    if "CURRENT_PROJECT_VERSION = 83" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 83 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 82" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 82 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 81" in pbx:
@@ -1260,8 +1264,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 83" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 83")
+    if "CURRENT_PROJECT_VERSION: 84" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 84")
+    if "CURRENT_PROJECT_VERSION: 83" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 83 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 82" in yml:
         fail("stale CURRENT_PROJECT_VERSION 82 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 81" in yml:
@@ -1629,8 +1635,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 83") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 83")
+    if pbx.count("CURRENT_PROJECT_VERSION = 84") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 84")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3583,6 +3589,95 @@ def test_item_imported_urgency() -> None:
     print("item imported/urgency: ok")
 
 
+def test_item_langfr() -> None:
+    models = (ROOT / "Sources/Shared/Models.swift").read_text()
+    codec = (ROOT / "Sources/Shared/BackupCodec.swift").read_text()
+    store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
+    theme = (ROOT / "Sources/Shared/Theme.swift").read_text()
+    ios = (ROOT / "Sources/iOS/ContentView.swift").read_text()
+    watch = (ROOT / "Sources/Watch/WatchListView.swift").read_text()
+    staple = (ROOT / "Sources/Shared/StapleApply.swift").read_text()
+    desc = (ROOT / "Description.md").read_text()
+    tests = (ROOT / "Tests/EinkaufCoreTests/EinkaufCoreTests.swift").read_text()
+    todo_models = (ROOT / "Sources/Shared/TodoModels.swift").read_text()
+
+    if "var langfr: Bool" not in models:
+        fail("Item must have langfr")
+    if "langfr = try c.decodeIfPresent(Bool.self, forKey: .langfr) ?? false" not in models:
+        fail("Item decode must default missing langfr to false")
+    if "try c.encode(langfr, forKey: .langfr)" not in models:
+        fail("Item encode must write langfr")
+    if "enum LangfrFilter" not in models:
+        fail("shared LangfrFilter missing")
+    for symbol in ("hourglass", "hourglass.tophalf.filled", "hourglass.bottomhalf.filled"):
+        if symbol not in models:
+            fail(f"LangfrFilter missing SF Symbol {symbol}")
+    if "case .alle: return .langfristig" not in models or "case .kurzfristig: return .alle" not in models:
+        fail("LangfrFilter must cycle Alle → langfristig → kurzfristig → Alle")
+    if "langfr: item.langfr" not in models:
+        fail("SavedList.snapshot must keep langfr")
+    if '"langfr": item.langfr' not in codec:
+        fail("backup export must write item langfr")
+    if "langfr: bool(s[\"langfr\"])" not in codec:
+        fail("sanitizeItems must default missing langfr to false")
+    if "einkauf.iphone.langfrFilter" in codec or "einkauf.watch.langfrFilter" in codec:
+        fail("langfr filter mode must not enter BackupCodec")
+    if "func toggleItemLangfr" not in store:
+        fail("toggleItemLangfr missing")
+    if "applyLangfr: true" not in store:
+        fail("applySavedList must apply langfr")
+    if "langfr: snapshot.langfr" not in store:
+        fail("restoreFromArchive must keep langfr")
+    if "struct ItemLangfrChip" not in theme:
+        fail("ItemLangfrChip missing")
+    if "flag.fill" not in theme:
+        fail("langfr chip must use flag.fill when set")
+    if "ItemLangfrChip" not in ios or "toggleItemLangfr" not in ios:
+        fail("iPhone must show and toggle the langfr chip")
+    if "einkauf.iphone.langfrFilter" not in ios:
+        fail("iPhone langfr filter must use its own AppStorage key")
+    if "einkauf.watch.langfrFilter" in ios:
+        fail("iPhone must not reuse the Watch langfr filter key")
+    if "langfrFilter.systemImage" not in ios:
+        fail("iPhone filter must use LangfrFilter.systemImage")
+    eye = ios.find("hideCompleted.toggle")
+    edit = ios.find('Button(store.walkMode ? "Edit"')
+    filt = ios.find("langfrFilterRaw = langfrFilter.next.rawValue")
+    if eye < 0 or edit < 0 or filt < 0 or not (eye < filt < edit):
+        fail("iPhone langfr filter must sit between the eye and Edit / Geh-Modus")
+    for fn, blob in (
+        ("walkRow", ios[ios.find("func walkRow"):ios.find("func editRow")]),
+        ("editRow", ios[ios.find("func editRow"):ios.find("func beginRename")]),
+    ):
+        if not (blob.find("ItemUrgencyChip") < blob.find("ItemLangfrChip") < blob.find("ItemImportedMark")):
+            fail(f"iPhone {fn} order must be urgency, langfr, import mark")
+    if "ItemLangfrChip" not in watch or "toggleItemLangfr" not in watch:
+        fail("Watch must show and toggle the langfr chip")
+    if "einkauf.watch.langfrFilter" not in watch:
+        fail("Watch langfr filter must use its own AppStorage key")
+    if "einkauf.iphone.langfrFilter" in watch:
+        fail("Watch must not reuse the iPhone langfr filter key")
+    if "cycleItemUrgency" in watch:
+        fail("Watch must not cycle urgency")
+    if "applyLangfr" not in staple:
+        fail("StapleApply must be able to apply langfr from a saved list")
+    if "var langfr" in todo_models:
+        fail("To-Do must not grow langfr")
+    if "langfr" not in desc or "hourglass.tophalf.filled" not in desc:
+        fail("Description.md must document langfr and the hourglass filter")
+    if "einkauf.iphone.langfrFilter" not in desc or "einkauf.watch.langfrFilter" not in desc:
+        fail("Description.md must name separate langfr AppStorage keys")
+    for name in (
+        "testLangfrFilterKeepsItemsAndDropsEmptyDepartments",
+        "testSaveSnapshotRoundTripsLangfrAndApplyWritesIt",
+        "testApplyStapleDoesNotOverwriteOpenLangfr",
+        "testToggleItemLangfr",
+    ):
+        if name not in tests:
+            fail(f"tests must cover {name}")
+    print("item langfr: ok")
+
+
 def test_item_archive() -> None:
     archive = (ROOT / "Sources/Shared/CompletedItemArchive.swift").read_text()
     store = (ROOT / "Sources/Shared/ShoppingStore.swift").read_text()
@@ -4054,6 +4149,7 @@ def main() -> None:
     test_todo_store()
     test_icloud_inbox()
     test_item_imported_urgency()
+    test_item_langfr()
     test_item_archive()
     test_staple_order()
     test_saved_list_edit()

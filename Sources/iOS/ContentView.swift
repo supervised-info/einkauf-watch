@@ -22,9 +22,27 @@ struct ContentView: View {
     @FocusState private var renameFocused: Bool
     /// Nur iPhone-UserDefaults — nicht im Backup, nicht zur Watch.
     @AppStorage("einkauf.iphone.hideCompleted") private var hideCompleted = false
+    /// Drei-Zustands-Filter `langfr`. Nur iPhone-UserDefaults — nicht im Backup, nicht zur Watch.
+    @AppStorage("einkauf.iphone.langfrFilter") private var langfrFilterRaw = LangfrFilter.alle.rawValue
+
+    private var langfrFilter: LangfrFilter {
+        LangfrFilter(rawValue: langfrFilterRaw) ?? .alle
+    }
 
     private var visibleWalkRows: [WalkListRow] {
-        store.walkListRows(hidingCompleted: hideCompleted)
+        store.walkListRows(hidingCompleted: hideCompleted, langfr: langfrFilter)
+    }
+
+    private var visibleEditRows: [ItemEditing.Row] {
+        store.editRows(langfr: langfrFilter)
+    }
+
+    /// Auge blendet nur Erledigte aus, der Stundenglas-Filter lässt noch Zeilen übrig.
+    private var walkEmptyBecauseCompleted: Bool {
+        store.walkMode
+            && hideCompleted
+            && visibleWalkRows.isEmpty
+            && !store.walkListRows(hidingCompleted: false, langfr: langfrFilter).isEmpty
     }
 
     var body: some View {
@@ -34,7 +52,13 @@ struct ContentView: View {
                     ContentUnavailableView("Noch nichts auf der Liste.", systemImage: "basket", description: Text("Artikel hinzufügen oder ein Backup importieren."))
                         .foregroundStyle(theme.ink)
                 } else if store.walkMode && visibleWalkRows.isEmpty {
-                    ContentUnavailableView("Erledigte ausgeblendet.", systemImage: "eye.slash")
+                    ContentUnavailableView(
+                        walkEmptyBecauseCompleted ? "Erledigte ausgeblendet." : langfrFilter.emptyTitle,
+                        systemImage: walkEmptyBecauseCompleted ? "eye.slash" : langfrFilter.systemImage
+                    )
+                    .foregroundStyle(theme.ink)
+                } else if !store.walkMode && visibleEditRows.isEmpty {
+                    ContentUnavailableView(langfrFilter.emptyTitle, systemImage: langfrFilter.systemImage)
                         .foregroundStyle(theme.ink)
                 } else {
                     list
@@ -154,7 +178,7 @@ struct ContentView: View {
     /// Abteilung (inkl. vor/nach). Per-Section-`onMove` kann das in SwiftUI nicht.
     private var editList: some View {
         List {
-            ForEach(store.editRows) { row in
+            ForEach(store.editRows(langfr: langfrFilter)) { row in
                 switch row {
                 case .header(_, let dept):
                     Text(store.departmentTitle(dept))
@@ -171,10 +195,14 @@ struct ContentView: View {
                         .accessibilityLabel(store.departmentTitle(dept))
                 case .item(_, let item):
                     editRow(item)
+                        .moveDisabled(langfrFilter != .alle)
                 }
             }
-            .onMove { store.moveEditRows(from: $0, to: $1) }
-            .onDelete { store.deleteEditRows(at: $0) }
+            .onMove { source, destination in
+                guard langfrFilter == .alle else { return }
+                store.moveEditRows(from: source, to: destination)
+            }
+            .onDelete { store.deleteEditRows(at: $0, langfr: langfrFilter) }
         }
         .listStyle(.insetGrouped)
         .einkaufListChrome()
@@ -218,6 +246,9 @@ struct ContentView: View {
 
             ItemUrgencyChip(urgency: item.urgency, theme: theme) {
                 store.cycleItemUrgency(item.id)
+            }
+            ItemLangfrChip(langfr: item.langfr, theme: theme) {
+                store.toggleItemLangfr(item.id)
             }
             ItemImportedMark(imported: item.imported, theme: theme)
         }
@@ -284,6 +315,9 @@ struct ContentView: View {
             ItemUrgencyChip(urgency: item.urgency, theme: theme) {
                 store.cycleItemUrgency(item.id)
             }
+            ItemLangfrChip(langfr: item.langfr, theme: theme) {
+                store.toggleItemLangfr(item.id)
+            }
             ItemImportedMark(imported: item.imported, theme: theme)
         }
         .padding(.vertical, 2)
@@ -333,6 +367,15 @@ struct ContentView: View {
                     .einkaufToolbarChrome()
             }
             .accessibilityLabel(hideCompleted ? "Erledigte einblenden" : "Erledigte ausblenden")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                langfrFilterRaw = langfrFilter.next.rawValue
+            } label: {
+                Image(systemName: langfrFilter.systemImage)
+                    .einkaufToolbarChrome()
+            }
+            .accessibilityLabel(langfrFilter.accessibilityLabel)
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button(store.walkMode ? "Edit" : "Geh-Modus") {
