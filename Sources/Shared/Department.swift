@@ -141,10 +141,10 @@ enum DepartmentCatalog {
             item.dept = remap(item.dept)
             return item
         }
-        let staples = staples.map { Staple(name: $0.name, dept: remap($0.dept)) }
+        let staples = staples.map { Staple(name: $0.name, dept: remap($0.dept), langfr: $0.langfr) }
         let savedLists = savedLists.map { list -> SavedList in
             var list = list
-            list.items = list.items.map { Staple(name: $0.name, dept: remap($0.dept)) }
+            list.items = list.items.map { Staple(name: $0.name, dept: remap($0.dept), langfr: $0.langfr) }
             return list
         }
         var mappings = mappings

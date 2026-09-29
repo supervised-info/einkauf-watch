@@ -86,17 +86,18 @@ enum BackupCodec {
                     "added": item.added,
                     "ord": item.sortOrd,
                     "imported": item.imported,
-                    "urgency": item.urgency.rawValue
+                    "urgency": item.urgency.rawValue,
+                    "langfr": item.langfr
                 ] as [String: Any]
             },
             "walkMode": state.walkMode,
             "layoutTrip": 1,
-            "staples": state.staples.map { ["name": $0.name, "dept": $0.dept] },
+            "staples": state.staples.map { ["name": $0.name, "dept": $0.dept, "langfr": $0.langfr] },
             "savedLists": state.savedLists.map { list in
                 [
                     "id": list.id,
                     "name": list.name,
-                    "items": list.items.map { ["name": $0.name, "dept": $0.dept] }
+                    "items": list.items.map { ["name": $0.name, "dept": $0.dept, "langfr": $0.langfr] }
                 ] as [String: Any]
             },
             "customDepartments": state.customDepartments.map { dept in
@@ -146,7 +147,11 @@ enum BackupCodec {
         next.mappings = maps
         next.savedLists = sanitizeSavedListModels(state.savedLists, mappings: maps, customs: next.customDepartments)
         next.staples = state.staples.map { staple in
-            Staple(name: staple.name, dept: DepartmentCatalog.resolved(staple.dept, customs: next.customDepartments))
+            Staple(
+                name: staple.name,
+                dept: DepartmentCatalog.resolved(staple.dept, customs: next.customDepartments),
+                langfr: staple.langfr
+            )
         }
         return next
     }
@@ -237,7 +242,8 @@ enum BackupCodec {
                     ord: ord ?? added,
                     doneChangedAt: number(s["doneChangedAt"]),
                     imported: s["imported"] as? Bool ?? false,
-                    urgency: ItemUrgency.parse(string(s["urgency"]))
+                    urgency: ItemUrgency.parse(string(s["urgency"])),
+                    langfr: bool(s["langfr"])
                 )
             )
         }
@@ -265,11 +271,13 @@ enum BackupCodec {
         for entry in arr {
             let name: String?
             var dept = ""
+            var langfr = false
             if let s = entry as? String {
                 name = s
             } else if let obj = entry as? [String: Any] {
                 name = string(obj["name"])
                 dept = string(obj["dept"]) ?? ""
+                langfr = bool(obj["langfr"])
             } else {
                 name = nil
             }
@@ -283,7 +291,7 @@ enum BackupCodec {
             if !DepartmentCatalog.isKnown(dept, customs: customs) {
                 dept = DepartmentGuesser.guess(n, mappings: mappings, customs: customs)
             }
-            out.append(Staple(name: n, dept: dept))
+            out.append(Staple(name: n, dept: dept, langfr: langfr))
         }
         return out
     }
@@ -326,11 +334,13 @@ enum BackupCodec {
         for entry in arr {
             let name: String?
             var dept = ""
+            var langfr = false
             if let s = entry as? String {
                 name = s
             } else if let obj = entry as? [String: Any] {
                 name = string(obj["name"])
                 dept = string(obj["dept"]) ?? ""
+                langfr = bool(obj["langfr"])
             } else {
                 name = nil
             }
@@ -341,7 +351,7 @@ enum BackupCodec {
             if !DepartmentCatalog.isKnown(dept, customs: customs) {
                 dept = DepartmentGuesser.guess(n, mappings: mappings, customs: customs)
             }
-            out.append(Staple(name: n, dept: dept))
+            out.append(Staple(name: n, dept: dept, langfr: langfr))
         }
         return out
     }
@@ -355,7 +365,7 @@ enum BackupCodec {
             if !DepartmentCatalog.isKnown(dept, customs: customs) {
                 dept = DepartmentGuesser.guess(n, mappings: mappings, customs: customs)
             }
-            return Staple(name: n, dept: dept)
+            return Staple(name: n, dept: dept, langfr: staple.langfr)
         }
     }
 
@@ -383,6 +393,12 @@ enum BackupCodec {
             }
         }
         return out.isEmpty ? Store.seeds : out
+    }
+
+    private static func bool(_ any: Any?) -> Bool {
+        if let b = any as? Bool { return b }
+        if let n = any as? NSNumber { return n.boolValue }
+        return false
     }
 
     private static func string(_ any: Any?) -> String? {

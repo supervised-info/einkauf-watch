@@ -8,8 +8,10 @@ enum StapleApply {
         var added: Int
         var reopened: Int
         var already: Int
+        /// Offener Treffer, dessen `langfr` aus einer gespeicherten Liste übernommen wurde.
+        var langfrApplied: Int = 0
 
-        var didChange: Bool { added > 0 || reopened > 0 }
+        var didChange: Bool { added > 0 || reopened > 0 || langfrApplied > 0 }
     }
 
     static func apply(
@@ -18,12 +20,13 @@ enum StapleApply {
         mappings: [String: String],
         nextOrd: Double,
         now: Double = Date.nowEpochMillis,
-        customs: [CustomDepartment] = []
+        customs: [CustomDepartment] = [],
+        applyLangfr: Bool = false
     ) -> Outcome {
         let name = staple.name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else {
-            return Outcome(items: items, mappings: mappings, added: 0, reopened: 0, already: 0)
+            return Outcome(items: items, mappings: mappings, added: 0, reopened: 0, already: 0, langfrApplied: 0)
         }
         var dept = staple.dept
         if !DepartmentCatalog.isKnown(dept, customs: customs) {
@@ -37,10 +40,17 @@ enum StapleApply {
                 items[idx].done = false
                 items[idx].dept = dept
                 items[idx].doneChangedAt = now
+                if applyLangfr {
+                    items[idx].langfr = staple.langfr
+                }
                 mappings[key] = dept
-                return Outcome(items: items, mappings: mappings, added: 0, reopened: 1, already: 0)
+                return Outcome(items: items, mappings: mappings, added: 0, reopened: 1, already: 0, langfrApplied: 0)
             }
-            return Outcome(items: items, mappings: mappings, added: 0, reopened: 0, already: 1)
+            if applyLangfr, items[idx].langfr != staple.langfr {
+                items[idx].langfr = staple.langfr
+                return Outcome(items: items, mappings: mappings, added: 0, reopened: 0, already: 0, langfrApplied: 1)
+            }
+            return Outcome(items: items, mappings: mappings, added: 0, reopened: 0, already: 1, langfrApplied: 0)
         }
         items.append(
             Item(
@@ -50,7 +60,8 @@ enum StapleApply {
                 done: false,
                 added: now,
                 ord: nextOrd,
-                doneChangedAt: now
+                doneChangedAt: now,
+                langfr: staple.langfr
             )
         )
         mappings[key] = dept
@@ -63,7 +74,8 @@ enum StapleApply {
         mappings: [String: String],
         nextOrd: Double,
         now: Double = Date.nowEpochMillis,
-        customs: [CustomDepartment] = []
+        customs: [CustomDepartment] = [],
+        applyLangfr: Bool = false
     ) -> Outcome {
         var items = items
         var mappings = mappings
@@ -71,15 +83,32 @@ enum StapleApply {
         var added = 0
         var reopened = 0
         var already = 0
+        var langfrApplied = 0
         for staple in staples {
-            let r = apply(staple, items: items, mappings: mappings, nextOrd: ord, now: now, customs: customs)
+            let r = apply(
+                staple,
+                items: items,
+                mappings: mappings,
+                nextOrd: ord,
+                now: now,
+                customs: customs,
+                applyLangfr: applyLangfr
+            )
             items = r.items
             mappings = r.mappings
             added += r.added
             reopened += r.reopened
             already += r.already
+            langfrApplied += r.langfrApplied
             if r.added > 0 { ord += 1 }
         }
-        return Outcome(items: items, mappings: mappings, added: added, reopened: reopened, already: already)
+        return Outcome(
+            items: items,
+            mappings: mappings,
+            added: added,
+            reopened: reopened,
+            already: already,
+            langfrApplied: langfrApplied
+        )
     }
 }

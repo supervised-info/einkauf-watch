@@ -244,6 +244,44 @@ struct ItemUrgencyChip: View {
     }
 }
 
+/// Tippen schaltet `langfr`. Gesetztes Flag: `flag.fill`. Aus: leere Kapsel (Treffer bleibt).
+/// Dieselbe kompakte Kapsel wie `ItemUrgencyChip`, `fixedSize`.
+struct ItemLangfrChip: View {
+    var langfr: Bool
+    var theme: ThemeTokens
+    var compact: Bool = false
+    var action: (() -> Void)? = nil
+
+    private var minSide: CGFloat { compact ? 22 : 26 }
+
+    var body: some View {
+        Group {
+            if let action {
+                Button(action: action) { chipLabel }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Tippen schaltet langfristig um")
+            } else {
+                chipLabel
+            }
+        }
+        .fixedSize()
+        .accessibilityLabel(langfr ? "langfristig" : "nicht langfristig")
+    }
+
+    private var chipLabel: some View {
+        Image(systemName: "flag.fill")
+            .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+            .foregroundStyle(theme.ink)
+            .opacity(langfr ? 1 : 0)
+            .frame(width: minSide, height: minSide)
+            .frame(minWidth: minSide, minHeight: minSide)
+            .padding(.horizontal, compact ? 4 : 6)
+            .background(theme.paper3)
+            .clipShape(Capsule())
+            .contentShape(Capsule())
+    }
+}
+
 extension View {
     func einkaufScreen(_ theme: ThemeTokens) -> some View {
         modifier(EinkaufScreenModifier(theme: theme))

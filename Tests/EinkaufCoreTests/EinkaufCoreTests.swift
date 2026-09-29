@@ -32,6 +32,7 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(state.items[0].name, "Milch")
         XCTAssertFalse(state.items[0].imported)
         XCTAssertEqual(state.items[0].urgency, .normal)
+        XCTAssertFalse(state.items[0].langfr)
     }
 
     func testMissingImportedAndUrgencyDefault() throws {
@@ -42,6 +43,7 @@ final class BackupCodecTests: XCTestCase {
         XCTAssertEqual(state.items.count, 1)
         XCTAssertFalse(state.items[0].imported)
         XCTAssertEqual(state.items[0].urgency, .normal)
+        XCTAssertFalse(state.items[0].langfr)
     }
 
     func testUnknownUrgencyIsNormal() throws {
@@ -56,36 +58,41 @@ final class BackupCodecTests: XCTestCase {
     func testExportRoundTripPreservesImportedAndUrgency() throws {
         var original = AppState.seed
         original.items = [
-            Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .urgent),
-            Item(id: "i2", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 2, imported: false, urgency: .later)
+            Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .urgent, langfr: true),
+            Item(id: "i2", name: "Äpfel", dept: "obst", done: false, added: 2, ord: 2, imported: false, urgency: .later, langfr: false)
         ]
         let exported = try BackupCodec.encodeExport(original)
         let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
         let rawItems = obj["items"] as! [[String: Any]]
         XCTAssertEqual(rawItems[0]["imported"] as? Bool, true)
         XCTAssertEqual(rawItems[0]["urgency"] as? String, "urgent")
+        XCTAssertEqual(rawItems[0]["langfr"] as? Bool, true)
         XCTAssertEqual(rawItems[1]["imported"] as? Bool, false)
         XCTAssertEqual(rawItems[1]["urgency"] as? String, "later")
+        XCTAssertEqual(rawItems[1]["langfr"] as? Bool, false)
         XCTAssertNil(rawItems[0]["doneChangedAt"])
         let again = try BackupCodec.decode(exported)
         XCTAssertEqual(again.items.map(\.imported), [true, false])
         XCTAssertEqual(again.items.map(\.urgency), [.urgent, .later])
+        XCTAssertEqual(again.items.map(\.langfr), [true, false])
     }
 
     func testLocalEncodeWritesImportedAndUrgency() throws {
         var state = AppState.seed
         state.items = [
-            Item(id: "i1", name: "Butter", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .later)
+            Item(id: "i1", name: "Butter", dept: "kuehlung", done: false, added: 1, ord: 1, imported: true, urgency: .later, langfr: true)
         ]
         let data = try BackupCodec.encodeLocal(state)
         let again = try BackupCodec.decodeLocal(data)
         XCTAssertEqual(again.items[0].imported, true)
         XCTAssertEqual(again.items[0].urgency, .later)
+        XCTAssertTrue(again.items[0].langfr)
         let obj = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         let nested = obj["state"] as! [String: Any]
         let items = nested["items"] as! [[String: Any]]
         XCTAssertEqual(items[0]["imported"] as? Bool, true)
         XCTAssertEqual(items[0]["urgency"] as? String, "later")
+        XCTAssertEqual(items[0]["langfr"] as? Bool, true)
     }
 
     func testExportRoundTrip() throws {
@@ -341,6 +348,74 @@ final class GroupingTests: XCTestCase {
         XCTAssertEqual(ListGrouping.progressLabel(groups: groups), "0/2/2")
     }
 
+    func testLangfrFilterKeepsItemsAndDropsEmptyDepartments() {
+        let items = [
+            Item(id: "m", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, langfr: true),
+            Item(id: "b", name: "Brot", dept: "brot", done: true, added: 2, ord: 1, langfr: false),
+            Item(id: "k", name: "Käse", dept: "kuehlung", done: false, added: 3, ord: 2, langfr: false)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+        XCTAssertEqual(LangfrFilter.alle.next, .langfristig)
+        XCTAssertEqual(LangfrFilter.langfristig.next, .kurzfristig)
+        XCTAssertEqual(LangfrFilter.kurzfristig.next, .alle)
+        XCTAssertEqual(LangfrFilter.alle.systemImage, "hourglass")
+        XCTAssertEqual(LangfrFilter.langfristig.systemImage, "infinity")
+        XCTAssertEqual(LangfrFilter.kurzfristig.systemImage, "hourglass.bottomhalf.filled")
+        XCTAssertEqual(LangfrFilter.alle.symbolRotationDegrees, 90)
+        XCTAssertEqual(LangfrFilter.langfristig.symbolRotationDegrees, 0)
+        XCTAssertEqual(LangfrFilter.kurzfristig.symbolRotationDegrees, 0)
+        XCTAssertEqual(LangfrFilter.alle.accessibilityLabel, "Alle")
+        XCTAssertEqual(LangfrFilter.langfristig.accessibilityLabel, "langfristig")
+        XCTAssertEqual(LangfrFilter.kurzfristig.accessibilityLabel, "kurzfristig")
+
+        XCTAssertEqual(ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .alle), groups)
+        let long = ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .langfristig)
+        XCTAssertEqual(long.map(\.dept), ["kuehlung"])
+        XCTAssertEqual(long.flatMap(\.items).map(\.id), ["m"])
+        let short = ListGrouping.walkListRows(groups: groups, storeId: "edeka", hidingCompleted: true, langfr: .kurzfristig)
+        XCTAssertEqual(short.compactMap(\.line.itemId), ["k"])
+        XCTAssertEqual(groups.flatMap(\.items).map(\.id), ["b", "m", "k"])
+    }
+
+    /// „Liste teilen“ nutzt `visibleGroups` mit Auge und aktuellem `LangfrFilter`.
+    func testShareVisibleGroupsFollowsLangfrAndEye() {
+        let items = [
+            Item(id: "long-open", name: "Reis", dept: "trocken", done: false, added: 1, ord: 1, langfr: true),
+            Item(id: "long-done", name: "Öl", dept: "trocken", done: true, added: 2, ord: 2, langfr: true),
+            Item(id: "short-open", name: "Milch", dept: "trocken", done: false, added: 3, ord: 3, langfr: false),
+            Item(id: "short-done", name: "Brot", dept: "trocken", done: true, added: 4, ord: 4, langfr: false)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .alle).flatMap(\.items).map(\.id),
+            ["long-open", "long-done", "short-open", "short-done"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: true, langfr: .alle).flatMap(\.items).map(\.id),
+            ["long-open", "short-open"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: true, langfr: .langfristig).flatMap(\.items).map(\.id),
+            ["long-open"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .langfristig).flatMap(\.items).map(\.id),
+            ["long-open", "long-done"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: true, langfr: .kurzfristig).flatMap(\.items).map(\.id),
+            ["short-open"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .kurzfristig).flatMap(\.items).map(\.id),
+            ["short-open", "short-done"]
+        )
+        XCTAssertEqual(groups.flatMap(\.items).map(\.id), ["long-open", "long-done", "short-open", "short-done"])
+    }
+
     private func loadFixture(_ name: String) throws -> Data {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -452,9 +527,11 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.storeName, "Einkauf")
         XCTAssertTrue(snap.isEmpty)
         XCTAssertEqual(snap.openCount, 0)
-        XCTAssertEqual(snap.compactCountText, "erledigt")
-        XCTAssertEqual(snap.inlineText, "Einkauf  erledigt")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, Liste erledigt")
+        XCTAssertEqual(snap.kurzfristigOpen, 0)
+        XCTAssertEqual(snap.langfristigOpen, 0)
+        XCTAssertEqual(snap.compactCountText, "0 (0)")
+        XCTAssertEqual(snap.inlineText, "Einkauf  0 (0)")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 0 kurzfristig, 0 langfristig")
         XCTAssertEqual(snap.progress, 0, accuracy: 0.0001)
         XCTAssertEqual(snap.openText, "0")
         XCTAssertEqual(snap.doneText, "0")
@@ -471,7 +548,7 @@ final class ComplicationSnapshotTests: XCTestCase {
         ]
         XCTAssertEqual(state.complicationSnapshot.progress, 2.0 / 3.0, accuracy: 0.0001)
         XCTAssertEqual(state.complicationSnapshot.openText, "1")
-        XCTAssertEqual(state.complicationSnapshot.compactCountText, "1")
+        XCTAssertEqual(state.complicationSnapshot.compactCountText, "1 (0)")
         XCTAssertEqual(state.complicationSnapshot.doneText, "2")
         XCTAssertEqual(state.complicationSnapshot.totalText, "3")
         state.items = [
@@ -481,8 +558,8 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(state.complicationSnapshot.progress, 1, accuracy: 0.0001)
         XCTAssertEqual(state.complicationSnapshot.progressLabel, "0/2/2")
         XCTAssertEqual(state.complicationSnapshot.openText, "0")
-        XCTAssertEqual(state.complicationSnapshot.compactCountText, "erledigt")
-        XCTAssertEqual(state.complicationSnapshot.accessibilityLabel, "Einkauf, Liste erledigt")
+        XCTAssertEqual(state.complicationSnapshot.compactCountText, "0 (0)")
+        XCTAssertEqual(state.complicationSnapshot.accessibilityLabel, "Einkauf, 0 kurzfristig, 0 langfristig")
         XCTAssertEqual(state.complicationSnapshot.doneText, "2")
         XCTAssertEqual(state.complicationSnapshot.totalText, "2")
     }
@@ -500,9 +577,9 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.storeName, ComplicationSnapshot.titleLabel)
         XCTAssertFalse(snap.isEmpty)
         XCTAssertEqual(snap.openCount, 1)
-        XCTAssertEqual(snap.compactCountText, "1")
-        XCTAssertEqual(snap.inlineText, "Einkauf  1")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 1 offen")
+        XCTAssertEqual(snap.compactCountText, "1 (0)")
+        XCTAssertEqual(snap.inlineText, "Einkauf  1 (0)")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 1 kurzfristig, 0 langfristig")
         XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
         XCTAssertFalse(snap.inlineText.contains(snap.progressLabel))
     }
@@ -522,33 +599,39 @@ final class ComplicationSnapshotTests: XCTestCase {
     func testPlaceholderSplitsThreeParts() {
         XCTAssertEqual(ComplicationSnapshot.placeholder.progressLabel, "5/2/7")
         XCTAssertEqual(ComplicationSnapshot.placeholder.openText, "5")
-        XCTAssertEqual(ComplicationSnapshot.placeholder.compactCountText, "5")
+        XCTAssertEqual(ComplicationSnapshot.placeholder.compactCountText, "3 (2)")
+        XCTAssertEqual(ComplicationSnapshot.placeholder.kurzfristigOpen, 3)
+        XCTAssertEqual(ComplicationSnapshot.placeholder.langfristigOpen, 2)
         XCTAssertEqual(ComplicationSnapshot.placeholder.doneText, "2")
         XCTAssertEqual(ComplicationSnapshot.placeholder.totalText, "7")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.progressLabel, "5/2/7")
     }
 
-    func testCompactCountIsOpenOnlyAndErledigtWhenZero() {
+    func testCompactCountIsOpenKurzOverLang() {
         var state = AppState.seed
         state.items = [
-            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1),
-            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1)
+            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1, langfr: false),
+            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1, langfr: false),
+            Item(id: "c", name: "C", dept: "brot", done: false, added: 3, ord: 1, langfr: false),
+            Item(id: "d", name: "D", dept: "kuehlung", done: false, added: 4, ord: 1, langfr: true),
+            Item(id: "e", name: "E", dept: "kuehlung", done: false, added: 5, ord: 1, langfr: true),
+            Item(id: "f", name: "F", dept: "nach", done: true, added: 6, ord: 1, langfr: false),
+            Item(id: "g", name: "G", dept: "nach", done: true, added: 7, ord: 1, langfr: true)
         ]
         var snap = state.complicationSnapshot
-        XCTAssertEqual(snap.progressLabel, "2/0/2")
-        XCTAssertEqual(snap.compactCountText, "2")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 2 offen")
+        XCTAssertEqual(snap.progressLabel, "5/2/7")
+        XCTAssertEqual(snap.compactCountText, "3 (2)")
+        XCTAssertEqual(snap.inlineText, "Einkauf  3 (2)")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 3 kurzfristig, 2 langfristig")
+        XCTAssertEqual(state.langfrCountLabel, "3 (2)")
         state.items[0].done = true
         snap = state.complicationSnapshot
-        XCTAssertEqual(snap.progressLabel, "1/1/2")
-        XCTAssertEqual(snap.compactCountText, "1")
-        XCTAssertEqual(snap.inlineText, "Einkauf  1")
-        state.items[1].done = true
+        XCTAssertEqual(snap.progressLabel, "4/3/7")
+        XCTAssertEqual(snap.compactCountText, "2 (2)")
+        state.items[3].done = true
         snap = state.complicationSnapshot
-        XCTAssertEqual(snap.progressLabel, "0/2/2")
-        XCTAssertEqual(snap.compactCountText, "erledigt")
-        XCTAssertEqual(snap.inlineText, "Einkauf  erledigt")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, Liste erledigt")
+        XCTAssertEqual(snap.compactCountText, "2 (1)")
+        XCTAssertEqual(snap.inlineText, "Einkauf  2 (1)")
     }
 
     func testWidgetKindIsStable() {
@@ -565,8 +648,9 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.progressLabel, "0/0/0")
         XCTAssertEqual(snap.todoListName, "Alle")
         XCTAssertEqual(snap.todoRowLabel, "To Do (Alle)")
-        XCTAssertEqual(snap.compactEinkaufLine(short: false), "Einkaufsliste: 0/0/0")
-        XCTAssertEqual(snap.compactEinkaufLine(short: true), "Einkauf: 0/0/0")
+        XCTAssertEqual(snap.einkaufLangfrLabel, "0 (0)")
+        XCTAssertEqual(snap.compactEinkaufLine(short: false), "Einkaufsliste: 0 (0)")
+        XCTAssertEqual(snap.compactEinkaufLine(short: true), "Einkauf: 0 (0)")
         XCTAssertEqual(snap.compactTodoLine, "To Do (Alle): 0/0/0")
         XCTAssertTrue(snap.accessibilityLabel.contains("leer"))
     }
@@ -584,8 +668,30 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.einkauf.open, 1)
         XCTAssertEqual(snap.einkauf.done, 2)
         XCTAssertEqual(snap.einkauf.total, 3)
+        XCTAssertEqual(snap.einkaufLangfrLabel, "1 (0)")
         XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
         XCTAssertEqual(state.complicationSnapshot.progressLabel, snap.progressLabel)
+    }
+
+    func testSmallEinkaufCounterIsOpenKurzOverLang() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1, langfr: false),
+            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1, langfr: false),
+            Item(id: "c", name: "C", dept: "brot", done: false, added: 3, ord: 1, langfr: false),
+            Item(id: "d", name: "D", dept: "kuehlung", done: false, added: 4, ord: 1, langfr: true),
+            Item(id: "e", name: "E", dept: "kuehlung", done: false, added: 5, ord: 1, langfr: true),
+            Item(id: "f", name: "F", dept: "nach", done: true, added: 6, ord: 1, langfr: false),
+            Item(id: "g", name: "G", dept: "nach", done: true, added: 7, ord: 1, langfr: true)
+        ]
+        let snap = HomeWidgetSnapshot.make(from: state)
+        XCTAssertEqual(snap.einkaufLangfrLabel, "3 (2)")
+        XCTAssertEqual(snap.compactEinkaufLine(short: true), "Einkauf: 3 (2)")
+        XCTAssertEqual(snap.progressLabel, "5/2/7")
+        XCTAssertEqual(snap.einkauf.open, 5)
+        XCTAssertEqual(snap.einkauf.done, 2)
+        XCTAssertEqual(snap.einkauf.total, 7)
+        XCTAssertTrue(snap.accessibilityLabel.contains("3 kurzfristig, 2 langfristig"))
     }
 
     func testTodoCountsFollowCurrentListOnly() {
@@ -632,6 +738,7 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(HomeWidgetSnapshot.columnHeaders.1, "Erledigt")
         XCTAssertEqual(HomeWidgetSnapshot.columnHeaders.2, "Gesamt")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.progressLabel, "5/2/7")
+        XCTAssertEqual(HomeWidgetSnapshot.placeholder.einkaufLangfrLabel, "3 (2)")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.todoProgressLabel, "3/1/4")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.todoRowLabel, "To Do (Haus)")
     }
@@ -1001,6 +1108,50 @@ final class SavedListTests: XCTestCase {
         XCTAssertEqual(Set(state.stores.map(\.id)), Set(Store.seeds.map(\.id)))
         XCTAssertTrue(state.stores.allSatisfy(\.builtin))
         XCTAssertTrue(state.staples.isEmpty)
+        XCTAssertEqual(state.savedLists[0].items.map(\.langfr), [false])
+    }
+
+    func testSaveSnapshotRoundTripsLangfrAndApplyWritesIt() throws {
+        var seed = AppState.seed
+        seed.items = [
+            Item(id: "a", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, langfr: true),
+            Item(id: "b", name: "Butter", dept: "kuehlung", done: true, added: 2, ord: 2, doneChangedAt: 2, langfr: false)
+        ]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        XCTAssertEqual(store.saveCurrentList(name: "Grillen"), .saved)
+        XCTAssertEqual(store.savedLists[0].items.map(\.langfr), [true, false])
+
+        let exported = try BackupCodec.encodeExport(store.state)
+        let again = try BackupCodec.decode(exported)
+        XCTAssertEqual(again.savedLists[0].items.map(\.langfr), [true, false])
+        let obj = try JSONSerialization.jsonObject(with: exported) as! [String: Any]
+        let saved = (obj["savedLists"] as! [[String: Any]])[0]["items"] as! [[String: Any]]
+        XCTAssertEqual(saved.map { $0["langfr"] as? Bool }, [true, false])
+        XCTAssertTrue(saved.allSatisfy { $0["done"] == nil })
+
+        let empty = ShoppingStore(state: .seed, enableSync: false)
+        let added = empty.applySavedList(again.savedLists[0])
+        XCTAssertEqual(added.added, 2)
+        XCTAssertEqual(empty.state.items.map(\.langfr), [true, false])
+        XCTAssertTrue(empty.state.items.allSatisfy { !$0.done })
+
+        empty.toggleItemLangfr(empty.state.items[0].id)
+        XCTAssertFalse(empty.state.items[0].langfr)
+        let updated = empty.applySavedList(again.savedLists[0])
+        XCTAssertEqual(updated.langfrApplied, 1)
+        XCTAssertEqual(updated.already, 1)
+        XCTAssertTrue(empty.state.items[0].langfr)
+        XCTAssertFalse(empty.state.items[1].langfr)
+    }
+
+    func testApplyStapleDoesNotOverwriteOpenLangfr() {
+        var seed = AppState.seed
+        seed.items = [Item(id: "a", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1, langfr: true)]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        let result = store.applyStaple(Staple(name: "Milch", dept: "kuehlung"))
+        XCTAssertEqual(result.already, 1)
+        XCTAssertFalse(result.didChange)
+        XCTAssertTrue(store.state.items[0].langfr)
     }
 
     func testRemoveSavedList() {
@@ -1875,6 +2026,35 @@ final class ListShareTests: XCTestCase {
         return calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h, minute: min))!
     }
 
+    func testPdfTitleFollowsLangfrFilter() {
+        XCTAssertEqual(ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .alle), "Einkaufsliste Edeka")
+        XCTAssertEqual(ListShare.pdfPageTitle(storeName: "Edeka", langfr: .alle), "Einkaufsliste  Edeka")
+        XCTAssertFalse(ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .alle).contains("("))
+        XCTAssertFalse(ListShare.pdfPageTitle(storeName: "Edeka", langfr: .alle).contains("("))
+
+        XCTAssertEqual(
+            ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .langfristig),
+            "Einkaufsliste (langfristig) Edeka"
+        )
+        XCTAssertEqual(
+            ListShare.pdfPageTitle(storeName: "Edeka", langfr: .langfristig),
+            "Einkaufsliste (langfristig) Edeka"
+        )
+        XCTAssertEqual(
+            ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .kurzfristig),
+            "Einkaufsliste (kurzfristig) Edeka"
+        )
+        XCTAssertEqual(
+            ListShare.pdfPageTitle(storeName: "Edeka", langfr: .kurzfristig),
+            "Einkaufsliste (kurzfristig) Edeka"
+        )
+        for filter in [LangfrFilter.langfristig, .kurzfristig] {
+            let title = ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: filter)
+            XCTAssertFalse(title.contains("/"))
+            XCTAssertFalse(title.contains("langfristig/kurzfristig"))
+        }
+    }
+
     func testStampedFilenameUsesStoreSlug() {
         XCTAssertEqual(
             ListShare.stampedFilename(storeName: "Edeka", date: date(2026, 9, 2, 16, 39), timeZone: utc),
@@ -2094,6 +2274,7 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.state.items.map(\.dept), ["kuehlung", "kuehlung", "kuehlung"])
         XCTAssertEqual(store.state.items.map(\.imported), [false, false, false])
         XCTAssertEqual(store.state.items.map(\.urgency), [.normal, .normal, .normal])
+        XCTAssertEqual(store.state.items.map(\.langfr), [false, false, false])
         XCTAssertEqual(store.state.listRevision, 1)
     }
 
@@ -2119,7 +2300,22 @@ final class SpeechAddItemsTests: XCTestCase {
         store.cycleItemUrgency("i1")
         XCTAssertEqual(store.state.items[0].urgency, .normal)
         XCTAssertTrue(store.state.items[0].imported)
+        XCTAssertFalse(store.state.items[0].langfr)
         XCTAssertEqual(store.state.listRevision, 3)
+    }
+
+    func testToggleItemLangfr() {
+        var seed = AppState.seed
+        seed.items = [Item(id: "i1", name: "Milch", dept: "kuehlung", done: false, added: 1, ord: 1)]
+        let store = ShoppingStore(state: seed, enableSync: false)
+        store.toggleItemLangfr("i1")
+        XCTAssertTrue(store.state.items[0].langfr)
+        XCTAssertEqual(store.state.items[0].urgency, .normal)
+        store.toggleItemLangfr("i1")
+        XCTAssertFalse(store.state.items[0].langfr)
+        XCTAssertEqual(store.state.listRevision, 2)
+        store.toggleItemLangfr("missing")
+        XCTAssertEqual(store.state.listRevision, 2)
     }
 
     func testUrgencyChipSymbols() {
@@ -2142,6 +2338,7 @@ final class SpeechAddItemsTests: XCTestCase {
         XCTAssertEqual(store.state.items.count, 2)
         XCTAssertTrue(store.state.items.allSatisfy { !$0.imported })
         XCTAssertTrue(store.state.items.allSatisfy { $0.urgency == .normal })
+        XCTAssertTrue(store.state.items.allSatisfy { !$0.langfr })
     }
 
     func testImportBackupPreservesImportedAndUrgency() throws {
