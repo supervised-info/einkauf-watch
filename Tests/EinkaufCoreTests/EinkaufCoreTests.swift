@@ -486,9 +486,11 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.storeName, "Einkauf")
         XCTAssertTrue(snap.isEmpty)
         XCTAssertEqual(snap.openCount, 0)
-        XCTAssertEqual(snap.compactCountText, "erledigt")
-        XCTAssertEqual(snap.inlineText, "Einkauf  erledigt")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, Liste erledigt")
+        XCTAssertEqual(snap.kurzfristigOpen, 0)
+        XCTAssertEqual(snap.langfristigOpen, 0)
+        XCTAssertEqual(snap.compactCountText, "0/0")
+        XCTAssertEqual(snap.inlineText, "Einkauf  0/0")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 0 kurzfristig, 0 langfristig")
         XCTAssertEqual(snap.progress, 0, accuracy: 0.0001)
         XCTAssertEqual(snap.openText, "0")
         XCTAssertEqual(snap.doneText, "0")
@@ -505,7 +507,7 @@ final class ComplicationSnapshotTests: XCTestCase {
         ]
         XCTAssertEqual(state.complicationSnapshot.progress, 2.0 / 3.0, accuracy: 0.0001)
         XCTAssertEqual(state.complicationSnapshot.openText, "1")
-        XCTAssertEqual(state.complicationSnapshot.compactCountText, "1")
+        XCTAssertEqual(state.complicationSnapshot.compactCountText, "1/0")
         XCTAssertEqual(state.complicationSnapshot.doneText, "2")
         XCTAssertEqual(state.complicationSnapshot.totalText, "3")
         state.items = [
@@ -515,8 +517,8 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(state.complicationSnapshot.progress, 1, accuracy: 0.0001)
         XCTAssertEqual(state.complicationSnapshot.progressLabel, "0/2/2")
         XCTAssertEqual(state.complicationSnapshot.openText, "0")
-        XCTAssertEqual(state.complicationSnapshot.compactCountText, "erledigt")
-        XCTAssertEqual(state.complicationSnapshot.accessibilityLabel, "Einkauf, Liste erledigt")
+        XCTAssertEqual(state.complicationSnapshot.compactCountText, "0/0")
+        XCTAssertEqual(state.complicationSnapshot.accessibilityLabel, "Einkauf, 0 kurzfristig, 0 langfristig")
         XCTAssertEqual(state.complicationSnapshot.doneText, "2")
         XCTAssertEqual(state.complicationSnapshot.totalText, "2")
     }
@@ -534,9 +536,9 @@ final class ComplicationSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.storeName, ComplicationSnapshot.titleLabel)
         XCTAssertFalse(snap.isEmpty)
         XCTAssertEqual(snap.openCount, 1)
-        XCTAssertEqual(snap.compactCountText, "1")
-        XCTAssertEqual(snap.inlineText, "Einkauf  1")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 1 offen")
+        XCTAssertEqual(snap.compactCountText, "1/0")
+        XCTAssertEqual(snap.inlineText, "Einkauf  1/0")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 1 kurzfristig, 0 langfristig")
         XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
         XCTAssertFalse(snap.inlineText.contains(snap.progressLabel))
     }
@@ -556,33 +558,39 @@ final class ComplicationSnapshotTests: XCTestCase {
     func testPlaceholderSplitsThreeParts() {
         XCTAssertEqual(ComplicationSnapshot.placeholder.progressLabel, "5/2/7")
         XCTAssertEqual(ComplicationSnapshot.placeholder.openText, "5")
-        XCTAssertEqual(ComplicationSnapshot.placeholder.compactCountText, "5")
+        XCTAssertEqual(ComplicationSnapshot.placeholder.compactCountText, "3/2")
+        XCTAssertEqual(ComplicationSnapshot.placeholder.kurzfristigOpen, 3)
+        XCTAssertEqual(ComplicationSnapshot.placeholder.langfristigOpen, 2)
         XCTAssertEqual(ComplicationSnapshot.placeholder.doneText, "2")
         XCTAssertEqual(ComplicationSnapshot.placeholder.totalText, "7")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.progressLabel, "5/2/7")
     }
 
-    func testCompactCountIsOpenOnlyAndErledigtWhenZero() {
+    func testCompactCountIsOpenKurzOverLang() {
         var state = AppState.seed
         state.items = [
-            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1),
-            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1)
+            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1, langfr: false),
+            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1, langfr: false),
+            Item(id: "c", name: "C", dept: "brot", done: false, added: 3, ord: 1, langfr: false),
+            Item(id: "d", name: "D", dept: "kuehlung", done: false, added: 4, ord: 1, langfr: true),
+            Item(id: "e", name: "E", dept: "kuehlung", done: false, added: 5, ord: 1, langfr: true),
+            Item(id: "f", name: "F", dept: "nach", done: true, added: 6, ord: 1, langfr: false),
+            Item(id: "g", name: "G", dept: "nach", done: true, added: 7, ord: 1, langfr: true)
         ]
         var snap = state.complicationSnapshot
-        XCTAssertEqual(snap.progressLabel, "2/0/2")
-        XCTAssertEqual(snap.compactCountText, "2")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 2 offen")
+        XCTAssertEqual(snap.progressLabel, "5/2/7")
+        XCTAssertEqual(snap.compactCountText, "3/2")
+        XCTAssertEqual(snap.inlineText, "Einkauf  3/2")
+        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, 3 kurzfristig, 2 langfristig")
+        XCTAssertEqual(state.langfrCountLabel, "3/2")
         state.items[0].done = true
         snap = state.complicationSnapshot
-        XCTAssertEqual(snap.progressLabel, "1/1/2")
-        XCTAssertEqual(snap.compactCountText, "1")
-        XCTAssertEqual(snap.inlineText, "Einkauf  1")
-        state.items[1].done = true
+        XCTAssertEqual(snap.progressLabel, "4/3/7")
+        XCTAssertEqual(snap.compactCountText, "2/2")
+        state.items[3].done = true
         snap = state.complicationSnapshot
-        XCTAssertEqual(snap.progressLabel, "0/2/2")
-        XCTAssertEqual(snap.compactCountText, "erledigt")
-        XCTAssertEqual(snap.inlineText, "Einkauf  erledigt")
-        XCTAssertEqual(snap.accessibilityLabel, "Einkauf, Liste erledigt")
+        XCTAssertEqual(snap.compactCountText, "2/1")
+        XCTAssertEqual(snap.inlineText, "Einkauf  2/1")
     }
 
     func testWidgetKindIsStable() {
@@ -599,8 +607,9 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.progressLabel, "0/0/0")
         XCTAssertEqual(snap.todoListName, "Alle")
         XCTAssertEqual(snap.todoRowLabel, "To Do (Alle)")
-        XCTAssertEqual(snap.compactEinkaufLine(short: false), "Einkaufsliste: 0/0/0")
-        XCTAssertEqual(snap.compactEinkaufLine(short: true), "Einkauf: 0/0/0")
+        XCTAssertEqual(snap.einkaufLangfrLabel, "0/0")
+        XCTAssertEqual(snap.compactEinkaufLine(short: false), "Einkaufsliste: 0/0")
+        XCTAssertEqual(snap.compactEinkaufLine(short: true), "Einkauf: 0/0")
         XCTAssertEqual(snap.compactTodoLine, "To Do (Alle): 0/0/0")
         XCTAssertTrue(snap.accessibilityLabel.contains("leer"))
     }
@@ -618,8 +627,30 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(snap.einkauf.open, 1)
         XCTAssertEqual(snap.einkauf.done, 2)
         XCTAssertEqual(snap.einkauf.total, 3)
+        XCTAssertEqual(snap.einkaufLangfrLabel, "1/0")
         XCTAssertTrue(state.watchTitle.contains(snap.progressLabel))
         XCTAssertEqual(state.complicationSnapshot.progressLabel, snap.progressLabel)
+    }
+
+    func testSmallEinkaufCounterIsOpenKurzOverLang() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "a", name: "A", dept: "obst", done: false, added: 1, ord: 1, langfr: false),
+            Item(id: "b", name: "B", dept: "obst", done: false, added: 2, ord: 1, langfr: false),
+            Item(id: "c", name: "C", dept: "brot", done: false, added: 3, ord: 1, langfr: false),
+            Item(id: "d", name: "D", dept: "kuehlung", done: false, added: 4, ord: 1, langfr: true),
+            Item(id: "e", name: "E", dept: "kuehlung", done: false, added: 5, ord: 1, langfr: true),
+            Item(id: "f", name: "F", dept: "nach", done: true, added: 6, ord: 1, langfr: false),
+            Item(id: "g", name: "G", dept: "nach", done: true, added: 7, ord: 1, langfr: true)
+        ]
+        let snap = HomeWidgetSnapshot.make(from: state)
+        XCTAssertEqual(snap.einkaufLangfrLabel, "3/2")
+        XCTAssertEqual(snap.compactEinkaufLine(short: true), "Einkauf: 3/2")
+        XCTAssertEqual(snap.progressLabel, "5/2/7")
+        XCTAssertEqual(snap.einkauf.open, 5)
+        XCTAssertEqual(snap.einkauf.done, 2)
+        XCTAssertEqual(snap.einkauf.total, 7)
+        XCTAssertTrue(snap.accessibilityLabel.contains("3 kurzfristig, 2 langfristig"))
     }
 
     func testTodoCountsFollowCurrentListOnly() {
@@ -666,6 +697,7 @@ final class HomeWidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(HomeWidgetSnapshot.columnHeaders.1, "Erledigt")
         XCTAssertEqual(HomeWidgetSnapshot.columnHeaders.2, "Gesamt")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.progressLabel, "5/2/7")
+        XCTAssertEqual(HomeWidgetSnapshot.placeholder.einkaufLangfrLabel, "3/2")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.todoProgressLabel, "3/1/4")
         XCTAssertEqual(HomeWidgetSnapshot.placeholder.todoRowLabel, "To Do (Haus)")
     }

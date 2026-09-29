@@ -17,7 +17,7 @@ struct EinkaufComplication: Widget {
                 .widgetURL(ComplicationSnapshot.openURL)
         }
         .configurationDisplayName("Einkauf")
-        .description("Offene Artikel der Einkaufsliste.")
+        .description("Offene Artikel: kurzfristig/langfristig.")
         .supportedFamilies([
             .accessoryCircular,
             .accessoryRectangular,
@@ -77,7 +77,7 @@ struct EinkaufComplicationView: View {
         .accessibilityHint("Öffnet die Einkaufsliste")
     }
 
-    /// Runde Komplikation: Gauge 0…1 (erledigt/gesamt), Zentrum nur offene Anzahl bzw. „erledigt“.
+    /// Runde Komplikation: Gauge 0…1 (erledigt/gesamt), Zentrum `kurz/lang`.
     /// Kein `.title2` — auf der physischen Watch zeichnet watchOS sonst „!“.
     private var circular: some View {
         Gauge(value: entry.snapshot.progress, in: 0...1) {
@@ -93,7 +93,7 @@ struct EinkaufComplicationView: View {
         .widgetAccentable()
     }
 
-    /// Rechteck: fester Titel **Einkauf** plus offene Anzahl bzw. „erledigt“.
+    /// Rechteck: fester Titel **Einkauf** plus `kurz/lang`.
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(entry.snapshot.storeName)
@@ -110,7 +110,7 @@ struct EinkaufComplicationView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Inline-Zeile: **Einkauf** + Zähler, sonst nur offene Anzahl bzw. „erledigt“.
+    /// Inline-Zeile: **Einkauf** + `kurz/lang`, sonst nur der Zähler.
     private var inline: some View {
         ViewThatFits(in: .horizontal) {
             Text(entry.snapshot.inlineText)
@@ -120,7 +120,7 @@ struct EinkaufComplicationView: View {
     }
 
     /// Ecke: Zähler größer als der gebogene Titel **Einkauf** (explizite pt-Größen, kein `.title2` → sonst „!“).
-    /// `minimumScaleFactor` hält „erledigt“ in der Ecke lesbar.
+    /// `minimumScaleFactor` hält längere `kurz/lang`-Zähler in der Ecke lesbar.
     private var corner: some View {
         Text(entry.snapshot.compactCountText)
             .font(.system(size: 19, weight: .semibold, design: .rounded))

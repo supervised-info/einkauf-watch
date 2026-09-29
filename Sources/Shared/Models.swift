@@ -344,6 +344,12 @@ struct AppState: Equatable, Codable, Sendable {
     var doneCount: Int { items.filter(\.done).count }
     /// Kompakter Fortschritt: offen/erledigt/gesamt, inkl. vor/nach. Leer: `0/0/0`.
     var progressLabel: String { "\(openCount)/\(doneCount)/\(items.count)" }
+    /// Offene kurzfristige Artikel (`langfr == false`). Erledigte zählen nicht.
+    var openKurzfristigCount: Int { items.filter { !$0.done && !$0.langfr }.count }
+    /// Offene langfristige Artikel (`langfr == true`). Erledigte zählen nicht.
+    var openLangfristigCount: Int { items.filter { !$0.done && $0.langfr }.count }
+    /// Complication und iPhone-Small-Einkauf: `<kurzfristig>/<langfristig>`. Leer: `0/0`.
+    var langfrCountLabel: String { "\(openKurzfristigCount)/\(openLangfristigCount)" }
     /// Eine Zeile für die Watch-Nav: Laden links, dann Einkauf oo/xx/yy. Lange Namen
     /// kürzen, damit der Zähler auf 41mm nicht vom Systemtitel abgeschnitten wird.
     var watchTitle: String {
@@ -368,7 +374,7 @@ struct AppState: Equatable, Codable, Sendable {
 }
 
 /// Anzeige für die Watch-Complication. `progressLabel` bleibt `oo/xx/yy` (wie `watchTitle`);
-/// der sichtbare Zähler ist `compactCountText` (nur offene Anzahl, bei 0 „erledigt“).
+/// der sichtbare Zähler ist `compactCountText` (`kurzfristig/langfristig`, nur offene Artikel).
 /// Titel fest **Einkauf** (nicht Ladenname, nicht „Einkaufsliste“ — zu lang für Corner/Inline).
 struct ComplicationSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufProgress"
@@ -382,12 +388,18 @@ struct ComplicationSnapshot: Equatable, Sendable {
     var isEmpty: Bool
     /// Gauge 0…1 (erledigt/gesamt); leere Liste ist 0.
     var progress: Double = 0
+    /// Offene kurzfristige Artikel (`!done && !langfr`).
+    var kurzfristigOpen: Int = 0
+    /// Offene langfristige Artikel (`!done && langfr`).
+    var langfristigOpen: Int = 0
 
     static let placeholder = ComplicationSnapshot(
         progressLabel: "5/2/7",
         storeName: titleLabel,
         isEmpty: false,
-        progress: 2.0 / 7.0
+        progress: 2.0 / 7.0,
+        kurzfristigOpen: 3,
+        langfristigOpen: 2
     )
 
     static func make(from state: AppState) -> ComplicationSnapshot {
@@ -396,7 +408,9 @@ struct ComplicationSnapshot: Equatable, Sendable {
             progressLabel: state.progressLabel,
             storeName: titleLabel,
             isEmpty: state.items.isEmpty,
-            progress: total == 0 ? 0 : Double(state.doneCount) / Double(total)
+            progress: total == 0 ? 0 : Double(state.doneCount) / Double(total),
+            kurzfristigOpen: state.openKurzfristigCount,
+            langfristigOpen: state.openLangfristigCount
         )
     }
 
@@ -410,12 +424,12 @@ struct ComplicationSnapshot: Equatable, Sendable {
     var totalText: String { progressParts.indices.contains(2) ? progressParts[2] : "" }
     var openCount: Int { Int(openText) ?? 0 }
 
-    /// Sichtbarer Complication-Zähler: `"\(openCount)"`, bei 0 das Wort „erledigt“.
+    /// Sichtbarer Complication-Zähler: offene kurzfristig/langfristig. Leer und alles abgehakt: `0/0`.
     var compactCountText: String {
-        openCount == 0 ? "erledigt" : openText
+        "\(kurzfristigOpen)/\(langfristigOpen)"
     }
 
-    /// Inline: fester Titel **Einkauf** und kompakter Zähler (0 → „erledigt“).
+    /// Inline: fester Titel **Einkauf** und kompakter Zähler (`k/l`).
     var inlineText: String {
         let name = storeName.trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty { return compactCountText }
@@ -424,10 +438,7 @@ struct ComplicationSnapshot: Equatable, Sendable {
 
     var accessibilityLabel: String {
         let title = storeName.isEmpty ? Self.titleLabel : storeName
-        if openCount == 0 {
-            return "\(title), Liste erledigt"
-        }
-        return "\(title), \(openCount) offen"
+        return "\(title), \(kurzfristigOpen) kurzfristig, \(langfristigOpen) langfristig"
     }
 }
 
@@ -450,7 +461,8 @@ struct HomeWidgetCounts: Equatable, Sendable {
     }
 }
 
-/// Homescreen-Widget (iPhone): Einkauf + To-Do der **aktuellen Liste**, beide `oo/xx/yy`.
+/// Homescreen-Widget (iPhone): Einkauf + To-Do der **aktuellen Liste**.
+/// Small-Einkauf: `kurz/lang`. To-Do und die Tabelle: `oo/xx/yy`.
 struct HomeWidgetSnapshot: Equatable, Sendable {
     static let widgetKind = "EinkaufHome"
     static let openURL = URL(string: "einkauf://list")!
@@ -464,11 +476,17 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
     var todo: HomeWidgetCounts
     /// Listenname für `To Do (…)` — **Alle** bei leerer oder unbekannter ID.
     var todoListName: String
+    /// Offene kurzfristige Einkaufsartikel. Small-Widget, nicht die Tabelle.
+    var kurzfristigOpen: Int = 0
+    /// Offene langfristige Einkaufsartikel. Small-Widget, nicht die Tabelle.
+    var langfristigOpen: Int = 0
 
     static let placeholder = HomeWidgetSnapshot(
         einkauf: HomeWidgetCounts(open: 5, done: 2, total: 7),
         todo: HomeWidgetCounts(open: 3, done: 1, total: 4),
-        todoListName: "Haus"
+        todoListName: "Haus",
+        kurzfristigOpen: 3,
+        langfristigOpen: 2
     )
 
     static func make(
@@ -481,12 +499,17 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
         return HomeWidgetSnapshot(
             einkauf: .shopping(state),
             todo: .todo(tasks),
-            todoListName: TodoListFilter.title(lists: todoState.lists, currentListId: listId)
+            todoListName: TodoListFilter.title(lists: todoState.lists, currentListId: listId),
+            kurzfristigOpen: state.openKurzfristigCount,
+            langfristigOpen: state.openLangfristigCount
         )
     }
 
-    /// Einkauf-Zähler, gleiche Form wie `AppState.progressLabel`.
+    /// Einkauf-Zähler der Tabelle, gleiche Form wie `AppState.progressLabel`.
     var progressLabel: String { einkauf.progressLabel }
+
+    /// Small-Widget Einkauf: offene kurzfristig/langfristig. Leer: `0/0`.
+    var einkaufLangfrLabel: String { "\(kurzfristigOpen)/\(langfristigOpen)" }
 
     var todoProgressLabel: String { todo.progressLabel }
 
@@ -494,7 +517,7 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
 
     func compactEinkaufLine(short: Bool) -> String {
         let name = short ? Self.einkaufLabelCompact : Self.einkaufLabel
-        return "\(name): \(einkauf.progressLabel)"
+        return "\(name): \(einkaufLangfrLabel)"
     }
 
     var compactTodoLine: String {
@@ -502,7 +525,13 @@ struct HomeWidgetSnapshot: Equatable, Sendable {
     }
 
     var accessibilityLabel: String {
-        "\(Self.einkaufLabel) \(spoken(einkauf)), \(todoRowLabel) \(spoken(todo))"
+        "\(Self.einkaufLabel) \(spokenEinkauf()), \(todoRowLabel) \(spoken(todo))"
+    }
+
+    private func spokenEinkauf() -> String {
+        let split = "\(kurzfristigOpen) kurzfristig, \(langfristigOpen) langfristig"
+        if einkauf.isEmpty { return "\(split), Liste leer" }
+        return "\(split), \(einkauf.open) offen, \(einkauf.done) erledigt, \(einkauf.total) gesamt"
     }
 
     private func spoken(_ counts: HomeWidgetCounts) -> String {

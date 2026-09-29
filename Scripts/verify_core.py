@@ -1594,8 +1594,13 @@ def test_watch_complication() -> None:
         fail("ComplicationSnapshot must expose openText for three-part labels")
     if "var compactCountText" not in models:
         fail("ComplicationSnapshot must expose compactCountText")
-    if '"erledigt"' not in models:
-        fail("ComplicationSnapshot compactCountText must use erledigt when open is 0")
+    comp_models = models.split("struct ComplicationSnapshot", 1)[-1].split("struct HomeWidgetSnapshot", 1)[0]
+    if "kurzfristigOpen" not in comp_models or "langfristigOpen" not in comp_models:
+        fail("ComplicationSnapshot must count open kurzfristig and langfristig")
+    if '"\\(kurzfristigOpen)/\\(langfristigOpen)"' not in comp_models:
+        fail("compactCountText must be kurzfristigOpen/langfristigOpen")
+    if '"erledigt"' in comp_models:
+        fail("Einkauf complication compactCountText must not use erledigt")
     if "Watch-Complication" not in desc or "accessoryCircular" not in desc:
         fail("Description.md must document the Watch complication families")
     comp_sec = markdown_section(desc, "### Watch-Complication", "### iPhone-Widget")
@@ -1605,12 +1610,18 @@ def test_watch_complication() -> None:
         fail("Description.md complication must document the fixed Einkauf title")
     if "Listenname" not in comp_sec or "Alle" not in comp_sec:
         fail("Description.md To-Do complication must document list name + Alle fallback")
-    if "erledigt" not in comp_sec:
-        fail("Description.md complication must document erledigt when open is 0")
+    einkauf_comp = comp_sec.split("### Watch-To-Do-Complication", 1)[0]
+    todo_comp = comp_sec.split("### Watch-To-Do-Complication", 1)[-1]
+    if "kurzfristig" not in einkauf_comp or "langfristig" not in einkauf_comp or "0/0" not in einkauf_comp:
+        fail("Description.md Einkauf complication must document kurzfristig/langfristig and empty 0/0")
+    if "erledigt" in einkauf_comp:
+        fail("Description.md Einkauf complication must not document erledigt as the counter")
+    if "erledigt" not in todo_comp:
+        fail("Description.md To-Do complication must document erledigt when open is 0")
     if "19pt" not in comp_sec and "18–20pt" not in comp_sec and "18-20pt" not in comp_sec:
         fail("Description.md must document accessoryCorner count larger than the store widgetLabel")
-    if '"erledigt"' not in tests:
-        fail("tests must cover complication compactCountText erledigt")
+    if 'compactCountText, "0/0"' not in tests or 'compactCountText, "3/2"' not in tests:
+        fail("tests must cover complication compactCountText as kurz/lang (empty 0/0, example 3/2)")
     if "nicht auf dem iPhone" not in desc.lower() and "Nicht auf dem iPhone" not in desc:
         fail("Description.md must say the complication is not on iPhone")
     if "WidgetKit" not in desc or "ClockKit" not in desc:
@@ -1756,6 +1767,8 @@ def test_iphone_widget() -> None:
         fail("medium/large widget rows must use Link tap targets")
     if "progressLabel" not in widget:
         fail("iPhone widget must show progressLabel oo/xx/yy")
+    if "einkaufLangfrLabel" not in widget:
+        fail("small Einkauf counter must show einkaufLangfrLabel (kurz/lang)")
     if "Einkaufsliste" not in widget:
         fail("small widget must prefer label Einkaufsliste")
     if "To Do" not in widget:
@@ -1795,6 +1808,12 @@ def test_iphone_widget() -> None:
         fail("small widget must not keep label and counts on one HStack row")
     if "ViewThatFits" not in small_src:
         fail("small widget must keep ViewThatFits Einkaufsliste vs Einkauf")
+    if "einkaufLangfrLabel" not in small_src:
+        fail("small Einkauf counter must be kurz/lang")
+    if "einkauf.progressLabel" in small_src:
+        fail("small Einkauf counter must not show oo/xx/yy")
+    if "todo.progressLabel" not in small_src:
+        fail("small To-Do counter must keep oo/xx/yy")
     if "spacing: 12" not in small_src:
         fail("small widget must space the two stacked blocks (empty-line feel)")
     table_src = extract_some_view(widget, "table")
@@ -1877,6 +1896,10 @@ def test_iphone_widget() -> None:
         fail("Description.md must document Small label on its own line then counts below")
     if "darunter" not in iphone_sec:
         fail("Description.md must document Small counts below the label")
+    if "kurz/lang" not in iphone_sec or "einkaufLangfrLabel" not in iphone_sec:
+        fail("Description.md must document Small Einkauf counter as kurz/lang")
+    if "Offen" not in iphone_sec or "Erledigt" not in iphone_sec or "Gesamt" not in iphone_sec:
+        fail("Description.md must keep medium/large Offen / Erledigt / Gesamt")
     if "To Do (" not in desc and "To Do (`" not in desc:
         fail("Description.md must document To Do (<list>) on the iPhone widget")
     if "nicht auf der Watch" not in desc.lower() and "Nicht auf der Watch" not in desc:
