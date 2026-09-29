@@ -244,11 +244,11 @@ struct ContentView: View {
                 .strikethrough(item.done, color: theme.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
-                store.cycleItemUrgency(item.id)
-            }
             ItemLangfrChip(langfr: item.langfr, theme: theme) {
                 store.toggleItemLangfr(item.id)
+            }
+            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
+                store.cycleItemUrgency(item.id)
             }
             ItemImportedMark(imported: item.imported, theme: theme)
         }
@@ -312,11 +312,11 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
-                store.cycleItemUrgency(item.id)
-            }
             ItemLangfrChip(langfr: item.langfr, theme: theme) {
                 store.toggleItemLangfr(item.id)
+            }
+            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
+                store.cycleItemUrgency(item.id)
             }
             ItemImportedMark(imported: item.imported, theme: theme)
         }
@@ -374,6 +374,7 @@ struct ContentView: View {
             } label: {
                 Image(systemName: langfrFilter.systemImage)
                     .einkaufToolbarChrome()
+                    .rotationEffect(.degrees(langfrFilter.symbolRotationDegrees))
             }
             .accessibilityLabel(langfrFilter.accessibilityLabel)
         }
@@ -517,7 +518,11 @@ struct ContentView: View {
 
     private func shareList() {
         do {
-            let groups = ListGrouping.visibleGroups(store.groups, hidingCompleted: hideCompleted)
+            let groups = ListGrouping.visibleGroups(
+                store.groups,
+                hidingCompleted: hideCompleted,
+                langfr: langfrFilter
+            )
             let data = try ListPDF.render(
                 groups: groups,
                 storeName: store.state.currentStore.name,

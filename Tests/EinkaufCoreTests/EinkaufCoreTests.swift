@@ -360,8 +360,11 @@ final class GroupingTests: XCTestCase {
         XCTAssertEqual(LangfrFilter.langfristig.next, .kurzfristig)
         XCTAssertEqual(LangfrFilter.kurzfristig.next, .alle)
         XCTAssertEqual(LangfrFilter.alle.systemImage, "hourglass")
-        XCTAssertEqual(LangfrFilter.langfristig.systemImage, "hourglass.tophalf.filled")
+        XCTAssertEqual(LangfrFilter.langfristig.systemImage, "infinity")
         XCTAssertEqual(LangfrFilter.kurzfristig.systemImage, "hourglass.bottomhalf.filled")
+        XCTAssertEqual(LangfrFilter.alle.symbolRotationDegrees, 90)
+        XCTAssertEqual(LangfrFilter.langfristig.symbolRotationDegrees, 0)
+        XCTAssertEqual(LangfrFilter.kurzfristig.symbolRotationDegrees, 0)
         XCTAssertEqual(LangfrFilter.alle.accessibilityLabel, "Alle")
         XCTAssertEqual(LangfrFilter.langfristig.accessibilityLabel, "langfristig")
         XCTAssertEqual(LangfrFilter.kurzfristig.accessibilityLabel, "kurzfristig")
@@ -373,6 +376,44 @@ final class GroupingTests: XCTestCase {
         let short = ListGrouping.walkListRows(groups: groups, storeId: "edeka", hidingCompleted: true, langfr: .kurzfristig)
         XCTAssertEqual(short.compactMap(\.line.itemId), ["k"])
         XCTAssertEqual(groups.flatMap(\.items).map(\.id), ["b", "m", "k"])
+    }
+
+    /// „Liste teilen“ nutzt `visibleGroups` mit Auge und aktuellem `LangfrFilter`.
+    func testShareVisibleGroupsFollowsLangfrAndEye() {
+        let items = [
+            Item(id: "long-open", name: "Reis", dept: "trocken", done: false, added: 1, ord: 1, langfr: true),
+            Item(id: "long-done", name: "Öl", dept: "trocken", done: true, added: 2, ord: 2, langfr: true),
+            Item(id: "short-open", name: "Milch", dept: "trocken", done: false, added: 3, ord: 3, langfr: false),
+            Item(id: "short-done", name: "Brot", dept: "trocken", done: true, added: 4, ord: 4, langfr: false)
+        ]
+        let edeka = Store.seeds.first { $0.id == "edeka" }!
+        let groups = ListGrouping.groups(items: items, store: edeka)
+
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .alle).flatMap(\.items).map(\.id),
+            ["long-open", "long-done", "short-open", "short-done"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: true, langfr: .alle).flatMap(\.items).map(\.id),
+            ["long-open", "short-open"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: true, langfr: .langfristig).flatMap(\.items).map(\.id),
+            ["long-open"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .langfristig).flatMap(\.items).map(\.id),
+            ["long-open", "long-done"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: true, langfr: .kurzfristig).flatMap(\.items).map(\.id),
+            ["short-open"]
+        )
+        XCTAssertEqual(
+            ListGrouping.visibleGroups(groups, hidingCompleted: false, langfr: .kurzfristig).flatMap(\.items).map(\.id),
+            ["short-open", "short-done"]
+        )
+        XCTAssertEqual(groups.flatMap(\.items).map(\.id), ["long-open", "long-done", "short-open", "short-done"])
     }
 
     private func loadFixture(_ name: String) throws -> Data {
