@@ -244,11 +244,11 @@ struct ContentView: View {
                 .strikethrough(item.done, color: theme.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
-                store.cycleItemUrgency(item.id)
-            }
             ItemLangfrChip(langfr: item.langfr, theme: theme) {
                 store.toggleItemLangfr(item.id)
+            }
+            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
+                store.cycleItemUrgency(item.id)
             }
             ItemImportedMark(imported: item.imported, theme: theme)
         }
@@ -312,11 +312,11 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
-                store.cycleItemUrgency(item.id)
-            }
             ItemLangfrChip(langfr: item.langfr, theme: theme) {
                 store.toggleItemLangfr(item.id)
+            }
+            ItemUrgencyChip(urgency: item.urgency, theme: theme) {
+                store.cycleItemUrgency(item.id)
             }
             ItemImportedMark(imported: item.imported, theme: theme)
         }

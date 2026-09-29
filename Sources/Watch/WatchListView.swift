@@ -84,12 +84,12 @@ struct WatchListView: View {
                                         .buttonStyle(.plain)
                                         .accessibilityLabel(item.name)
                                         .accessibilityValue(item.done ? "erledigt" : "offen")
-                                        // Alle drei Zustände wie iPhone (⚡ / ↔ / ↓),
-                                        // auch bei normal — nicht ausblenden. Nur Anzeige, kein Urgency-Zyklus.
-                                        ItemUrgencyChip(urgency: item.urgency, theme: theme, compact: true)
                                         ItemLangfrChip(langfr: item.langfr, theme: theme, compact: true) {
                                             store.toggleItemLangfr(item.id)
                                         }
+                                        // Alle drei Zustände wie iPhone (⚡ / ↔ / ↓),
+                                        // auch bei normal — nicht ausblenden. Nur Anzeige, kein Urgency-Zyklus.
+                                        ItemUrgencyChip(urgency: item.urgency, theme: theme, compact: true)
                                         ItemImportedMark(imported: item.imported, theme: theme)
                                     }
                                     .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))

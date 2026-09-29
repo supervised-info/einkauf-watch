@@ -550,8 +550,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 86" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 86 / CURRENT_PROJECT_VERSION")
+    if "Build 87" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 87 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1115,10 +1115,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 86" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 86")
-    if "CURRENT_PROJECT_VERSION = 85" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 85 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 87" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 87")
+    if "CURRENT_PROJECT_VERSION = 86" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 86 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 83" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 83 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 82" in pbx:
@@ -1270,10 +1270,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 86" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 86")
-    if "CURRENT_PROJECT_VERSION: 85" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 85 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 87" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 87")
+    if "CURRENT_PROJECT_VERSION: 86" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 86 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 83" in yml:
         fail("stale CURRENT_PROJECT_VERSION 83 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 82" in yml:
@@ -1660,8 +1660,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 86") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 86")
+    if pbx.count("CURRENT_PROJECT_VERSION = 87") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 87")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3694,14 +3694,17 @@ def test_item_langfr() -> None:
         ("walkRow", ios[ios.find("func walkRow"):ios.find("func editRow")]),
         ("editRow", ios[ios.find("func editRow"):ios.find("func beginRename")]),
     ):
-        if not (blob.find("ItemUrgencyChip") < blob.find("ItemLangfrChip") < blob.find("ItemImportedMark")):
-            fail(f"iPhone {fn} order must be urgency, langfr, import mark")
+        if not (blob.find("ItemLangfrChip") < blob.find("ItemUrgencyChip") < blob.find("ItemImportedMark")):
+            fail(f"iPhone {fn} order must be langfr, urgency, import mark")
     if "ItemLangfrChip" not in watch or "toggleItemLangfr" not in watch:
         fail("Watch must show and toggle the langfr chip")
     if "einkauf.watch.langfrFilter" not in watch:
         fail("Watch langfr filter must use its own AppStorage key")
     if "langfrFilter.symbolRotationDegrees" not in watch or ".rotationEffect(.degrees(langfrFilter.symbolRotationDegrees))" not in watch:
         fail("Watch Alle filter must rotate hourglass via symbolRotationDegrees")
+    watch_item = watch[watch.find("case .item"):watch.find("listRowInsets", watch.find("case .item"))]
+    if not (watch_item.find("ItemLangfrChip") < watch_item.find("ItemUrgencyChip") < watch_item.find("ItemImportedMark")):
+        fail("Watch row order must be langfr, urgency, import mark")
     if "einkauf.iphone.langfrFilter" in watch:
         fail("Watch must not reuse the iPhone langfr filter key")
     if "cycleItemUrgency" in watch:
