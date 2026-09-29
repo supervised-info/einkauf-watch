@@ -517,7 +517,11 @@ struct ContentView: View {
 
     private func shareList() {
         do {
-            let groups = ListGrouping.visibleGroups(store.groups, hidingCompleted: hideCompleted)
+            let groups = ListGrouping.visibleGroups(
+                store.groups,
+                hidingCompleted: hideCompleted,
+                langfr: langfrFilter
+            )
             let data = try ListPDF.render(
                 groups: groups,
                 storeName: store.state.currentStore.name,
