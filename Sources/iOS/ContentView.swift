@@ -374,6 +374,7 @@ struct ContentView: View {
             } label: {
                 Image(systemName: langfrFilter.systemImage)
                     .einkaufToolbarChrome()
+                    .rotationEffect(.degrees(langfrFilter.symbolRotationDegrees))
             }
             .accessibilityLabel(langfrFilter.accessibilityLabel)
         }

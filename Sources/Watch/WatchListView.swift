@@ -136,6 +136,7 @@ struct WatchListView: View {
                     .font(.caption)
                     .imageScale(.small)
                     .foregroundStyle(langfrFilter == .alle ? theme.muted : theme.oxide)
+                    .rotationEffect(.degrees(langfrFilter.symbolRotationDegrees))
                     .padding(.horizontal, 8)
                     .contentShape(Rectangle())
             }

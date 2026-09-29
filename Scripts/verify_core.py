@@ -550,8 +550,8 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 85" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 85 / CURRENT_PROJECT_VERSION")
+    if "Build 86" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 86 / CURRENT_PROJECT_VERSION")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1115,10 +1115,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 85" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 85")
-    if "CURRENT_PROJECT_VERSION = 84" in pbx:
-        fail("stale CURRENT_PROJECT_VERSION 84 still in pbxproj")
+    if "CURRENT_PROJECT_VERSION = 86" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 86")
+    if "CURRENT_PROJECT_VERSION = 85" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 85 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 83" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 83 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 82" in pbx:
@@ -1270,10 +1270,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 85" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 85")
-    if "CURRENT_PROJECT_VERSION: 84" in yml:
-        fail("stale CURRENT_PROJECT_VERSION 84 still in project.yml")
+    if "CURRENT_PROJECT_VERSION: 86" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 86")
+    if "CURRENT_PROJECT_VERSION: 85" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 85 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 83" in yml:
         fail("stale CURRENT_PROJECT_VERSION 83 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 82" in yml:
@@ -1660,8 +1660,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 85") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 85")
+    if pbx.count("CURRENT_PROJECT_VERSION = 86") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 86")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
@@ -3648,9 +3648,13 @@ def test_item_langfr() -> None:
         fail("Item encode must write langfr")
     if "enum LangfrFilter" not in models:
         fail("shared LangfrFilter missing")
-    for symbol in ("hourglass", "hourglass.tophalf.filled", "hourglass.bottomhalf.filled"):
+    for symbol in ("hourglass", "infinity", "hourglass.bottomhalf.filled"):
         if symbol not in models:
             fail(f"LangfrFilter missing SF Symbol {symbol}")
+    if "hourglass.tophalf.filled" in models:
+        fail("LangfrFilter must not use hourglass.tophalf.filled")
+    if "case .alle: return 90" not in models:
+        fail("Alle hourglass must rotate 90 degrees")
     if "case .alle: return .langfristig" not in models or "case .kurzfristig: return .alle" not in models:
         fail("LangfrFilter must cycle Alle → langfristig → kurzfristig → Alle")
     if "langfr: item.langfr" not in models:
@@ -3679,6 +3683,8 @@ def test_item_langfr() -> None:
         fail("iPhone must not reuse the Watch langfr filter key")
     if "langfrFilter.systemImage" not in ios:
         fail("iPhone filter must use LangfrFilter.systemImage")
+    if "langfrFilter.symbolRotationDegrees" not in ios or ".rotationEffect(.degrees(langfrFilter.symbolRotationDegrees))" not in ios:
+        fail("iPhone Alle filter must rotate hourglass via symbolRotationDegrees")
     eye = ios.find("hideCompleted.toggle")
     edit = ios.find('Button(store.walkMode ? "Edit"')
     filt = ios.find("langfrFilterRaw = langfrFilter.next.rawValue")
@@ -3694,6 +3700,8 @@ def test_item_langfr() -> None:
         fail("Watch must show and toggle the langfr chip")
     if "einkauf.watch.langfrFilter" not in watch:
         fail("Watch langfr filter must use its own AppStorage key")
+    if "langfrFilter.symbolRotationDegrees" not in watch or ".rotationEffect(.degrees(langfrFilter.symbolRotationDegrees))" not in watch:
+        fail("Watch Alle filter must rotate hourglass via symbolRotationDegrees")
     if "einkauf.iphone.langfrFilter" in watch:
         fail("Watch must not reuse the iPhone langfr filter key")
     if "cycleItemUrgency" in watch:
@@ -3702,8 +3710,8 @@ def test_item_langfr() -> None:
         fail("StapleApply must be able to apply langfr from a saved list")
     if "var langfr" in todo_models:
         fail("To-Do must not grow langfr")
-    if "langfr" not in desc or "hourglass.tophalf.filled" not in desc:
-        fail("Description.md must document langfr and the hourglass filter")
+    if "langfr" not in desc or "infinity" not in desc or "90°" not in desc:
+        fail("Description.md must document langfr filter icons")
     if "einkauf.iphone.langfrFilter" not in desc or "einkauf.watch.langfrFilter" not in desc:
         fail("Description.md must name separate langfr AppStorage keys")
     for name in (

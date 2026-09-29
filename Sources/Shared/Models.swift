@@ -103,8 +103,16 @@ enum LangfrFilter: String, Equatable, CaseIterable, Sendable {
     var systemImage: String {
         switch self {
         case .alle: return "hourglass"
-        case .langfristig: return "hourglass.tophalf.filled"
+        case .langfristig: return "infinity"
         case .kurzfristig: return "hourglass.bottomhalf.filled"
+        }
+    }
+
+    /// Alle zeigt `hourglass` quer. Die anderen Zustände bleiben aufrecht.
+    var symbolRotationDegrees: Double {
+        switch self {
+        case .alle: return 90
+        case .langfristig, .kurzfristig: return 0
         }
     }
 
