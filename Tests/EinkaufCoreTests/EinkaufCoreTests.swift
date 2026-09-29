@@ -2026,6 +2026,35 @@ final class ListShareTests: XCTestCase {
         return calendar.date(from: DateComponents(year: y, month: m, day: d, hour: h, minute: min))!
     }
 
+    func testPdfTitleFollowsLangfrFilter() {
+        XCTAssertEqual(ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .alle), "Einkaufsliste Edeka")
+        XCTAssertEqual(ListShare.pdfPageTitle(storeName: "Edeka", langfr: .alle), "Einkaufsliste  Edeka")
+        XCTAssertFalse(ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .alle).contains("("))
+        XCTAssertFalse(ListShare.pdfPageTitle(storeName: "Edeka", langfr: .alle).contains("("))
+
+        XCTAssertEqual(
+            ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .langfristig),
+            "Einkaufsliste (langfristig) Edeka"
+        )
+        XCTAssertEqual(
+            ListShare.pdfPageTitle(storeName: "Edeka", langfr: .langfristig),
+            "Einkaufsliste (langfristig) Edeka"
+        )
+        XCTAssertEqual(
+            ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: .kurzfristig),
+            "Einkaufsliste (kurzfristig) Edeka"
+        )
+        XCTAssertEqual(
+            ListShare.pdfPageTitle(storeName: "Edeka", langfr: .kurzfristig),
+            "Einkaufsliste (kurzfristig) Edeka"
+        )
+        for filter in [LangfrFilter.langfristig, .kurzfristig] {
+            let title = ListShare.pdfDocumentTitle(storeName: "Edeka", langfr: filter)
+            XCTAssertFalse(title.contains("/"))
+            XCTAssertFalse(title.contains("langfristig/kurzfristig"))
+        }
+    }
+
     func testStampedFilenameUsesStoreSlug() {
         XCTAssertEqual(
             ListShare.stampedFilename(storeName: "Edeka", date: date(2026, 9, 2, 16, 39), timeZone: utc),
