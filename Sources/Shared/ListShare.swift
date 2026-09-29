@@ -38,6 +38,29 @@ enum ListShare {
         return out.isEmpty ? "laden" : out
     }
 
+    /// Dokumenttitel der Einkaufs-PDF. Alle ohne Klammern: `Einkaufsliste {Laden}`.
+    /// langfristig / kurzfristig: `Einkaufsliste (langfristig|kurzfristig) {Laden}` — ein Wort, kein Schrägstrich.
+    static func pdfDocumentTitle(storeName: String, langfr: LangfrFilter) -> String {
+        switch langfr {
+        case .alle:
+            return "Einkaufsliste \(storeName)"
+        case .langfristig:
+            return "Einkaufsliste (langfristig) \(storeName)"
+        case .kurzfristig:
+            return "Einkaufsliste (kurzfristig) \(storeName)"
+        }
+    }
+
+    /// Seitenüberschrift. Alle behält die bisherigen zwei Leerzeichen vor dem Laden.
+    static func pdfPageTitle(storeName: String, langfr: LangfrFilter) -> String {
+        switch langfr {
+        case .alle:
+            return "Einkaufsliste  \(storeName)"
+        case .langfristig, .kurzfristig:
+            return pdfDocumentTitle(storeName: storeName, langfr: langfr)
+        }
+    }
+
     static func stampedFilename(
         storeName: String,
         date: Date = Date(),

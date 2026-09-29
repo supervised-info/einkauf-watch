@@ -27,11 +27,12 @@ enum ListPDF {
         groups: [DeptGroup],
         storeName: String,
         progressLabel: String,
-        colors: ThemeRGB
+        colors: ThemeRGB,
+        langfr: LangfrFilter
     ) throws -> Data {
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = [
-            kCGPDFContextTitle as String: "Einkaufsliste \(storeName)",
+            kCGPDFContextTitle as String: ListShare.pdfDocumentTitle(storeName: storeName, langfr: langfr),
             kCGPDFContextCreator as String: "Einkauf"
         ]
         let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
@@ -43,7 +44,7 @@ enum ListPDF {
                 muted: uiColor(colors.muted),
                 rule: uiColor(colors.rule)
             )
-            painter.draw(groups: groups, storeName: storeName, progressLabel: progressLabel)
+            painter.draw(groups: groups, storeName: storeName, progressLabel: progressLabel, langfr: langfr)
         }
         guard !data.isEmpty else { throw ListPDFError.empty }
         return data
@@ -72,10 +73,10 @@ enum ListPDF {
         private var bottom: CGFloat { page.height - inset }
         private var remaining: CGFloat { bottom - y }
 
-        mutating func draw(groups: [DeptGroup], storeName: String, progressLabel: String) {
+        mutating func draw(groups: [DeptGroup], storeName: String, progressLabel: String, langfr: LangfrFilter) {
             beginPage()
 
-            let title = "Einkaufsliste  \(storeName)"
+            let title = ListShare.pdfPageTitle(storeName: storeName, langfr: langfr)
             y += drawText(title, font: ListPDF.titleFont, color: ink, width: contentWidth) + 6
 
             if !groups.isEmpty {
