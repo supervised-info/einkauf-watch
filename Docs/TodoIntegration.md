@@ -1,6 +1,6 @@
 # To-Do als zweiter Reiter (native Einkauf)
 
-Stand: 2026-09-05, Build 62. Phasen 1–10 **geliefert**. iPhone-Listen ohne großen Nav-Titel, Toolbar kompakt (`einkaufToolbarChrome`). Natives Verhalten: `Description.md`. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
+Stand: 2026-09-05, Build 62. Phasen 1–10 **geliefert**. Abgeschlossen laut Tom am 30.10.2026; aktueller App-Stand Build 88 (`Description.md`). iPhone-Listen ohne großen Nav-Titel, Toolbar kompakt (`einkaufToolbarChrome`). Natives Verhalten: `Description.md`. HTML-Listen sind ein Follow-up auf demselben `todo-v3-json`-Schema.
 
 Begleit-Leser: Menschen und Regeneratoren. Swift-Quellen bleiben die Wahrheit. HTML-PWA [todo](https://supervised-info.github.io/todo/) ist die Produktreferenz für Task-Shape und JSON-Brücke.
 
