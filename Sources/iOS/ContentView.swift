@@ -354,14 +354,14 @@ struct ContentView: View {
                     }
                 }
             } label: {
-                Text(store.state.iphoneStoreLabel)
+                Text(store.state.iphoneStoreLabel(langfr: langfrFilter))
                     .einkaufToolbarChrome()
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
             }
             .layoutPriority(-1)
             .accessibilityLabel("Laden")
-            .accessibilityValue(store.state.iphoneStoreAccessibilityValue)
+            .accessibilityValue(store.state.iphoneStoreAccessibilityValue(langfr: langfrFilter))
         }
         ToolbarItem(placement: .topBarTrailing) {
             Button {

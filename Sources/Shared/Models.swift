@@ -364,16 +364,29 @@ struct AppState: Equatable, Codable, Sendable {
         "\(Self.clippedWatchStoreName(currentStore.name))  Einkauf \(progressLabel)"
     }
 
-    /// iPhone-Ladenfeld: `Name (offen/erledigt/gesamt)` der ganzen Liste.
-    /// Dieselbe Zahl wie `progressLabel` — nicht die Auge-/Stundenglas-Sicht,
-    /// nicht `watchTitle`, nicht der Complication-Zähler `k (l)`.
-    var iphoneStoreLabel: String {
-        "\(currentStore.name) (\(progressLabel))"
+    /// Offen/erledigt/gesamt der Stundenglas-Teilmenge. `alle` ist die ganze Liste
+    /// (gleiche Zahlen wie `progressLabel`). Erledigte der Teilmenge zählen mit;
+    /// die Augen-Anzeige ist hier kein Eingang.
+    private func storeProgressCounts(langfr: LangfrFilter) -> (open: Int, done: Int, total: Int) {
+        let subset = items.filter { langfr.matches($0) }
+        let done = subset.filter(\.done).count
+        return (subset.count - done, done, subset.count)
     }
 
-    /// VoiceOver-Wert des Laden-Menüs. Das Accessibility-Label bleibt „Laden“.
-    var iphoneStoreAccessibilityValue: String {
-        "\(currentStore.name), \(openCount) offen, \(doneCount) erledigt, \(items.count) gesamt"
+    /// iPhone-Ladenfeld: `Name (offen/erledigt/gesamt)` der Stundenglas-Teilmenge.
+    /// Alle = ganze Liste. Kurzfristig nur `!langfr`, langfristig nur `langfr`.
+    /// Leere Teilmenge: `Name (0/0/0)`. Nicht `watchTitle`, nicht der Zähler `k (l)`.
+    /// Das Auge ändert diese Zahl nicht.
+    func iphoneStoreLabel(langfr: LangfrFilter) -> String {
+        let counts = storeProgressCounts(langfr: langfr)
+        return "\(currentStore.name) (\(counts.open)/\(counts.done)/\(counts.total))"
+    }
+
+    /// VoiceOver-Wert des Laden-Menüs, dieselben gefilterten Zahlen.
+    /// Das Accessibility-Label bleibt „Laden“.
+    func iphoneStoreAccessibilityValue(langfr: LangfrFilter) -> String {
+        let counts = storeProgressCounts(langfr: langfr)
+        return "\(currentStore.name), \(counts.open) offen, \(counts.done) erledigt, \(counts.total) gesamt"
     }
 
     var complicationSnapshot: ComplicationSnapshot { .make(from: self) }

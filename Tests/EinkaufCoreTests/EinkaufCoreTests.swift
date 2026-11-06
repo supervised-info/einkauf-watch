@@ -522,11 +522,14 @@ final class WatchTitleTests: XCTestCase {
 final class IPhoneStoreLabelTests: XCTestCase {
     func testEmptyListIsEdekaZero() {
         XCTAssertEqual(AppState.seed.progressLabel, "0/0/0")
-        XCTAssertEqual(AppState.seed.iphoneStoreLabel, "Edeka (0/0/0)")
-        XCTAssertEqual(
-            AppState.seed.iphoneStoreAccessibilityValue,
-            "Edeka, 0 offen, 0 erledigt, 0 gesamt"
-        )
+        for filter in LangfrFilter.allCases {
+            XCTAssertEqual(AppState.seed.iphoneStoreLabel(langfr: filter), "Edeka (0/0/0)")
+            XCTAssertEqual(
+                AppState.seed.iphoneStoreAccessibilityValue(langfr: filter),
+                "Edeka, 0 offen, 0 erledigt, 0 gesamt"
+            )
+        }
+        XCTAssertEqual(AppState.seed.iphoneStoreLabel(langfr: .alle), "Edeka (0/0/0)")
     }
 
     func testEdekaSixOpenNoneDone() {
@@ -535,11 +538,13 @@ final class IPhoneStoreLabelTests: XCTestCase {
             Item(id: "\(n)", name: "Artikel \(n)", dept: "obst", done: false, added: Double(n), ord: Double(n))
         }
         XCTAssertEqual(state.progressLabel, "6/0/6")
-        XCTAssertEqual(state.iphoneStoreLabel, "Edeka (6/0/6)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "Edeka (6/0/6)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "\(state.currentStore.name) (\(state.progressLabel))")
         XCTAssertEqual(
-            state.iphoneStoreAccessibilityValue,
+            state.iphoneStoreAccessibilityValue(langfr: .alle),
             "Edeka, 6 offen, 0 erledigt, 6 gesamt"
         )
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 6/0/6")
     }
 
     func testCheckOffAndStoreSwitchUpdateTheSameField() {
@@ -548,14 +553,15 @@ final class IPhoneStoreLabelTests: XCTestCase {
             Item(id: "\(n)", name: "Artikel \(n)", dept: "obst", done: false, added: Double(n), ord: Double(n))
         }
         state.items[0].done = true
-        XCTAssertEqual(state.iphoneStoreLabel, "Edeka (5/1/6)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "Edeka (5/1/6)")
         state.currentStoreId = "rewe"
-        XCTAssertEqual(state.iphoneStoreLabel, "Rewe (5/1/6)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "Rewe (5/1/6)")
         XCTAssertEqual(
-            state.iphoneStoreAccessibilityValue,
+            state.iphoneStoreAccessibilityValue(langfr: .alle),
             "Rewe, 5 offen, 1 erledigt, 6 gesamt"
         )
         XCTAssertEqual(state.watchTitle, "Rewe  Einkauf 5/1/6")
+        XCTAssertEqual(state.progressLabel, "5/1/6")
     }
 
     func testLongStoreNameStaysFullOnIPhone() {
@@ -564,8 +570,89 @@ final class IPhoneStoreLabelTests: XCTestCase {
             Store(id: "lang", name: "Wochenmarkt Neustadt", layout: ["vor", "sonstiges", "nach"], builtin: false)
         )
         state.currentStoreId = "lang"
-        XCTAssertEqual(state.iphoneStoreLabel, "Wochenmarkt Neustadt (0/0/0)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "Wochenmarkt Neustadt (0/0/0)")
         XCTAssertEqual(state.watchTitle, "Woche…  Einkauf 0/0/0")
+    }
+
+    /// Alle = ganze Liste. Kurz nur `!langfr`, lang nur `langfr`. Erledigte zählen mit.
+    func testLangfrFilterChangesStoreLabel() {
+        var state = mixedLangfrState()
+        XCTAssertEqual(state.progressLabel, "3/3/6")
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 3/3/6")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "Edeka (3/3/6)")
+        XCTAssertEqual(
+            state.iphoneStoreAccessibilityValue(langfr: .alle),
+            "Edeka, 3 offen, 3 erledigt, 6 gesamt"
+        )
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .kurzfristig), "Edeka (2/2/4)")
+        XCTAssertEqual(
+            state.iphoneStoreAccessibilityValue(langfr: .kurzfristig),
+            "Edeka, 2 offen, 2 erledigt, 4 gesamt"
+        )
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .langfristig), "Edeka (1/1/2)")
+        XCTAssertEqual(
+            state.iphoneStoreAccessibilityValue(langfr: .langfristig),
+            "Edeka, 1 offen, 1 erledigt, 2 gesamt"
+        )
+        XCTAssertEqual(state.langfrCountLabel, "2 (1)")
+    }
+
+    /// Leere Teilmenge behält den Ladennamen: `Name (0/0/0)`.
+    func testEmptyLangfrSubsetKeepsStoreName() {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "l1", name: "Lang", dept: "obst", done: false, added: 1, ord: 1, langfr: true)
+        ]
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .kurzfristig), "Edeka (0/0/0)")
+        XCTAssertEqual(
+            state.iphoneStoreAccessibilityValue(langfr: .kurzfristig),
+            "Edeka, 0 offen, 0 erledigt, 0 gesamt"
+        )
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .langfristig), "Edeka (1/0/1)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "Edeka (1/0/1)")
+        XCTAssertEqual(state.progressLabel, "1/0/1")
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 1/0/1")
+    }
+
+    /// Das Auge blendet Erledigte nur in der Liste aus. Die Klammerzahlen bleiben:
+    /// kurz weiter `2/2/4`, nicht die Augen-Sicht `2/0/2`.
+    func testHideCompletedDoesNotChangeIPhoneStoreLabel() {
+        let state = mixedLangfrState()
+        let hideCompleted = true
+        func eyeWouldShow(_ filter: LangfrFilter) -> String {
+            let visible = state.items.filter { filter.matches($0) && !(hideCompleted && $0.done) }
+            let done = visible.filter(\.done).count
+            return "Edeka (\(visible.count - done)/\(done)/\(visible.count))"
+        }
+        XCTAssertEqual(eyeWouldShow(.kurzfristig), "Edeka (2/0/2)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .kurzfristig), "Edeka (2/2/4)")
+        XCTAssertNotEqual(state.iphoneStoreLabel(langfr: .kurzfristig), eyeWouldShow(.kurzfristig))
+        XCTAssertEqual(
+            state.iphoneStoreAccessibilityValue(langfr: .kurzfristig),
+            "Edeka, 2 offen, 2 erledigt, 4 gesamt"
+        )
+        XCTAssertEqual(eyeWouldShow(.langfristig), "Edeka (1/0/1)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .langfristig), "Edeka (1/1/2)")
+        XCTAssertNotEqual(state.iphoneStoreLabel(langfr: .langfristig), eyeWouldShow(.langfristig))
+        XCTAssertEqual(eyeWouldShow(.alle), "Edeka (3/0/3)")
+        XCTAssertEqual(state.iphoneStoreLabel(langfr: .alle), "Edeka (3/3/6)")
+        XCTAssertEqual(state.watchTitle, "Edeka  Einkauf 3/3/6")
+        XCTAssertEqual(state.progressLabel, "3/3/6")
+        XCTAssertEqual(state.langfrCountLabel, "2 (1)")
+    }
+
+    /// 4 kurz (2 offen, 2 erledigt) + 2 lang (1 offen, 1 erledigt).
+    private func mixedLangfrState() -> AppState {
+        var state = AppState.seed
+        state.items = [
+            Item(id: "k1", name: "Kurz offen 1", dept: "obst", done: false, added: 1, ord: 1, langfr: false),
+            Item(id: "k2", name: "Kurz offen 2", dept: "obst", done: false, added: 2, ord: 2, langfr: false),
+            Item(id: "k3", name: "Kurz erledigt 1", dept: "obst", done: true, added: 3, ord: 3, langfr: false),
+            Item(id: "k4", name: "Kurz erledigt 2", dept: "obst", done: true, added: 4, ord: 4, langfr: false),
+            Item(id: "l1", name: "Lang offen", dept: "obst", done: false, added: 5, ord: 5, langfr: true),
+            Item(id: "l2", name: "Lang erledigt", dept: "obst", done: true, added: 6, ord: 6, langfr: true)
+        ]
+        return state
     }
 }
 
