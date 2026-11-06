@@ -481,6 +481,12 @@ def test_sources() -> None:
     leading = content[content.find("placement: .topBarLeading"):content.find("placement: .topBarTrailing")]
     if 'accessibilityLabel("Laden")' not in leading:
         fail("store Menu must stay topBarLeading")
+    if "iphoneStoreLabel" not in leading:
+        fail("iPhone store Menu must show iphoneStoreLabel (Name (oo/xx/yy))")
+    if "lineLimit(1)" not in leading or "minimumScaleFactor" not in leading:
+        fail("iPhone store label must stay one line and scale down")
+    if "iphoneStoreAccessibilityValue" not in leading:
+        fail("store Menu must expose offen/erledigt/gesamt via iphoneStoreAccessibilityValue")
     if "eye.slash" in leading or "hideCompleted.toggle" in leading:
         fail("eye toggle must not replace the store Menu")
     if content.find("hideCompleted.toggle") < 0 or content.find("hideCompleted.toggle") > content.find('Button(store.walkMode ? "Edit"'):
@@ -550,8 +556,10 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 88" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 88 / CURRENT_PROJECT_VERSION")
+    if "Build 89" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 89 / CURRENT_PROJECT_VERSION")
+    if "iphoneStoreLabel" not in desc:
+        fail("Description.md must document the iPhone store label iphoneStoreLabel")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1082,6 +1090,12 @@ def test_sources() -> None:
         fail("ListGrouping missing visibleGroups for Geh-Modus and Liste teilen")
     if "func progressLabel(groups:" not in models:
         fail("ListGrouping missing progressLabel(groups:) for printed PDF rows")
+    if "var iphoneStoreLabel" not in models:
+        fail("AppState missing iphoneStoreLabel (Name (progressLabel))")
+    if 'iphoneStoreLabel, "Edeka (6/0/6)"' not in tests:
+        fail("tests must cover iPhone store label Edeka (6/0/6)")
+    if 'iphoneStoreLabel, "Edeka (0/0/0)"' not in tests:
+        fail("tests must cover empty iPhone store label 0/0/0")
     if "ForEach(store.editRows" not in content:
         fail("iPhone Bearbeiten must still ForEach editRows")
     if "einkauf.iphone.hideCompleted" not in content:
@@ -1122,8 +1136,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 88" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 88")
+    if "CURRENT_PROJECT_VERSION = 89" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 89")
+    if "CURRENT_PROJECT_VERSION = 88" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 88 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 87" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 87 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 83" in pbx:
@@ -1277,8 +1293,10 @@ def test_sources() -> None:
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 88" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 88")
+    if "CURRENT_PROJECT_VERSION: 89" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 89")
+    if "CURRENT_PROJECT_VERSION: 88" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 88 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 87" in yml:
         fail("stale CURRENT_PROJECT_VERSION 87 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 83" in yml:
@@ -1683,8 +1701,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 88") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 88")
+    if pbx.count("CURRENT_PROJECT_VERSION = 89") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 89")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
