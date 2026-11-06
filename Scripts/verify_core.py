@@ -481,12 +481,17 @@ def test_sources() -> None:
     leading = content[content.find("placement: .topBarLeading"):content.find("placement: .topBarTrailing")]
     if 'accessibilityLabel("Laden")' not in leading:
         fail("store Menu must stay topBarLeading")
-    if "iphoneStoreLabel" not in leading:
-        fail("iPhone store Menu must show iphoneStoreLabel (Name (oo/xx/yy))")
+    if "iphoneStoreLabel(langfr: langfrFilter)" not in leading:
+        fail("iPhone store Menu must show iphoneStoreLabel for the current LangfrFilter")
     if "lineLimit(1)" not in leading or "minimumScaleFactor" not in leading:
         fail("iPhone store label must stay one line and scale down")
-    if "iphoneStoreAccessibilityValue" not in leading:
-        fail("store Menu must expose offen/erledigt/gesamt via iphoneStoreAccessibilityValue")
+    if "iphoneStoreAccessibilityValue(langfr: langfrFilter)" not in leading:
+        fail("store Menu must expose the filtered offen/erledigt/gesamt via iphoneStoreAccessibilityValue")
+    label_at = leading.find("iphoneStoreLabel")
+    value_at = leading.find("iphoneStoreAccessibilityValue")
+    label_call = leading[label_at:value_at] if label_at >= 0 and value_at > label_at else ""
+    if "hideCompleted" in label_call:
+        fail("iPhone store label must not take hideCompleted (eye must not change the count)")
     if "eye.slash" in leading or "hideCompleted.toggle" in leading:
         fail("eye toggle must not replace the store Menu")
     if content.find("hideCompleted.toggle") < 0 or content.find("hideCompleted.toggle") > content.find('Button(store.walkMode ? "Edit"'):
@@ -556,10 +561,16 @@ def test_sources() -> None:
     if '.alert("Einkaufsliste speichern"' not in content:
         fail("save-list alert title must be Einkaufsliste speichern")
     desc = (ROOT / "Description.md").read_text()
-    if "Build 89" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
-        fail("Description.md must name Build 89 / CURRENT_PROJECT_VERSION")
+    if "Build 90" not in desc or "CURRENT_PROJECT_VERSION" not in desc:
+        fail("Description.md must name Build 90 / CURRENT_PROJECT_VERSION")
     if "iphoneStoreLabel" not in desc:
         fail("Description.md must document the iPhone store label iphoneStoreLabel")
+    if "Nicht die Auge-/Stundenglas-Sicht" in desc:
+        fail("Description.md must not claim the iPhone store counter ignores the hourglass")
+    if "Stundenglas-Teilmenge" not in desc:
+        fail("Description.md must document that the iPhone store count follows the hourglass subset")
+    if "ändert die Klammerzahlen **nicht**" not in desc:
+        fail("Description.md must document that the eye does not change the iPhone store count")
     if "Titel **Einkaufsliste** (inline)" in desc:
         fail("Description.md must not document Einkaufsliste as iPhone nav title")
     if "Titel **To-Do** (inline)" in desc:
@@ -1090,12 +1101,24 @@ def test_sources() -> None:
         fail("ListGrouping missing visibleGroups for Geh-Modus and Liste teilen")
     if "func progressLabel(groups:" not in models:
         fail("ListGrouping missing progressLabel(groups:) for printed PDF rows")
-    if "var iphoneStoreLabel" not in models:
-        fail("AppState missing iphoneStoreLabel (Name (progressLabel))")
-    if 'iphoneStoreLabel, "Edeka (6/0/6)"' not in tests:
-        fail("tests must cover iPhone store label Edeka (6/0/6)")
-    if 'iphoneStoreLabel, "Edeka (0/0/0)"' not in tests:
-        fail("tests must cover empty iPhone store label 0/0/0")
+    if "func iphoneStoreLabel(langfr: LangfrFilter)" not in models:
+        fail("AppState iphoneStoreLabel must take LangfrFilter")
+    if "func iphoneStoreAccessibilityValue(langfr: LangfrFilter)" not in models:
+        fail("AppState iphoneStoreAccessibilityValue must take LangfrFilter")
+    if "var iphoneStoreLabel" in models:
+        fail("iphoneStoreLabel must follow LangfrFilter, not only the whole list")
+    if 'iphoneStoreLabel(langfr: .alle), "Edeka (6/0/6)"' not in tests:
+        fail("tests must cover iPhone store label Edeka (6/0/6) for Alle")
+    if 'iphoneStoreLabel(langfr: .alle), "Edeka (0/0/0)"' not in tests:
+        fail("tests must cover empty iPhone store label 0/0/0 for Alle")
+    if 'iphoneStoreLabel(langfr: .kurzfristig), "Edeka (2/2/4)"' not in tests:
+        fail("tests must cover kurzfristig store label including done items")
+    if 'iphoneStoreLabel(langfr: .langfristig), "Edeka (1/1/2)"' not in tests:
+        fail("tests must cover langfristig store label")
+    if 'iphoneStoreLabel(langfr: .kurzfristig), "Edeka (0/0/0)"' not in tests:
+        fail("tests must cover empty kurzfristig subset 0/0/0")
+    if "testHideCompletedDoesNotChangeIPhoneStoreLabel" not in tests:
+        fail("tests must show hideCompleted does not change the iPhone store count")
     if "ForEach(store.editRows" not in content:
         fail("iPhone Bearbeiten must still ForEach editRows")
     if "einkauf.iphone.hideCompleted" not in content:
@@ -1136,8 +1159,10 @@ def test_sources() -> None:
         fail("ListGrouping.groups must walk StoreLayout.sanitized")
     if "shown = aisles.contains" in models or 'shown = aisles.contains(home) ? home : "sonstiges"' in models:
         fail("groups must not remap leftover depts into sonstiges")
-    if "CURRENT_PROJECT_VERSION = 89" not in pbx:
-        fail("CURRENT_PROJECT_VERSION must be 89")
+    if "CURRENT_PROJECT_VERSION = 90" not in pbx:
+        fail("CURRENT_PROJECT_VERSION must be 90")
+    if "CURRENT_PROJECT_VERSION = 89" in pbx:
+        fail("stale CURRENT_PROJECT_VERSION 89 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 88" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 88 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 87" in pbx:
@@ -1288,13 +1313,15 @@ def test_sources() -> None:
         fail("stale CURRENT_PROJECT_VERSION 11 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 10" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 10 still in pbxproj")
-    if "CURRENT_PROJECT_VERSION = 9" in pbx:
+    if "CURRENT_PROJECT_VERSION = 9;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 9 still in pbxproj")
     if "CURRENT_PROJECT_VERSION = 8;" in pbx:
         fail("stale CURRENT_PROJECT_VERSION 8 still in pbxproj")
     yml = (ROOT / "project.yml").read_text()
-    if "CURRENT_PROJECT_VERSION: 89" not in yml:
-        fail("project.yml CURRENT_PROJECT_VERSION must be 89")
+    if "CURRENT_PROJECT_VERSION: 90" not in yml:
+        fail("project.yml CURRENT_PROJECT_VERSION must be 90")
+    if "CURRENT_PROJECT_VERSION: 89" in yml:
+        fail("stale CURRENT_PROJECT_VERSION 89 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 88" in yml:
         fail("stale CURRENT_PROJECT_VERSION 88 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 87" in yml:
@@ -1445,7 +1472,7 @@ def test_sources() -> None:
         fail("stale CURRENT_PROJECT_VERSION 11 still in project.yml")
     if "CURRENT_PROJECT_VERSION: 10" in yml:
         fail("stale CURRENT_PROJECT_VERSION 10 still in project.yml")
-    if "CURRENT_PROJECT_VERSION: 9" in yml:
+    if re.search(r"CURRENT_PROJECT_VERSION: 9$", yml, re.M):
         fail("stale CURRENT_PROJECT_VERSION 9 still in project.yml")
     if re.search(r"CURRENT_PROJECT_VERSION: 8$", yml, re.M):
         fail("stale CURRENT_PROJECT_VERSION 8 still in project.yml")
@@ -1701,8 +1728,8 @@ def test_watch_complication() -> None:
         fail("tests must cover Gauge progress 0…1 including empty = 0")
     if "DEVELOPMENT_TEAM = WV26CSTDDR" not in pbx:
         fail("DEVELOPMENT_TEAM must stay WV26CSTDDR")
-    if pbx.count("CURRENT_PROJECT_VERSION = 89") < 8:
-        fail("all app/extension targets need CURRENT_PROJECT_VERSION 89")
+    if pbx.count("CURRENT_PROJECT_VERSION = 90") < 8:
+        fail("all app/extension targets need CURRENT_PROJECT_VERSION 90")
     circular = extract_some_view(widget, "circular")
     rectangular = extract_some_view(widget, "rectangular")
     inline = extract_some_view(widget, "inline")
