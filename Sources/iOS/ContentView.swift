@@ -383,14 +383,14 @@ struct ContentView: View {
             .accessibilityLabel(langfrFilter.accessibilityLabel)
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button(store.walkMode ? "Edit" : "Geh-Modus") {
+            Button(store.walkMode ? "Edit" : "Show") {
                 if store.walkMode == false {
                     commitRename()
                 }
                 store.toggleWalkMode()
             }
             .einkaufToolbarChrome()
-            .accessibilityLabel(store.walkMode ? "Edit" : "Geh-Modus")
+            .accessibilityLabel(store.walkMode ? "Edit" : "Show")
             .accessibilityAddTraits(store.walkMode ? .isSelected : [])
         }
         ToolbarItem(placement: .topBarTrailing) {
