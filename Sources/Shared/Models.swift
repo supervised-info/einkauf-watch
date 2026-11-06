@@ -364,6 +364,18 @@ struct AppState: Equatable, Codable, Sendable {
         "\(Self.clippedWatchStoreName(currentStore.name))  Einkauf \(progressLabel)"
     }
 
+    /// iPhone-Ladenfeld: `Name (offen/erledigt/gesamt)` der ganzen Liste.
+    /// Dieselbe Zahl wie `progressLabel` — nicht die Auge-/Stundenglas-Sicht,
+    /// nicht `watchTitle`, nicht der Complication-Zähler `k (l)`.
+    var iphoneStoreLabel: String {
+        "\(currentStore.name) (\(progressLabel))"
+    }
+
+    /// VoiceOver-Wert des Laden-Menüs. Das Accessibility-Label bleibt „Laden“.
+    var iphoneStoreAccessibilityValue: String {
+        "\(currentStore.name), \(openCount) offen, \(doneCount) erledigt, \(items.count) gesamt"
+    }
+
     var complicationSnapshot: ComplicationSnapshot { .make(from: self) }
 
     /// Zeichenbudget vor „Einkauf oo/xx/yy“, passend für die 41mm-Leiste

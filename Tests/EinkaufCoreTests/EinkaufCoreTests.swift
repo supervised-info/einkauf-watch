@@ -519,6 +519,56 @@ final class WatchTitleTests: XCTestCase {
     }
 }
 
+final class IPhoneStoreLabelTests: XCTestCase {
+    func testEmptyListIsEdekaZero() {
+        XCTAssertEqual(AppState.seed.progressLabel, "0/0/0")
+        XCTAssertEqual(AppState.seed.iphoneStoreLabel, "Edeka (0/0/0)")
+        XCTAssertEqual(
+            AppState.seed.iphoneStoreAccessibilityValue,
+            "Edeka, 0 offen, 0 erledigt, 0 gesamt"
+        )
+    }
+
+    func testEdekaSixOpenNoneDone() {
+        var state = AppState.seed
+        state.items = (1...6).map { n in
+            Item(id: "\(n)", name: "Artikel \(n)", dept: "obst", done: false, added: Double(n), ord: Double(n))
+        }
+        XCTAssertEqual(state.progressLabel, "6/0/6")
+        XCTAssertEqual(state.iphoneStoreLabel, "Edeka (6/0/6)")
+        XCTAssertEqual(
+            state.iphoneStoreAccessibilityValue,
+            "Edeka, 6 offen, 0 erledigt, 6 gesamt"
+        )
+    }
+
+    func testCheckOffAndStoreSwitchUpdateTheSameField() {
+        var state = AppState.seed
+        state.items = (1...6).map { n in
+            Item(id: "\(n)", name: "Artikel \(n)", dept: "obst", done: false, added: Double(n), ord: Double(n))
+        }
+        state.items[0].done = true
+        XCTAssertEqual(state.iphoneStoreLabel, "Edeka (5/1/6)")
+        state.currentStoreId = "rewe"
+        XCTAssertEqual(state.iphoneStoreLabel, "Rewe (5/1/6)")
+        XCTAssertEqual(
+            state.iphoneStoreAccessibilityValue,
+            "Rewe, 5 offen, 1 erledigt, 6 gesamt"
+        )
+        XCTAssertEqual(state.watchTitle, "Rewe  Einkauf 5/1/6")
+    }
+
+    func testLongStoreNameStaysFullOnIPhone() {
+        var state = AppState.seed
+        state.stores.append(
+            Store(id: "lang", name: "Wochenmarkt Neustadt", layout: ["vor", "sonstiges", "nach"], builtin: false)
+        )
+        state.currentStoreId = "lang"
+        XCTAssertEqual(state.iphoneStoreLabel, "Wochenmarkt Neustadt (0/0/0)")
+        XCTAssertEqual(state.watchTitle, "Woche…  Einkauf 0/0/0")
+    }
+}
+
 final class ComplicationSnapshotTests: XCTestCase {
     func testEmptyListIsZeroOverZeroNotHidden() {
         let snap = ComplicationSnapshot.make(from: .seed)
